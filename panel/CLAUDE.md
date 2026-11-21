@@ -28,12 +28,37 @@ revisan antes de cada cambio en esta carpeta.
   secundario plegado (como un ajuste guardado) o en su `?`. **Si no cabe sin
   romper la regla de arriba** —botones bajo 36px, letra bajo 13px—, gana la
   regla de arriba, y el PR dice que no cupo y cuánto mide.
+  **Lo mide una prueba, no la memoria** (2026-11-21, lo pidió el cliente:
+  *"¿por qué tengo que agregar yo todas las revisiones en los pop-ups… qué
+  habrá que hacer para reforzar esto?"*): `npm run ventanas` abre cada
+  ficha y cada ventana del panel de ejemplo a 1280×650 y **falla** si una
+  que cabía deja de caber, si una anotada crece o si aparece un campo
+  corrido. Va dentro de `npm run revisar`. Lo que todavía no cabe está
+  anotado con su alto en `NO_CABEN` y solo puede bajar. **Una ventana o una
+  ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el mismo PR
+  que la crea**: lo que no está en la lista no se mide.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
   el porqué y el cómo funciona, en `AyudaCorta` o en el `?` de la pantalla.
   Un texto que se lee una vez puede ser `AvisoFijo`, que tiene su ✕. Una
   frase que dice qué pasa al apretar un botón sí se queda.
+- **Los formularios van alineados** (regla del cliente, 2026-11-21: *"se
+  podría alinear los campos para que los títulos estén en un orden vertical
+  y los valores también, o los botones… esto también debería ser una regla
+  que se revise siempre, para que se vean de forma profesional todos estos
+  formularios"*). En una tarjeta, una ventana o una ficha con varios campos,
+  **los nombres van en una columna y los valores en otra**: todos los
+  nombres miden lo mismo, así que cada campo, cada valor y cada fila de
+  botones parte en la misma vertical. Nunca un campo pegado a su nombre solo
+  porque la palabra es más corta. Un segundo dato en la misma fila va a la
+  derecha. Las piezas: `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia`;
+  `rejilla-campos` y `fila-ficha` (`globals.css`) para una ficha con varios
+  campos. **Antes de cerrar un cambio que toque un formulario**, se mira en
+  una captura que los bordes izquierdos calcen, y `revisarAlineacion()`
+  —dentro de `npm run ventanas`— avisa de un campo que salta respecto de su
+  vecino, de un nombre partido en dos renglones y de dos bordes que casi
+  calzan.
 - **Elegir de una lista que crece se hace con buscador** (regla del
   cliente, 2026-11-12). Los botones a la vista son para opciones fijas y
   pocas; para personas o empresas —vendedores, socios, clientes— van **dos
@@ -50,7 +75,10 @@ revisan antes de cada cambio en esta carpeta.
   a alguien; (7) toca cuentas, roles o links; (8) cambia el nombre de algo
   que otros usan —un producto, una persona, un puesto— o la Configuración,
   que afecta al sitio público. Lo manual pregunta con una ventana que dice
-  qué va a pasar; si pide motivo, queda en la bitácora.
+  qué va a pasar; si pide motivo, queda en la bitácora. **Corregir un día
+  cerrado no pide un motivo escrito** (2026-11-21): el panel arma la lista
+  de lo que cambió, se confirma con una casilla y esa lista es lo que queda
+  en la bitácora (ver "Corregir un día cerrado: la lista de cambios").
 - **Las lecturas de Google son un presupuesto**: 60 por minuto para todo el
   panel. Nada nuevo lee la planilla por su cuenta: se suma a la tanda que la
   ruta ya precarga (`conLecturas()`), y el PR dice cuántas lecturas cuesta.
@@ -84,6 +112,10 @@ revisan antes de cada cambio en esta carpeta.
   | Una tarjeta de una lista que se abre: el marco, el + / − y el pie *▴ Cerrar* | `marcoTarjeta`, `SignoAbrir`, `PieCerrar` y `LISTA_TARJETAS` de `TarjetaLista` (Informe, Equipo, Extras, Vendedores, Clientes, Productos, Recepción, las reservas del día y las ventanas del equipo y de extras del día) |
   | Un grupo de tarjetas (un puesto en la ventana del equipo) | `marcoGrupo` de `TarjetaLista` |
   | Lo de adentro de la línea de una persona en un día: campos, ajustes, total, *Ficha / Sacar del día*, *+ Nuevo …* | `CampoAlLado`, `AjustesDelDia`, `TotalDelDia`, `BotonesDeLaLinea` y `BotonNuevaPersona` de `LineaDelDia` (ventana del equipo y de las actividades extras) |
+  | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
+  | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
+  | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
+  | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts` |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
   actualiza **en el mismo PR**. Cuenta como ayuda:
@@ -123,10 +155,397 @@ revisan antes de cada cambio en esta carpeta.
   - **No se cambia ningún permiso de plata sin que el cliente lo diga
     concretamente**: lo que esta regla encuentre se propone primero.
 - **Antes del PR**: `npm run revisar` (tipos, lógica, presupuesto de
-  lecturas y letra chica), una pasada con Playwright a 393 y 1280px con
-  `revisarPlayStation()` de `panel/pruebas/playstation.mjs`, y **la
-  pregunta de la regla de arriba: ¿cambió algo que una ayuda describe?**
-  Y si se tocó una tarjeta o una ventana, **¿cabe abierta en 1280×650?**
+  lecturas, letra chica **y las ventanas**: que cada ficha y cada ventana
+  quepa en 1280×650 y tenga sus campos alineados, `npm run ventanas`), una
+  pasada con Playwright a 393 y 1280px con `revisarPlayStation()` de
+  `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
+  ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
+  ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El computador, más compacto (2026-11-21)
+
+Lo pidió el cliente: *"se puede compactar todas las vistas en el computador
+un poco más, sin perder la regla PlayStation y… el aspecto jugable,
+intuitivo en el panel"*. Se midieron las 15 pantallas a 1280×650 en el panel
+de ejemplo: en todas, el título de la página aparecía recién a los 202–209px
+—casi un tercio de la pantalla de un notebook—, entre la barra (109px), la
+tira *¿Primera vez acá?* (61px) y el margen de arriba (32px). **El espacio
+que sobra es aire entre piezas, no tamaño de botones ni de letra.**
+
+Se propuso en **dos capas** y el cliente aprobó primero la uno (*"dale con
+la capa 1 y déjalo en preview"*) y después la dos:
+
+**Capa 1, hecha: el marco común, solo desde 1024px de ancho.**
+
+| | Antes | Ahora |
+|---|---|---|
+| La barra de arriba (`Cabecera`) | 109px | 97px |
+| La tira *¿Primera vez acá?* (`Recorrido`) | 61px | 49px |
+| El margen sobre la página (`layout.tsx`) | 32px | 16px |
+| Bajo el título con banda (`BandaSeccion`) | 16px y 8px | 12px y 6px |
+| El título de la página | a los 202–209px | a los 162–169px |
+| La primera tarjeta de un día en Calendario | a los 534px | a los 472px |
+
+- **Lo que no cambió**: los botones del menú y de la barra siguen en 36px, y
+  ninguna letra bajó. Los dos botones de la tira pasaron de 40 a 36px en el
+  computador (tamaño secundario); en el celular siguen en 40.
+- **El celular queda igual**: todo va con `lg:`. Comprobado a 393: la barra,
+  la tira y el margen miden lo mismo que antes.
+- **Las páginas que se mandan afuera no cambian**: el link personal, la
+  planilla semanal, la cotización, el contrato y la entrada. La barra entera
+  del panel lleva `data-marco="panel"` y es `peer`; el `<main>` —su hermano—
+  sube solo cuando la ve (`lg:peer-data-[marco=panel]:pt-4`). Comprobado en
+  `/login`, `/mi/…`, `/presupuesto/…` y `/contrato/…`: 32px, como antes.
+- **En Calendario** se tocó solo el aire de su barra; la barra entera y el
+  botón *Agregar reserva* cambiaron en la capa 2, abajo.
+- **Las fotos de la ayuda no cambian**: `capturas-ayuda.mjs` las saca a
+  400px de ancho, y este cambio rige desde 1024. Ningún texto de ayuda
+  describe estas medidas.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+- **Probado** en el panel de ejemplo, las 16 pantallas del administrador a
+  1280×650, 1024×650 y 393×740. `revisarPlayStation()` marca lo de siempre
+  (los `?` de 30px, y la letra de 12px heredada de Cuentas y Bitácora), nada
+  de la barra ni de la tira. Entre 1024 y 1279px el menú del administrador
+  sigue en dos filas (la barra mide 141px).
+
+**Capa 2, hecha el mismo día: pantalla por pantalla.** El cliente la pidió
+(*"dale con la capa 2"*) y fue agregando sobre la marcha, mirando la
+versión de prueba en su notebook. Todo va con `lg:` (o `xl:` donde se
+indica): **en el celular las 15 pantallas miden lo mismo que antes**,
+comprobado una por una a 393px.
+
+**Los calendarios de Reservas y de Cotizaciones, con zoom.** Lo pidió así:
+*"esta página está demasiado ampliado todo… como hacer un zoom… no quiero
+que ninguna de las informaciones que mostramos hoy desaparezca, pero
+compactar todo"*, y *"no al nivel del calendario de turnos"*.
+
+- **Cinco tarjetas por fila desde 1280px** (eran cuatro): 238px de ancho en
+  vez de 295. Entre 1024 y 1279 siguen cuatro, que ahí ya miden 236.
+- **La tarjeta del día** (`TarjetaDia`) bajó de 285 a **236px**: menos
+  relleno, la fecha y el número de personas a 22px (eran 28 y 30), el punto
+  del estado **al lado** de su palabra (`enLinea` de `PuntoDia`), la pastilla
+  del tiempo más baja, las pastillas del pago más juntas y el pie con menos
+  aire. **Los botones siguen en 36px y ninguna letra baja de 13.**
+- **Las tres pastillas del pago** (pagadas · abonadas · sin pagar): en la
+  tarjeta angosta *sin pagar* se partía en dos renglones. Desde 1024px cada
+  columna mide lo que pide su palabra (`.tramos-pago` en `globals.css`).
+- **El piso de la tarjeta** es 236px con el pie en dos filas, y **192px
+  para quien no ve el equipo** (el vendedor, con un solo botón): con el piso
+  de todos le quedaba un hueco en el medio.
+- **La tarjeta de Cotizaciones** bajó de 215 a **170px**, con el mismo
+  criterio y las mismas piezas.
+- **La caja de cada semana y la línea del mes**, con menos aire.
+- No cupieron seis por fila: *Reservas* y *Editar*, con su ícono, piden
+  182px y la tarjeta tendría 175.
+
+**Lo que ocupaba varias filas, en una.** Después de ver el día en su
+notebook: *"se gasta un montón de espacio… esto puede ser una fila en el
+computador, un campo bien organizado con el botón actualizar, y revisa si
+hay otros casos"*.
+
+| Pantalla | Antes | Ahora, en el computador |
+|---|---|---|
+| Página del día | Volver, el día, el tiempo, *Al día*, las reservas, *Qué preparar* y *Cómo viene el pago*: seis filas apiladas | **Un solo campo**: a la izquierda el día (volver, la fecha, el tiempo y las reservas, *Al día* con su botón) y a la derecha los dos grupos de azulejos, lado a lado. Los avisos de la recepción, arriba del campo |
+| El equipo del día | Los nombres, el botón y la propina: tres filas | Una: los nombres se doblan adentro, y el botón y la propina van a su derecha |
+| Calendario | *Al día*, la frase *Toca un día…* y los botones: tres filas | Una: los botones, el rango con *Cambiar el rango* y *Al día*. La frase queda en el `?`, que ya la decía |
+| Cotizaciones | *+ Cotizar* con los filtros, y debajo *Tus pendientes* | Una fila (`enFila` de `Pendientes`); la lista de un pendiente abierto y el aviso de sobrecupo, debajo a todo el ancho |
+| Recepción | Título, día, tres números y buscador: cuatro filas | Dos: el título con el día, y los números con el buscador |
+| Equipo | Título, aviso y *Ver el mes completo* | El título y el botón en una línea |
+| Configuración | Un campo por fila, a todo el ancho (77px cada uno) | **Dos columnas** de campos, 61px cada uno: la página bajó de 3.742 a 2.208px |
+| Cuentas | La columna del rol, angosta: cada cuenta medía hasta 190px | Desde 1280px el rol y *Vista gerencia* van en una fila y el resumen del rol debajo, a lo ancho: de 1.988 a 1.375px |
+| Turnos y Cuentas | Dos avisos fijos, uno bajo el otro | Lado a lado |
+
+- **El aviso fijo** (`AvisoFijo`) es más ancho en el computador —hasta
+  60rem— y con menos relleno: los que pedían `max-w-2xl` se partían en tres
+  o cuatro renglones con media pantalla libre al lado.
+- **El botón principal y los filtros**, de 48 a 44px, juntos: *Agregar
+  reserva*, *+ Cotizar*, *Sin fecha* y *📋 Lista*.
+- **Lo que se muestra dos veces en el HTML**: en Calendario, *Al día* y el
+  rango se dibujan una vez para el celular (`lg:hidden`) y otra para el
+  computador (`hidden lg:block`), porque van en otro lugar de la fila. Solo
+  una se ve cada vez.
+
+**Cuánto mide cada pantalla a 1280×650**, de punta a punta:
+
+| Pantalla | Antes | Ahora |
+|---|---|---|
+| Calendario | 2.558 | 2.085 |
+| Cotizaciones | 2.279 | 1.863 |
+| Página del día | 1.346 | 1.028 |
+| Configuración | 3.742 | 2.208 |
+| Cuentas | 1.988 | 1.375 |
+| Equipo | 1.496 | 1.328 |
+| Turnos | 1.714 | 1.563 |
+| Extras | 1.716 | 1.631 |
+| Recepción | 861 | 769 |
+| Informe | 1.881 | 1.818 |
+| Productos · Bitácora | 1.108 · 1.296 | 1.064 · 1.261 |
+
+En la página del día, la lista de reservas empieza a los 440px; antes, a
+los 880.
+
+**Los formularios, alineados** (regla nueva, arriba). La pidió con una foto
+de la línea de un extra: *Actividad* con su campo, *Monto* —más corto— con
+el campo pegado al nombre, y *Ajustes* con los botones al otro lado.
+
+- **`COLUMNA_ROTULO`** en `LineaDelDia`: todos los nombres de la línea
+  —Actividad, Monto, Jornada, Ajustes, Propina, Total del día— miden 6rem,
+  así que los campos, los botones *− Descontar / + Sumar* y los valores
+  parten en la misma vertical. **Vale también en el celular**: es el formato
+  de la línea, no una cosa del computador.
+- **El total del día** dejó de ser una franja con fondo y relleno propios,
+  que corría su nombre 10px: es una línea bajo una raya, como el total de una
+  cuenta.
+- **El segundo dato de una fila** —las horas extra al lado de la jornada, el
+  total al lado de la propina— va a la derecha, pegado a su valor
+  (`segundo` de `CampoAlLado`).
+- Es la misma pieza en la ventana del equipo y en la de las actividades, así
+  que cambió en las dos.
+- **Medido**: en las dos ventanas, a 1280 y a 393, todos los nombres parten
+  en la misma x y todos los valores también.
+
+**Lo de siempre**
+
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+- **Ayuda**: el `?` del calendario ya decía *apreta la fecha de un día*.
+  Las fotos no cambian: se sacan a 400px y ninguna muestra una línea del día
+  abierta; se rehicieron `enc-dia`, `ope-dia`, `enc-cerrar` y `ope-corregir`
+  para comprobarlo y salieron idénticas.
+- `npm run revisar` pasa. `revisarPlayStation()` marca lo de siempre (los
+  `?` de 30px, la letra de 12px de Cuentas y Bitácora, y *MET Norway* a
+  10px), nada nuevo.
+
+**Lo que quedó sin tocar ese día, y cómo siguió**
+
+- **Vendedores y Estadísticas**: se juntaron sus filas de controles —en
+  Vendedores el buscador va en la fila del periodo; en Estadísticas, *Ver*
+  va en la fila de la cabecera—.
+- **La regla de los formularios alineados** se llevó a todo el panel: ver
+  "Los formularios alineados, en todo el panel", abajo.
+- **Las ventanas que no cabían**: ver "Las ventanas caben en la pantalla
+  del computador", abajo.
+- **Entre 1024 y 1279px**, Cuentas sigue con la columna del rol angosta.
+
+**El criterio, para seguir**: solo desde 1024px; se quita aire y lo que cabe
+en una fila no se apila; no se achican botones bajo 36px (44 lo que se usa
+seguido) ni letra bajo 13px; lo que es la misma pieza en dos pantallas
+cambia en las dos; y se comprueba que el celular mida lo mismo.
+
+## Los formularios alineados, en todo el panel (2026-11-21)
+
+La regla nació con la línea del día; el cliente la extendió con tres fotos
+el mismo día: un `?` que empujaba su campo hacia abajo respecto de los de al
+lado (*"generas… saltos verticales, donde debería estar alineado todo… para
+todos los elementos en el sitio. Haz la tarea completa directo"*), *Correo
+del comprobante* partido en dos renglones, y *"sobre todo revisa todos los
+popups, en cada uno existe este problema"*.
+
+- **El `?` chico ya no mueve a sus vecinos** (`AyudaCorta`). Medía 30px y
+  agrandaba el renglón donde iba: el campo de al lado quedaba más arriba.
+  Ahora **se ve de 24px, le suma 16 al renglón y se aprieta en 36** (un
+  área invisible alrededor, `before:`). Un nombre con `?` y uno sin `?`
+  miden lo mismo. `revisarPlayStation()` lo sigue listando como botón de
+  24px: es lo que se ve, no lo que se aprieta.
+- **`rejilla-campos`** (`globals.css`): la grilla de una ficha. Va dentro de
+  una `caja-campos` y **se ordena según el ancho de su caja, no de la
+  pantalla** (*container query*): dos columnas angosta, cuatro desde 30rem y
+  seis desde 52rem. Un campo ocupa una columna, o más con `campo-2`,
+  `campo-resto` y `campo-todo`. La usan `DatosBancarios` y las fichas de
+  trabajador y de colaborador (`FichaTrabajador`, `FichaColaborador`).
+- **`fila-ficha`**: una fila con el nombre de la sección a la izquierda, en
+  una columna de 11rem (`rotulo-ficha`), y lo suyo a la derecha. Es el
+  formato de las fichas que se abren en su lista (Equipo y Extras): *Datos ·
+  Link personal · Pago · Transferencia*.
+- **`Campo`** dejó de pedir un ancho: sin nada ocupa una columna de la
+  grilla.
+- **Los nombres que se partían, más cortos**: *Correo comprobante* y *Hora
+  extra*. En Cuentas, cada celda de la tabla centra lo suyo a 40px, para que
+  el texto y los campos de una fila partan a la misma altura.
+- **El trato de un vendedor**: el bono y *con socio* van en la misma caja y
+  la misma columna que las etapas.
+- **Palabras que cambiaron** (lo pidió el cliente con otra foto: *"en vez de
+  decir no aplica, debería decir sin propina"*): en la línea del día, la
+  propina de quien no participa del reparto dice ***sin propina*** —antes
+  *no participa*, y solo si había venido—, y la jornada de un contratado
+  dice ***sin jornada*** —antes *contratado · no aplica*—. Es una
+  interpretación: en esa fila el dato es la jornada, no la propina.
+- **Cotizar, paso 1** (*"cliente nuevo tiene que estar arriba y un botón
+  notable"*): **+ Cliente nuevo** va arriba, al lado del buscador, con borde
+  dorado y 48px; debajo, la lista.
+- **Lo mide `revisarAlineacion(page)`** (`pruebas/alineacion.mjs`), dentro de
+  `npm run ventanas`: un **salto** entre dos campos de una misma fila, un
+  **nombre partido** en dos renglones y dos **bordes que casi calzan** (entre
+  2 y 12px). No reemplaza al ojo: no sabe si una columna está bien elegida.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
+## Las ventanas caben en la pantalla del computador (2026-11-21)
+
+Lo pidió el cliente con una foto del paso 3 de cotizar: *"lo mismo con
+cotizaciones. Todas las pestañas se pueden organizar para que queden dentro
+de una pantalla en el computador"*; y después, con razón: *"¿por qué tengo
+que agregar yo todas las revisiones en los pop-ups… si ya debería ser regla?
+¿Qué habrá que hacer para reforzar esto, para que realmente siempre tengas
+presente esta regla?"*.
+
+**La respuesta a esa pregunta es `npm run ventanas`**, que desde ese día es
+parte de `npm run revisar`. La regla *una tarjeta abierta cabe en una
+pantalla* estaba escrita, pero se aplicaba a lo que se iba tocando y
+dependía de acordarse. Se midieron todas: **21 de 39 fichas y ventanas no
+cabían en 1280×650**. Quedaron dos.
+
+**Todo va con `lg:`** (desde 1024px; la ficha del vendedor, con `xl:`): en
+el celular las ventanas miden lo mismo, comprobado una por una a 393px con
+el código de antes y el de después. Tres bajaron unos pixeles y es a
+propósito: la ficha de un producto (−12: el aviso del nombre quedó pegado a
+su campo, que era la intención), el paso 5 de cotizar (−16: el `?` de la Ley
+20.393 va al lado de su botón) y la corrección de un día cerrado (−8).
+
+**La pieza común, `Dialogo`**: en el computador la ventana parte arriba (8px
+en vez de 56) y con 16px de relleno: 48px más para el contenido, en todas.
+Y admite **`alLado`**: algo que va en la línea del título, solo en el
+computador.
+
+| Ventana o ficha | Antes | Ahora | Cómo |
+|---|---|---|---|
+| Cotizar · 2 Evento | 807 | 423 | Dos columnas: cuándo y cuántos · qué es, por quién viene y las notas |
+| Cotizar · 3 Productos | 1.417 | 533 | Los productos para agregar en dos filas con su nombre a la izquierda; **las líneas como una tabla**, una fila por producto con el nombre de cada columna una vez arriba (`subgrid`); las cuentas en una fila |
+| Cotizar · 4 Envío | 1.970 | 627 | Tres columnas: el documento con el próximo paso debajo, el pago, y el seguimiento. Lo que se llena una vez va plegado |
+| Cotizar · 5 Contrato | 1.565 | 622 | El contrato ocupa dos tercios, con lo suyo en dos columnas, y el próximo paso a su derecha |
+| El equipo del día, con una línea abierta | 1.272 | 621 | Tres columnas parejas de puestos; las dos caras y el resumen, en la línea del título; la propina y el resumen, en el pie |
+| Un día cerrado | 1.092 | 621 | Lo mismo |
+| La propina (el equipo, desde la página del día) | 1.006 | 545 | Lo mismo |
+| Agregar reserva | 910 | 506 | Dos columnas: quién, cuándo y el pago · los menús y el monto |
+| Agregar vendedor | 870 | 469 | Los tres pasos lado a lado |
+| El trato de un vendedor | 979 | 476 | Las etapas a la izquierda, el bono y el socio a la derecha; los montos y la base, debajo |
+| Ver como | 903 | 612 | Los roles en dos columnas |
+| Comentar | 662 | 623 | Los cuatro tipos en una fila (`tipos-en-fila`, por el ancho de la caja) |
+| Dejar la base en cero | 993 | 594 | Qué se borra y qué se conserva a la izquierda; el aviso y los dos pasos a la derecha |
+| Ficha de un producto | 788 | 494 | El nombre y *Qué es* en una fila, los tres interruptores en otra, los precios de la reserva al lado de los de la cotización |
+| Ficha de un cliente | 692 | 540 | Cuatro campos por fila |
+| Ficha de un vendedor | 740 | 501 | Dos columnas desde 1280px, y la página a todo el ancho |
+| Agregar fecha · ficha de trabajador · trabajador nuevo · pago | 617–629 | 605–621 | Solo con la pieza común |
+
+**Cotizar, lo que conviene saber para seguir**:
+
+- **La ventana es ancha en el computador** (73rem). Los cinco pasos y las
+  alternativas van en una fila; *Para quién · día · invitados · total* y
+  *✓ Guardado* van en la línea del N° (`resumenArriba`); la línea *Para…* y
+  el resumen que abría los pasos 4 y 5 quedan solo en el celular.
+- **Las líneas del paso 3 son una tabla** con `grid-cols-subgrid`: cada
+  línea es una fila de la misma grilla y el nombre de cada campo sigue ahí
+  para un lector de pantalla (`rotuloClase="lg:sr-only"` de `Campo`). Un
+  producto ya agregado muestra solo el ✓ en su botón. *¿Le ofreces otra
+  versión?* no se dibuja: *+ Crear alternativa* está arriba, a la vista.
+  **Entran cuatro líneas con precio más el show**; con más, la ventana crece.
+- **Lo plegado en el computador** (regla: *lo secundario plegado, como un
+  ajuste guardado*): las **condiciones de pago**, los **recordatorios** y
+  *Cambios de fecha y cancelación* se leen en su frase y se abren con
+  *✎ Cambiar*; los **datos de la factura** se leen en dos renglones y se
+  escriben en una ventanita (`facturaAbierta`). Si falta un dato o el RUT no
+  calza, lo dice en ámbar ahí mismo. **En el celular siguen a la vista**: el
+  pliegue es una clase `lg:hidden`, no otro flujo.
+- **El pie de cada paso** lleva, solo en el computador, lo que iba en su
+  propia fila: el aviso de que los menús suman los invitados (paso 3) y
+  *Borrar* / *Corregir la ganada* / *Cancelar evento* (pasos 4 y 5).
+- **El próximo paso** baja de 56 a 48px en el computador y su título a 19px.
+
+**El equipo del día**:
+
+- **`enColumnas()`** reparte los puestos en tres columnas parejas: cada uno
+  va a la columna más corta según cuánta gente tiene. **Al abrir una línea
+  nada cambia de columna**, que es lo que haría una grilla que se balancea
+  sola. Más angosto, las columnas se deshacen (`contents`) y cada puesto
+  conserva su orden.
+- ***+ Agregar…* y *+ Nuevo trabajador* van lado a lado**; al abrir el
+  buscador ocupa la fila entera (`:has(input)`). Igual en la ventana de las
+  actividades extras.
+- **Tres piezas se dibujan en dos lugares** —`resumenDelDia()`,
+  `cajaPropina()` y `cuantosVinieron()`, más `avisosDeCierre()`—: bajo los
+  puestos en el celular, y en la línea del título o en el pie en el
+  computador. Solo una se ve cada vez. **Ojo al buscar por nombre en una
+  prueba**: hay dos *Propina del día* y dos pestañas *Reservas* en el HTML;
+  se pide la visible (`button:visible`).
+- **El nombre y la plata de cada persona se doblan en vez de cortarse** en
+  las columnas más angostas, y solo entre un dato y el otro (*propina
+  $14.438* nunca queda con el monto abajo).
+- **La cara de reservas**: los tres grupos de azulejos van lado a lado.
+
+**Lo que no cupo, con su medida** (`NO_CABEN`, solo puede bajar):
+
+| Qué | Mide | Por qué |
+|---|---|---|
+| El equipo del día con el formulario de un ajuste abierto | 846 | El ajuste —monto, motivo, cómo y nota— suma 225px dentro de la línea. Guardado se pliega y la ventana vuelve a caber |
+| El equipo del día, cara *Reservas* | 859 | Es una lista: crece con las reservas del día |
+
+Las dos ventanas crecen con lo que tenga el día. Con más gente o más
+puestos que el ejemplo (ocho personas, cuatro puestos), la de trabajadores
+también pasa de una pantalla.
+
+**La prueba** (`pruebas/ventanas.mjs`): 43 escenas. Fija el reloj del
+navegador a la hora del servidor de ejemplo —si no, *hoy* es un día para
+uno y otro para la página, y React avisa en rojo—, y **espera lo que se
+carga antes de medir**: *Dejar la base en cero* y la cara de reservas se
+estaban midiendo mientras decían *Cargando…*, y daban por buena una ventana
+de 150px que en verdad medía mil.
+
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+- **El RUT del cliente de ejemplo** (`generar-planilla.mjs`) tenía el dígito
+  verificador malo y salía un aviso rojo en cada foto: se corrigió.
+- **Ayuda**: el `?` de *Agregar productos* decía que el botón dice *ya
+  está*; ahora, que queda apagado con un ✓. Las fotos se rehicieron todas.
+
+## Corregir un día cerrado: la lista de cambios y una casilla (2026-11-21)
+
+Lo pidió el cliente con una foto del pie *Motivo de la corrección*: *"sobra
+este motivo… el que entra con su cuenta y cambia algo —pone un adelanto y
+pone la marca adelanto— ya se puede ver después por qué se hizo. En vez de
+escribir, haz una casilla, confirmar, y luego la lista de los cambios que
+aplicaste. Y luego guardar. Eso tiene que ser."*
+
+- **`lib/correccion.ts`** (pura, con pruebas) compara el día como estaba
+  cerrado con el día como queda y dice cada cambio con palabras:
+  *Matías Pérez: se agregó un descuento de $4.000 (Adelanto ·
+  Transferencia)* · *Felipe Cortés: de No vino a Vino* · *jornada de $35.000
+  a $40.000* · *se agregó al día, en Barra* · *se sacó del día* · *Propina
+  del día: de $100.000 a $120.000* · *Reserva de Gonzalo Contreras: de sin
+  marcar a Vino*. `cambiosDelEquipo()`, `cambiosDeExtras()` y
+  `cambioDeReserva()`.
+- **El pie de la corrección** (`PieCorreccion`): **la lista**, la casilla
+  ***Confirmo estos cambios*** y *Guardar corrección*, que se apaga hasta
+  que haya algún cambio y la casilla esté marcada. **Si se cambia algo más
+  después de marcarla, se suelta sola**: lo confirmado era otra lista. Sin
+  cambios dice *Todavía no cambiaste nada*.
+- **Esa lista es lo que queda en la bitácora** —*Corrigió el equipo de un
+  día cerrado · 2026-11-07 · cambios: …*—, a nombre de quien corrigió
+  (`textoDeCambios()`, que corta una lista muy larga en un cambio entero y
+  dice cuántos más hubo).
+- **El servidor no cambió su regla**: una corrección sin ese texto se
+  rechaza igual (`corregirDiaCerrado()`), y sigue pidiendo el permiso
+  `corregir`. Lo que cambió es quién escribe el texto.
+- **La propina se compara por el total del día**: la parte de cada uno es
+  una consecuencia. **El valor de la hora extra cuenta solo si hay horas.**
+  Un ajuste al que se le cambió el monto sale como uno quitado y otro
+  agregado.
+- **Volver una reserva a como estaba no es un cambio**: sale de la lista.
+- **Es la misma pieza en la ventana del equipo y en la de las actividades
+  extras**, así que cambió en las dos.
+- **Lo que sigue pidiendo un motivo escrito**, y hay que preguntárselo al
+  cliente antes de tocarlo (regla *un cambio de diseño se lleva a sus
+  parecidos*): **editar una reserva de un día cerrado** (`ReservaForm`) y
+  **borrar una reserva de un día cerrado** (página del día). En el borrado,
+  el porqué no sale del cambio mismo.
+- **En el computador** el pie es una fila —la lista a la izquierda, la
+  casilla y los botones a la derecha— y dice ahí *Estás corrigiendo un día
+  cerrado*, así que el aviso de arriba no se dibuja.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.**
+- **Ayuda**: el `?` de Turnos, el `?` chico *Un día cerrado* y la misión
+  *Corregir un día cerrado* dicen lo nuevo.
+- **Probado en el panel de ejemplo**: en el sábado 7, cerrado, un descuento
+  de $4.000 por adelanto a un garzón y *No vino → Vino* a otra persona: la
+  lista dice los dos, *Guardar corrección* está apagado hasta marcar la
+  casilla, y la bitácora queda con *cambios: Matías Pérez: se agregó un
+  descuento de $4.000 (Adelanto · Transferencia); Felipe Cortés: de No vino
+  a Vino*.
 
 ## El token de Shopify de la tienda real (2026-11-21)
 
@@ -647,6 +1066,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 43 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de
@@ -5514,7 +5934,7 @@ una **corrección**:
 | Día abierto | Como siempre: se escribe y se guarda solo |
 | Día cerrado, encargado | **Solo lectura.** La ventana dice quién lo cerró y que, si hay que cambiar algo, se lo pida al administrador o a quien paga |
 | Día cerrado, administrador o pagos | Solo lectura, con un botón **Corregir este día** |
-| Corrigiendo | Se edita, **nada se guarda solo**, y abajo hay un motivo obligatorio y *Guardar corrección* |
+| Corrigiendo | Se edita, **nada se guarda solo**, y abajo hay un motivo obligatorio y *Guardar corrección*. **Desde el 2026-11-21 no se escribe el motivo**: abajo va la lista de lo que cambió, una casilla para confirmarla y *Guardar corrección* (ver "Corregir un día cerrado: la lista de cambios y una casilla") |
 
 - **El día nunca deja de estar cerrado.** Reabrir, corregir y volver a
   cerrar son tres pasos, y el que se olvida es el último: queda un día
