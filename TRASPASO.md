@@ -54,12 +54,20 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   puede corregir, con la lista de cambios y su casilla; y el encabezado de la
   página del día en una línea, con el ancho repartido entre los azulejos. El
   panel en producción quedó comprobado después (`verificar.sh`, 15 de 15).
-  **No hay ningún PR abierto.** Detalle en la sección 4.
+  Detalle en la sección 4.
   https://github.com/ayc-y-blp/aycyblp/pull/289
 - **Las compras de prueba en la tienda real pasaron** (lo dijo el cliente el
   21-11-2026: *"han pasado varias pruebas exitosas de pago y de solo
   reservar"*). **Lo que sigue es la base en cero** y después importar los
-  contactos del CRM: pendientes 1 y 2 de la sección 7.
+  contactos del CRM: pendientes 1 y 10 de la sección 7.
+- **El PR #291 está abierto, en el camino *con prueba***: la revisión de
+  *Dejar la base en cero* que pidió el cliente antes de apretarlo. Suma la
+  pestaña `Ajustes sueltos` a lo que se vacía —no estaba—, agrega una prueba
+  que obliga a decidir cada pestaña nueva, y la ventana dice arriba cuál
+  planilla es y si es producción o una versión de prueba. **No se mergea
+  hasta que diga *"mergea"***; sirve además para el ensayo en la planilla
+  "Pruebas". Detalle en `panel/CLAUDE.md`, "La revisión antes de apretarlo".
+  https://github.com/ayc-y-blp/aycyblp/pull/291
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -893,7 +901,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **La base en cero** | Las compras de prueba ya pasaron. **Antes de apretar el botón**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —si no, la revisión diaria las vuelve a traer ocupando cupo—; (b) sumar la pestaña `Ajustes sueltos` a lo que se vacía (`lib/produccion.ts`): nació el 21-11 y no está en la lista, así que los ajustes de prueba sobrevivirían; (c) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (d) copia de la planilla real. **El orden**: primero en una versión de prueba del panel, que borra la planilla "Pruebas"; si sale bien, en producción. Después: abrir a mano los días especiales y anotar los pedidos del sitio viejo (pendiente 7) | Claude arregla (b); cliente hace el resto |
+| 1 | **La base en cero** | Las compras de prueba ya pasaron. **Antes de apretar el botón**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —si no, la revisión diaria las vuelve a traer ocupando cupo—; (b) mergear el PR #291, que suma la pestaña `Ajustes sueltos` a lo que se vacía —nació el 21-11 y no estaba en la lista, así que los ajustes de prueba sobrevivían—; (c) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (d) copia de la planilla real. **El orden**: primero en una versión de prueba del panel, que borra la planilla "Pruebas"; si sale bien, en producción. Después: abrir a mano los días especiales y anotar los pedidos del sitio viejo (pendiente 7) | Cliente; Claude mergea el #291 cuando diga *"mergea"* |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
 | 3 | ~~Compras de prueba en la tienda real~~ | **Hecho el 21-11-2026**, lo dijo el cliente: pasaron varias de pago y de solo reserva. Queda devolverlas o cancelarlas en Shopify antes de la base en cero (pendiente 1) | — |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |

@@ -4082,7 +4082,7 @@ administrador (permiso `mantencion`), con la lógica en `lib/produccion.ts`
 
 | Se vacía | Se conserva |
 |---|---|
-| Reservas (y sus eventos en Google Calendar), Presupuestos, Presupuesto Líneas, Clientes, Cobros, Turnos, Cierres, Actividades, Pagos, Boletas, Fechas Hábiles, Bitácora | Trabajadores, Puestos, Usuarios (las cuentas), Config, Menús (productos y precios), Colaboradores (fichas de los extras), Vendedores (fichas de vendedores y socios) y los comentarios, que viven en otra planilla |
+| Reservas (y sus eventos en Google Calendar), Presupuestos, Presupuesto Líneas, Clientes, Cobros, Turnos, Ajustes sueltos (desde el 2026-11-21), Cierres, Actividades, Pagos, Boletas, Fechas Hábiles, Bitácora | Trabajadores, Puestos, Usuarios (las cuentas), Config, Menús (productos y precios), Colaboradores (fichas de los extras), Vendedores (fichas de vendedores y socios) y los comentarios, que viven en otra planilla |
 
 - **Es una lista fija**, no una casilla por pestaña: elegir de a una sería
   una forma de borrar el equipo con un toque de más. Hay una prueba que fija
@@ -4109,7 +4109,7 @@ administrador (permiso `mantencion`), con la lógica en `lib/produccion.ts`
   ver la sección que sigue), así que el sitio no queda sin fechas. La
   ventana lo dice antes y después de borrar. Si eso falla, lo borrado ya está
   borrado: lo dice y la tarea diaria los abre a la mañana siguiente.
-- **Lecturas de Google**: abrir la ventana, una tanda (las 19 pestañas
+- **Lecturas de Google**: abrir la ventana, una tanda (las 20 pestañas
   juntas). Borrar: la misma tanda, una llamada de borrado y la línea de la
   bitácora.
 - **Probado en el panel de ejemplo**: 176 filas de 12 pestañas; los 9
@@ -4117,6 +4117,43 @@ administrador (permiso `mantencion`), con la lógica en `lib/produccion.ts`
   extras y los vendedores, intactos y con su encabezado; la portada,
   Cotizaciones, Turnos, Equipo, Informe y Clientes abren vacíos. Sin la
   palabra o sin la copia, 400; la gerencia, 403 y sin el bloque.
+
+### La revisión antes de apretarlo (2026-11-21)
+
+Con las compras de prueba ya pasadas, el cliente pidió revisar el botón
+antes de usarlo, y propuso el orden: *"ponemos en cero primero la base de
+datos de prueba y luego, si eso está exitoso, aplicamos lo mismo en la base
+de datos de producción"*. La revisión encontró un hueco y dejó el ensayo más
+seguro.
+
+- **`Ajustes sueltos` no estaba en ninguna de las dos listas.** La pestaña
+  nació el 21, tres días después de la lista: la base habría quedado "en
+  cero" con los ajustes de prueba vivos en el informe y en el link de cada
+  trabajador. Ahora se vacía (*Ajustes fuera de turno*).
+- **Una prueba para que no vuelva a pasar**: recorre todas las pestañas del
+  panel —las `HOJA_…` de `lib/`— y falla si una no está en *se vacía*, en
+  *se conserva* o en `FUERA_DE_LA_PLANILLA` (los comentarios, que viven en
+  otra planilla). Una pestaña nueva obliga a decidir.
+- **La ventana dice cuál base es**: arriba, *🔴 Producción: la planilla real
+  «nombre»* o *🧪 Versión de prueba: no es la planilla real «Pruebas»*. El
+  nombre sale de la planilla misma (`nombreDeLaPlanilla()`, en la consulta de
+  los títulos que cada instancia ya hace: ninguna lectura más) y la versión,
+  de `VERCEL_ENV` (`entornoDe()`).
+- **El ensayo es válido**: la versión de prueba de un PR está conectada a la
+  copia *Pruebas*, así que el mismo botón, con el mismo código, vacía esa
+  copia y no toca la real. **Lo que el ensayo no cubre**: en la versión de
+  prueba no hay Google Calendar (no se borran eventos) y Shopify es la tienda
+  de desarrollo, así que ahí la ventana muestra el aviso ámbar de la tienda;
+  en producción no tiene que aparecer.
+- **Antes de apretarlo en producción, en Shopify**: devolver las compras de
+  prueba pagadas y cancelar las de *solo reserva*. La revisión diaria vuelve
+  a traer los pedidos de los últimos 10 días: una compra de prueba que siga
+  pagada o por pagar volvería como una reserva viva, ocupando cupo; devuelta
+  o cancelada vuelve como *Ya no vienen*, que no ocupa.
+- **Lo que no vuelve solo**: los días abiertos a mano —un feriado, un día
+  privado, un cupo distinto—. Vuelven solo los de la regla.
+- **Lecturas de Google**: las mismas (una tanda al abrir). **Ningún permiso
+  cambió.**
 
 ### Los días de la regla se abren solos (2026-11-18)
 

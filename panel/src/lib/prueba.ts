@@ -5528,6 +5528,28 @@ console.log('\nDejar la base en cero para producción');
      'el equipo, las cuentas, la configuración y los productos nunca se vacían');
   ok(['Reservas', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros', 'Turnos', 'Bitácora'].every((h) => vacian.includes(h)),
      'las reservas, las cotizaciones, los clientes, los cobros, los turnos y la bitácora se vacían');
+  ok(vacian.includes('Ajustes sueltos'),
+     'los ajustes fuera de turno se vacían: sin eso, los de prueba quedaban en el informe de cada trabajador');
+  // **Ninguna pestaña del panel queda sin decidir** (2026-11-21): se recorren
+  // todas las `HOJA_…` de `lib/` y cada una tiene que estar en una lista.
+  {
+    const fsP = await import('node:fs');
+    const carpeta = new URL('.', import.meta.url);
+    const pestanas = new Map<string, string>();
+    for (const archivo of fsP.readdirSync(carpeta)) {
+      if (!archivo.endsWith('.ts')) continue;
+      const texto = fsP.readFileSync(new URL(archivo, carpeta), 'utf8');
+      for (const m of texto.matchAll(/export const (HOJA_[A-Z_]+)\s*=\s*'([^']+)'/g)) pestanas.set(m[2], `${m[1]} (${archivo})`);
+    }
+    const sinDecidir = [...pestanas.keys()].filter((h) =>
+      !vacian.includes(h) && !conservan.includes(h) && !P.FUERA_DE_LA_PLANILLA.includes(h));
+    ok(pestanas.size >= 20 && sinDecidir.length === 0,
+       'cada pestaña del panel está en "se vacía" o en "se conserva"'
+       + (sinDecidir.length ? `: falta decidir ${sinDecidir.map((h) => pestanas.get(h)).join(', ')}` : ''));
+  }
+  ok(P.entornoDe('production') === 'produccion' && P.entornoDe('preview') === 'prueba' && P.entornoDe(undefined) === ''
+     && P.entornoDe('development') === '',
+     'dice si se está en producción o en una versión de prueba');
   ok(P.confirmado({ copia: true, palabra: 'borrar ' }) && !P.confirmado({ copia: false, palabra: 'BORRAR' })
      && !P.confirmado({ copia: true, palabra: 'BORRA' }) && !P.confirmado({ copia: 'true', palabra: 'BORRAR' })
      && !P.confirmado(null),
