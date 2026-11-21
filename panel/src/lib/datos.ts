@@ -313,12 +313,28 @@ export async function guardarConfig(c: Config): Promise<void> {
  * Al actualizar solo se escriben las columnas de Shopify: la asistencia que
  * alguien marcó a mano no se pisa. Ver `camposDeShopify()`.
  *
+ * **Un pedido que ya no ocupa lugar y que no está anotado, no se anota**
+ * (2026-11-21, salió de revisar *Dejar la base en cero*). Cancelado,
+ * reembolsado o anulado: si el panel nunca lo tuvo, no hay cupo que liberar
+ * ni fila que corregir, y anotarlo solo dejaría un *Ya no vienen* de alguien
+ * que nunca estuvo. Importa por dos casos reales:
+ *
+ * - **después de dejar la base en cero**, la revisión diaria vuelve a mirar
+ *   los pedidos de los últimos diez días: las compras de prueba, ya devueltas
+ *   o canceladas, volvían a aparecer en sus fechas;
+ * - **una reserva cancelada que alguien borró a mano** volvía sola al día
+ *   siguiente, y así diez días.
+ *
+ * Uno que **sí** está anotado se actualiza como siempre: así es como una
+ * reserva viva pasa a cancelada y libera su cupo. Y uno pagado o por pagar se
+ * anota aunque llegue tarde: eso no cambia.
+ *
  * Devuelve qué pasó, para poder contarlo en el registro sin tener que
  * adivinarlo después.
  */
 export async function guardarPedido(
   r: Omit<Reserva, 'fila'>
-): Promise<'creada' | 'actualizada'> {
+): Promise<'creada' | 'actualizada' | 'omitida'> {
   const filas = await leerHoja(HOJA_RESERVAS, true);
   const enc = filas[0] ?? [];
   const fila = buscarFilaPorId(filas, enc, r.id);
@@ -328,6 +344,7 @@ export async function guardarPedido(
       filaReserva(enc, camposDeShopify(r), filas[fila - 1]));
     return 'actualizada';
   }
+  if (!ocupaLugar(r as Reserva)) return 'omitida';
   await agregarFila(HOJA_RESERVAS, filaReserva(enc, r));
   return 'creada';
 }

@@ -4147,9 +4147,18 @@ seguro.
   en producción no tiene que aparecer.
 - **Antes de apretarlo en producción, en Shopify**: devolver las compras de
   prueba pagadas y cancelar las de *solo reserva*. La revisión diaria vuelve
-  a traer los pedidos de los últimos 10 días: una compra de prueba que siga
-  pagada o por pagar volvería como una reserva viva, ocupando cupo; devuelta
-  o cancelada vuelve como *Ya no vienen*, que no ocupa.
+  a mirar los pedidos de los últimos 10 días: una compra de prueba que siga
+  pagada o por pagar volvería como una reserva viva, ocupando cupo.
+- **Un pedido cancelado o devuelto que no está anotado ya no se anota**
+  (`guardarPedido()` devuelve `omitida`). Sin esto, las compras de prueba
+  —aun devueltas— volvían a aparecer a la mañana siguiente como *Ya no
+  vienen* en sus fechas, justo después de dejar la base en cero. Sirve
+  también para el día a día: una reserva cancelada de Shopify que alguien
+  borró a mano volvía sola al día siguiente, y así diez días. **Lo que no
+  cambia**: un pedido que sí está anotado se actualiza a cancelado y libera
+  su cupo, y uno pagado o por pagar se anota aunque llegue tarde. Vale para
+  el webhook y para la revisión diaria, que lo cuenta aparte (*N ya
+  canceladas, sin anotar*). `npm run webhook` lo fija con cuatro casos.
 - **Lo que no vuelve solo**: los días abiertos a mano —un feriado, un día
   privado, un cupo distinto—. Vuelven solo los de la regla.
 - **Lecturas de Google**: las mismas (una tanda al abrir). **Ningún permiso

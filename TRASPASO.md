@@ -64,9 +64,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *Dejar la base en cero* que pidió el cliente antes de apretarlo. Suma la
   pestaña `Ajustes sueltos` a lo que se vacía —no estaba—, agrega una prueba
   que obliga a decidir cada pestaña nueva, y la ventana dice arriba cuál
-  planilla es y si es producción o una versión de prueba. **No se mergea
-  hasta que diga *"mergea"***; sirve además para el ensayo en la planilla
-  "Pruebas". Detalle en `panel/CLAUDE.md`, "La revisión antes de apretarlo".
+  planilla es y si es producción o una versión de prueba. Y, en un commit
+  aparte, **un pedido de Shopify cancelado o devuelto que no está anotado ya
+  no se anota**: sin eso las compras de prueba volvían a aparecer al día
+  siguiente de dejar la base en cero. **No se mergea hasta que diga
+  *"mergea"***; sirve además para el ensayo en la planilla "Pruebas".
+  Detalle en `panel/CLAUDE.md`, "La revisión antes de apretarlo".
   https://github.com/ayc-y-blp/aycyblp/pull/291
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó

@@ -70,7 +70,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
     }
 
     const que = await guardarPedido(reserva);
-    console.log(`[webhook] ${req.headers.get('x-shopify-topic')} pedido ${reserva.id}: ${que}`);
+    console.log(`[webhook] ${req.headers.get('x-shopify-topic')} pedido ${reserva.id}: ${que}`
+      + (que === 'omitida' ? ', ya no ocupa lugar y no estaba anotado' : ''));
+    // Cancelado o devuelto y sin anotar (ver `guardarPedido()`): tampoco
+    // tiene evento que borrar. Para Shopify se entregó bien: 200.
+    if (que === 'omitida') return NextResponse.json({ ok: true, omitida: reserva.id });
 
     await anotarEnElCalendario(reserva);
 

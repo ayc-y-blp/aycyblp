@@ -59,7 +59,8 @@ export default function ConfigEditor() {
       const d = await r.json();
       setResumen(d.error
         ? d.error
-        : `${d.revisados} pedidos revisados · ${d.creadas} nuevas · ${d.actualizadas} al día`);
+        : `${d.revisados} pedidos revisados · ${d.creadas} nuevas · ${d.actualizadas} al día`
+          + (d.omitidas ? ` · ${d.omitidas} ya canceladas, sin anotar` : ''));
     } catch (e) {
       setResumen(String(e));
     } finally {
