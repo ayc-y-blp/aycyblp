@@ -1,8 +1,9 @@
 # Las variables del panel en Vercel
 
-Son **17** desde el 2026-11-19 (se agregó `SESION_SECRETO`, y se anotó
-`COMENTARIOS_SHEET_ID`, que existía desde el 2026-11-12 y faltaba en esta
-lista). Viven en
+Son **18** desde el 2026-11-20: con la tienda real se sumaron
+`SHOPIFY_CLIENT_ID` y `SHOPIFY_CLIENT_SECRET`. (El 2026-11-19 se había
+agregado `SESION_SECRETO` y anotado `COMENTARIOS_SHEET_ID`, que existía desde
+el 2026-11-12 y faltaba en esta lista.) Viven en
 Vercel → equipo *Ayc y Blp* → proyecto **`landing-pirque`** → **Settings →
 Environment Variables**, y en ningún otro lado. Esta lista **no lleva
 valores, a propósito**: dice qué es cada una, en qué entorno va y cómo

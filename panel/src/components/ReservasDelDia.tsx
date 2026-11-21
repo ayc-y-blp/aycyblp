@@ -30,27 +30,9 @@ import { menusDe } from '@/lib/shopify';
 import { POR_DEFECTO_MENUS, type Menu } from '@/lib/menus';
 import Asistencia from './Asistencia';
 import PastillaPago from './PastillaPago';
+import Azulejo from './Azulejo';
 import IngresoFudo from './IngresoFudo';
 import { LISTA_TARJETAS, marcoTarjeta } from './TarjetaLista';
-
-/**
- * Un azulejo: el número grande arriba y qué es debajo. La misma forma que
- * los del resumen de la página del día, para que se lean igual. Va al nivel
- * del módulo, nunca dentro del componente: ver `Campo.tsx`.
- */
-function Azulejo({ n, titulo, nota, color, borde }: {
-  n: number; titulo: string; nota?: string; color?: string; borde?: string;
-}) {
-  return (
-    <div className={`rounded border ${borde ?? 'border-hueso/15'} bg-panel px-3 py-2`}>
-      <div className={`text-3xl font-bold leading-none tabular-nums ${color ?? 'text-oro'}`}>
-        {n}
-      </div>
-      <div className="mt-1.5 text-sm font-medium leading-tight">{titulo}</div>
-      {nota && <div className="mt-0.5 text-[13px] text-hueso/60">{nota}</div>}
-    </div>
-  );
-}
 
 function Rotulo({ children }: { children: React.ReactNode }) {
   return (
@@ -177,14 +159,14 @@ export default function ReservasDelDia({
           <div>
           <Rotulo>Quién vino</Rotulo>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Azulejo n={gente(vinieron)} titulo="vinieron" nota={reservas(vinieron.length)}
+            <Azulejo compacto n={gente(vinieron)} titulo="vinieron" nota={reservas(vinieron.length)}
               color="text-verde-texto" borde="border-verde/40" />
             {noVinieron.length > 0 && (
-              <Azulejo n={gente(noVinieron)} titulo="no llegaron"
+              <Azulejo compacto n={gente(noVinieron)} titulo="no llegaron"
                 nota={reservas(noVinieron.length)}
                 color="text-rojo-texto" borde="border-rojo/40" />
             )}
-            <Azulejo n={gente(sinMarcar)} titulo="sin marcar" nota={reservas(sinMarcar.length)}
+            <Azulejo compacto n={gente(sinMarcar)} titulo="sin marcar" nota={reservas(sinMarcar.length)}
               color={sinMarcar.length > 0 ? 'text-ambar-texto' : 'text-hueso/60'}
               borde={sinMarcar.length > 0 ? 'border-ambar/40' : undefined} />
           </div>
@@ -193,20 +175,20 @@ export default function ReservasDelDia({
           <div>
           <Rotulo>Qué preparar</Rotulo>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {menus.map((m) => <Azulejo key={m.menu} n={m.cantidad} titulo={m.menu} />)}
+            {menus.map((m) => <Azulejo compacto key={m.menu} n={m.cantidad} titulo={m.menu} />)}
           </div>
           </div>
 
           <div>
           <Rotulo>Cómo viene el pago</Rotulo>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Azulejo n={gente(pagadas)} titulo="ya pagaron" nota={reservas(pagadas.length)}
+            <Azulejo compacto n={gente(pagadas)} titulo="ya pagaron" nota={reservas(pagadas.length)}
               color="text-verde-texto" borde="border-verde/40" />
             {abonadas.length > 0 && (
-              <Azulejo n={gente(abonadas)} titulo="abonaron" nota={`${reservas(abonadas.length)} · falta el resto`}
+              <Azulejo compacto n={gente(abonadas)} titulo="abonaron" nota={`${reservas(abonadas.length)} · falta el resto`}
                 color="text-verde-texto" borde="border-verde/40 border-dashed" />
             )}
-            <Azulejo n={gente(sinPagar)} titulo="sin pagar" nota={reservas(sinPagar.length)}
+            <Azulejo compacto n={gente(sinPagar)} titulo="sin pagar" nota={reservas(sinPagar.length)}
               color="text-ambar-texto" borde="border-ambar/40" />
           </div>
           </div>

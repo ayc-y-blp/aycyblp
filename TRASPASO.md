@@ -8,7 +8,7 @@ dos documentos, ordenado por tema y con fecha:
 |---|---|---|
 | `CLAUDE.md` (raíz) | Las reglas fijas, el sitio público, los landings, la reserva con Shopify, Vercel, el dominio, Git | Siempre (y este archivo, que importa) |
 | `panel/CLAUDE.md` | Todo el panel: reservas, cotizaciones, equipo, informe, roles, la regla PlayStation, el límite de Google | Al trabajar en `panel/` |
-| `migracion-team/` | Las 17 variables de Vercel (sin valores), `verificar.sh`, el entorno de Claude Code | A mano |
+| `migracion-team/` | Las 18 variables de Vercel (sin valores), `verificar.sh`, el entorno de Claude Code | A mano |
 | `panel/DESPLIEGUE.md` | Cómo se despliega el panel, los webhooks, la planilla | A mano |
 
 **Antes de tocar algo, busca su sección** en esos archivos (`grep -n` por la
@@ -38,7 +38,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **El PR #287 se mergeó el 21-11-2026**, cuando el cliente dijo *"mergea"*
   (había pedido *"déjalo en preview"*). El panel en producción quedó
   comprobado después: `/login` 200, `/api/publico/fechas` 200 y el webhook
-  sin firma 401. **No hay ningún PR abierto.** Trajo *el computador, más
+  sin firma 401. Trajo *el computador, más
   compacto* —las dos capas—, los
   formularios alineados en todo el panel, **las ventanas que caben en la
   pantalla del computador** (de 21 que no cabían quedan 2), **corregir un
@@ -49,6 +49,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   vez de cortarse** y **la casilla + lista también al editar o borrar una
   reserva de un día cerrado**.
   https://github.com/ayc-y-blp/aycyblp/pull/287
+- **El PR #289 está abierto, en el camino *con prueba***: una cotización ganada
+  cuya reserva está en un día cerrado ya se puede corregir, con la lista de
+  cambios y su casilla (lo decidió el cliente el 21-11-2026: *"sí, también
+  debería poder corregirse"*). **No se mergea hasta que diga *"mergea"*.**
+  Detalle en la sección 4 y en `panel/CLAUDE.md`, "Una cotización ganada en
+  un día cerrado también se corrige".
+  https://github.com/ayc-y-blp/aycyblp/pull/289
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -152,7 +159,7 @@ no quiera mostrar.** `main` está protegida (no se borra ni se reescribe),
 
 | Proyecto | Sale de | URL | Notas |
 |---|---|---|---|
-| **`landing-pirque`** (el panel) | Root Directory `panel`, Next.js | `landing-pirque-alpha.vercel.app` y `panel.brasasdelopirque.cl` | Las 17 variables. Las dos direcciones sirven; los links que el panel copia salen de `window.location.origin` |
+| **`landing-pirque`** (el panel) | Root Directory `panel`, Next.js | `landing-pirque-alpha.vercel.app` y `panel.brasasdelopirque.cl` | Las 18 variables. Las dos direcciones sirven; los links que el panel copia salen de `window.location.origin` |
 | **`brasas-sitio`** (el sitio) | La raíz, preset *Other*, Build Command `bash tools/publicar_sitio.sh` | `brasas-sitio.vercel.app`; `brasasdelopirque.cl` desde el lanzamiento | Ninguna variable. El script escribe `.vercel/output` con **la lista de lo público** (`PUBLICO`) y las redirecciones 301 del sitio viejo |
 
 - **Cada PR dispara dos chequeos**, `Vercel – landing-pirque` y
@@ -581,6 +588,42 @@ piezas, no tamaño de botones ni de letra.**
     escena abría *Editar actividades*). Medido, el más largo daba 760px; en
     el computador ahora mide 589.
 
+### PR #289, abierto: una cotización ganada en un día cerrado (21-11-2026, *con prueba*)
+
+Era lo que quedaba sin dónde confirmarse. Se le preguntó al cliente: *"Sí,
+también debería poder corregirse."*
+
+- **Guardar una ganada cuyo día está cerrado** —o que se mueve a uno
+  cerrado— abre la lista de lo que cambió, con su casilla y *Guardar
+  corrección* (`PieCorreccion`, la misma pieza). Antes el servidor la
+  rechazaba y la ventana no tenía dónde confirmar.
+- **`cambiosDeLaCotizacion()`** en `lib/correccion.ts`, con pruebas: el día,
+  los invitados, cada producto y el total van con su valor; las notas, el
+  contrato y los datos de facturación se nombran sin su valor.
+- **En un día cerrado se sigue de paso sin guardar** y se confirma una sola
+  vez.
+- `/api/presupuestos` manda los días cerrados y si la cuenta puede corregir.
+  **Ninguna lectura de Google más, ningún permiso cambió, ninguna columna
+  nueva.** La bitácora dice *cambios: …*.
+- Toca `lib/correccion.ts`, `lib/prueba.ts`, `lib/ayudas.ts`,
+  `api/presupuestos/route.ts`, `CotizacionDialogo.tsx` y
+  `pruebas/ventanas.mjs` (escena `v-cotizar-ganada-dia-cerrado`; son 44).
+- **En el mismo PR, el encabezado del día en una línea** (lo pidió el
+  cliente con una foto: *"todo puedes dejarlo en una línea, solo tienes que
+  achicar todo un poco"*). En el computador, el título y los azulejos son un
+  poco más chicos, y las dos filas de azulejos **se angostan antes de
+  bajar**: se dobla una nota en vez de mandar una fila abajo. `Azulejo` pasó
+  a ser una pieza (`components/Azulejo.tsx`). El celular mide lo mismo. Y el
+  ancho que sobra **se reparte entre los azulejos**, que llegan al borde
+  derecho y miden el mismo alto (*"más equitativo"*).
+  Detalle en `panel/CLAUDE.md`, "El encabezado del día, en una línea".
+- **La guía *Traspaso a producción* quedó al día** (21-11-2026, lo pidió el
+  cliente): marcado lo hecho el 20 y 21, y los pasos del domingo reordenados
+  sin lo que se adelantó. Es un documento fuera del repo.
+- **Las variables del panel son 18**, no 17: se sumaron `SHOPIFY_CLIENT_ID`
+  y `SHOPIFY_CLIENT_SECRET` con la tienda real y la cuenta no se había
+  corregido.
+
 ---
 
 ## 5. Decisiones tomadas y por qué
@@ -674,7 +717,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 - **Autoguardado por defecto**, y se confirma a mano solo una lista cerrada
   de casos (sección 9).
 - **Las piezas compartidas** (`TarjetaLista`, `LineaDelDia`, `Pastilla`,
-  `FechaDia`, `CajaBoleta`…) en vez de copias: un cambio llega solo a todas
+  `FechaDia`, `CajaBoleta`, `Azulejo`…) en vez de copias: un cambio llega solo a todas
   partes.
 - **Los extras guardan varios ajustes en las mismas dos columnas** de
   siempre, con el formato de `Turnos`: ninguna columna nueva.
@@ -709,6 +752,11 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 - **La corrección de un día cerrado guarda lo que cambió, no por qué**: cada
   cambio ya trae su porqué (un ajuste lleva su motivo). El servidor sigue
   rechazando una corrección sin ese texto.
+- **Una cotización ganada de un día cerrado se confirma una sola vez, al
+  guardar** (21-11-2026), no al pasar de un paso a otro: así la lista sale
+  completa —los invitados junto con los menús— y queda una sola entrada en
+  la bitácora. Sus renglones no repiten *"Cotización de …"*: la ventana ya
+  dice de quién es.
 - **El `?` chico se ve de 24px y se aprieta en 36**: a 30px agrandaba su
   renglón y corría el campo de al lado.
 - **El marco de afuera es el más marcado** (21-11-2026): el del puesto nació
@@ -758,9 +806,9 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   equipo del día con el formulario de un ajuste abierto, y su cara de
   reservas. Las dos crecen con lo que tenga el día; con más gente o más
   puestos que el ejemplo, la de trabajadores también pasa de una pantalla.
-- **Editar una cotización ganada cuya reserva está en un día cerrado** no
-  tiene dónde confirmar la lista de cambios: el servidor la rechaza. Ya era
-  así. **(Por confirmar)** si hace falta.
+- **Cambiar el nombre de un cliente desde su ficha** reescribe sus reservas
+  ganadas sin pasar por la guarda del día cerrado. Ya era así. **(Por
+  confirmar)** si importa: es solo el nombre y el contacto.
 - **La casilla + lista para la reserva de un día cerrado** salió de una
   respuesta dictada (*"¿las listas? Sí…"*) que se leyó como un sí. Se le
   dijo así al cliente, con las capturas, y después dijo *"mergea"*. Si al
@@ -841,7 +889,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **Lo que el cliente siga marcando** | El PR #287 ya está mergeado y no hay ninguno abierto. Lo nuevo va en una rama desde `main`, en su propio PR, **con su camino dicho** (chico o con prueba). Si el cliente pide verlo antes, *"déjalo en preview"* lo deja abierto hasta su *"mergea"* | Cliente marca; Claude propone |
+| 1 | **El PR #289, abierto: la cotización ganada en un día cerrado** | Está en el camino *con prueba*: el cliente lo mira en la versión de prueba y se mergea cuando diga *"mergea"*. Después del merge, comprobar el panel en producción (`/login` 200, `/api/publico/fechas` 200, el webhook sin firma 401). Lo que siga marcando va en una rama desde `main`, en su propio PR, **con su camino dicho** (chico o con prueba) | Cliente dice *"mergea"*; Claude mergea y comprueba |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
 | 3 | **Compras de prueba en la tienda real** | En `brasas-sitio.vercel.app`, una compra de cada modalidad (con Mercado Pago, según lo conversado): ver que llegue al panel con fecha, nombre, correo, teléfono y la modalidad; que la regla de medios de pago por SKU oculte el que no corresponde; después devolver | Cliente |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |
@@ -909,7 +957,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 43 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 44 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

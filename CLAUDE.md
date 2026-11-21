@@ -178,8 +178,9 @@ más abajo; esto es la lista para revisar.
   qué va a pasar; si pide motivo, queda en la bitácora. **Corregir un día
   cerrado no pide un motivo escrito** (2026-11-21): el panel arma la lista
   de lo que cambió, se confirma con una casilla y esa lista es lo que queda
-  en la bitácora. Vale para el equipo, los extras y **editar o borrar una
-  reserva** de ese día.
+  en la bitácora. Vale para el equipo, los extras, **editar o borrar una
+  reserva** de ese día y **guardar una cotización ganada** cuya reserva está
+  en ese día.
 - **Las lecturas de Google son un presupuesto**: 60 por minuto para todo el
   panel. Nada nuevo lee la planilla por su cuenta: se suma a la tanda que la
   ruta ya precarga (`conLecturas()`), y el PR dice cuántas lecturas cuesta.

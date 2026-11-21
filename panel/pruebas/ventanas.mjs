@@ -57,7 +57,7 @@ export const NO_CABEN = {
   // El formulario de un ajuste abierto dentro de la línea de una persona.
   'v-equipo-del-dia-con-ajuste': 839,
   // La cara de reservas es una lista: crece con las reservas del día.
-  'v-equipo-del-dia-reservas': 859
+  'v-equipo-del-dia-reservas': 851
 };
 
 /** Hallazgos de alineación que se aceptan, con el porqué. Hoy, ninguno. */
@@ -160,6 +160,17 @@ export const ESCENAS = {
     await clic(ventana().getByRole('button', { name: /datos de facturación/ }));
   },
   'v-cotizar-5-contrato': () => cotizacion(/Contrato/),
+  // Guardar una ganada cuya reserva queda en un día cerrado (2026-11-21): la
+  // lista de lo que cambia, con su casilla. No guarda nada: solo la abre.
+  'v-cotizar-ganada-dia-cerrado': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
+    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    await clic(ventana().getByRole('button', { name: /Evento/ }));
+    await ventana().locator('input[type=date]').fill('2026-11-07'); await p.waitForTimeout(400);
+    await clic(ventana().getByRole('button', { name: /Productos/ }));
+    await clic(ventana().locator('button:visible', { hasText: /^Guardar$/ }));
+    await ventana().getByText('Confirmo').waitFor();
+  },
   // Informe.
   'v-pago': async () => { await personaDelInforme(); await clic(boton(/Pago parcial/)); },
   'v-ajuste-del-informe': async () => { await personaDelInforme(); await clic(boton(/Descontar/)); },

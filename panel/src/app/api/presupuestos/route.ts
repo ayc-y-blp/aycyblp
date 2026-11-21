@@ -17,8 +17,9 @@ import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerPresupuestos, leerLineasPresupuesto, guardarPresupuesto, guardarLineas,
   borrarPresupuesto, leerMenus, leerConfig, leerClientes, leerFechas, anotar, leerCobros,
-  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios
+  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres
 } from '@/lib/datos';
+import { HOJA_CIERRES } from '@/lib/cierres';
 import { HOJA_USUARIOS, cuentaDeSesion } from '@/lib/usuarios';
 import {
   nuevoId, validoHastaDe, ESTADO_PRESUPUESTO, estaMandada, aEntero, folioDe, estadoNormal, lineasDe,
@@ -44,15 +45,15 @@ export const dynamic = 'force-dynamic';
  * nombre y el contacto ya puestos. Las de antes de las fichas siguen
  * mostrando lo que tenían escrito.
  */
-export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES], async function GET(req: Request) {
   const no = await exigirVer(req, 'presupuestos');
   if (no) return no;
   try {
     const quien = await quienEs(req);
-    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas] = await Promise.all([
+    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres] = await Promise.all([
       leerPresupuestos(), leerLineasPresupuesto(), leerMenus(), leerConfig(),
       leerClientes(), leerFechas(), leerCobros().catch(() => []), leerReservas().catch(() => []),
-      leerVendedores().catch(() => []), leerUsuarios()
+      leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => [])
     ]);
     // **Los días que se pasaron del cupo** (2026-11-12): un pago entró sobre
     // reservas sin pagar. Va en la misma lectura —la tanda ya trae
@@ -114,6 +115,14 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // en la misma tanda de lecturas (`Usuarios` se sumó a la precarga).
       avisosLeidos: cuentaDeSesion(cuentas, quien.usuario)?.avisosLeidos ?? [],
       sobrecupo,
+      // **Los días cerrados** (2026-11-21, lo decidió el cliente: una ganada
+      // cuya reserva está en un día cerrado *"también debería poder
+      // corregirse"*). Guardarla reescribe su reserva, así que la ventana de
+      // cotizar tiene que saber que ese día está cerrado para mostrar la lista
+      // de cambios con su casilla. Solo las fechas, y si esta cuenta puede
+      // corregir. `Cierres` va en la misma tanda: no es una lectura más.
+      cerrados: cierres.map((c) => c.fecha),
+      puedeCorregir: puede(quien.rol as Rol, 'corregir'),
       // **El día en que se ganó cada una** (2026-11-17, para la Lista): el día
       // en que nació su reserva, que ya viene en esta tanda.
       ganadaEl: ganadasEl(presupuestos, reservas)
@@ -328,7 +337,7 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
  * - **Una ganada no cambia de estado**: tiene una reserva ocupando cupo. Sí
  *   se edita —más invitados, otro menú, otro precio— y **su reserva se
  *   reescribe sola** (`sincronizarReserva()`). Si el día de la reserva ya
- *   está cerrado, eso es corregirlo, con motivo.
+ *   está cerrado, eso es corregirlo: con la lista de cambios confirmada.
  */
 export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_FECHAS], async function PATCH(req: Request) {
   const no = await exigir(req, 'presupuestos');
@@ -415,8 +424,10 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
           || estadoNormal(estado) === ESTADO_PRESUPUESTO.candidato);
     if (desmandada) { enviada = ''; validoHasta = ''; }
 
-    // Una ganada que cambia de día: si el día de antes o el de después ya
-    // se cerraron, es una corrección, con motivo.
+    // Una ganada: si el día de su reserva —o el día al que se mueve— ya se
+    // cerró, guardarla es corregirlo. Desde el 2026-11-21 la ventana de
+    // cotizar manda la lista de lo que cambió (`cambiosDeLaCotizacion()`),
+    // confirmada con una casilla, y esa lista es la que queda en la bitácora.
     let motivoCorreccion = '';
     if (previo.idReserva) {
       const guarda = await guardaDelDia(req, [previo.fecha, cuando.fecha], cuerpo.correccion);
@@ -567,7 +578,7 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       accion: motivoCorreccion ? 'Corrigió una cotización ganada de un día cerrado'
                                : 'Editó una cotización',
       detalle: `${folioDe(p)} · ${p.estado || 'Borrador'}`
-             + (motivoCorreccion ? ` · motivo: ${motivoCorreccion}` : '') });
+             + (motivoCorreccion ? ` · cambios: ${motivoCorreccion}` : '') });
     return NextResponse.json({ ok: true, contratoEnviado: p.contratoEnviado });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

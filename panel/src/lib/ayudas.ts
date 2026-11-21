@@ -702,7 +702,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Ganada',
     texto: [
       'Tiene su reserva en el calendario.',
-      'Si cambias algo acá —la fecha, la gente, los precios—, la reserva se actualiza sola.'
+      'Si cambias algo acá —la fecha, la gente, los precios—, la reserva se actualiza sola.',
+      'Si el día de esa reserva ya está cerrado, al guardar el panel muestra la lista de lo que cambia y pide marcar una casilla. Lo hace el administrador o quien hace los pagos, y queda en la bitácora.'
     ]
   },
   invitados: {

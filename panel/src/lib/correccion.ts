@@ -196,6 +196,76 @@ export function cambiosDeLaReserva(antes: ReservaEnCorreccion | null, despues: R
 export const cambioDeBorrarReserva = (r: ReservaEnCorreccion) =>
   `Se borra la reserva de ${quienDe(r)}: ${reservaEnPalabras(r)}`;
 
+/**
+ * **Una cotización ganada cuya reserva está en un día cerrado** (2026-11-21,
+ * lo decidió el cliente: *"sí, también debería poder corregirse"*). Guardarla
+ * reescribe su reserva, así que es corregir ese día: la misma lista con su
+ * casilla. Hasta ese día el servidor la rechazaba y la ventana de cotizar no
+ * tenía dónde confirmar nada.
+ *
+ * Lo que se compara es lo que la ventana manda al guardar:
+ *
+ * - `cliente`, `fecha`, `invitados`, `total` y `lineas` van con su valor: son
+ *   lo que cambia la reserva (quién, qué día, cuánta gente y cuánto).
+ * - `datos` son datos cortos que se dicen con su valor —*documento de Boleta
+ *   a Factura*—: el rótulo y el valor en palabras.
+ * - `otros` se nombran **sin su valor** —*cambiaron las notas*—: son textos
+ *   largos o datos de la ficha del cliente (RUT, domicilio), que no van a la
+ *   bitácora. Cada uno es la frase que se dice si cambió y una huella para
+ *   compararlo.
+ */
+export type LineaEnCorreccion = { concepto: string; cantidad: number; precio: number; descuento: number };
+export type CotizacionEnCorreccion = {
+  cliente: string; fecha: string; invitados: number; total: number;
+  lineas: LineaEnCorreccion[];
+  datos: [rotulo: string, valor: string][];
+  otros: [frase: string, huella: string][];
+};
+
+/** *36 × $49.000*; lo que va incluido —el show en un día público— es *sin costo*. */
+const lineaEnPalabras = (l: LineaEnCorreccion) => (!l.precio
+  ? (l.cantidad > 1 ? `${l.cantidad}, sin costo` : 'sin costo')
+  : `${l.cantidad} × ${pesos(l.precio)}${l.descuento ? ` con ${l.descuento}% de descuento` : ''}`);
+
+/** Qué cambia al guardar una cotización ganada. Vacío si no cambió nada. */
+export function cambiosDeLaCotizacion(antes: CotizacionEnCorreccion, despues: CotizacionEnCorreccion): string[] {
+  const c: string[] = [];
+  if (llano(antes.cliente) !== llano(despues.cliente)) c.push(`el cliente pasa a ${quienDe({ nombre: despues.cliente })}`);
+  if (antes.fecha !== despues.fecha) c.push(`se mueve del ${enPalabras(antes.fecha)} al ${enPalabras(despues.fecha)}`);
+  if (antes.invitados !== despues.invitados) c.push(`de ${antes.invitados} invitados a ${despues.invitados}`);
+
+  // Las líneas, por producto: un producto va una sola vez en una cotización.
+  const era = new Map(antes.lineas.map((l) => [llano(l.concepto), l]));
+  const es = new Set(despues.lineas.map((l) => llano(l.concepto)));
+  for (const l of despues.lineas) {
+    const a = era.get(llano(l.concepto));
+    if (!a) { c.push(`se agregó ${l.concepto}: ${lineaEnPalabras(l)}`); continue; }
+    const de: string[] = [];
+    if (a.cantidad !== l.cantidad) de.push(`cantidad de ${a.cantidad} a ${l.cantidad}`);
+    if (Math.round(a.precio) !== Math.round(l.precio)) de.push(`precio de ${pesos(a.precio)} a ${pesos(l.precio)}`);
+    if ((a.descuento || 0) !== (l.descuento || 0)) de.push(`descuento de ${a.descuento || 0}% a ${l.descuento || 0}%`);
+    if (de.length) c.push(`${l.concepto}: ${de.join(', ')}`);
+  }
+  for (const a of antes.lineas) if (!es.has(llano(a.concepto))) c.push(`se quitó ${a.concepto} (${lineaEnPalabras(a)})`);
+
+  const valorDe = (lista: [string, string][], k: string) => lista.find(([r]) => r === k)?.[1] ?? '';
+  const dicho = (v: string) => v.trim() || 'sin definir';
+  for (const [rotulo, valor] of despues.datos) {
+    const previo = valorDe(antes.datos, rotulo);
+    if (previo.trim() !== valor.trim()) c.push(`${rotulo} de ${dicho(previo)} a ${dicho(valor)}`);
+  }
+  if (Math.round(antes.total) !== Math.round(despues.total)) {
+    c.push(`total de ${pesos(antes.total)} a ${pesos(despues.total)}`);
+  }
+  for (const [frase, huella] of despues.otros) {
+    if (valorDe(antes.otros, frase) !== huella) c.push(frase);
+  }
+  // **Sin "Cotización de…" delante de cada renglón**: la ventana ya dice de
+  // quién es y la bitácora lleva su número. Con el nombre repetido, *Cotización
+  // de X: Tradiciones: cantidad de 36 a 39* se leía peor que el cambio solo.
+  return c.map((x) => x.charAt(0).toUpperCase() + x.slice(1));
+}
+
 /** Hasta cuánto texto de cambios se manda y se guarda en la bitácora. */
 export const LARGO_MAXIMO_CAMBIOS = 900;
 

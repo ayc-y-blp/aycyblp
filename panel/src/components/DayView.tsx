@@ -30,6 +30,7 @@ import Dialogo from './Dialogo';
 import { PieCorreccion } from './Correccion';
 import { cambioDeBorrarReserva, textoDeCambios } from '@/lib/correccion';
 import PastillaPago from './PastillaPago';
+import Azulejo from './Azulejo';
 import RectificarReserva from './RectificarReserva';
 import { partirAviso } from './AvisosRecepcion';
 import { BotonMias } from './BotonMias';
@@ -55,36 +56,6 @@ import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO,
          faltantesDe, textoFaltantes, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { extrasDelDia, costoExtrasDelDia, costoDeExtra,
          type Colaborador, type Extra } from '@/lib/extras';
-
-/**
- * Un azulejo del resumen: el número grande arriba y qué es debajo.
- *
- * **Es la misma forma para las dos filas** —los menús que hay que preparar y
- * cómo viene el pago— y eso es a propósito: son los dos datos por los que se
- * abre esta página un sábado en la mañana, y repetir la forma es lo que los
- * deja leerse de un vistazo sin aprender dos diseños distintos.
- *
- * Va al nivel del módulo, nunca dentro de DayView: un componente declarado
- * adentro es una función nueva en cada dibujado, o sea otro tipo de elemento
- * para React, que desmonta y vuelve a montar. Ver CLAUDE.md.
- */
-function Azulejo({ n, titulo, nota, color, borde }: {
-  n: number | string;
-  titulo: string;
-  nota?: string;
-  color?: string;
-  borde?: string;
-}) {
-  return (
-    <div className={`rounded border ${borde ?? 'border-hueso/15'} bg-panel px-4 py-2.5`}>
-      <div className={`text-3xl font-bold leading-none tabular-nums ${color ?? 'text-oro'}`}>
-        {n}
-      </div>
-      <div className="mt-1.5 text-sm font-medium leading-tight">{titulo}</div>
-      {nota && <div className="mt-0.5 text-[13px] text-hueso/60">{nota}</div>}
-    </div>
-  );
-}
 
 /**
  * El rótulo de cada fila del resumen.
@@ -575,15 +546,27 @@ export default function DayView(
           reservas y *Al día* con su botón. A la derecha, *Qué preparar* y
           *Cómo viene el pago*, lado a lado. Eran seis filas apiladas con
           media pantalla libre al lado; ahora es una. En el celular sigue una
-          cosa debajo de la otra, en el orden de siempre: todo va con `lg:`. */}
-      <div className="lg:flex lg:flex-wrap lg:items-start lg:gap-x-8 lg:gap-y-3 lg:rounded-xl
+          cosa debajo de la otra, en el orden de siempre: todo va con `lg:`.
+
+          **Todo en una línea, siempre que quepa** (2026-11-21, lo pidió el
+          cliente con otra foto: *"todo puedes dejarlo en una línea, solo
+          tienes que achicar todo un poco"*). Con tres azulejos por lado y
+          *Ya no vienen*, *Cómo viene el pago* bajaba a una segunda fila por
+          veinte pixeles. Ahora todo es un poco más chico —el título, los
+          azulejos, las separaciones— y, sobre todo, **las dos filas de
+          azulejos se angostan antes de bajar**: van sin `flex-wrap`, así que
+          si falta ancho se dobla la nota de un azulejo en vez de mandar una
+          fila entera abajo. Solo si ni así cabe —muchísimos menús— el bloque
+          de azulejos pasa completo debajo del día, que es lo que hace el
+          `flex-wrap` de esta caja con el ancho mínimo de ese bloque. */}
+      <div className="lg:flex lg:flex-wrap lg:items-start lg:gap-x-4 lg:gap-y-3 lg:rounded-xl
                       lg:border lg:border-hueso/15 lg:bg-panel lg:p-3">
         {/* El día. En el computador es una grilla: la fecha arriba; debajo,
             el tiempo y las reservas en una línea; al pie, *Al día*. */}
         <div className="lg:grid lg:shrink-0 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-x-3 lg:gap-y-1.5">
-          <div className="lg:col-span-2 lg:flex lg:items-center lg:gap-3">
+          <div className="lg:col-span-2 lg:flex lg:items-center lg:gap-2">
             <a href="/" className="tecla boton">← Calendario</a>
-            <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0">
+            <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0 lg:text-lg">
               {enPalabras(fecha)}<Ayuda tema="dia" />
             </h1>
           </div>
@@ -621,14 +604,25 @@ export default function DayView(
           que se abre esta página el sábado en la mañana: no compite con el
           equipo ni con las actividades, que son cajas de una línea. */}
       {/* En el computador las dos filas de azulejos van lado a lado, dentro
-          del campo del día: tienen la misma forma y sobra ancho. */}
-      <div className="lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:gap-x-8 lg:gap-y-2">
+          del campo del día: tienen la misma forma y sobra ancho. **Sin
+          `min-w-0`, a propósito**: su ancho mínimo —los azulejos con sus
+          notas dobladas— es lo que decide si cabe al lado del día o baja. */}
+      {/* **El ancho que sobra se reparte entre los azulejos** (2026-11-21, lo
+          pidió el cliente: *"más equitativo"*): cada grupo crece según
+          cuántos azulejos tiene, y cada azulejo crece lo mismo (`estira`).
+          Así la línea ocupa el campo entero, hasta el borde derecho, como
+          las cajas de abajo. En el celular estos `flexGrow` no hacen nada:
+          ahí el contenedor no es una fila. **Y las dos filas miden el mismo
+          alto**: cada grupo es una columna y su fila de azulejos ocupa lo
+          que queda, así un azulejo sin nota (*Tradiciones*) queda tan alto
+          como uno con nota (*Pagadas · 3 reservas*). */}
+      <div className="lg:flex lg:flex-1 lg:flex-nowrap lg:gap-x-4">
       {menus.length > 0 && (
-        <div>
-          <Rotulo className="lg:mt-0">Qué preparar</Rotulo>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+        <div className="lg:flex lg:flex-col" style={{ flexGrow: menus.length }}>
+          <Rotulo className="lg:mt-0 lg:whitespace-nowrap">Qué preparar</Rotulo>
+          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-1 lg:flex-nowrap lg:gap-1.5">
             {menus.map(({ menu, cantidad }) => (
-              <Azulejo key={menu} n={cantidad} titulo={menu} />
+              <Azulejo estira key={menu} n={cantidad} titulo={menu} />
             ))}
           </div>
         </div>
@@ -638,19 +632,20 @@ export default function DayView(
           hay que cobrarle. Es la otra pregunta del mesón, y hasta ahora había
           que leerla fila por fila en la tabla. */}
       {cuentan.length > 0 && (
-        <div>
-          <Rotulo className="lg:mt-0">Cómo viene el pago</Rotulo>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            <Azulejo n={gente(pagadas)} titulo="Pagadas" nota={cuantas(pagadas)}
+        <div className="lg:flex lg:flex-col"
+          style={{ flexGrow: 2 + (abonadas.length > 0 ? 1 : 0) + (liberadas.length > 0 ? 1 : 0) }}>
+          <Rotulo className="lg:mt-0 lg:whitespace-nowrap">Cómo viene el pago</Rotulo>
+          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-1 lg:flex-nowrap lg:gap-1.5">
+            <Azulejo estira n={gente(pagadas)} titulo="Pagadas" nota={cuantas(pagadas)}
               color="text-verde-texto" borde="border-verde/40" />
             {abonadas.length > 0 && (
-              <Azulejo n={gente(abonadas)} titulo="Abonadas" nota={`${cuantas(abonadas)} · falta el resto`}
+              <Azulejo estira n={gente(abonadas)} titulo="Abonadas" nota={`${cuantas(abonadas)} · falta el resto`}
                 color="text-verde-texto" borde="border-verde/40 border-dashed" />
             )}
-            <Azulejo n={gente(sinPagar)} titulo="Sin pagar" nota={cuantas(sinPagar)}
+            <Azulejo estira n={gente(sinPagar)} titulo="Sin pagar" nota={cuantas(sinPagar)}
               color="text-ambar-texto" borde="border-ambar/40" />
             {liberadas.length > 0 && (
-              <Azulejo n={gente(liberadas)} titulo="Ya no vienen"
+              <Azulejo estira n={gente(liberadas)} titulo="Ya no vienen"
                 nota={`${cuantas(liberadas)} · liberaron su lugar`}
                 color="text-rojo-texto" borde="border-rojo/30" />
             )}
