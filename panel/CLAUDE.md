@@ -838,6 +838,14 @@ de la de los menús **por veinte pixeles**, y el campo medía 250px en vez de
   equipo, y al tener que cambiarlo se unió (regla *un cambio de diseño se
   lleva a sus parecidos*). En la ventana del equipo va con `compacto`, que
   es el relleno que ya tenía.
+- **El ancho que sobra se reparte entre los azulejos** (lo pidió el cliente
+  al ver la primera versión, con todo cargado a la izquierda y un hueco a la
+  derecha: *"lo puedes distribuir de mejor forma horizontal, más
+  equitativo"*). Cada grupo crece según cuántos azulejos tiene y cada
+  azulejo crece lo mismo (`estira`), así que la línea llega al borde
+  derecho, como las cajas de abajo. **Y las dos filas miden el mismo alto**:
+  un azulejo sin nota (*Tradiciones*) queda tan alto como uno con nota
+  (*Pagadas · 3 reservas*). Las mesas y la ventana del equipo no se estiran.
 
 **Medido a 1280×650** en el panel de ejemplo:
 

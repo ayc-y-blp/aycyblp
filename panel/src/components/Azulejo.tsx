@@ -27,6 +27,12 @@
  *
  * `compacto` es el relleno chico también en el celular: lo usa la ventana del
  * equipo, que ya lo tenía así.
+ *
+ * `estira` hace que, en el computador, el azulejo **se reparta el ancho que
+ * sobra en su fila** (lo pidió el cliente al ver el encabezado ya en una
+ * línea: *"lo puedes distribuir de mejor forma horizontal, más equitativo"*).
+ * Sin eso los azulejos quedaban cargados a la izquierda y un hueco a la
+ * derecha. Cada uno crece lo mismo; el orden y el contenido no cambian.
  */
 /**
  * Una palabra de hasta tres letras no queda sola al doblarse: *A Brasas
@@ -34,19 +40,20 @@
  */
 const sinHuerfanas = (t: string) => t.replace(/(^|\s)(\S{1,3})\s(?=\S)/g, '$1$2\u00a0');
 
-export default function Azulejo({ n, titulo, nota, color, borde, compacto = false }: {
+export default function Azulejo({ n, titulo, nota, color, borde, compacto = false, estira = false }: {
   n: number | string;
   titulo: string;
   nota?: string;
   color?: string;
   borde?: string;
   compacto?: boolean;
+  estira?: boolean;
 }) {
   const [cuenta, ...resto] = (nota ?? '').split(' · ');
   const explica = resto.join(' · ');
   return (
     <div className={`rounded border ${borde ?? 'border-hueso/15'} bg-panel ${
-      compacto ? 'px-3 py-2' : 'px-4 py-2.5 lg:px-2.5 lg:py-2'} ${explica ? 'lg:shrink-[8]' : ''}`}>
+      compacto ? 'px-3 py-2' : 'px-4 py-2.5 lg:px-2.5 lg:py-2'} ${explica ? 'lg:shrink-[8]' : ''} ${estira ? 'lg:grow' : ''}`}>
       <div className={`text-3xl font-bold leading-none tabular-nums lg:text-[26px] ${color ?? 'text-oro'}`}>
         {n}
       </div>

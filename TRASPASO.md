@@ -613,7 +613,9 @@ también debería poder corregirse."*
   achicar todo un poco"*). En el computador, el título y los azulejos son un
   poco más chicos, y las dos filas de azulejos **se angostan antes de
   bajar**: se dobla una nota en vez de mandar una fila abajo. `Azulejo` pasó
-  a ser una pieza (`components/Azulejo.tsx`). El celular mide lo mismo.
+  a ser una pieza (`components/Azulejo.tsx`). El celular mide lo mismo. Y el
+  ancho que sobra **se reparte entre los azulejos**, que llegan al borde
+  derecho y miden el mismo alto (*"más equitativo"*).
   Detalle en `panel/CLAUDE.md`, "El encabezado del día, en una línea".
 - **La guía *Traspaso a producción* quedó al día** (21-11-2026, lo pidió el
   cliente): marcado lo hecho el 20 y 21, y los pasos del domingo reordenados

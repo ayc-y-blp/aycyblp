@@ -607,13 +607,22 @@ export default function DayView(
           del campo del día: tienen la misma forma y sobra ancho. **Sin
           `min-w-0`, a propósito**: su ancho mínimo —los azulejos con sus
           notas dobladas— es lo que decide si cabe al lado del día o baja. */}
+      {/* **El ancho que sobra se reparte entre los azulejos** (2026-11-21, lo
+          pidió el cliente: *"más equitativo"*): cada grupo crece según
+          cuántos azulejos tiene, y cada azulejo crece lo mismo (`estira`).
+          Así la línea ocupa el campo entero, hasta el borde derecho, como
+          las cajas de abajo. En el celular estos `flexGrow` no hacen nada:
+          ahí el contenedor no es una fila. **Y las dos filas miden el mismo
+          alto**: cada grupo es una columna y su fila de azulejos ocupa lo
+          que queda, así un azulejo sin nota (*Tradiciones*) queda tan alto
+          como uno con nota (*Pagadas · 3 reservas*). */}
       <div className="lg:flex lg:flex-1 lg:flex-nowrap lg:gap-x-4">
       {menus.length > 0 && (
-        <div>
+        <div className="lg:flex lg:flex-col" style={{ flexGrow: menus.length }}>
           <Rotulo className="lg:mt-0 lg:whitespace-nowrap">Qué preparar</Rotulo>
-          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-nowrap lg:gap-1.5">
+          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-1 lg:flex-nowrap lg:gap-1.5">
             {menus.map(({ menu, cantidad }) => (
-              <Azulejo key={menu} n={cantidad} titulo={menu} />
+              <Azulejo estira key={menu} n={cantidad} titulo={menu} />
             ))}
           </div>
         </div>
@@ -623,19 +632,20 @@ export default function DayView(
           hay que cobrarle. Es la otra pregunta del mesón, y hasta ahora había
           que leerla fila por fila en la tabla. */}
       {cuentan.length > 0 && (
-        <div>
+        <div className="lg:flex lg:flex-col"
+          style={{ flexGrow: 2 + (abonadas.length > 0 ? 1 : 0) + (liberadas.length > 0 ? 1 : 0) }}>
           <Rotulo className="lg:mt-0 lg:whitespace-nowrap">Cómo viene el pago</Rotulo>
-          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-nowrap lg:gap-1.5">
-            <Azulejo n={gente(pagadas)} titulo="Pagadas" nota={cuantas(pagadas)}
+          <div className="mt-1.5 flex flex-wrap gap-2 lg:flex-1 lg:flex-nowrap lg:gap-1.5">
+            <Azulejo estira n={gente(pagadas)} titulo="Pagadas" nota={cuantas(pagadas)}
               color="text-verde-texto" borde="border-verde/40" />
             {abonadas.length > 0 && (
-              <Azulejo n={gente(abonadas)} titulo="Abonadas" nota={`${cuantas(abonadas)} · falta el resto`}
+              <Azulejo estira n={gente(abonadas)} titulo="Abonadas" nota={`${cuantas(abonadas)} · falta el resto`}
                 color="text-verde-texto" borde="border-verde/40 border-dashed" />
             )}
-            <Azulejo n={gente(sinPagar)} titulo="Sin pagar" nota={cuantas(sinPagar)}
+            <Azulejo estira n={gente(sinPagar)} titulo="Sin pagar" nota={cuantas(sinPagar)}
               color="text-ambar-texto" borde="border-ambar/40" />
             {liberadas.length > 0 && (
-              <Azulejo n={gente(liberadas)} titulo="Ya no vienen"
+              <Azulejo estira n={gente(liberadas)} titulo="Ya no vienen"
                 nota={`${cuantas(liberadas)} · liberaron su lugar`}
                 color="text-rojo-texto" borde="border-rojo/30" />
             )}
