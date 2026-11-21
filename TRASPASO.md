@@ -8,7 +8,7 @@ dos documentos, ordenado por tema y con fecha:
 |---|---|---|
 | `CLAUDE.md` (raíz) | Las reglas fijas, el sitio público, los landings, la reserva con Shopify, Vercel, el dominio, Git | Siempre (y este archivo, que importa) |
 | `panel/CLAUDE.md` | Todo el panel: reservas, cotizaciones, equipo, informe, roles, la regla PlayStation, el límite de Google | Al trabajar en `panel/` |
-| `migracion-team/` | Las 17 variables de Vercel (sin valores), `verificar.sh`, el entorno de Claude Code | A mano |
+| `migracion-team/` | Las 18 variables de Vercel (sin valores), `verificar.sh`, el entorno de Claude Code | A mano |
 | `panel/DESPLIEGUE.md` | Cómo se despliega el panel, los webhooks, la planilla | A mano |
 
 **Antes de tocar algo, busca su sección** en esos archivos (`grep -n` por la
@@ -159,7 +159,7 @@ no quiera mostrar.** `main` está protegida (no se borra ni se reescribe),
 
 | Proyecto | Sale de | URL | Notas |
 |---|---|---|---|
-| **`landing-pirque`** (el panel) | Root Directory `panel`, Next.js | `landing-pirque-alpha.vercel.app` y `panel.brasasdelopirque.cl` | Las 17 variables. Las dos direcciones sirven; los links que el panel copia salen de `window.location.origin` |
+| **`landing-pirque`** (el panel) | Root Directory `panel`, Next.js | `landing-pirque-alpha.vercel.app` y `panel.brasasdelopirque.cl` | Las 18 variables. Las dos direcciones sirven; los links que el panel copia salen de `window.location.origin` |
 | **`brasas-sitio`** (el sitio) | La raíz, preset *Other*, Build Command `bash tools/publicar_sitio.sh` | `brasas-sitio.vercel.app`; `brasasdelopirque.cl` desde el lanzamiento | Ninguna variable. El script escribe `.vercel/output` con **la lista de lo público** (`PUBLICO`) y las redirecciones 301 del sitio viejo |
 
 - **Cada PR dispara dos chequeos**, `Vercel – landing-pirque` y
@@ -608,6 +608,19 @@ también debería poder corregirse."*
 - Toca `lib/correccion.ts`, `lib/prueba.ts`, `lib/ayudas.ts`,
   `api/presupuestos/route.ts`, `CotizacionDialogo.tsx` y
   `pruebas/ventanas.mjs` (escena `v-cotizar-ganada-dia-cerrado`; son 44).
+- **En el mismo PR, el encabezado del día en una línea** (lo pidió el
+  cliente con una foto: *"todo puedes dejarlo en una línea, solo tienes que
+  achicar todo un poco"*). En el computador, el título y los azulejos son un
+  poco más chicos, y las dos filas de azulejos **se angostan antes de
+  bajar**: se dobla una nota en vez de mandar una fila abajo. `Azulejo` pasó
+  a ser una pieza (`components/Azulejo.tsx`). El celular mide lo mismo.
+  Detalle en `panel/CLAUDE.md`, "El encabezado del día, en una línea".
+- **La guía *Traspaso a producción* quedó al día** (21-11-2026, lo pidió el
+  cliente): marcado lo hecho el 20 y 21, y los pasos del domingo reordenados
+  sin lo que se adelantó. Es un documento fuera del repo.
+- **Las variables del panel son 18**, no 17: se sumaron `SHOPIFY_CLIENT_ID`
+  y `SHOPIFY_CLIENT_SECRET` con la tienda real y la cuenta no se había
+  corregido.
 
 ---
 
@@ -702,7 +715,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 - **Autoguardado por defecto**, y se confirma a mano solo una lista cerrada
   de casos (sección 9).
 - **Las piezas compartidas** (`TarjetaLista`, `LineaDelDia`, `Pastilla`,
-  `FechaDia`, `CajaBoleta`…) en vez de copias: un cambio llega solo a todas
+  `FechaDia`, `CajaBoleta`, `Azulejo`…) en vez de copias: un cambio llega solo a todas
   partes.
 - **Los extras guardan varios ajustes en las mismas dos columnas** de
   siempre, con el formato de `Turnos`: ninguna columna nueva.

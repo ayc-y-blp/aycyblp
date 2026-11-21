@@ -125,6 +125,7 @@ revisan antes de cada cambio en esta carpeta.
   | Elegir de una lista que crece | `BuscarEnLista` |
   | Escribirle al cliente por WhatsApp | `BotonWhatsApp` (o `abrirWhatsApp()`), con el saludo de `saludoAlCliente()` |
   | Cuánto boletear: bruto, retención y neto | `CajaBoleta` (link personal e informe) |
+  | Un número grande con su nombre y su nota: qué preparar, cómo viene el pago, las mesas | `Azulejo` (la página del día y la cara de reservas de la ventana del equipo, con `compacto`) |
   | Una tarjeta de una lista que se abre: el marco, el + / − y el pie *▴ Cerrar* | `marcoTarjeta`, `SignoAbrir`, `PieCerrar` y `LISTA_TARJETAS` de `TarjetaLista` (Informe, Equipo, Extras, Vendedores, Clientes, Productos, Recepción, las reservas del día y las ventanas del equipo y de extras del día) |
   | Un grupo de tarjetas (un puesto en la ventana del equipo, *Actividades del día* en la de extras): **el marco más marcado**, su título y las tarjetas de adentro | `marcoGrupo`, `TITULO_GRUPO` y `marcoTarjeta(…, dentro)` de `TarjetaLista` |
   | Elegir el puesto habitual de una persona | `ElegirPuesto`: un desplegable con los puestos que existen (la ficha de `/equipo` y la ficha que se abre desde el día) |
@@ -492,7 +493,7 @@ computador.
 | Qué | Mide | Por qué |
 |---|---|---|
 | El equipo del día con el formulario de un ajuste abierto | 839 | El ajuste —monto, motivo, cómo y nota— suma 225px dentro de la línea. Guardado se pliega y la ventana vuelve a caber |
-| El equipo del día, cara *Reservas* | 859 | Es una lista: crece con las reservas del día |
+| El equipo del día, cara *Reservas* | 851 | Es una lista: crece con las reservas del día. Bajó de 859 al achicar los azulejos |
 
 Las dos ventanas crecen con lo que tenga el día. Con más gente o más
 puestos que el ejemplo (ocho personas, cuatro puestos), la de trabajadores
@@ -804,6 +805,58 @@ los extras. El formulario de editar una reserva no estaba en la prueba.
   (1.003px la reserva nueva). *La reserva se cayó…* se dibuja dos veces en el
   HTML —al pie en el celular, en la línea del pago en el computador—: en una
   prueba se pide el que se ve.
+
+## El encabezado del día, en una línea (2026-11-21)
+
+Lo pidió el cliente con una foto de su notebook, del domingo 29: *"Todo
+puedes dejarlo todo en una línea. Solo tienes que achicar todo un poco."*
+
+**Qué pasaba**: el encabezado de la página del día ya era un solo campo —el
+día a la izquierda, *Qué preparar* y *Cómo viene el pago* a la derecha— pero
+con tres azulejos por lado y *Ya no vienen*, la fila del pago bajaba debajo
+de la de los menús **por veinte pixeles**, y el campo medía 250px en vez de
+150.
+
+**Qué hace ahora**, solo en el computador (`lg:`):
+
+- **Todo un poco más chico**: el título a 18px en vez de 20, los azulejos con
+  10px de relleno y el número a 26px en vez de 30, y 16px entre los bloques
+  en vez de 32. Ninguna letra baja de 13px.
+- **Las dos filas de azulejos se angostan antes de bajar.** Van sin
+  `flex-wrap`: si falta ancho, se dobla la nota de un azulejo (*1 reserva · /
+  liberaron su lugar*) en vez de mandar una fila entera abajo.
+- **Qué se dobla primero** (`Azulejo`): la cuenta de la nota —*1 reserva*—
+  nunca se corta; la explicación de después del ` · ` sí. El azulejo que
+  tiene explicación cede ocho veces más ancho que los demás, así que se dobla
+  esa nota antes que el título de su vecino. Y una palabra de hasta tres
+  letras no queda sola: *A Brasas / abiertas*, no *A / Brasas / abiertas*.
+- **Si ni así cabe** —muchísimos menús, o una pantalla de 1024px—, el bloque
+  de azulejos pasa completo debajo del día. Lo decide el `flex-wrap` de la
+  caja con el ancho mínimo de ese bloque: por eso **no lleva `min-w-0`**.
+- **`Azulejo` pasó a ser una pieza** (`components/Azulejo.tsx`): estaba
+  copiado en la página del día y en la cara de reservas de la ventana del
+  equipo, y al tener que cambiarlo se unió (regla *un cambio de diseño se
+  lleva a sus parecidos*). En la ventana del equipo va con `compacto`, que
+  es el relleno que ya tenía.
+
+**Medido a 1280×650** en el panel de ejemplo:
+
+| Día | Antes | Ahora |
+|---|---|---|
+| 2 menús y 3 estados de pago, con *Ya no vienen* | una línea, 149px | una línea, 137px |
+| 4 menús y 2 estados | una línea, 149px | una línea, 137px |
+| 4 menús y 4 estados, con *Abonadas* y *Ya no vienen* (el más cargado) | **dos filas, 258px** | **una línea, 170px**, con dos notas dobladas |
+
+El caso de la foto —3 menús y 3 estados— no está en el panel de ejemplo. Con
+los anchos medidos de cada pieza, antes sumaba 1.234px en 1.214 disponibles;
+ahora suma unos 1.094.
+
+- **El celular mide lo mismo que antes** (comprobado en tres días, alto de la
+  página y de cada azulejo): los cambios van con `lg:`, y el azulejo sin
+  `lg:` es el de siempre.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+- **Ayuda**: no describe el tamaño del encabezado, y las fotos se sacan a
+  400px: no cambian.
 
 ## Una cotización ganada en un día cerrado también se corrige (2026-11-21)
 

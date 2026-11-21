@@ -57,7 +57,7 @@ export const NO_CABEN = {
   // El formulario de un ajuste abierto dentro de la línea de una persona.
   'v-equipo-del-dia-con-ajuste': 839,
   // La cara de reservas es una lista: crece con las reservas del día.
-  'v-equipo-del-dia-reservas': 859
+  'v-equipo-del-dia-reservas': 851
 };
 
 /** Hallazgos de alineación que se aceptan, con el porqué. Hoy, ninguno. */
