@@ -49,13 +49,17 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   vez de cortarse** y **la casilla + lista también al editar o borrar una
   reserva de un día cerrado**.
   https://github.com/ayc-y-blp/aycyblp/pull/287
-- **El PR #289 está abierto, en el camino *con prueba***: una cotización ganada
-  cuya reserva está en un día cerrado ya se puede corregir, con la lista de
-  cambios y su casilla (lo decidió el cliente el 21-11-2026: *"sí, también
-  debería poder corregirse"*). **No se mergea hasta que diga *"mergea"*.**
-  Detalle en la sección 4 y en `panel/CLAUDE.md`, "Una cotización ganada en
-  un día cerrado también se corrige".
+- **El PR #289 se mergeó el 21-11-2026**, cuando el cliente dijo *"mergea"*.
+  Trajo: una cotización ganada cuya reserva está en un día cerrado ya se
+  puede corregir, con la lista de cambios y su casilla; y el encabezado de la
+  página del día en una línea, con el ancho repartido entre los azulejos. El
+  panel en producción quedó comprobado después (`verificar.sh`, 15 de 15).
+  **No hay ningún PR abierto.** Detalle en la sección 4.
   https://github.com/ayc-y-blp/aycyblp/pull/289
+- **Las compras de prueba en la tienda real pasaron** (lo dijo el cliente el
+  21-11-2026: *"han pasado varias pruebas exitosas de pago y de solo
+  reservar"*). **Lo que sigue es la base en cero** y después importar los
+  contactos del CRM: pendientes 1 y 2 de la sección 7.
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -588,7 +592,7 @@ piezas, no tamaño de botones ni de letra.**
     escena abría *Editar actividades*). Medido, el más largo daba 760px; en
     el computador ahora mide 589.
 
-### PR #289, abierto: una cotización ganada en un día cerrado (21-11-2026, *con prueba*)
+### PR #289, mergeado el 21-11-2026: una cotización ganada en un día cerrado, y el encabezado del día
 
 Era lo que quedaba sin dónde confirmarse. Se le preguntó al cliente: *"Sí,
 también debería poder corregirse."*
@@ -889,12 +893,12 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **El PR #289, abierto: la cotización ganada en un día cerrado** | Está en el camino *con prueba*: el cliente lo mira en la versión de prueba y se mergea cuando diga *"mergea"*. Después del merge, comprobar el panel en producción (`/login` 200, `/api/publico/fechas` 200, el webhook sin firma 401). Lo que siga marcando va en una rama desde `main`, en su propio PR, **con su camino dicho** (chico o con prueba) | Cliente dice *"mergea"*; Claude mergea y comprueba |
+| 1 | **La base en cero** | Las compras de prueba ya pasaron. **Antes de apretar el botón**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —si no, la revisión diaria las vuelve a traer ocupando cupo—; (b) sumar la pestaña `Ajustes sueltos` a lo que se vacía (`lib/produccion.ts`): nació el 21-11 y no está en la lista, así que los ajustes de prueba sobrevivirían; (c) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (d) copia de la planilla real. **El orden**: primero en una versión de prueba del panel, que borra la planilla "Pruebas"; si sale bien, en producción. Después: abrir a mano los días especiales y anotar los pedidos del sitio viejo (pendiente 7) | Claude arregla (b); cliente hace el resto |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
-| 3 | **Compras de prueba en la tienda real** | En `brasas-sitio.vercel.app`, una compra de cada modalidad (con Mercado Pago, según lo conversado): ver que llegue al panel con fecha, nombre, correo, teléfono y la modalidad; que la regla de medios de pago por SKU oculte el que no corresponde; después devolver | Cliente |
+| 3 | ~~Compras de prueba en la tienda real~~ | **Hecho el 21-11-2026**, lo dijo el cliente: pasaron varias de pago y de solo reserva. Queda devolverlas o cancelarlas en Shopify antes de la base en cero (pendiente 1) | — |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |
 | 5 | **El link de estado de un pedido viejo** | Abrir uno `brasasdelopirque.cl/<id>/orders/…?key=…` después del lanzamiento y ver que llegue a `tienda.` con su `?key=` | Cliente |
-| 6 | **Base en cero** | Copiar la planilla real como respaldo; después *Configuración → Mantención → Dejar la base en cero*, cuando terminen las pruebas | Cliente |
+| 6 | ~~Base en cero~~ | Pasó a ser el pendiente 1 | — |
 | 7 | **Pedidos del sitio viejo** | Anotar a mano en el panel los de fechas posteriores al lanzamiento (el producto viejo vendía hasta el 27-12) | Cliente |
 | 8 | **Lanzamiento** (domingo 22-11, en la noche) | En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
 | 9 | **Después del lanzamiento** | Links en Maps, Instagram y WhatsApp; enviar el sitemap en Google Search Console; productos en Fudo; mirar en Vercel → Logs que las tres tareas diarias corran en 200 | Cliente |
