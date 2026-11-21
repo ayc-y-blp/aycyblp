@@ -49,12 +49,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   vez de cortarse** y **la casilla + lista también al editar o borrar una
   reserva de un día cerrado**.
   https://github.com/ayc-y-blp/aycyblp/pull/287
-- **Hay un PR abierto, en el camino *con prueba***: una cotización ganada
+- **El PR #289 está abierto, en el camino *con prueba***: una cotización ganada
   cuya reserva está en un día cerrado ya se puede corregir, con la lista de
   cambios y su casilla (lo decidió el cliente el 21-11-2026: *"sí, también
   debería poder corregirse"*). **No se mergea hasta que diga *"mergea"*.**
   Detalle en la sección 4 y en `panel/CLAUDE.md`, "Una cotización ganada en
   un día cerrado también se corrige".
+  https://github.com/ayc-y-blp/aycyblp/pull/289
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -587,7 +588,7 @@ piezas, no tamaño de botones ni de letra.**
     escena abría *Editar actividades*). Medido, el más largo daba 760px; en
     el computador ahora mide 589.
 
-### PR abierto: una cotización ganada en un día cerrado (21-11-2026, *con prueba*)
+### PR #289, abierto: una cotización ganada en un día cerrado (21-11-2026, *con prueba*)
 
 Era lo que quedaba sin dónde confirmarse. Se le preguntó al cliente: *"Sí,
 también debería poder corregirse."*
@@ -873,7 +874,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **El PR abierto: la cotización ganada en un día cerrado** | Está en el camino *con prueba*: el cliente lo mira en la versión de prueba y se mergea cuando diga *"mergea"*. Después del merge, comprobar el panel en producción (`/login` 200, `/api/publico/fechas` 200, el webhook sin firma 401). Lo que siga marcando va en una rama desde `main`, en su propio PR, **con su camino dicho** (chico o con prueba) | Cliente dice *"mergea"*; Claude mergea y comprueba |
+| 1 | **El PR #289, abierto: la cotización ganada en un día cerrado** | Está en el camino *con prueba*: el cliente lo mira en la versión de prueba y se mergea cuando diga *"mergea"*. Después del merge, comprobar el panel en producción (`/login` 200, `/api/publico/fechas` 200, el webhook sin firma 401). Lo que siga marcando va en una rama desde `main`, en su propio PR, **con su camino dicho** (chico o con prueba) | Cliente dice *"mergea"*; Claude mergea y comprueba |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
 | 3 | **Compras de prueba en la tienda real** | En `brasas-sitio.vercel.app`, una compra de cada modalidad (con Mercado Pago, según lo conversado): ver que llegue al panel con fecha, nombre, correo, teléfono y la modalidad; que la regla de medios de pago por SKU oculte el que no corresponde; después devolver | Cliente |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |
