@@ -365,8 +365,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'contrato que se imprime.',
       'En Mantención, el administrador tiene además «Dejar la base en cero»: '
       + 'borra lo que fueron pruebas —reservas, cotizaciones, clientes, pagos, '
-      + 'turnos y la bitácora— y conserva el equipo, las cuentas, los productos '
-      + 'y la configuración. Pide antes una copia de la planilla y escribir BORRAR. '
+      + 'turnos, ajustes y la bitácora— y conserva el equipo, las cuentas, los productos '
+      + 'y la configuración. Arriba dice cuál planilla se va a vaciar y si es '
+      + 'producción o una versión de prueba. Pide antes una copia de la planilla y escribir BORRAR. '
       + 'Al terminar, vuelve a abrir solos los días que se abre.'
     ],
     ojo: 'Esto cambia lo que ve el público. Un día suelto se abre o se cierra '

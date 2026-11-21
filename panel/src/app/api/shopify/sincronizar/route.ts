@@ -66,7 +66,7 @@ export const GET = conLecturas([], async function GET(req: Request) {
       pedidosDesde(desde), leerMenus(), leerConfig()
     ]);
 
-    let creadas = 0, actualizadas = 0, ignorados = 0;
+    let creadas = 0, actualizadas = 0, ignorados = 0, omitidas = 0;
     const fallidos: string[] = [];
 
     for (const p of pedidos) {
@@ -76,7 +76,11 @@ export const GET = conLecturas([], async function GET(req: Request) {
         // En serie y no en paralelo: son dos escritores sobre la misma
         // planilla —esto y el webhook— y la API de Sheets no da bloqueo.
         // Veinte escrituras simultáneas se pisan entre ellas.
-        if (await guardarPedido(reserva) === 'creada') creadas++;
+        const que = await guardarPedido(reserva);
+        // Cancelado o devuelto y sin anotar: no se anota, y no tiene evento
+        // que crear ni que borrar (ver `guardarPedido()`).
+        if (que === 'omitida') { omitidas++; continue; }
+        if (que === 'creada') creadas++;
         else actualizadas++;
 
         // El calendario también se reconcilia. Sin esto, un webhook
@@ -102,7 +106,7 @@ export const GET = conLecturas([], async function GET(req: Request) {
       }
     }
 
-    const resumen = { revisados: pedidos.length, creadas, actualizadas, ignorados, fallidos };
+    const resumen = { revisados: pedidos.length, creadas, actualizadas, ignorados, omitidas, fallidos };
     console.log('[sincronizar]', JSON.stringify(resumen));
     return NextResponse.json(resumen);
   } catch (e) {

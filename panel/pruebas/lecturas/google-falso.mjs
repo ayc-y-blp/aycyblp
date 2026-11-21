@@ -17,7 +17,7 @@ const sheetsApi = {
       lecturas.push('libro');
       const ts = [...new Set([...store.keys(), ...TODAS])];
       globalThis.__gids = ts;
-      return { data: { sheets: ts.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
+      return { data: { properties: { title: 'Planilla de la prueba' }, sheets: ts.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
     },
     batchUpdate: async ({ requestBody }) => {
       escrituras.push('batchUpdate');

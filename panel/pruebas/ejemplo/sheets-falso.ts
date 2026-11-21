@@ -55,7 +55,7 @@ export const sheetsFalso = {
   spreadsheets: {
     get: async () => {
       const l = leer();
-      return { data: { sheets: l.orden.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
+      return { data: { properties: { title: 'Panel de ejemplo' }, sheets: l.orden.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
     },
     batchUpdate: async ({ requestBody }: any) => {
       const l = leer();

@@ -14,7 +14,7 @@
  * Solo el permiso `mantencion` (el administrador).
  */
 import { NextResponse } from 'next/server';
-import { conLecturas, leerHoja, vaciarHojas, idPlanilla, esPestanaQueNoExiste } from '@/lib/sheets';
+import { conLecturas, leerHoja, vaciarHojas, idPlanilla, esPestanaQueNoExiste, nombreDeLaPlanilla } from '@/lib/sheets';
 import { exigir, quienEs } from '@/lib/permisos';
 import { anotar, abrirDiasDeLaRegla, leerConfig } from '@/lib/datos';
 import { deDiasSemana } from '@/lib/config';
@@ -23,7 +23,7 @@ import { idDeEvento } from '@/lib/calendario';
 import { borrarEvento, hayCalendario } from '@/lib/google-calendar';
 import {
   SE_VACIAN, SE_CONSERVAN, PALABRA_PARA_BORRAR, confirmado, filasConDatos,
-  tiendaDe, detalleDeLaLimpieza, idsConEvento
+  tiendaDe, detalleDeLaLimpieza, idsConEvento, entornoDe
 } from '@/lib/produccion';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +61,11 @@ export const GET = conLecturas(TODAS, async function GET(req: Request) {
   try {
     const [{ cuantas, reservas }, cfg] = await Promise.all([contar(), leerConfig()]);
     return NextResponse.json({
+      // **Cuál planilla se va a vaciar, con su nombre**, y en qué versión del
+      // panel: es lo que deja ensayarlo primero en la copia de pruebas sin
+      // dudar de dónde se está.
+      nombrePlanilla: await nombreDeLaPlanilla().catch(() => ''),
+      entorno: entornoDe(process.env.VERCEL_ENV),
       seVacian: SE_VACIAN.map((p) => ({ ...p, filas: cuantas[p.hoja] })),
       seConservan: SE_CONSERVAN.map((p) => ({ ...p, filas: cuantas[p.hoja] })),
       eventos: hayCalendario() ? idsConEvento(idsDeReservas(reservas)).length : 0,

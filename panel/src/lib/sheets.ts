@@ -96,6 +96,8 @@ export function sheets(): sheets_v4.Sheets {
 let titulos: Map<string, string> | null = null;
 /** El id de cada pestaña por su título real: no cambia nunca. */
 let ids = new Map<string, number>();
+/** El nombre del libro entero (*Pruebas*, o el de la planilla real). */
+let nombreLibro = '';
 
 function clave(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -116,8 +118,9 @@ function leerTitulos(): Promise<Map<string, string>> {
 
 async function leerTitulosYa(): Promise<Map<string, string>> {
   const libro = await conReintento(() => sheets().spreadsheets.get({
-    spreadsheetId: idPlanilla(), fields: 'sheets.properties(title,sheetId)'
+    spreadsheetId: idPlanilla(), fields: 'properties.title,sheets.properties(title,sheetId)'
   }));
+  nombreLibro = String(libro.data.properties?.title ?? '');
   ids = new Map((libro.data.sheets ?? [])
     .filter((s) => s.properties?.title && s.properties.sheetId != null)
     .map((s) => [s.properties!.title!, s.properties!.sheetId!]));
@@ -128,6 +131,18 @@ async function leerTitulosYa(): Promise<Map<string, string>> {
       .map((t) => [clave(t), t])
   );
   return titulos;
+}
+
+/**
+ * **Cómo se llama la planilla a la que está conectado el panel** (2026-11-21,
+ * para *Dejar la base en cero*: antes de borrar hay que ver, con su nombre,
+ * si es la copia de pruebas o la real). Viene en la misma consulta de los
+ * títulos de las pestañas, que cada instancia hace una vez: no es una lectura
+ * más. Vacío si Google no lo dice.
+ */
+export async function nombreDeLaPlanilla(): Promise<string> {
+  if (!titulos) await leerTitulos();
+  return nombreLibro;
 }
 
 /**

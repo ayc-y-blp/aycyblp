@@ -5,9 +5,9 @@
  * que se conserva lo decidió el cliente el mismo día, sobre la propuesta.
  *
  * - **Se vacía** lo que fueron pruebas: reservas (con sus eventos en Google
- *   Calendar), cotizaciones, clientes, cobros, turnos, cierres, actividades
- *   agendadas, pagos, boletas, días abiertos y la bitácora. Los encabezados
- *   quedan: la planilla sigue sirviendo.
+ *   Calendar), cotizaciones, clientes, cobros, turnos, ajustes fuera de
+ *   turno, cierres, actividades agendadas, pagos, boletas, días abiertos y la
+ *   bitácora. Los encabezados quedan: la planilla sigue sirviendo.
  * - **Se conserva** lo del mundo real y lo que es configuración: el equipo
  *   —trabajadores y puestos—, las cuentas, la configuración, los productos
  *   con sus precios, las fichas de los extras y de los vendedores y socios,
@@ -15,6 +15,14 @@
  *
  * Es una lista fija a propósito: elegir pestaña por pestaña en una pantalla
  * sería una forma de borrar el equipo por un toque de más.
+ *
+ * **Una pestaña nueva tiene que estar en una de las dos listas** (2026-11-21).
+ * `Ajustes sueltos` nació tres días después de esta lista y nadie la sumó:
+ * la base habría quedado "en cero" con los ajustes de prueba vivos en el
+ * informe de cada trabajador. Lo encontró la revisión que pidió el cliente
+ * antes de apretar el botón. Ahora hay una prueba que recorre todas las
+ * pestañas del panel (`HOJA_…`) y falla si una no está acá ni en
+ * `FUERA_DE_LA_PLANILLA`.
  *
  * Puro: lo usan la ruta y las pruebas. **No lo importa la pantalla**: trae
  * `usuarios.ts`, que usa `node:crypto`; la pantalla recibe las listas de la
@@ -24,7 +32,7 @@ import { HOJA_RESERVAS, HOJA_FECHAS } from './columnas.ts';
 import { HOJA_PRESUPUESTOS, HOJA_LINEAS } from './presupuestos.ts';
 import { HOJA_CLIENTES } from './clientes.ts';
 import { HOJA_COBROS } from './cobros.ts';
-import { HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS } from './equipo.ts';
+import { HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HOJA_AJUSTES_SUELTOS } from './equipo.ts';
 import { HOJA_CIERRES } from './cierres.ts';
 import { HOJA_ACTIVIDADES, HOJA_COLABORADORES } from './extras.ts';
 import { HOJA_PAGOS, HOJA_BOLETAS } from './remuneraciones.ts';
@@ -44,6 +52,7 @@ export const SE_VACIAN: PestanaProduccion[] = [
   { hoja: HOJA_CLIENTES, que: 'Clientes' },
   { hoja: HOJA_COBROS, que: 'Pagos de los clientes' },
   { hoja: HOJA_TURNOS, que: 'Turnos del equipo' },
+  { hoja: HOJA_AJUSTES_SUELTOS, que: 'Ajustes fuera de turno' },
   { hoja: HOJA_CIERRES, que: 'Días cerrados' },
   { hoja: HOJA_ACTIVIDADES, que: 'Actividades extras agendadas' },
   { hoja: HOJA_PAGOS, que: 'Pagos al equipo, extras y vendedores' },
@@ -62,6 +71,22 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
   { hoja: HOJA_COLABORADORES, que: 'Fichas de los extras' },
   { hoja: HOJA_VENDEDORES, que: 'Fichas de vendedores y socios' }
 ];
+
+/**
+ * Pestañas del panel que no están en la planilla de la empresa, y por eso en
+ * ninguna de las dos listas: los comentarios del testeo viven en otra.
+ */
+export const FUERA_DE_LA_PLANILLA: string[] = ['Comentarios'];
+
+/**
+ * **En qué versión del panel se está por borrar**, dicho en la ventana: la
+ * de prueba de un PR está conectada a la copia *Pruebas*; producción, a la
+ * planilla real. Sale de `VERCEL_ENV`. En un computador no viene nada.
+ */
+export function entornoDe(vercelEnv: string | undefined): 'produccion' | 'prueba' | '' {
+  const v = String(vercelEnv ?? '').trim().toLowerCase();
+  return v === 'production' ? 'produccion' : v === 'preview' ? 'prueba' : '';
+}
 
 /** Lo que hay que escribir para que se borre. */
 export const PALABRA_PARA_BORRAR = 'BORRAR';
