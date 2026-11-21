@@ -5949,6 +5949,43 @@ console.log('\nLas estadísticas del equipo');
      'corrección: borrar una reserva dice lo que era, también sin nombre ni monto');
   ok(!/1111|ejemplo\.cl/.test([...C.cambiosDeLaReserva(r0, { ...r0, telefono: '', email: '' }), C.cambioDeBorrarReserva(r0)].join()),
      'corrección de una reserva: el teléfono y el correo nunca van escritos en la lista');
+
+  // Una cotización ganada cuya reserva está en un día cerrado (2026-11-21).
+  const q0: Parameters<typeof C.cambiosDeLaCotizacion>[0] = {
+    cliente: 'Constructora Andes', fecha: '2026-11-07', invitados: 40, total: 2380000,
+    lineas: [{ concepto: 'Lo Pirque', cantidad: 40, precio: 50000, descuento: 0 },
+             { concepto: 'Arriendo del recinto', cantidad: 1, precio: 1500000, descuento: 0 }],
+    datos: [['documento', 'Factura'], ['descuento sobre el total', '0%'], ['socio comercial', '']],
+    otros: [['cambiaron las notas', 'traen torta'], ['cambiaron los datos de facturación', '76.111.111-1|Av. Uno 123']]
+  };
+  ok(C.cambiosDeLaCotizacion(q0, { ...q0, lineas: q0.lineas.map((l) => ({ ...l })) }).length === 0,
+     'corrección de una cotización: sin cambios, la lista queda vacía');
+  ok(C.cambiosDeLaCotizacion(q0, { ...q0, invitados: 45, total: 2975000,
+       lineas: [{ concepto: 'Lo Pirque', cantidad: 45, precio: 50000, descuento: 0 }] }).join(' / ') === [
+    'De 40 invitados a 45',
+    'Lo Pirque: cantidad de 40 a 45',
+    'Se quitó Arriendo del recinto (1 × $1.500.000)',
+    'Total de $2.380.000 a $2.975.000'
+  ].join(' / '), 'corrección de una cotización: los invitados, las líneas y el total, con sus valores');
+  ok(C.cambiosDeLaCotizacion(q0, { ...q0, fecha: '2026-11-08', cliente: 'Andes SpA',
+       lineas: [...q0.lineas, { concepto: 'Sommelier', cantidad: 5, precio: 90000, descuento: 10 }],
+       datos: [['documento', 'Boleta'], ['descuento sobre el total', '0%'], ['socio comercial', 'Turismo Sur']] })
+     .join(' / ') === [
+    'El cliente pasa a Andes SpA',
+    'Se mueve del sábado 7 de noviembre al domingo 8 de noviembre',
+    'Se agregó Sommelier: 5 × $90.000 con 10% de descuento',
+    'Documento de Factura a Boleta',
+    'Socio comercial de sin definir a Turismo Sur'
+  ].join(' / '), 'corrección de una cotización: el cliente, el día, un producto nuevo y los datos cortos');
+  ok(C.cambiosDeLaCotizacion(q0, { ...q0, lineas: [...q0.lineas, { concepto: 'Show ecuestre', cantidad: 1, precio: 0, descuento: 0 }] })
+       .join() === 'Se agregó Show ecuestre: sin costo',
+     'corrección de una cotización: lo que va incluido se dice sin costo, no "1 × $0"');
+  const soloOtros = C.cambiosDeLaCotizacion(q0, { ...q0,
+    otros: [['cambiaron las notas', 'sin torta'], ['cambiaron los datos de facturación', '76.222.222-2|Av. Dos 456']] });
+  ok(soloOtros.join(' / ') === 'Cambiaron las notas / Cambiaron los datos de facturación',
+     'corrección de una cotización: las notas y la facturación se nombran');
+  ok(!/torta|76\.|Av\./.test(soloOtros.join()),
+     'corrección de una cotización: lo que se nombra sin valor no lleva el texto ni el RUT');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

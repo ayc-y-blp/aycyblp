@@ -27,6 +27,8 @@ import { rutValido } from '@/lib/banco';
 import AvisoGuardado from './AvisoGuardado';
 import { usarAutoguardado } from './usarAutoguardado';
 import Dialogo from './Dialogo';
+import { PieCorreccion } from './Correccion';
+import { cambiosDeLaCotizacion, textoDeCambios, type CotizacionEnCorreccion } from '@/lib/correccion';
 import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
@@ -95,6 +97,9 @@ export interface DatosCotizar {
   rol: string;
   /** Los socios comerciales, para *¿Viene por un socio comercial?* (2026-11-12). */
   socios?: { id: string; nombre: string; activo: boolean; porConfirmar?: boolean }[];
+  /** Los días cerrados y si esta cuenta puede corregirlos (2026-11-21). Ver `diaCerrado`. */
+  cerrados?: string[];
+  puedeCorregir?: boolean;
 }
 
 /** El 4 se llamaba *Enviar* y ahí no se manda nada solo: tiene el documento,
@@ -417,6 +422,64 @@ export default function CotizacionDialogo({
   const sucio = !p || (guardada !== null && firma !== guardada);
 
   /**
+   * **Una ganada cuya reserva está en un día cerrado se corrige con la lista
+   * de cambios y su casilla** (2026-11-21, lo decidió el cliente: *"sí,
+   * también debería poder corregirse"*). Guardar una ganada reescribe su
+   * reserva; si ese día —o el día al que se mueve— ya se cerró, es corregirlo,
+   * y el servidor lo rechazaba porque esta ventana no tenía dónde confirmar
+   * nada. Ahora *Guardar* abre la misma pieza del equipo y de las reservas
+   * (`PieCorreccion`), con lo que cambió respecto de lo guardado, y esa lista
+   * es la que queda en la bitácora. Son las mismas dos fechas que mira el
+   * servidor (`guardaDelDia()`).
+   */
+  const diaCerrado = ganada && [p?.fecha, fechaReal].some((f) => !!f && (datos.cerrados ?? []).includes(f));
+  const nombreSocio = (id: string) => (!id ? ''
+    : [...(datos.socios ?? []), ...sociosNuevos].find((x) => x.id === id)?.nombre ?? id);
+  /** Lo que se manda al guardar, en palabras: con qué se compara lo guardado (`cambiosDeLaCotizacion()`). */
+  const enCorreccion: CotizacionEnCorreccion = {
+    cliente: cliente?.nombre ?? '', fecha: fechaReal, invitados, total: cuentas.total,
+    lineas: vistas.map((l) => ({ concepto: l.concepto, cantidad: l.cantidad, precio: l.precio, descuento: l.descuento })),
+    datos: [
+      ['tipo de evento', tipoEvento],
+      ['descuento sobre el total', `${descuento || 0}%`],
+      ['documento', documento],
+      ['socio comercial', nombreSocio(socio) || 'ninguno'],
+      ['día exclusivo', exclusivo],
+      ['anticipo', anticipoMontoTxt.trim() ? enPesos(Number(anticipoMontoTxt))
+        : anticipoTxt.trim() ? `${anticipoTxt.trim()}%` : 'el de Configuración'],
+      ['saldo', saldoTxt.trim() ? `${saldoTxt.trim()} días antes` : 'el de Configuración'],
+      ['UF', uf ? enPesos(uf) : '']
+    ],
+    // Sin su valor: son textos largos, o datos de la ficha del cliente.
+    otros: [
+      ['cambiaron las notas', notas.trim()],
+      ['cambió el horario del contrato', horario],
+      ['cambió la marca de la Ley 20.393', String(ley20393)],
+      ['cambió lo acordado aparte', acuerdos.trim()],
+      ['cambiaron las condiciones de cancelación', [cambiosTxt, cancelTxt, reembolsoTxt].join('|')],
+      ['cambiaron los recordatorios', [segTxt, avisoTxt].join('|')],
+      ['cambiaron los datos de facturación', JSON.stringify(facturacion)]
+    ]
+  };
+  /** Como quedó guardada: al abrir, y después de cada guardado. */
+  const [baseCorreccion, setBaseCorreccion] = useState(enCorreccion);
+  /** La ventana de la corrección, abierta. */
+  const [corrigiendoDia, setCorrigiendoDia] = useState(false);
+  const [correccionConfirmada, setCorreccionConfirmada] = useState(false);
+  const cambiosCorreccion = useMemo(() => {
+    if (!diaCerrado) return [];
+    const c = cambiosDeLaCotizacion(baseCorreccion, enCorreccion);
+    // Que nadie quede sin poder guardar: si hay algo sin guardar que la lista
+    // no sabe nombrar, se dice igual que algo cambió.
+    return c.length || !sucio ? c : ['Cambió otro detalle de la cotización'];
+  }, [diaCerrado, sucio, firma, baseCorreccion]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** *Guardar*: directo, o por la lista de cambios si el día de la reserva está cerrado. */
+  function pedirGuardar() {
+    if (!diaCerrado) return void guardar();
+    setError(''); setCorreccionConfirmada(false); setCorrigiendoDia(true);
+  }
+
+  /**
    * **Una cotización ya creada se guarda sola** (2026-11-10, lo pidió el
    * cliente: ahorrarle el *Guardar* donde se pueda). Es la regla del panel:
    * lo que se edita acá son valores de algo que ya existe —cantidades,
@@ -488,7 +551,7 @@ export default function CotizacionDialogo({
   }
 
   /** Guarda. Devuelve el id, o '' si falló. */
-  async function guardar(estadoForzado?: string, solo = false): Promise<string> {
+  async function guardar(estadoForzado?: string, solo = false, correccion = ''): Promise<string> {
     setError('');
     ultimoError.current = '';
     // Guardando solo no se salta de paso: quien está escribiendo se queda
@@ -522,7 +585,9 @@ export default function CotizacionDialogo({
         seguimientoDias: segTxt, avisoEvento: avisoTxt, exclusivo, socio,
         ...(uf ? { uf, fechaUF } : {}),
         estado: estadoForzado ?? estado,
-        lineas: vistas
+        lineas: vistas,
+        // La lista de cambios confirmada, si el día de la reserva está cerrado.
+        ...(correccion ? { correccion: { motivo: correccion } } : {})
       };
       const r = await fetch('/api/presupuestos', {
         method: p ? 'PATCH' : 'POST', headers: { 'content-type': 'application/json' },
@@ -536,6 +601,7 @@ export default function CotizacionDialogo({
       }
       if (estadoForzado) setEstado(estadoForzado);
       setGuardada(JSON.stringify({ ...JSON.parse(firma), estado: estadoForzado ?? estado }));
+      setBaseCorreccion(enCorreccion);
       // **Guardando solo no se recarga la lista de atrás** (2026-11-12): cada
       // recarga son siete lecturas de la planilla, y con un autoguardado por
       // pausa al escribir se pasaba del límite de Google (60 por minuto). Se
@@ -587,6 +653,10 @@ export default function CotizacionDialogo({
     if (n <= 2 || paso >= 3 || !puedeEditar) return setPaso(n);
     const nuevoEstado = estado === ESTADO_PRESUPUESTO.candidato ? ESTADO_PRESUPUESTO.borrador : undefined;
     if (!p || sucio || nuevoEstado) {
+      // **En un día cerrado se sigue sin guardar**: lo escrito se confirma una
+      // sola vez, con *Guardar*, y la lista sale completa —los invitados del
+      // paso 2 junto con los menús del 3—, en vez de una corrección por paso.
+      if (p && diaCerrado) return setPaso(n);
       const id = await guardar(nuevoEstado);
       if (!id) return;
       if (!p) { onAbrir?.(id, n); return; }
@@ -2036,7 +2106,7 @@ export default function CotizacionDialogo({
             <div className={`flex flex-wrap justify-end gap-2 ${autoActivo ? 'lg:hidden' : ''}`}>
               {p && puedeEditar && (autoActivo
                 ? <AvisoGuardado estado={auto.estado} error={auto.error} onReintentar={() => void auto.reintentar()} />
-                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => void guardar()} />)}
+                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />)}
             </div>
 
             {/* **¿Otra versión?** (2026-11-11, lo pidió el cliente: que crear
@@ -2522,7 +2592,7 @@ export default function CotizacionDialogo({
             <div className="flex flex-wrap items-center gap-2 border-t border-hueso/10 pt-3 lg:hidden">
               {!cancelada && (autoActivo
                 ? <AvisoGuardado estado={auto.estado} error={auto.error} onReintentar={() => void auto.reintentar()} />
-                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => void guardar()} />)}
+                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />)}
               <span className="flex-1" />
               {secundarios}
             </div>
@@ -2750,7 +2820,7 @@ export default function CotizacionDialogo({
             <div className="flex flex-wrap items-center gap-2 border-t border-hueso/10 pt-3 lg:hidden">
               {!cancelada && (autoActivo
                 ? <AvisoGuardado estado={auto.estado} error={auto.error} onReintentar={() => void auto.reintentar()} />
-                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => void guardar()} />)}
+                : <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />)}
               <span className="flex-1" />
               {secundariosContrato}
             </div>
@@ -2768,7 +2838,7 @@ export default function CotizacionDialogo({
             : ''}
           medio={paso === 3 ? avisoMenus
             : paso === 4 ? <>
-                {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => void guardar()} />}
+                {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
               </> : null}
           onVolver={() => void irA(paso - 1)} onSeguir={() => void irA(paso + 1)} />
@@ -2779,13 +2849,35 @@ export default function CotizacionDialogo({
             ← 4 · {PASOS[3]}
           </button>
           <div className="hidden min-w-0 flex-wrap items-center gap-2 lg:ml-2 lg:flex">
-            {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => void guardar()} />}
+            {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
             {secundariosContrato}
           </div>
         </div>
       )}
 
       {error && <p className="mt-3 text-[15px] font-semibold text-rojo-texto">{error}</p>}
+      {/* **Guardar una ganada en un día cerrado** (2026-11-21): la lista de lo
+          que cambió y su casilla, como en el equipo y en las reservas. */}
+      {corrigiendoDia && p && (
+        <Dialogo titulo={`Corregir un día cerrado · ${cliente?.nombre ?? folioDe(p)}`} ancho="max-w-lg"
+          onCerrar={() => { if (!guardando) setCorrigiendoDia(false); }}>
+          <p className="mt-2 text-[15px] text-hueso/80">
+            {p.fecha && fechaReal && p.fecha !== fechaReal
+              ? <>La reserva se mueve del <strong>{enPalabras(p.fecha)}</strong> al <strong>{enPalabras(fechaReal)}</strong>, y uno de los dos días ya está cerrado.</>
+              : <>El <strong>{enPalabras(fechaReal || p.fecha)}</strong> ya está cerrado: guardar esta cotización es corregir su reserva de ese día.</>}
+          </p>
+          {error && <p className="mt-2 text-[14px] font-semibold text-rojo-texto">{error}</p>}
+          <PieCorreccion modo="apilado" cambios={cambiosCorreccion}
+            confirmado={correccionConfirmada} onConfirmado={setCorreccionConfirmada}
+            guardando={guardando}
+            porQueNo={datos.puedeCorregir ? undefined
+              : 'Un día cerrado lo corrige el administrador o quien hace los pagos.'}
+            onCancelar={() => setCorrigiendoDia(false)}
+            onGuardar={async () => {
+              if (await guardar(undefined, false, textoDeCambios(cambiosCorreccion))) setCorrigiendoDia(false);
+            }} />
+        </Dialogo>
+      )}
       {preguntaEnvio && (
         <Dialogo titulo="¿La mandaste?" onCerrar={() => setPreguntaEnvio('')}>
           <p className="mt-3 text-[17px]">

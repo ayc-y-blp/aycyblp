@@ -92,7 +92,8 @@ revisan antes de cada cambio en esta carpeta.
   cerrado no pide un motivo escrito** (2026-11-21): el panel arma la lista
   de lo que cambió, se confirma con una casilla y esa lista es lo que queda
   en la bitácora (ver "Corregir un día cerrado: la lista de cambios"). Vale
-  para el equipo, los extras y **editar o borrar una reserva** de ese día.
+  para el equipo, los extras, **editar o borrar una reserva** de ese día y
+  **guardar una cotización ganada** cuya reserva está en ese día.
 - **Las lecturas de Google son un presupuesto**: 60 por minuto para todo el
   panel. Nada nuevo lee la planilla por su cuenta: se suma a la tanda que la
   ruta ya precarga (`conLecturas()`), y el PR dice cuántas lecturas cuesta.
@@ -131,7 +132,7 @@ revisan antes de cada cambio en esta carpeta.
   | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
-  | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva) |
+  | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
   actualiza **en el mismo PR**. Cuenta como ayuda:
@@ -497,7 +498,7 @@ Las dos ventanas crecen con lo que tenga el día. Con más gente o más
 puestos que el ejemplo (ocho personas, cuatro puestos), la de trabajadores
 también pasa de una pantalla.
 
-**La prueba** (`pruebas/ventanas.mjs`): 43 escenas. Fija el reloj del
+**La prueba** (`pruebas/ventanas.mjs`): 44 escenas. Fija el reloj del
 navegador a la hora del servidor de ejemplo —si no, *hoy* es un día para
 uno y otro para la página, y React avisa en rojo—, y **espera lo que se
 carga antes de medir**: *Dejar la base en cero* y la cara de reservas se
@@ -763,9 +764,10 @@ dos cosas que seguían pidiendo un motivo escrito.
   lista de cambios*.
 - **Lo que queda con su propio motivo, y está bien**: rectificar una reserva
   y soltarla ya piden el suyo —es el dato de esa acción— y con él corrigen el
-  día. **Lo que no tiene dónde confirmarse**: editar una cotización ganada
-  cuya reserva está en un día cerrado; el servidor la rechaza y la ventana de
-  cotizar no muestra la lista. Ya era así antes de este cambio.
+  día. **Lo que no tenía dónde confirmarse**: editar una cotización ganada
+  cuya reserva está en un día cerrado; el servidor la rechazaba y la ventana
+  de cotizar no mostraba la lista. **Resuelto el mismo día**: ver "Una
+  cotización ganada en un día cerrado también se corrige".
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.**
 - **Ayuda**: el `?` de la página del día dice que con el día cerrado editar o
   borrar es corregirlo, con la lista y la casilla.
@@ -802,6 +804,82 @@ los extras. El formulario de editar una reserva no estaba en la prueba.
   (1.003px la reserva nueva). *La reserva se cayó…* se dibuja dos veces en el
   HTML —al pie en el celular, en la línea del pago en el computador—: en una
   prueba se pide el que se ve.
+
+## Una cotización ganada en un día cerrado también se corrige (2026-11-21)
+
+Era lo único que quedaba sin dónde confirmarse (sección anterior). Se le
+preguntó al cliente y lo decidió en una línea: *"Sí, también debería poder
+corregirse."*
+
+**Qué pasaba**: guardar una cotización ganada reescribe su reserva
+(`sincronizarReserva()`). Si el día de esa reserva —o el día al que se
+mueve— ya estaba cerrado, el servidor pedía la lista de cambios confirmada
+(`guardaDelDia()`), y la ventana de cotizar no tenía cómo mandarla: decía
+*hay que confirmar la lista de cambios* y no había dónde. Ni el
+administrador podía sumarle dos invitados a un evento ya cerrado.
+
+**Qué hace ahora**: el botón *Guardar* de una ganada, cuando su día está
+cerrado, abre una ventana con **la lista de lo que cambió, la casilla y
+*Guardar corrección*** (`PieCorreccion`, en `apilado`: la misma pieza del
+equipo, los extras y las reservas). Esa lista es la que queda en la
+bitácora.
+
+- **`cambiosDeLaCotizacion(antes, después)`** en `lib/correccion.ts` (pura,
+  con pruebas) compara lo guardado con lo que la ventana va a mandar:
+  - con su valor, lo que cambia la reserva: *Se mueve del miércoles 11 de
+    noviembre al sábado 7 de noviembre* · *De 42 invitados a 45* ·
+    *Tradiciones: cantidad de 36 a 39* (o precio, o descuento) · *Se agregó
+    Sommelier: 5 × $90.000* · *Se quitó Arriendo del recinto (1 ×
+    $1.500.000)* · *Total de $1.908.000 a $2.055.000*;
+  - con su valor, los datos cortos: tipo de evento, descuento sobre el
+    total, documento, socio comercial, día exclusivo, anticipo, saldo y UF;
+  - **sin su valor**, lo que es texto largo o dato de la ficha del cliente:
+    *Cambiaron las notas*, *el horario del contrato*, *lo acordado aparte*,
+    *las condiciones de cancelación*, *los recordatorios* y *los datos de
+    facturación* (RUT y domicilio no van a la bitácora). Hay una prueba que
+    lo fija.
+- **Los renglones no llevan *"Cotización de …:"* delante**, al revés que los
+  de una reserva: la ventana ya dice de quién es y la bitácora lleva su
+  número. Con el nombre repetido, *Cotización de X: Tradiciones: cantidad de
+  36 a 39* se leía peor que el cambio solo.
+- **Lo que va incluido se dice *sin costo***: al mover un evento de un día
+  privado a uno público, el show ecuestre entra solo a $0, y la lista lo
+  dice —*Se agregó Show ecuestre: sin costo*— en vez de *1 × $0*.
+- **En un día cerrado se sigue de paso sin guardar** (`irA()`): una ganada
+  guardaba al pasar de Evento a Productos; ahí habría pedido una corrección
+  por paso. Ahora lo escrito se confirma **una vez**, con *Guardar*, y la
+  lista sale completa —los invitados del paso 2 junto con los menús del 3—.
+- **Cómo sabe la ventana que el día está cerrado**: `/api/presupuestos`
+  manda `cerrados` (solo las fechas) y `puedeCorregir`. Mira las mismas dos
+  fechas que el servidor: la guardada y la nueva.
+- **Quien no puede corregir** (un vendedor con su propia ganada) ve la lista
+  y la frase *Un día cerrado lo corrige el administrador o quien hace los
+  pagos*, con *Guardar corrección* apagado. **Ningún permiso cambió**: el
+  servidor sigue pidiendo `corregir` y rechazando una corrección sin lista.
+- **La red de seguridad**: si hay algo sin guardar que la lista no sabe
+  nombrar, dice *Cambió otro detalle de la cotización*, para que nadie quede
+  sin poder guardar.
+- **La bitácora**: *Corrigió una cotización ganada de un día cerrado ·
+  509127 · Ganada · cambios: De 42 invitados a 45; Tradiciones: cantidad de
+  36 a 39; Total de $1.908.000 a $2.055.000* (antes, *motivo: …*, que nunca
+  llegó a escribirse).
+- **Lecturas de Google**: ninguna más. `Cierres` entra en la tanda que
+  `/api/presupuestos` ya precarga (`npm run lecturas` sigue en 1). Guardar
+  no cambió.
+- **Ayuda**: el `?` de *✓ Ganada* dice que con el día cerrado, al guardar,
+  aparece la lista con su casilla. Ninguna foto de las misiones cambia.
+- **La prueba de ventanas**: escena nueva `v-cotizar-ganada-dia-cerrado`
+  (385px a 1280×650; en el celular 524px, entera en 393×740). Son 44.
+- **Probado en el panel de ejemplo**, con la cotización ganada de Gonzalo
+  Contreras: se movió del miércoles 11 al sábado 7, que está cerrado —la
+  lista dijo el cambio de día y el show que entra sin costo—, y después, ya
+  en el día cerrado, se le sumaron tres invitados y tres menús. Las dos se
+  guardaron, la reserva quedó en *39 × Tradiciones + 6 × Niños · 45 personas
+  · $2.055.000* y la bitácora, con las dos listas.
+- **Lo que no se tocó**: *Corregir la ganada* y *Cancelar evento* ya pasaban
+  en un día cerrado, con su propio motivo. Y **cambiar el nombre de un
+  cliente desde su ficha** reescribe sus reservas ganadas sin pasar por esta
+  guarda, también en un día cerrado: ya era así.
 
 ## El token de Shopify de la tienda real (2026-11-21)
 
