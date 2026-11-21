@@ -1473,9 +1473,21 @@ token público del canal **Brasas De Lo Pirque Headless** y los ocho IDs.
   domingo 27 de diciembre: **quien compró ahí para una fecha posterior al
   lanzamiento no le descuenta cupo al panel** hasta que alguien lo anote.
   **Se anotan a mano en el panel** (lo decidió el cliente el 2026-11-21): no
-  se le enseña al panel a leer el modelo viejo. Y al lanzar, ese producto
+  se le enseña al panel a leer el modelo viejo. **Ese mismo día quedó cómo
+  anotarlos de una vez**: el export de pedidos de Shopify trae el día en el
+  nombre de la variante y si está pagado, y *Importar del CRM* los lee desde
+  una pestaña `Importar reservas` (ver `panel/CLAUDE.md`, "Importar del CRM
+  y del sitio viejo"). **El export tiene que ser de todos los pedidos**: la
+  *página actual* trae solo los últimos 50. Y al lanzar, ese producto
   hay que sacarlo de Tienda online: en `tienda.` el tema viejo lo seguiría
   vendiendo.
+- **Los días que vendía el sitio viejo no son los de la regla del panel**
+  (mirado en su catálogo público el 2026-11-21). Vendía tres días que no son
+  fin de semana —viernes 4, martes 8 y viernes 11 de diciembre— y tenía
+  **bloqueado el domingo 22 de noviembre**. Después de la base en cero, la
+  regla abre los sábados y domingos como públicos: el 22 hay que cerrarlo o
+  dejarlo privado a mano, y los otros tres abrirlos a mano si se van a
+  seguir vendiendo.
 - **El medio de pago "Pago en el local" ya existe en la tienda real**
   (confirmado por el cliente el 2026-11-21). Que la regla por SKU oculte el
   medio que no corresponde se ve en la compra de prueba de cada modalidad.

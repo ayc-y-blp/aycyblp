@@ -157,11 +157,19 @@ export function esPestanaQueNoExiste(e: unknown): boolean {
   return e instanceof Error && e.message.startsWith('No hay ninguna pestaña llamada');
 }
 
-export async function nombreReal(hoja: string): Promise<string> {
+export async function nombreReal(
+  hoja: string,
+  /**
+   * La lista de pestañas se acaba de leer (2026-11-21): no se vuelve a mirar.
+   * Lo usa una tanda que ya preguntó por una pestaña que no existe: las tres
+   * de importar, antes de subirlas, gastaban una lectura del libro cada una.
+   */
+  reciente = false
+): Promise<string> {
   let mapa = titulos;
   // Si hubo que leer el libro recién, lo que dice es de ahora mismo y no hay
   // nada que volver a mirar.
-  let alDia = false;
+  let alDia = reciente;
   if (!mapa) { mapa = await leerTitulos(); alDia = true; }
 
   let real = mapa.get(clave(hoja));
@@ -272,8 +280,15 @@ async function despachar(): Promise<void> {
   // El nombre real de cada pestaña. Una que no existe falla sola, sin
   // arrastrar a las demás.
   const listas: (Pedida & { real: string })[] = [];
+  // La primera que no aparece hace mirar el libro de nuevo; desde ahí la
+  // lista está al día para el resto de esta tanda. **Solo si de verdad no
+  // existe**: ese error sale después de haber leído el libro. Con cualquier
+  // otra falla —el límite de Google— la lista puede seguir vieja, y darla
+  // por buena haría pasar por inexistente una pestaña que sí está.
+  let reciente = false;
   for (const x of pedidas) {
-    try { listas.push({ ...x, real: await nombreReal(x.hoja) }); } catch (e) { x.rej(e); }
+    try { listas.push({ ...x, real: await nombreReal(x.hoja, reciente) }); }
+    catch (e) { if (esPestanaQueNoExiste(e)) reciente = true; x.rej(e); }
   }
   if (!listas.length) return;
   try {

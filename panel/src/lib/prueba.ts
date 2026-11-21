@@ -5542,7 +5542,7 @@ console.log('\nDejar la base en cero para producción');
       for (const m of texto.matchAll(/export const (HOJA_[A-Z_]+)\s*=\s*'([^']+)'/g)) pestanas.set(m[2], `${m[1]} (${archivo})`);
     }
     const sinDecidir = [...pestanas.keys()].filter((h) =>
-      !vacian.includes(h) && !conservan.includes(h) && !P.FUERA_DE_LA_PLANILLA.includes(h));
+      !vacian.includes(h) && !conservan.includes(h) && !P.FUERA_DE_LA_PLANILLA.includes(h) && !P.DE_PASO.includes(h));
     ok(pestanas.size >= 20 && sinDecidir.length === 0,
        'cada pestaña del panel está en "se vacía" o en "se conserva"'
        + (sinDecidir.length ? `: falta decidir ${sinDecidir.map((h) => pestanas.get(h)).join(', ')}` : ''));
@@ -5564,6 +5564,179 @@ console.log('\nDejar la base en cero para producción');
   ok(P.detalleDeLaLimpieza({ Reservas: 12, Clientes: 0, Bitácora: 40 }, 3) === 'Reservas 12 · Bitácora 40 · 3 eventos de Calendar'
      && P.detalleDeLaLimpieza({}, 0) === 'no había nada que borrar',
      'la bitácora dice qué se borró');
+}
+
+console.log('\nImportar del CRM');
+{
+  const I = await import('./importar.ts');
+  const M = await import('./menus.ts');
+  const usuarios = [
+    { nombre: 'Carla Rojas', usuario: 'carla', activo: true },
+    { nombre: 'Bruno Díaz', usuario: 'bdiaz', activo: true },
+    { nombre: 'Bruno Soto', usuario: 'bsoto', activo: true },
+    { nombre: 'Elsa Mora', usuario: 'elsa', activo: false }
+  ];
+  ok(I.cuentaDelVendedor('carla rojas', usuarios) === 'carla' && I.cuentaDelVendedor('Carla', usuarios) === 'carla',
+     'el vendedor calza por su nombre completo, o por su primer nombre si es de una sola cuenta');
+  ok(I.cuentaDelVendedor('Bruno', usuarios) === '' && I.cuentaDelVendedor('Elsa Mora', usuarios) === '' && I.cuentaDelVendedor('', usuarios) === '',
+     'con dos Bruno no se adivina; una cuenta apagada no calza; sin nombre, sin cuenta');
+  ok(JSON.stringify(I.productosDeLaCelda('Lo Pirque | 80 | 50.000 | + IVA\n\nArriendo del recinto | 1 | $1.500.000\n| 3 | 2'))
+       === JSON.stringify([{ concepto: 'Lo Pirque', cantidad: 80, precio: 50000, ivaIncluido: false },
+                           { concepto: 'Arriendo del recinto', cantidad: 1, precio: 1500000, ivaIncluido: true }]),
+     'los productos de una celda: uno por renglón, con su cantidad, su precio y si es más IVA');
+
+  const encC = ['Ref', 'Nombre', 'Teléfono', 'Correo', 'Empresa del cliente', 'Vendedor', 'Notas', 'Etapa (CRM)'];
+  const encQ = ['Ref', 'Ref cliente', 'Estado', 'Fecha del evento', 'Periodo', 'Invitados', 'Tipo de evento', 'Vendedor', 'Notas', 'Productos'];
+  const filasClientes = [encC,
+    ['CRM-0001', 'Ana Prueba', 'tel: +56 9 5111 2233', 'ANA@ejemplo.cl ', '', 'Carla Rojas', 'Del CRM: Matrimonio', 'Contactado'],
+    ['CRM-0002', 'Beto Prueba', '', 'beto@ejemplo.cl', '', 'Bruno', '', 'Cotizado'],
+    ['CRM-0003', 'Sin Contacto', '', '', '', 'Carla Rojas', '', 'Nuevo'],
+    ['CRM-0004', 'Ya Estaba', '951112299', '', '', 'Carla Rojas', '', 'Ganado'],
+    ['CRM-0005', 'Ana Repetida', '', 'ana@ejemplo.cl', '', 'Carla Rojas', '', 'Nuevo']];
+  const filasCotizaciones = [encQ,
+    ['CRM-0001-a', 'CRM-0001', 'candidato', '2027-03-14', '', '120', 'Matrimonio', 'Carla Rojas', 'Del CRM (CRM-0001-a): etapa Contactado', ''],
+    ['CRM-0002-a', 'CRM-0002', 'Borrador', '', 'entre el 01-02-2027 y el 28-02-2027', '80 pers.', 'Empresa', 'Bruno', 'Cotizado en el CRM', 'Lo Pirque | 80 | 50000 | + IVA\nTaller de quesos | 1 | 90000 | + IVA'],
+    ['CRM-0004-a', 'CRM-0004', 'Enviada', '2027-01-10', '', '50', 'Empresa', 'Carla Rojas', '', ''],
+    ['CRM-0004-b', 'CRM-0004', 'Borrador', '2026-10-01', '', '50', 'Empresa', 'Carla Rojas', '', ''],
+    ['CRM-0003-a', 'CRM-0003', 'Candidato', '2027-05-01', '', '30', 'Otro', 'Carla Rojas', '', ''],
+    ['CRM-0004-c', 'CRM-0004', 'Candidato', '', '', '50', 'Empresa', 'Carla Rojas', '', ''],
+    ['CRM-0004-d', 'CRM-0004', 'Candidato', '2027-06-01', '', '40', 'Empresa', 'Carla Rojas', 'ya vino antes', '']];
+  const yaHay = { id: 'C-0007', nombre: 'Ya Estaba', empresa: '', rut: '', domicilio: '', giro: '', telefono: '+56 9 5111 2299', correo: '', notas: '', creadoPor: 'carla', creado: '', fila: 2 };
+  let n = 0;
+  type Dia = { fecha: string; estado: string; capacidad: number };
+  const base = { filasClientes, filasCotizaciones, clientes: [yaHay],
+    presupuestos: [] as { id: string; notas: string; estado: string; idReserva: string }[], usuarios,
+    menus: M.POR_DEFECTO_MENUS, fechas: [] as Dia[], reservas: [] as import('./tipos.ts').Reserva[],
+    cfg: { cupoNormal: 60, horaApertura: '13:00' }, quien: 'admin',
+    hoy: '2026-11-21', cuando: '2026-11-21 18:30', ahora: 1795000000000, nuevoToken: () => `tok${++n}` };
+  const plan = I.planDeImportacion(base);
+  ok(plan.fichas.length === 2 && plan.fichas[0].id === 'C-0008' && plan.fichas[1].id === 'C-0009' && plan.fichasQueYaEstaban === 1,
+     'entran las fichas nuevas con ids correlativos, y la que ya estaba (mismo teléfono) no se duplica');
+  ok(plan.fichas[0].telefono === '+56 9 5111 2233' && plan.fichas[0].correo === 'ana@ejemplo.cl' && plan.fichas[0].creadoPor === 'carla'
+     && plan.fichas[1].creadoPor === '',
+     'la ficha queda con el teléfono y el correo ordenados y a nombre de la cuenta de su vendedor; "Bruno" no calza con una sola cuenta');
+  ok(plan.problemas.some((x) => x.includes('Importar clientes, fila 4') && x.includes('teléfono o un correo'))
+     && plan.problemas.some((x) => x.includes('Importar clientes, fila 6') && x.includes('repite')),
+     'una fila sin teléfono ni correo no entra, y una que repite el correo de otra se avisa: con el número de la fila');
+  ok(!plan.problemas.some((x) => /Ana|Beto|ejemplo\.cl|5111/.test(x)), 'los avisos no llevan nombres, teléfonos ni correos');
+  ok(plan.cotizaciones.length === 3 && plan.candidatos === 2 && plan.borradores === 1,
+     'entran un candidato con día, un borrador con periodo y un candidato del cliente que ya estaba');
+  const [cand, borr, deYa] = plan.cotizaciones;
+  ok(cand.estado === 'Candidato' && cand.fecha === '2027-03-14' && cand.idCliente === 'C-0008' && cand.invitados === 120
+     && cand.creadoPor === 'carla' && cand.token === 'tok1' && cand.id === 'PRE-1795000000000' && cand.validoHasta === '' && cand.enviada === '',
+     'el candidato: su día, su ficha, su vendedor, su token; sin mandar y sin vigencia');
+  ok(borr.estado === 'Borrador' && borr.fecha === '' && borr.periodo.startsWith('entre el') && borr.invitados === 80
+     && borr.notas.endsWith('(CRM-0002-a)') && borr.id === 'PRE-1795000000001',
+     'el borrador sin día lleva su periodo, y la referencia de su fila queda en la nota');
+  ok(deYa.idCliente === 'C-0007' && deYa.notas === 'ya vino antes (CRM-0004-d)', 'la cotización de un cliente que ya estaba se cuelga de su ficha');
+  const lb = plan.lineas.filter((l) => l.presupuesto === borr.id);
+  ok(lb.length === 2 && lb[0].concepto === 'Lo Pirque' && lb[0].cantidad === 80 && lb[0].precio === 50000 && lb[0].ivaIncluido === false
+     && lb[0].personas === 80 && lb[1].personas === 0,
+     'sus productos entran como líneas: el menú suma personas, lo demás no');
+  ok(plan.sinCatalogo.length === 1 && plan.sinCatalogo[0].concepto === 'Taller de quesos',
+     'un producto que no está en Productos entra como línea libre, y se avisa');
+  ok(plan.problemas.some((x) => x.includes('fila 4') && x.includes('"Enviada"')) && plan.problemas.some((x) => x.includes('fila 5') && x.includes('ya pasó'))
+     && plan.problemas.some((x) => x.includes('fila 6') && x.includes('no entró')) && plan.problemas.some((x) => x.includes('fila 7') && x.includes('ni periodo')),
+     'no entran: una Enviada (nunca se importa como mandada), una fecha pasada, una cotización sin su cliente, una sin fecha ni periodo');
+  ok(plan.ganadas.length === 0, 'sin filas ganadas no se toca ningún cupo');
+  ok(plan.vendedores[0].nombre === 'Carla Rojas' && plan.vendedores[0].usuario === 'carla' && plan.vendedores[0].fichas === 1 && plan.vendedores[0].cotizaciones === 2
+     && plan.vendedores[1].usuario === '',
+     'la vista previa dice qué cuenta calzó con cada vendedor, y cuál quedó sin cuenta');
+  // Correrlo de nuevo, con lo importado ya en el panel: no duplica nada.
+  const otra = I.planDeImportacion({ ...base, clientes: [yaHay, ...plan.fichas.map((c, i) => ({ ...c, fila: 3 + i }))],
+    presupuestos: plan.cotizaciones.map((p) => ({ id: p.id, notas: p.notas, estado: p.estado, idReserva: '' })) });
+  ok(otra.fichas.length === 0 && otra.cotizaciones.length === 0 && otra.fichasQueYaEstaban === 4 && otra.cotizacionesQueYaEstaban === 3,
+     'apretarlo dos veces no duplica: las fichas calzan por contacto y las cotizaciones por su referencia');
+  ok(I.planDeImportacion({ ...base, filasClientes: [['Nombre', 'Correo'], ['Ana', 'a@b.cl']], filasCotizaciones: [] }).problemas[0].includes('faltan las columnas'),
+     'una pestaña sin sus columnas no se adivina: se dice cuáles faltan');
+  ok(I.detalleDeLaImportacion(plan) === '2 fichas · 2 candidatos · 1 borrador', 'la bitácora dice cuánto entró, sin nombres');
+
+  // --- Una ganada del CRM entra ganada: con su reserva, y tomando cupo.
+  const res = (x: Partial<import('./tipos.ts').Reserva>) => ({ id: 'R', fila: 2, fecha: '2026-12-05', nombre: 'Otro', email: '', telefono: '',
+    menu: '', personas: 0, monto: 0, tipoPago: '', estadoPago: 'pending', asistencia: '', creada: '', ...x }) as import('./tipos.ts').Reserva;
+  const conGanadas = { ...base,
+    filasClientes: [encC, ['CRM-0001', 'Ana Prueba', '+56951112233', 'ana@ejemplo.cl', '', 'Carla Rojas', '', 'Ganado'],
+                          ['CRM-0002', 'Beto Prueba', '', 'beto@ejemplo.cl', '', 'Bruno', '', 'Ganado']],
+    filasCotizaciones: [encQ,
+      ['CRM-0001-a', 'CRM-0001', 'Ganada', '2026-12-18', '', '80', 'Empresa', 'Carla Rojas', 'Ganada en el CRM', 'Lo Pirque | 76 | 50000 | + IVA\nNiños | 4 | 19000\nArriendo del recinto | 1 | 1500000 | + IVA'],
+      ['CRM-0002-a', 'CRM-0002', 'ganada', '2026-12-05', '', '30', 'Otro', 'Bruno', '', ''],
+      ['CRM-0002-b', 'CRM-0002', 'Ganada', '2026-12-05', '', '40', 'Otro', 'Bruno', '', ''],
+      ['CRM-0002-c', 'CRM-0002', 'Ganada', '', 'diciembre', '40', 'Otro', 'Bruno', '', ''],
+      ['CRM-0002-d', 'CRM-0002', 'Ganada', '2026-12-12', '', '', 'Otro', 'Bruno', '', 'Arriendo del recinto | 1 | 1500000 | + IVA'],
+      ['CRM-0002-e', 'CRM-0002', 'Ganada', '2026-12-13', '', '20', 'Otro', 'Bruno', '', '']],
+    clientes: [],
+    fechas: [{ fecha: '2026-12-05', estado: 'Abierta', capacidad: 60 }, { fecha: '2026-12-13', estado: 'Privada exclusiva', capacidad: 60 }],
+    reservas: [res({ fecha: '2026-12-05', personas: 10 }), res({ fecha: '2026-12-05', personas: 99, estadoPago: 'cancelled' }),
+               res({ fecha: '2026-12-13', personas: 50 })] };
+  const pg = I.planDeImportacion(conGanadas);
+  ok(pg.ganadas.length === 3 && pg.borradores === 0 && pg.cotizaciones.length === 3 && pg.cotizaciones.every((p) => p.estado === 'Borrador' && !p.idReserva),
+     'las ganadas se escriben primero como borrador, sin reserva: se ganan después, una por una');
+  const [g1, g2, g3] = pg.ganadas;
+  const [d5, d18] = pg.dias;
+  ok(pg.dias.length === 2 && d18.fecha === '2026-12-18' && d18.personas === 80 && d18.ganadas === 1 && d18.dia === 'crea' && d18.capacidad === 60 && d18.sobre === 20,
+     'un día que no existe se crea privado con el cupo de siempre, y se dice cuánta gente queda sobre ese cupo');
+  ok(g1.reserva.menu.includes('76') && g1.reserva.menu.includes('Lo Pirque') && !/Arriendo/.test(g1.reserva.menu)
+     && g1.reserva.monto === Math.round(76 * 50000 * 1.19) + 4 * 19000 + Math.round(1500000 * 1.19)
+     && g1.reserva.estadoPago === 'pending' && g1.reserva.anotadaPor === 'carla' && g1.reserva.nombre === 'Ana Prueba'
+     && g1.reserva.notaPago === `De la cotización N° ${g1.id.slice(-6)}`,
+     'su reserva es la de Marcar ganada: el total negociado, al menú solo la gente, por pagar, a nombre de su vendedor');
+  ok(g2.fecha === '2026-12-05' && g2.personas === 30 && g2.reserva.anotadaPor === 'admin' && g3.personas === 40,
+     'sin menús la gente son los invitados; sin cuenta del vendedor queda a nombre de quien importa');
+  ok(d5.fecha === '2026-12-05' && d5.ganadas === 2 && d5.personas === 70 && d5.libres === 50 && d5.sobre === 20 && d5.dia === '',
+     'en un día abierto cuenta lo ya tomado (sin las canceladas), y dos ganadas el mismo día se suman: avisa el sobrecupo');
+  ok(pg.problemas.some((x) => x.includes('fila 5') && x.includes('día exacto')) && pg.problemas.some((x) => x.includes('fila 6') && x.includes('cuánta gente'))
+     && pg.problemas.some((x) => x.includes('fila 7') && x.includes('exclusiva')) && pg.problemas.length === 3,
+     'una ganada no entra sin su día, sin gente, o en un día arrendado en exclusiva a otro');
+  ok(I.detalleDeLaImportacion(pg) === '2 fichas · 0 candidatos · 0 borradores · 3 ganadas', 'la bitácora cuenta las ganadas');
+  // Se cortó después de escribirla: al volver a importar, se dice dónde terminarla.
+  const aMedias = I.planDeImportacion({ ...conGanadas,
+    presupuestos: [{ id: g1.id, notas: 'Ganada en el CRM (CRM-0001-a)', estado: 'Borrador', idReserva: '' },
+                   { id: g2.id, notas: '(CRM-0002-a)', estado: 'Ganada', idReserva: 'MANUAL-1' }] });
+  ok(aMedias.ganadas.length === 1 && aMedias.cotizacionesQueYaEstaban === 2
+     && aMedias.problemas.filter((x) => x.includes('Marcar ganada')).length === 1 && aMedias.problemas.some((x) => x.includes('fila 2') && x.includes('Marcar ganada')),
+     'una ganada que quedó a medias no se duplica ni se salta callada: se nombra, y la que sí se ganó no');
+
+  // --- Las reservas del sitio viejo: anotadas de una vez, con su pago.
+  const encR = ['Ref', 'Fecha', 'Nombre', 'Teléfono', 'Correo', 'Menú', 'Personas', 'Monto', 'Pago', 'Nota de pago', 'Comprado'];
+  const conReservas = { ...base, filasClientes: [], filasCotizaciones: [],
+    filasReservas: [encR,
+      ['LP1001', '2026-11-28', 'Ana Prueba', '951112233', 'ANA@ejemplo.cl', '8 × tradiciones + 2 x niños', '10', '$390.000', 'Pagada', 'Pedido LP1001 del sitio viejo · Mercado Pago', '2026-11-08'],
+      ['LP1002', '2026-11-28', 'Beto Prueba', '', 'beto@ejemplo.cl', '6 × Tradiciones', '', '264000', 'por pagar', '', ''],
+      ['LP1003', '2026-12-04', 'Caro Prueba', '', '', '', '2', '88000', 'Por pagar', '', ''],
+      ['LP1004', '2026-11-20', 'Pasada', '', '', '2 × Tradiciones', '2', '', 'Pagada', '', ''],
+      ['LP1005', '2026-12-05', 'Sin Pago', '', '', '2 × Tradiciones', '2', '', 'Abonada', '', ''],
+      ['', '2026-12-05', 'Sin Ref', '', '', '2 × Tradiciones', '2', '', 'Pagada', '', ''],
+      ['LP1007', '2026-12-05', 'Sin Gente', '', '', '', '', '', 'Pagada', '', ''],
+      ['LP1008', '2026-12-05', 'Descuadrada', '', '', '4 × Tradiciones + 1 × Pequeños', '4', '182000', 'Por pagar', '', '']],
+    fechas: [{ fecha: '2026-11-28', estado: 'Abierta', capacidad: 20 }],
+    reservas: [res({ fecha: '2026-11-28', personas: 5 }), res({ fecha: '2026-12-12', personas: 3, notaPago: 'Pedido del sitio viejo (LP1009)' })] };
+  const pr = I.planDeImportacion(conReservas);
+  ok(pr.reservas.length === 4 && pr.fichas.length === 0 && pr.cotizaciones.length === 0, 'entran las reservas con día a futuro, aunque no haya nada del CRM');
+  const [r1, r2, r3, r8] = pr.reservas;
+  ok(r1.fecha === '2026-11-28' && r1.menu === '8 × Tradiciones + 2 × Niños' && r1.personas === 10 && r1.monto === 390000
+     && r1.estadoPago === 'paid' && r1.tipoPago === '' && r1.email === 'ana@ejemplo.cl' && r1.telefono === '+56 9 5111 2233'
+     && r1.notaPago === 'Pedido LP1001 del sitio viejo · Mercado Pago (LP1001)' && r1.anotadaPor === 'admin',
+     'la reserva: su día, su menú con los nombres del catálogo, su monto, pagada, sin modalidad, y el número del pedido en la nota');
+  ok(!!r1.pagoAnotado && r1.pagoAnotado.includes('admin') && !r1.pagoRevisado && !r2.pagoAnotado,
+     'una pagada queda anotada a nombre de quien importa y SIN revisar: le llega a pagos. Una por pagar no lleva marca');
+  ok(r2.estadoPago === 'pending' && r2.personas === 6 && r3.menu === '' && r3.personas === 2 && r8.personas === 5,
+     'la gente sale de los menús; sin menús, de la columna Personas');
+  ok(pr.problemas.some((x) => x.includes('Importar reservas, fila 5') && x.includes('ya pasó')) && pr.problemas.some((x) => x.includes('fila 6') && x.includes('"Abonada"'))
+     && pr.problemas.some((x) => x.includes('fila 7') && x.includes('Ref')) && pr.problemas.some((x) => x.includes('fila 8') && x.includes('cuánta gente'))
+     && pr.problemas.some((x) => x.includes('fila 9') && x.includes('suman 5')) && !pr.problemas.some((x) => /Prueba|ejemplo\.cl|5111/.test(x)),
+     'no entran una fecha pasada, un pago que no es Pagada o Por pagar, una sin número de pedido ni una sin gente; una descuadrada entra y se avisa. Sin datos del cliente');
+  ok(pr.dias.length === 3 && pr.dias[0].fecha === '2026-11-28' && pr.dias[0].reservas === 2 && pr.dias[0].personas === 16 && pr.dias[0].libres === 15 && pr.dias[0].sobre === 1
+     && pr.dias[1].fecha === '2026-12-04' && pr.dias[1].dia === 'crea' && pr.dias[1].sobre === 0,
+     'cada día dice cuánta gente toma, lo que tenía libre y si queda sobre el cupo; uno que no existe se crea privado');
+  const otraVez = I.planDeImportacion({ ...conReservas,
+    reservas: [...conReservas.reservas, ...pr.reservas.map((x, i) => ({ ...x, id: `MANUAL-${i}`, fila: 9 + i, creada: '' }) as import('./tipos.ts').Reserva)] });
+  ok(otraVez.reservas.length === 0 && otraVez.reservasQueYaEstaban === 4 && otraVez.dias.length === 0,
+     'apretarlo dos veces no duplica una reserva: calza por el número del pedido en su nota');
+  ok(I.detalleDeLaImportacion(pr) === '0 fichas · 0 candidatos · 0 borradores · 4 reservas del sitio viejo', 'la bitácora cuenta las reservas');
+  // Una ganada el mismo día que una reserva importada: la cuenta como lugar ya tomado.
+  const juntas = I.planDeImportacion({ ...conGanadas, filasReservas: [encR, ['LP2001', '2026-12-05', 'Dani Prueba', '', '', '4 × Tradiciones', '', '', 'Pagada', '', '']] });
+  ok(juntas.dias.find((d) => d.fecha === '2026-12-05')?.personas === 74 && juntas.dias.find((d) => d.fecha === '2026-12-05')?.reservas === 1,
+     'las reservas y las ganadas de un mismo día se suman en la vista previa');
 }
 
 console.log('\nLos días de la regla se abren solos');

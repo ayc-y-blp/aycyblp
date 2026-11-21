@@ -12,6 +12,7 @@
  */
 import { useState } from 'react';
 import Dialogo from './Dialogo';
+import CualBase from './CualBase';
 import { usarPuede } from './SesionCliente';
 
 interface Pestana { hoja: string; que: string; filas: number | null }
@@ -75,24 +76,9 @@ export default function PasoAProduccion() {
 
   const total = estado ? estado.seVacian.reduce((a, p) => a + (p.filas ?? 0), 0) : 0;
   const palabraOk = !!estado && palabra.trim().toUpperCase() === estado.palabra;
-  /**
-   * **Cuál base es, dicho arriba** (2026-11-21, lo pidió el cliente: ensayar
-   * primero en la base de prueba y después en producción). La versión de
-   * prueba de un PR está conectada a la copia *Pruebas* y producción a la
-   * planilla real: con el nombre de la planilla y la palabra *Producción* o
-   * *Versión de prueba* a la vista, no hay cómo confundir una con la otra.
-   * Va en la línea del título en el computador, para no alargar la ventana.
-   */
-  const cualBase = estado && !listo ? (
-    // Es un aviso, no un botón: fino y redondo, como las demás pastillas.
-    <p className={`inline-flex flex-wrap items-center gap-x-2 rounded-full border px-3 py-0.5 text-[14px] font-semibold ${
-      estado.entorno === 'produccion' ? 'border-rojo-fuerte text-rojo-texto'
-        : estado.entorno === 'prueba' ? 'border-cielo/70 text-cielo-texto' : 'border-hueso/30 text-hueso/80'}`}>
-      <span>{estado.entorno === 'produccion' ? '🔴 Producción: la planilla real'
-        : estado.entorno === 'prueba' ? '🧪 Versión de prueba: no es la planilla real' : 'Planilla'}</span>
-      {estado.nombrePlanilla && <span className="font-bold">«{estado.nombrePlanilla}»</span>}
-    </p>
-  ) : null;
+  // Cuál base es, dicho arriba: va en la línea del título en el computador,
+  // para no alargar la ventana (`CualBase`).
+  const cualBase = estado && !listo ? <CualBase entorno={estado.entorno} nombre={estado.nombrePlanilla} /> : null;
 
   return (
     <div className="mt-6 border-t border-hueso/10 pt-4">

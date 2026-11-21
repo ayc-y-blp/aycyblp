@@ -368,7 +368,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'turnos, ajustes y la bitácora— y conserva el equipo, las cuentas, los productos '
       + 'y la configuración. Arriba dice cuál planilla se va a vaciar y si es '
       + 'producción o una versión de prueba. Pide antes una copia de la planilla y escribir BORRAR. '
-      + 'Al terminar, vuelve a abrir solos los días que se abre.'
+      + 'Al terminar, vuelve a abrir solos los días que se abre.',
+      'También en Mantención, «Importar del CRM» trae de una vez lo del sistema anterior, desde '
+      + 'pestañas que se suben a la planilla: las fichas de los clientes; lo que viene a futuro —quien '
+      + 'preguntó entra como candidato, lo cotizado como borrador y lo ganado como ganada, con su reserva—; '
+      + 'y los pedidos del sitio viejo, como reservas pagadas o por pagar. Antes de escribir nada muestra '
+      + 'cuánto entra, a nombre de qué cuenta queda, qué filas no entran y cómo queda el cupo de cada día. '
+      + 'Se puede apretar dos veces: lo que ya entró no se duplica.'
     ],
     ojo: 'Esto cambia lo que ve el público. Un día suelto se abre o se cierra '
        + 'desde el calendario, sin tocar esta pantalla.'

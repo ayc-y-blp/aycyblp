@@ -33,6 +33,10 @@ const TOPE = {
   'usuarios': 1,
   'vendedores': 1,                 // el resumen del equipo de ventas (2026-11-12)
   'mantencion/produccion': 1,      // dejar la base en cero: cuenta las 20 pestañas (2026-11-18)
+  // La vista previa de importar del CRM y del sitio viejo (2026-11-21): una
+  // tanda con las pestañas subidas; antes de subirlas, una más para mirar
+  // la lista de pestañas, que es lo que se mide acá.
+  'mantencion/importar': 2,
   'estadisticas': 1                // las estadísticas de reservas (2026-11-19)
 };
 
