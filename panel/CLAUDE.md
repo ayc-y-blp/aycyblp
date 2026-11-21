@@ -247,6 +247,27 @@ puede cambiar en la planilla antes de importar. El panel acepta tres:
   monto fijo va una vez y el show va incluido en un día público. Un nombre
   que no está en *Productos* entra como línea libre, y la vista previa lo
   dice.
+- **Un producto que en el catálogo se llama un poco distinto calza igual**
+  (`productoParecido()`). Lo pidió el cliente al ver la lista de los que no
+  calzaban: *"si está arriendo del recinto, eso es claramente arriendo. Y si
+  está el desayuno de campo, eso es desayuno… estos productos existen, solo
+  tienen un poco otro nombre"*. Primero el nombre tal cual; si no:
+  1. **un nombre dentro del otro** —*Desayuno de campo* con *Desayuno*,
+     *Brasas* con *A Brasas abiertas*, *Taller de quesos* con *Taller de
+     queso*—: todas las palabras de uno están en el otro, sin mirar el plural
+     ni *de, del, la, y…*, con dos palabras de diferencia a lo más y ninguna
+     que sea *sin* o *no* (*Barra abierta sin alcohol* no es *Barra
+     abierta*);
+  2. **un arriendo es el arriendo**: si el nombre dice *arriendo*, el
+     producto de tipo Arriendo.
+
+  **Siempre que calce uno solo**: con *Arriendo fin de semana* y *Arriendo
+  día de semana* no se adivina, y entra como línea libre. Solo mira lo
+  activo y que se puede cotizar. La línea queda con el nombre y las reglas
+  del producto del catálogo, y **con el precio del CRM**. La vista previa
+  dice cada calce con sus dos nombres —*Calzan con otro nombre: Brasas → A
+  Brasas abiertas*—: es una adivinanza acotada, y se controla ahí. Para
+  cambiar una, se escribe el nombre exacto en la columna `Productos`.
 
 ### Una ganada del CRM entra ganada
 
@@ -301,7 +322,9 @@ Muestra, sin datos de clientes —solo cuentas, días y números de fila—:
 - **Días que toman cupo**: uno por renglón, con su gente, si se abre privado
   y si queda sobre el cupo. Las reservas y las ganadas del mismo día, juntas.
 - **Avisos**: las filas que no entran y por qué, por pestaña y número de
-  fila. Y **No están en Productos**.
+  fila.
+- **Productos de las cotizaciones**: los que calzaron con un producto que se
+  llama distinto, con los dos nombres, y los que no están en *Productos*.
 - Arriba, **cuál planilla es** (`CualBase`, la misma pieza de *Dejar la base
   en cero*): *🔴 Producción* o *🧪 Versión de prueba*, con su nombre.
 - No importa sin ***Revisé lo que entra***. *↻ Volver a mirar* relee la
@@ -340,7 +363,7 @@ el estado, su reserva y qué se le hizo a su día.
   ese botón borra (clientes, cotizaciones, reservas).
 - **Ayuda**: el `?` de Configuración lo explica; cada caja de la ventana
   tiene su `?`.
-- **Ventanas**: escena nueva `v-importar-crm` (584px a 1280×650). Son 45.
+- **Ventanas**: escena nueva `v-importar-crm` (609px a 1280×650). Son 45.
 - **Probado en el panel de ejemplo**, con gente inventada: entran 5 fichas, 3
   candidatos, 1 borrador, 2 ganadas y 4 reservas; una ficha que ya estaba no
   se duplica; un vendedor sin cuenta se dice; las dos ganadas quedan

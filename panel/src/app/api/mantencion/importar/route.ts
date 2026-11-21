@@ -76,6 +76,7 @@ export const GET = conLecturas(PESTANAS, async function GET(req: Request) {
       reservasPagadas: plan.reservas.filter((x) => x.pagoAnotado).length,
       dias: plan.dias,
       vendedores: plan.vendedores, problemas: plan.problemas, sinCatalogo: plan.sinCatalogo,
+      equivalencias: plan.equivalencias,
       pestanas: { clientes: HOJA_IMPORTAR_CLIENTES, cotizaciones: HOJA_IMPORTAR_COTIZACIONES, reservas: HOJA_IMPORTAR_RESERVAS },
       nombrePlanilla: await nombreDeLaPlanilla().catch(() => ''),
       entorno: entornoDe(process.env.VERCEL_ENV),

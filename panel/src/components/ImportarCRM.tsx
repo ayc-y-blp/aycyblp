@@ -36,6 +36,7 @@ interface Vista {
   vendedores: { nombre: string; usuario: string; fichas: number; cotizaciones: number }[];
   problemas: string[];
   sinCatalogo: { concepto: string; veces: number }[];
+  equivalencias: { de: string; a: string; veces: number }[];
   pestanas: { clientes: string; cotizaciones: string; reservas: string };
   nombrePlanilla?: string; entorno?: 'produccion' | 'prueba' | '';
   planilla: string;
@@ -288,21 +289,35 @@ export default function ImportarCRM() {
                   </div>
                 )}
 
-                {vista.sinCatalogo.length > 0 && (
+                {(vista.sinCatalogo.length > 0 || vista.equivalencias.length > 0) && (
                   <div className="mt-3 rounded-xl border-2 border-hueso/30 p-3">
                     <div className="flex items-center gap-2">
-                      <p className="text-[15px] font-bold">No están en Productos</p>
-                      <AyudaCorta titulo="No están en Productos">
-                        Estos nombres de las cotizaciones no calzan con ningún producto del catálogo. Entran igual,
-                        como una línea escrita a mano: con su precio, pero sin sumar personas ni seguir las reglas del
-                        producto. Si es un producto que existe con otro nombre, corrige el nombre en la columna
-                        Productos de la planilla; si falta, agrégalo en Productos. Después, vuelve a mirar.
+                      <p className="text-[15px] font-bold">Productos de las cotizaciones</p>
+                      <AyudaCorta titulo="Productos de las cotizaciones">
+                        Un producto del CRM entra como el producto del catálogo que se llama igual. Si allá se llama un
+                        poco distinto, el panel lo reconoce cuando calza con uno solo —«Desayuno de campo» con «Desayuno»,
+                        o cualquier arriendo con el único producto de tipo Arriendo— y acá dice cuál eligió: revísalo.
+                        Los que no calzan con ninguno entran igual, como una línea escrita a mano: con su precio, pero sin
+                        sumar personas ni seguir las reglas del producto. Para cambiar cualquiera, escribe en la columna
+                        Productos de la planilla el nombre exacto del producto, o agrégalo en Productos, y vuelve a mirar.
                       </AyudaCorta>
                     </div>
-                    <p className="mt-1 text-[14px]">
-                      {vista.sinCatalogo.slice(0, 6).map((s) => `${s.concepto} (${s.veces})`).join(' · ')}
-                      {vista.sinCatalogo.length > 6 && ` · y ${vista.sinCatalogo.length - 6} más`}
-                    </p>
+                    {vista.equivalencias.length > 0 && (
+                      <p className="mt-1 text-[14px]">
+                        <span className="text-hueso/70">Calzan con otro nombre: </span>
+                        {vista.equivalencias.slice(0, 6).map((q, i) => (
+                          <span key={`${q.de}-${q.a}`}>{i > 0 && ' · '}{q.de} → <strong>{q.a}</strong> ({q.veces})</span>
+                        ))}
+                        {vista.equivalencias.length > 6 && ` · y ${vista.equivalencias.length - 6} más`}
+                      </p>
+                    )}
+                    {vista.sinCatalogo.length > 0 && (
+                      <p className="mt-1 text-[14px]">
+                        <span className="text-hueso/70">No están en Productos: </span>
+                        {vista.sinCatalogo.slice(0, 6).map((x) => `${x.concepto} (${x.veces})`).join(' · ')}
+                        {vista.sinCatalogo.length > 6 && ` · y ${vista.sinCatalogo.length - 6} más`}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

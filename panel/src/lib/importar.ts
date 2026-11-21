@@ -104,7 +104,7 @@ import { ocupaLugar } from './ocupacion.ts';
 import { desglosarMenu, componerMenu } from './shopify.ts';
 import { telefonoNormal, correoNormal } from './contacto.ts';
 import { marcasDePago } from './plata.ts';
-import type { Menu } from './menus.ts';
+import { TIPO_PRODUCTO, type Menu } from './menus.ts';
 import type { Usuario } from './usuarios.ts';
 import type { Config } from './config.ts';
 import type { FechaHabil, Reserva } from './tipos.ts';
@@ -200,6 +200,8 @@ export interface PlanImportacion {
   problemas: string[];
   /** Productos de las cotizaciones que no están en *Productos*: entran como línea libre. */
   sinCatalogo: { concepto: string; veces: number }[];
+  /** Nombres del CRM que calzaron con un producto que se llama distinto (`productoParecido()`). */
+  equivalencias: { de: string; a: string; veces: number }[];
 }
 
 const texto = (v: unknown) => String(v ?? '').trim();
@@ -251,6 +253,58 @@ export function productosDeLaCelda(celda: string): { concepto: string; cantidad:
     salida.push({ concepto, cantidad: n(cantidad) || 1, precio: n(precio), ivaIncluido: !/\+\s*iva/i.test(iva ?? '') });
   }
   return salida;
+}
+
+/** Palabras que no distinguen un producto de otro. *Sin* y *no* no están: cambian lo que es. */
+const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'e', 'en', 'con', 'para', 'a', 'al', 'por']);
+/** Las palabras que cuentan de un nombre, sin el plural: *Taller de quesos* es *Taller de queso*. */
+const palabrasDe = (t: string) => normalizar(t).split(/[^a-z0-9]+/).filter((x) => x && !VACIAS.has(x))
+  .map((x) => (x.length > 3 && x.endsWith('s') ? x.slice(0, -1) : x));
+
+/**
+ * **El producto del catálogo que corresponde a un nombre del CRM, aunque no
+ * se llame igual** (2026-11-21, lo pidió el cliente al ver la lista de los
+ * que no calzaban: *"si está arriendo del recinto, eso es claramente
+ * arriendo. Y si está el desayuno de campo, eso es desayuno… estos productos
+ * existen, solo tienen un poco otro nombre"*).
+ *
+ * Primero el nombre tal cual. Si no:
+ *
+ * 1. **Un nombre dentro del otro**: todas las palabras de uno están en el
+ *    otro —*Desayuno de campo* con *Desayuno*, *Brasas* con *A Brasas
+ *    abiertas*—, con dos palabras de diferencia a lo más, y ninguna que sea
+ *    *sin* o *no*: *Barra abierta sin alcohol* no es *Barra abierta*. Sin
+ *    mirar el plural.
+ * 2. **Un arriendo es el arriendo**: si el nombre dice *arriendo*, el
+ *    producto de tipo Arriendo.
+ *
+ * **Siempre que calce uno solo.** Con dos candidatos —*Arriendo fin de
+ * semana* y *Arriendo día de semana*— no se adivina: entra como línea libre
+ * y la vista previa lo nombra. Solo mira lo que se puede cotizar y está
+ * activo. Lo que calza por acá **se dice en la vista previa**, con los dos
+ * nombres, para que quien importa lo controle.
+ */
+export function productoParecido(concepto: string, menus: Menu[]): Menu | undefined {
+  const exacto = productoDe(concepto, menus);
+  if (exacto) return exacto;
+  const suyas = palabrasDe(concepto);
+  if (!suyas.length) return undefined;
+  const vivos = menus.filter((m) => m.activo !== false && m.cotizacion !== false);
+  const dentro = (chico: string[], grande: string[]) => {
+    if (!chico.length || !chico.every((x) => grande.includes(x))) return false;
+    const sobran = grande.filter((x) => !chico.includes(x));
+    return sobran.length <= 2 && !sobran.some((x) => x === 'sin' || x === 'no');
+  };
+  const porNombre = vivos.filter((m) => {
+    const delProducto = palabrasDe(m.nombre);
+    return dentro(delProducto, suyas) || dentro(suyas, delProducto);
+  });
+  if (porNombre.length) return porNombre.length === 1 ? porNombre[0] : undefined;
+  if (suyas.includes('arriendo')) {
+    const arriendos = vivos.filter((m) => m.tipo === TIPO_PRODUCTO.arriendo);
+    if (arriendos.length === 1) return arriendos[0];
+  }
+  return undefined;
 }
 
 /** La referencia de una fila, como queda en la nota de su cotización: es lo que evita importarla dos veces. */
@@ -365,6 +419,7 @@ export function planDeImportacion(e: {
   const cotizaciones: Omit<Presupuesto, 'fila'>[] = [];
   const lineas: Omit<LineaPresupuesto, 'fila'>[] = [];
   const ganadas: GanadaImportada[] = [];
+  const equivalencias = new Map<string, { de: string; a: string; veces: number }>();
   /** Lo que ya ocupa lugar ese día en el panel, antes de importar nada. */
   const yaTomadas = (fecha: string) => e.reservas.filter((x) => x.fecha === fecha && ocupaLugar(x)).reduce((n, x) => n + (x.personas || 0), 0);
   const sinCatalogo = new Map<string, number>();
@@ -399,7 +454,12 @@ export function planDeImportacion(e: {
 
     const id = `PRE-${e.ahora + cotizaciones.length}`;
     const invitados = Math.max(0, Math.round(Number(f.invitados.replace(/[^\d]/g, '')) || 0));
-    const productos = estado === ESTADO_PRESUPUESTO.candidato ? [] : productosDeLaCelda(f.productos);
+    // Cada producto con el nombre de su producto del catálogo, si tiene uno
+    // —también cuando allá se llama un poco distinto—: desde acá es ese producto.
+    const productos = (estado === ESTADO_PRESUPUESTO.candidato ? [] : productosDeLaCelda(f.productos)).map((x) => {
+      const prod = productoParecido(x.concepto, e.menus);
+      return { ...x, escrito: x.concepto, concepto: prod?.nombre ?? x.concepto, esta: !!prod };
+    });
     // Las mismas reglas de una cotización hecha a mano: solo los menús suman
     // personas, un producto de monto fijo va una vez, el show va incluido en
     // un día público.
@@ -445,7 +505,12 @@ export function planDeImportacion(e: {
     }
 
     for (const p of productos) {
-      if (!productoDe(p.concepto, e.menus)) sinCatalogo.set(p.concepto, (sinCatalogo.get(p.concepto) ?? 0) + 1);
+      if (!p.esta) sinCatalogo.set(p.concepto, (sinCatalogo.get(p.concepto) ?? 0) + 1);
+      else if (normalizar(p.escrito) !== normalizar(p.concepto)) {
+        const k = `${normalizar(p.escrito)}→${p.concepto}`;
+        const ya = equivalencias.get(k) ?? { de: p.escrito, a: p.concepto, veces: 0 };
+        equivalencias.set(k, { ...ya, veces: ya.veces + 1 });
+      }
     }
     if (v) v.cotizaciones++;
     lineas.push(...suyas);
@@ -474,7 +539,8 @@ export function planDeImportacion(e: {
     ganadas, reservas, reservasQueYaEstaban, dias,
     vendedores: [...vendedores.values()].sort((a, b) => (b.fichas + b.cotizaciones) - (a.fichas + a.cotizaciones)),
     problemas,
-    sinCatalogo: [...sinCatalogo.entries()].map(([concepto, veces]) => ({ concepto, veces })).sort((a, b) => b.veces - a.veces)
+    sinCatalogo: [...sinCatalogo.entries()].map(([concepto, veces]) => ({ concepto, veces })).sort((a, b) => b.veces - a.veces),
+    equivalencias: [...equivalencias.values()].sort((a, b) => b.veces - a.veces)
   };
 }
 

@@ -656,7 +656,15 @@ preguntando si servía para preparar la producción.
   no son fin de semana (4, 8 y 11 de diciembre): ver el pendiente 1.
 - **Dos de las tres ganadas a futuro del CRM no calzan con su propia
   cotización** (la fecha en una, la gente en la otra): quedaron como borrador
-  en el Excel hasta que el cliente diga cuál vale.
+  en el Excel hasta que el cliente diga cuál vale. Lo va a ver con los
+  vendedores; está anotado en la guía *Traspaso a producción*, en *Lo que
+  falta*, junto con cerrar el domingo 22, abrir los tres días de diciembre y
+  ver el anticipo de las ganadas importadas.
+- **Las compras de prueba vivas: el cliente dijo que se ignoran** (21-11-2026).
+- **Para que cada vendedor del CRM quede dueño de lo suyo, tiene que existir
+  una cuenta del panel con su nombre** (o su primer nombre, si es de una sola
+  cuenta): si no, sale *sin cuenta* en la vista previa. Los nombres se los
+  di al cliente por el chat.
 
 ### PR #289, mergeado el 21-11-2026: una cotización ganada en un día cerrado, y el encabezado del día
 
@@ -747,6 +755,11 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   pagos con cada cliente.
 - **Nada se importa como *Enviada***: correría la vigencia y contaría gente
   posible por un link que el cliente nunca vio.
+- **Un producto del CRM calza con el del catálogo aunque se llame un poco
+  distinto** (21-11-2026, lo pidió el cliente: *"estos productos existen,
+  solo tienen un poco otro nombre"*): un nombre dentro del otro, o el único
+  producto de tipo Arriendo. Solo si calza uno, y la vista previa dice cuál
+  eligió. El Excel lleva los nombres del CRM y el panel los resuelve.
 - **Una ganada importada se escribe primero como borrador y se gana al
   final**: si se corta, *Marcar ganada* la termina sin duplicar la reserva.
 - **Las reservas importadas como pagadas le llegan a pagos sin revisar**,

@@ -5696,6 +5696,39 @@ console.log('\nImportar del CRM');
      && aMedias.problemas.filter((x) => x.includes('Marcar ganada')).length === 1 && aMedias.problemas.some((x) => x.includes('fila 2') && x.includes('Marcar ganada')),
      'una ganada que quedó a medias no se duplica ni se salta callada: se nombra, y la que sí se ganó no');
 
+  // --- Un producto del CRM que en el catálogo se llama un poco distinto.
+  const cat = [...M.POR_DEFECTO_MENUS.map((m) => ({ ...m, cotizacion: true })),
+    M.nuevoProducto({ nombre: 'Arriendo', tipo: 'Arriendo', cotizacion: true, cobro: 'Monto fijo' }),
+    M.nuevoProducto({ nombre: 'Desayuno', tipo: 'Extra', cotizacion: true }),
+    M.nuevoProducto({ nombre: 'Barra abierta', tipo: 'Extra', cotizacion: true })];
+  ok(I.productoParecido('Arriendo del recinto', cat)?.nombre === 'Arriendo' && I.productoParecido('Desayuno de campo', cat)?.nombre === 'Desayuno'
+     && I.productoParecido('Brasas', cat)?.nombre === 'A Brasas abiertas' && I.productoParecido('lo pirque', cat)?.nombre === 'Lo Pirque',
+     'un nombre dentro del otro calza: Arriendo del recinto con Arriendo, Desayuno de campo con Desayuno, Brasas con A Brasas abiertas');
+  ok(I.productoParecido('Taller de Quesos', [...cat, M.nuevoProducto({ nombre: 'Taller de queso', tipo: 'Extra', cotizacion: true })])?.nombre === 'Taller de queso'
+     && I.productoParecido('Karting & Paintball', [...cat, M.nuevoProducto({ nombre: 'Karting', tipo: 'Extra', cotizacion: true })])?.nombre === 'Karting',
+     'el plural y un "&" no impiden calzar');
+  ok(I.productoParecido('Barra abierta liquidos sin alcohol', cat) === undefined && I.productoParecido('Taller de quesos', cat) === undefined
+     && I.productoParecido('Menú personalizado', cat) === undefined && I.productoParecido('', cat) === undefined,
+     'no calza lo que cambia con un "sin", lo que no se parece a nada, ni un nombre vacío');
+  const dosArriendos = [...M.POR_DEFECTO_MENUS, M.nuevoProducto({ nombre: 'Arriendo fin de semana', tipo: 'Arriendo', cotizacion: true }),
+    M.nuevoProducto({ nombre: 'Arriendo día de semana', tipo: 'Arriendo', cotizacion: true })];
+  ok(I.productoParecido('Arriendo del recinto', dosArriendos) === undefined && I.productoParecido('Arriendo', dosArriendos) === undefined,
+     'con dos arriendos en el catálogo no se adivina cuál');
+  const otroNombre = [...M.POR_DEFECTO_MENUS, M.nuevoProducto({ nombre: 'Recinto completo', tipo: 'Arriendo', cotizacion: true }),
+    M.nuevoProducto({ nombre: 'Desayuno', tipo: 'Extra', cotizacion: true, activo: false })];
+  ok(I.productoParecido('Arriendo local', otroNombre)?.nombre === 'Recinto completo' && I.productoParecido('Desayuno de campo', otroNombre) === undefined,
+     'un arriendo es el único producto de tipo Arriendo, se llame como se llame; un producto desactivado no calza');
+  const pe = I.planDeImportacion({ ...base, menus: cat,
+    filasClientes: [encC, ['CRM-0001', 'Ana Prueba', '+56951112233', '', '', 'Carla Rojas', '', '']],
+    filasCotizaciones: [encQ, ['CRM-0001-a', 'CRM-0001', 'Borrador', '2027-03-14', '', '10', 'Empresa', 'Carla Rojas', '',
+      'Brasas | 10 | 70000 | + IVA\nDesayuno de campo | 10 | 8000 | + IVA\nArriendo local | 1 | 1500000 | + IVA\nTaller de quesos | 1 | 90000']] });
+  ok(pe.lineas.map((l) => l.concepto).join() === 'A Brasas abiertas,Desayuno,Arriendo,Taller de quesos' && pe.lineas[0].personas === 10 && pe.lineas[2].cantidad === 1
+     && pe.lineas[0].precio === 70000,
+     'la línea queda con el nombre del producto del catálogo, con sus reglas (el menú suma personas) y con el precio del CRM');
+  ok(pe.equivalencias.length === 3 && pe.equivalencias.some((q) => q.de === 'Brasas' && q.a === 'A Brasas abiertas' && q.veces === 1)
+     && pe.sinCatalogo.length === 1 && pe.sinCatalogo[0].concepto === 'Taller de quesos',
+     'la vista previa dice con qué producto calzó cada nombre distinto, y cuáles no calzaron con ninguno');
+
   // --- Las reservas del sitio viejo: anotadas de una vez, con su pago.
   const encR = ['Ref', 'Fecha', 'Nombre', 'Teléfono', 'Correo', 'Menú', 'Personas', 'Monto', 'Pago', 'Nota de pago', 'Comprado'];
   const conReservas = { ...base, filasClientes: [], filasCotizaciones: [],
