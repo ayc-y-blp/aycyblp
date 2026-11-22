@@ -545,6 +545,36 @@ dentro* (arriba).
   estar a la misma altura. Antes del cambio daba dos alturas.
 - Medido a 1024, 1280 y 1440px: todas las filas parejas.
 
+## La lista de cotizaciones, por fecha del evento y con el año (2026-11-22)
+
+Lo pidió el cliente mirando Cotizaciones → *📋 Lista* en producción, con lo
+importado del CRM: *"no se deberían principalmente ordenar por el vendedor,
+sino en la vista de todas, se deberían ordenar por fecha de evento. Y luego
+yo puedo filtrar arriba por vendedor"*, y *"escribe la fecha mejor en una
+versión más corta con el día, pero incluyendo el año también"*.
+
+- **El orden** (`ordenarLista()` en `lib/listaCotizaciones.ts`): **por fecha
+  del evento en todos los estados**, de la más próxima a la más lejana, y
+  las que solo tienen periodo al final. Antes, en *En carrera*, *Esperando
+  respuesta* y *Negociando* lo urgente iba arriba sin importar la fecha, y
+  *Ganadas* iba por el día en que se ganó; entre iguales quedaba el orden de
+  la planilla, que después de importar venía agrupado por vendedor.
+- **El mismo día**: primero lo urgente (lo que el próximo paso dice en rojo
+  o ámbar), después **por el nombre del cliente** y recién al final por N°.
+  No por N° antes: lo importado tiene los N° en el orden en que entró, y eso
+  lo volvía a juntar por vendedor.
+- **Lo de un vendedor** se mira con *👤 Por vendedor…*, que ya estaba arriba.
+- **La fecha de cada fila es *SÁB 21 nov 2026***: la misma pieza de los
+  calendarios (`FechaDia`, `tamano="aviso"`) con el año (`conAno`, nuevo),
+  porque la lista mezcla años. El lector de pantalla oye *sábado 21 de
+  noviembre de 2026*. Antes decía *Sábado 21 de noviembre*, sin año.
+- **Se llevó a su parecido**: el historial de cotizaciones en la ficha de un
+  cliente (`ClientesEditor`) muestra la fecha igual. Los avisos con
+  `conMes` (*DOM 8 nov*) no cambian.
+- **Ayuda**: el `?` de Cotizaciones dice el orden. Ninguna foto cambia: la
+  de la lista no está entre las misiones.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
 ## La línea de la fecha: *HOY* no baja el estado (2026-11-22)
 
 Lo marcó el cliente con una foto de Cotizaciones, el domingo 22 —hoy y

@@ -35,7 +35,7 @@ import {
 import { avisoCorreo } from '@/lib/contacto';
 import { PastillaEstado } from './CotizacionesVista';
 import { enPesos } from '@/lib/ocupacion';
-import { enPalabras } from '@/lib/fechas';
+import FechaDia from './FechaDia';
 
 /** Una cotización en el historial de un cliente. */
 interface EnHistorial {
@@ -425,8 +425,8 @@ export default function ClientesEditor() {
                                     <span className="text-[13px] text-hueso/60">alternativa</span>
                                   )}
                                   <span className="text-[14px] text-hueso/70">
-                                    {h.fecha ? <span className="first-letter:uppercase inline-block">{enPalabras(h.fecha)}</span>
-                                      : h.periodo}
+                                    {/* Como en la lista de cotizaciones (2026-11-22): *DOM 22 nov 2026*. */}
+                                    {h.fecha ? <FechaDia fecha={h.fecha} tamano="aviso" conAno /> : h.periodo}
                                   </span>
                                   <span className="flex-1" />
                                   <strong className="text-[15px]">{enPesos(h.total)}</strong>

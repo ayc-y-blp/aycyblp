@@ -5525,8 +5525,20 @@ console.log('\nLa Lista de cotizaciones');
   const meses = L.ganadoPorMes(base, ctx);
   ok(meses.length === 1 && meses[0].mes === '2026-11' && meses[0].monto === 300000 && meses[0].cantidad === 1,
      'lo ganado por mes sale del día en que se ganó');
-  ok(L.ordenarLista(base.filter((p) => L.pasaFiltro(p, 'enCarrera', ctx)), 'enCarrera', ctx)[0].id === 'A',
-     'en carrera, lo más urgente arriba');
+  ok(L.ordenarLista(base.filter((p) => L.pasaFiltro(p, 'enCarrera', ctx)), ctx)[0].id === 'A',
+     'el mismo día, lo más urgente arriba');
+  {
+    // **Por fecha del evento, en todos los estados** (2026-11-22): la fecha
+    // manda sobre lo urgente y sobre el vendedor; sin día, al final.
+    const orden = L.ordenarLista([
+      cot({ id: 'P-0003', estado: 'Enviada', enviada: '2026-10-01', validoHasta: '2026-10-16', fecha: '2027-01-10', creadoPor: 'Ana' }),
+      cot({ id: 'P-0010', fecha: '', periodo: 'marzo 2027', creadoPor: 'Ana' }),
+      cot({ id: 'P-0002', fecha: '2026-11-22', creadoPor: 'Ana', cliente: 'Zapata' }),
+      cot({ id: 'P-0001', estado: 'Ganada', idReserva: 'MANUAL-9', fecha: '2026-12-05', creadoPor: 'Ana' }),
+      cot({ id: 'P-0011', fecha: '2026-11-22', creadoPor: 'Zoe', cliente: 'Álvarez' })
+    ], ctx).map((p) => p.id).join();
+    ok(orden === 'P-0011,P-0002,P-0001,P-0003,P-0010', `la lista va por fecha del evento, con el cliente (no el vendedor) entre iguales y lo sin día al final (${orden})`);
+  }
   ok(L.vendedoresDe(ps).map((v) => v.id).join() === 'Daniela,Jorge', 'los vendedores salen de quién creó las cotizaciones');
 }
 

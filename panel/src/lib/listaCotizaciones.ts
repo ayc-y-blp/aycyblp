@@ -243,21 +243,31 @@ export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
 }
 
 /**
- * **El orden**: en lo que sigue en carrera, lo más urgente arriba —lo que
- * espera respuesta, lo que vence— y después por fecha del evento; en las
- * ganadas, la más reciente primero; en lo demás, por fecha del evento.
+ * **El orden: por fecha del evento, en todos los estados** (2026-11-22, lo
+ * pidió el cliente: *"no se deberían principalmente ordenar por el vendedor,
+ * sino… por fecha de evento. Y luego yo puedo filtrar arriba por
+ * vendedor"*). Antes, en lo que sigue en carrera, lo urgente iba arriba sin
+ * importar la fecha, y las ganadas por el día en que se ganaron; entre
+ * iguales quedaba el orden de la planilla, que después de importar el CRM
+ * venía agrupado por vendedor.
+ *
+ * - **La fecha del evento manda**, de la más próxima a la más lejana; las sin
+ *   día exacto (con periodo) van al final.
+ * - **El mismo día**: lo urgente primero —sin respuesta, por vencer—, que
+ *   sigue diciéndolo el próximo paso en rojo o ámbar; después por el nombre
+ *   del cliente. **No por N°**: lo importado tiene sus N° en el orden en
+ *   que entró, y eso volvía a juntarlo por vendedor.
+ * - **De un vendedor** se mira con *👤 Por vendedor…*, arriba.
  */
-export function ordenarLista(lista: Presupuesto[], filtro: FiltroLista, ctx: ContextoLista): Presupuesto[] {
+export function ordenarLista(lista: Presupuesto[], ctx: ContextoLista): Presupuesto[] {
   const fecha = (p: Presupuesto) => (esFecha(p.fecha) ? p.fecha : '9999');
   const urgencia = (p: Presupuesto) => {
     const t = proximosPasos(p, ctx).map((x) => x.tono);
     return t.includes('rojo') ? 0 : t.includes('ambar') ? 1 : 2;
   };
-  return [...lista].sort((a, b) => {
-    if (filtro === 'ganadas') return (ctx.ganadaEl[b.id] ?? '').localeCompare(ctx.ganadaEl[a.id] ?? '') || fecha(a).localeCompare(fecha(b));
-    if (filtro !== 'cerradas' && filtro !== 'todas') return urgencia(a) - urgencia(b) || fecha(a).localeCompare(fecha(b));
-    return fecha(a).localeCompare(fecha(b));
-  });
+  return [...lista].sort((a, b) => fecha(a).localeCompare(fecha(b)) || urgencia(a) - urgencia(b)
+    || String(a.cliente ?? '').localeCompare(String(b.cliente ?? ''), 'es', { sensitivity: 'base' })
+    || String(a.id).localeCompare(String(b.id), 'es', { numeric: true }));
 }
 
 /** Quiénes venden, sacado de las cotizaciones, con cuántas tiene cada uno. */

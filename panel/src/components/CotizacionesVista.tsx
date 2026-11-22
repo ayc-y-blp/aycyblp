@@ -326,8 +326,10 @@ export default function CotizacionesVista() {
         <PastillaEstado estado={estadoDe(p)} />
         {conFecha && (
           <span className="text-[14px] text-hueso/70">
-            {p.fecha ? <span className="first-letter:uppercase inline-block">{enPalabras(p.fecha)}</span>
-              : p.periodo}
+            {/* *DOM 22 nov 2026* (2026-11-22, lo pidió el cliente): la misma
+                pieza de la fecha que los calendarios, con el año, porque la
+                lista mezcla años. */}
+            {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
           </span>
         )}
         <span className="flex-1" />
