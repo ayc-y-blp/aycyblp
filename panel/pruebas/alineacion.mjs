@@ -107,3 +107,34 @@ export async function revisarAlineacion(page) {
     return problemas;
   });
 }
+
+/**
+ * **Las tarjetas de una misma fila van parejas por dentro** (2026-11-22, regla
+ * del cliente: *"se desordena o verticalmente o horizontalmente la
+ * información dentro de una tarjeta"*). En el calendario de Reservas, la barra
+ * del cupo de cada tarjeta de una fila tiene que estar a la misma altura: si
+ * en una el tiempo o el número bajan de renglón, todo lo de abajo queda
+ * corrido respecto de su vecina. Devuelve una frase por fila despareja.
+ */
+export async function revisarTarjetasParejas(page) {
+  return page.evaluate(() => {
+    const filas = new Map();
+    for (const barra of document.querySelectorAll('[role=img][aria-label*="lugares"]')) {
+      if (!barra.offsetParent) continue;
+      const tarjeta = barra.closest('[class*="perspective"]');
+      if (!tarjeta) continue;
+      const t = tarjeta.getBoundingClientRect();
+      const k = Math.round(t.top);
+      const numero = tarjeta.querySelector('p.font-bold')?.innerText.replace(/\s+/g, ' ') ?? '';
+      (filas.get(k) ?? filas.set(k, []).get(k)).push({ y: Math.round(barra.getBoundingClientRect().top - t.top), numero });
+    }
+    const salida = [];
+    for (const f of filas.values()) {
+      const ys = f.map((x) => x.y);
+      if (Math.max(...ys) - Math.min(...ys) > 1) {
+        salida.push(`tarjetas desparejas: la barra queda a ${[...new Set(ys)].join(' y ')}px (${f.map((x) => x.numero).join(' · ')})`);
+      }
+    }
+    return salida;
+  });
+}

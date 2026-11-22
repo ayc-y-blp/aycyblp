@@ -37,6 +37,18 @@ revisan antes de cada cambio en esta carpeta.
   anotado con su alto en `NO_CABEN` y solo puede bajar. **Una ventana o una
   ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el mismo PR
   que la crea**: lo que no está en la lista no se mide.
+- **Las tarjetas de una fila van parejas por dentro, y el espacio se usa
+  bien** (regla del cliente, 2026-11-22: *"mantén esto como regla de revisar
+  los diseños respecto a estos problemas, que se desordena o verticalmente o
+  horizontalmente la información dentro de una tarjeta y ocupar el espacio
+  lo más eficiente posible"*). En tarjetas que se ven lado a lado —los días
+  de una semana, las personas de un puesto—, **el mismo dato queda a la
+  misma altura en todas**: nada baja de renglón en una y en la otra no. Se
+  diseña con el peor caso —el número más largo, con todas las pastillas— y,
+  si falta ancho, cede lo secundario (un tamaño, una palabra), no se dobla
+  la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
+  tarjetas llenas y vacías juntas. En el calendario lo mide
+  `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
@@ -423,6 +435,28 @@ el estado, su reserva y qué se le hizo a su día.
   el Excel de revisión.
 - **No le enseña al panel el modelo viejo de Shopify**: los pedidos del sitio
   viejo entran una vez, por esta pestaña, y los nuevos siguen llegando solos.
+
+## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
+
+Lo marcó el cliente con una foto del panel de verdad: en un día con *150/150
+personas*, la pastilla del tiempo bajaba a otro renglón y la barra, las
+pastillas del pago y los botones quedaban más abajo que en la tarjeta de al
+lado. De ahí salió la regla *las tarjetas de una fila van parejas por
+dentro* (arriba).
+
+- **En el computador la fila del número no se dobla** (`TarjetaDia`): el cupo
+  —lo que va después de la barra— va a 15px y lo tomado sigue a 22, así que
+  caben tres cifras por lado, la palabra *personas* y el tiempo en los 238px
+  de la tarjeta. Si aun así faltara ancho, se recorta la palabra; nada baja.
+- **La fila mide siempre 24px**, con o sin pastilla del tiempo: hoy y los
+  días sin pronóstico quedaban un pixel más arriba.
+- La pastilla del tiempo no se encoge (`shrink-0` en `Clima`).
+- **El celular no cambió**: todo va con `lg:`.
+- **Lo mide `revisarTarjetasParejas()`** (`pruebas/alineacion.mjs`), al final
+  de `npm run ventanas`: con pronóstico en todos los días y un cupo de 150
+  lleno en uno de cada dos, la barra de cada tarjeta de una fila tiene que
+  estar a la misma altura. Antes del cambio daba dos alturas.
+- Medido a 1024, 1280 y 1440px: todas las filas parejas.
 
 ## Las fechas se escriben como texto (2026-11-22)
 

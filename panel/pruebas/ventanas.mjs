@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -273,6 +273,24 @@ for (const [nombre, abrir] of Object.entries(ESCENAS)) {
   console.log(`  ${marca} ${nombre}: ${m.que} de ${m.mide}px${m.cabe ? '' : ' · no cabe'}${problemas.length ? '\n           · ' + problemas.join('\n           · ') : ''}`);
   for (const x of ps) console.log(`           (PlayStation) ${x}`);
   if (problemas.length) fallas.push(nombre);
+}
+
+// **Las tarjetas del calendario, parejas por dentro** (2026-11-22). Con el
+// peor caso puesto a mano: pronóstico en todos los días menos hoy, y un cupo
+// de tres cifras lleno en uno de cada dos (*150/150 personas* más el tiempo
+// es lo que hacía bajar un renglón).
+if (!SOLO_MEDIR && !process.argv.slice(2).length) {
+  await p.route('**/api/clima', (r) => r.fulfill({ json: { clima: Array.from({ length: 120 }, (_, i) => ({
+    fecha: new Date(Date.UTC(2026, 10, 14 + i)).toISOString().slice(0, 10), simbolo: 'partlycloudy_day', max: 23, min: 9, lluvia: null, mm: 0 })) } }));
+  await p.route('**/api/ocupacion*', async (r) => {
+    const d = await (await r.fetch()).json();
+    (d.ocupacion ?? []).forEach((o, i) => { if (o.capacidad > 0) { o.capacidad = 150; if (i % 2) { o.tomadas = 150; o.porPagar = 150; o.pagadas = 0; o.quedan = 0; } } });
+    await r.fulfill({ json: d });
+  });
+  await ir('/');
+  const desparejas = await revisarTarjetasParejas(p);
+  console.log(`  ${desparejas.length ? 'FALLA ' : 'ok     '} calendario: las tarjetas de cada fila${desparejas.length ? '\n           · ' + desparejas.join('\n           · ') : ', parejas por dentro'}`);
+  if (desparejas.length) fallas.push('calendario');
 }
 await b.close();
 

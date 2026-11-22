@@ -78,7 +78,7 @@ export default function Clima({ c, grande = false, tamano }: {
   const detalle = `${climaEnPalabras(c)} · datos de ${FUENTE.texto}`;
   return (
     <span title={detalle}
-      className={`inline-flex items-center whitespace-nowrap font-normal normal-case
+      className={`inline-flex shrink-0 items-center whitespace-nowrap font-normal normal-case
                   tracking-normal text-hueso/60 ${CAJA[t]}`}>
       <span aria-hidden className={ICONO[t]}>{icono}</span>
       {c.max !== null && <span aria-hidden className={GRADO[t]}>{Math.round(c.max)}°</span>}
