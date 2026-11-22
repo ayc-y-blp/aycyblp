@@ -2262,10 +2262,13 @@ que sí rige, hay que devolverlo a cinco lugares del sitio público.
   página que 2,5 millones incluyendo IVA… y ahí veamos cuando se negocia, si
   hay que subir"*. O sea que el precio publicado es el total. Ver "El precio
   del recinto pasó a ser con IVA incluido".
-- **El nombre del negocio no calza.** Google Maps lo lista como "Lo Pirque
-  Restaurant" y el email es `@lopirque.cl`, pero el sitio se llama "Brasas de
-  Lo Pirque" y el dominio es `brasasdelopirque.cl`. Si alguien busca la marca
-  del sitio en Maps, puede no encontrarla. El cliente lo está aclarando.
+- ~~**El nombre del negocio no calza.**~~ — **resuelto el 2026-11-22**: la
+  ficha de Google Maps pasa a llamarse **Brasas de Lo Pirque**, como el sitio
+  y el dominio (lo decidió el cliente al hacer la ficha). Hasta ese día Maps
+  decía *Lo Pirque Restaurant*. El correo sigue siendo `@lopirque.cl`, y eso
+  no estorba. **El horario para Google** quedó en sábados y domingos de
+  13:00 a 19:00: Google pide una hora de cierre y el sitio dice *hasta el
+  cierre*.
 - ~~`contacto.html` podría renombrarse~~ — **hecho el 2026-09-16**: la página
   es `reservas.html`. Queda un `contacto.html` de una pantalla que redirige
   con `<meta http-equiv="refresh">`, para no romper enlaces ya compartidos.
