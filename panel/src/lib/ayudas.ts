@@ -1006,10 +1006,11 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     ]
   },
   listaPorMes: {
-    titulo: 'Ganado por mes',
+    titulo: 'Ganado mes a mes',
     texto: [
-      'Lo ganado en cada mes, según el día en que se marcó ganada. Muestra los últimos seis meses con algo ganado.',
-      'Sigue a lo que eliges en De quién, no al periodo de arriba.'
+      'Lo que ganó quien dice el título —todo el equipo, tú, o el vendedor o el socio que elegiste arriba—, mes a mes. Muestra los últimos seis meses con algo ganado.',
+      'Cuenta el día en que se marcó ganada, no el día del evento. Lo importado del CRM cuenta el día en que se importó.',
+      'Sale cuando miras Todo. Con Mes o Semana, lo ganado en ese periodo lo dice la tarjeta Ganado.'
     ]
   },
 

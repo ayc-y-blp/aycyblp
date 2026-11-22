@@ -133,9 +133,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Cotizaciones, *HOY* ya no baja el estado (*EXCLUSIVO*) a otro renglón, con
   una prueba que mide el peor caso (`revisarLineaDeLaFecha()`); y la lista de
   cotizaciones va por fecha del evento, con la fecha como *SÁB 21 nov 2026*.
-  **Queda abierta**: el cliente encontró confuso *Ganado por mes* en la lista
-  (sigue a *De quién* y no al periodo); se le propuso cambiarle el título y
-  el lugar, y decide él.
+  Después, **en el PR siguiente**: *Ganado por mes* pasó a *Ganado mes a mes · Todo el
+  equipo* (o el vendedor o socio elegido) y sale solo mirando *Todo*; lo
+  aprobó el cliente (*"dale con tu recomendación"*).
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
