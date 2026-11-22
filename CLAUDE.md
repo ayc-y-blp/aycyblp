@@ -921,9 +921,12 @@ como guía paso a paso en el documento *Traspaso a producción*, sección
   (`assets/compartir/portada.jpg`, 795×416): la original es vertical y
   WhatsApp y Facebook la cortarían por la mitad. La eligió el cliente *"por
   ahora"*; cambiarla es reemplazar ese archivo y `IMAGEN_COMPARTIR`.
-- **Los datos del negocio no llevan horario**: Google lo pide con hora de
-  cierre, y el cliente prefirió *hasta el cierre*. El horario va en la ficha
-  de Google Maps. **Ni precio, ni coordenadas, ni redes**: no están
+- **El horario en los datos del negocio: sábados y domingos de 13:00 a
+  19:00.** Primero no iba, porque Google lo pide con hora de cierre y el
+  sitio dice *hasta el cierre*; el mismo día, al hacer la ficha de Google
+  Maps, el cliente fijó el cierre a las 19:00 y pidió que los datos del sitio
+  dijeran lo mismo que la ficha. **El pie de las páginas sigue diciendo
+  *hasta el cierre***. **Ni precio, ni coordenadas, ni redes**: no están
   confirmados. Es un bloque de datos (`application/ld+json`), no un script
   que corra: no toca la regla de cero JavaScript.
 - **Los tres landings ganaron su descripción** (socios, promociones y
@@ -2262,10 +2265,13 @@ que sí rige, hay que devolverlo a cinco lugares del sitio público.
   página que 2,5 millones incluyendo IVA… y ahí veamos cuando se negocia, si
   hay que subir"*. O sea que el precio publicado es el total. Ver "El precio
   del recinto pasó a ser con IVA incluido".
-- **El nombre del negocio no calza.** Google Maps lo lista como "Lo Pirque
-  Restaurant" y el email es `@lopirque.cl`, pero el sitio se llama "Brasas de
-  Lo Pirque" y el dominio es `brasasdelopirque.cl`. Si alguien busca la marca
-  del sitio en Maps, puede no encontrarla. El cliente lo está aclarando.
+- ~~**El nombre del negocio no calza.**~~ — **resuelto el 2026-11-22**: la
+  ficha de Google Maps pasa a llamarse **Brasas de Lo Pirque**, como el sitio
+  y el dominio (lo decidió el cliente al hacer la ficha). Hasta ese día Maps
+  decía *Lo Pirque Restaurant*. El correo sigue siendo `@lopirque.cl`, y eso
+  no estorba. **El horario para Google** quedó en sábados y domingos de
+  13:00 a 19:00: Google pide una hora de cierre y el sitio dice *hasta el
+  cierre*.
 - ~~`contacto.html` podría renombrarse~~ — **hecho el 2026-09-16**: la página
   es `reservas.html`. Queda un `contacto.html` de una pantalla que redirige
   con `<meta http-equiv="refresh">`, para no romper enlaces ya compartidos.

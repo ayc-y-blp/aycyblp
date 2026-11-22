@@ -991,8 +991,9 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   propósito.
 - **Supuesto sin confirmar**: que el mínimo de 25 personas no rige para la
   venta directa del sitio.
-- **El nombre del negocio no calza**: Maps dice *Lo Pirque Restaurant*, el
-  correo es `@lopirque.cl`, el sitio *Brasas de Lo Pirque*.
+- ~~**El nombre del negocio no calza**~~: **resuelto el 22-11-2026**, la
+  ficha de Maps pasa a *Brasas de Lo Pirque*, como el sitio. Horario para
+  Google: sábados y domingos de 13:00 a 19:00.
 - **La tarea diaria del CRM sigue programada** con la conexión apagada:
   retira lo publicado y no hace nada más (según `panel/CLAUDE.md`).
 - **Desde el entorno de Claude Code no se abren** `brasas-sitio.vercel.app`,
@@ -1066,7 +1067,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **Importado en producción el 22-11-2026**, después de la base en cero. Queda: (a) el cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
-| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el nombre del negocio en Maps; el desayuno y la once a $8.000 + IVA | Cliente |
+| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA | Cliente |
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
 
 ---
