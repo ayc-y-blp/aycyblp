@@ -36,7 +36,7 @@ const llano = (t: string) =>
 import Ayuda from './Ayuda';
 import { Aviso } from './CalendarView';
 import {
-  informeDelPeriodo, mesesConTurnos, semanasConTurnos, rangoDelPeriodo,
+  informeDelPeriodo, rangoDelPeriodo,
   pagoDe, esContratado, type Turno
 } from '@/lib/equipo';
 import { informeDeExtras, costoDeExtra, type Extra } from '@/lib/extras';
@@ -47,7 +47,7 @@ import { cuentaBoleta, montosDeTurnos, montosDeExtras, montosDeVendedor, faltaBo
 import CajaBoleta from './CajaBoleta';
 import { enPesos } from '@/lib/ocupacion';
 import { normalizar } from '@/lib/columnas';
-import { mesEnPalabras, rangoEnPalabras, enPalabras, enCorto, sumarDias, semanaDe, hoy } from '@/lib/fechas';
+import { mesEnPalabras, rangoEnPalabras, enPalabras, enCorto, sumarDias, sumarMeses, semanaDe, hoy } from '@/lib/fechas';
 import { aCSV } from '@/lib/csv';
 import { totalAjustes, motivosDe, diasQueNoSuman, diasParaAjustar, pagoDelTurno, type TipoAjuste } from '@/lib/equipo';
 import { bancoVacio, sePuedeTransferir, titularDe,
@@ -59,6 +59,7 @@ import { aTransferirDe, desglosePago, CONCEPTO, pideBoleta, pagosEnPeriodo,
          type EstadoPago } from '@/lib/remuneraciones';
 import Dialogo from './Dialogo';
 import AjusteInforme from './AjusteInforme';
+import ElegirPeriodo, { DesdeHasta } from './ElegirPeriodo';
 import Campo from './Campo';
 import { copiarConAviso, avisar } from './AvisoFlotante';
 
@@ -1057,18 +1058,6 @@ export default function InformeEquipo() {
       .catch((e) => setError(String(e)));
   }, []);
 
-  // El periodo en curso siempre está en la lista, aunque todavía no tenga
-  // turnos: si no, el selector aparecería sin la opción que uno busca primero.
-  const opciones = useMemo(() => {
-    const conTurnos = tipo === 'mes'
-      ? mesesConTurnos(turnos ?? [])
-      : semanasConTurnos(turnos ?? []);
-    const actuales = tipo === 'mes'
-      ? [hoy().slice(0, 7)]
-      : [semanaDe(hoy()), sumarDias(semanaDe(hoy()), -7)];
-    return [...new Set([...actuales, ...conTurnos])].sort().reverse();
-  }, [turnos, tipo]);
-
   const { desde, hasta } = tipo === 'dia'
     ? { desde: diaElegido, hasta: diaElegido }
     : tipo === 'rango'
@@ -1827,60 +1816,31 @@ export default function InformeEquipo() {
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        {/* **Día, semana, mes u otro rango** (el día, 2026-11-12). Botones
-            de 44px con el elegido teñido de dorado, como los filtros del
-            resto del panel. */}
-        <div className="grid w-full grid-cols-4 gap-1.5 sm:flex sm:w-auto sm:gap-2" role="group" aria-label="Periodo">
-          {(['dia', 'semana', 'mes', 'rango'] as Tipo[]).map((t) => (
-            <button key={t} type="button" onClick={() => cambiarTipo(t)} aria-pressed={tipo === t}
-              className={`boton min-h-[40px] !px-1 !text-[14px] sm:min-h-[44px] sm:!px-3 ${tipo === t ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
-              {/* En el celular sin el "Por": los cuatro caben en una fila. */}
-              <span className="sm:hidden">{{ dia: 'Día', semana: 'Semana', mes: 'Mes', rango: 'Rango' }[t]}</span>
-              <span className="hidden sm:inline">{{ dia: 'Por día', semana: 'Por semana', mes: 'Por mes', rango: 'Otro rango' }[t]}</span>
-            </button>
-          ))}
-        </div>
-
-        {tipo === 'dia' ? (
-          <span className="flex flex-wrap items-center gap-2">
-            <button type="button" className="boton min-h-[44px] min-w-[44px]" aria-label="Día anterior"
-              onClick={() => setDiaElegido(sumarDias(diaElegido, -1))}>◀</button>
-            <input type="date" value={diaElegido} aria-label="Día"
-              onChange={(e) => e.target.value && setDiaElegido(e.target.value)}
-              className="min-h-[44px] rounded-lg border border-hueso/20 bg-tinta px-3 text-[15px]
-                         focus:border-oro focus:outline-none" />
-            <button type="button" className="boton min-h-[44px] min-w-[44px]" aria-label="Día siguiente"
-              onClick={() => setDiaElegido(sumarDias(diaElegido, 1))}>▶</button>
-            <span className="w-full text-[14px] text-hueso/70 first-letter:uppercase sm:w-auto">{enPalabras(diaElegido)}</span>
-          </span>
-        ) : tipo === 'rango' ? (
-          <span className="flex flex-wrap items-center gap-2 text-sm">
-            <input type="date" value={desdeLibre} aria-label="Desde"
-              onChange={(e) => setDesdeLibre(e.target.value)}
-              className="rounded border border-hueso/20 bg-tinta px-3 py-1.5 text-sm
-                         focus:border-oro focus:outline-none" />
-            <span className="text-hueso/40">a</span>
-            <input type="date" value={hastaLibre} aria-label="Hasta"
-              onChange={(e) => setHastaLibre(e.target.value)}
-              className="rounded border border-hueso/20 bg-tinta px-3 py-1.5 text-sm
-                         focus:border-oro focus:outline-none" />
-          </span>
-        ) : (
-          <select value={periodo} onChange={(e) => setPeriodo(e.target.value)}
-            aria-label="Periodo del informe"
-            className="rounded border border-hueso/20 bg-tinta px-3 py-1.5 text-sm
-                       capitalize focus:border-oro focus:outline-none">
-            {opciones.map((p) => (
-              <option key={p} value={p}>{comoSeLlama(p)}</option>
-            ))}
-          </select>
-        )}
-        <span className="flex-1" />
+        {/* **El periodo en un marco** (2026-11-22, lo pidió el cliente: *"sí,
+            llévalo también al Informe"*): la misma pieza de Cotizaciones →
+            *Lista*, Estadísticas y Vendedores. *Mes · Semana · Día ·
+            Personalizado*, en ese orden y con esas palabras, como en
+            Estadísticas, y ◀ ▶ en vez del desplegable de periodos: el
+            desplegable solo traía los que tenían turnos, y las flechas van a
+            cualquiera. En *Personalizado*, las dos fechas van dentro del marco.
+            Las claves de siempre (`dia`, `semana`, `mes`, `rango`) no
+            cambian: el link de *Pagarle* sigue abriendo un rango. */}
+        <ElegirPeriodo
+          modos={[{ clave: 'mes', rotulo: 'Mes' }, { clave: 'semana', rotulo: 'Semana' },
+            { clave: 'dia', rotulo: 'Día' }, { clave: 'rango', rotulo: 'Personalizado' }]}
+          modo={tipo} onModo={(m) => cambiarTipo(m as Tipo)}
+          titulo={tipo === 'dia' ? enPalabras(diaElegido) : tipo === 'rango' ? undefined : comoSeLlama(periodo)}
+          onMover={(n) => tipo === 'dia' ? setDiaElegido(sumarDias(diaElegido, n))
+            : setPeriodo(tipo === 'mes' ? sumarMeses(periodo, n) : sumarDias(periodo, 7 * n))}
+          enLugarDeFlechas={tipo === 'rango' ? (
+            <DesdeHasta desde={desdeLibre} hasta={hastaLibre}
+              onCambio={(k, f) => (k === 'desde' ? setDesdeLibre : setHastaLibre)(f)} />
+          ) : undefined} />
         {/* **Tres descargas** (2026-11-12): sueldos y propinas son dos pagos y
             se revisan por separado; la completa trae las dos cosas. Con el
             mismo tinte que el resto de esta pantalla: sueldo en celeste,
             propina en dorado. */}
-        <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-2" role="group" aria-label="Descargar planilla">
+        <div className="grid w-full grid-cols-3 items-center gap-1.5 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:gap-2" role="group" aria-label="Descargar planilla">
           <span className="col-span-3 text-[14px] font-semibold text-hueso/70 sm:w-auto">⬇ Descargar planilla:</span>
           {([['sueldos', 'Solo sueldos', TINTE.sueldo], ['propinas', 'Solo propinas', TINTE.propina]] as const)
             .map(([cual, texto, t]) => (

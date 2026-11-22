@@ -163,6 +163,8 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
+  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
+  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -210,6 +212,85 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El periodo en un marco: Cotizaciones → Lista, Estadísticas, Vendedores e Informe (2026-11-22)
+
+Lo pidió el cliente con dos fotos de Cotizaciones → *📋 Lista*: *"por
+defecto debería estar puesto mes… todos, otra opción, y semanal, otra opción,
+pero por defecto mes, y el mes debería estar abajo de estos botones de mes,
+donde pertenecen juntos como unidad de parámetro… juntar la información que
+pertenece junto, ahorrar espacio… cuidado con el tamaño de botones o tarjetas
+de información que tengan demasiado espacio vacío"*. Vio la propuesta y dijo
+*"dale, aplícalo y llévalo también a Estadísticas"*.
+
+**Qué pasaba**: el periodo estaba repartido en tres lugares —*Todo · Mes ·
+Semana* en una fila, las flechas con el mes en otra y *por qué fecha* en una
+tercera—, con la frase *Mostrando: …* repitiendo lo que ya decían los botones.
+Y la Lista partía en *Todo*.
+
+- **`ElegirPeriodo`** (pieza nueva) junta en **un marco dorado** las tres
+  cosas que deciden qué se cuenta: el periodo, ◀ el mes o la semana ▶ y por
+  qué fecha. En el computador va en una sola fila; en el celular, el marco
+  ocupa el ancho y cada parte su renglón. Los botones son de 40px, con el
+  elegido en dorado y con borde (se distingue por forma, no solo por color).
+  Las fechas se dicen largas en el computador (*Fecha del evento*) y cortas
+  en el celular (*Evento*), con el nombre largo para el lector de pantalla.
+- **La Lista parte en el mes en curso** (*Mes · Semana · Todo*, en ese
+  orden). *Ganado mes a mes* sigue saliendo solo en *Todo*.
+- **Estadísticas usa la misma pieza** (*Mes · Semana · Día · Personalizado*):
+  en *Personalizado*, *Desde* y *Hasta* van dentro del marco, donde estaban
+  las flechas, con cuántos días son. En la vista *👥 Equipo* no hay *por qué
+  fecha*: el marco lleva solo el periodo. **Desde 1280px, *Todo · Visitas ·
+  Eventos* va a la derecha del marco**, en su misma fila (lo pidió la prueba
+  de espacio: *dos filas que cabrían en una*); más angosto y en
+  *Personalizado* —el marco, con sus dos fechas, ocupa casi todo el ancho—,
+  en la fila de *Volver*. Van en una fila que no se parte: si falta ancho,
+  cede el marco, y *Todo · Visitas · Eventos* nunca queda solo en otra fila.
+- **Un título largo se dobla, el marco no**: desde 1280px el título entre las
+  flechas tiene un tope de 12,5rem, y *26 de octubre – 1 de noviembre 2026* va
+  en dos renglones en vez de mandar las fechas a otra línea del marco. Vale en
+  las tres pantallas.
+- **Vendedores también**, en el mismo PR (regla *un cambio de diseño se
+  lleva a sus parecidos*): tenía el mismo dibujo que la Lista antes del
+  cambio —de ahí se había copiado—, *Mes · Semana* sueltos y el mes con ◀ ▶
+  en otra caja. Ahora es la misma pieza, sin *por qué fecha*. Sus botones
+  bajan de 15 a 13px de letra y de 44 a 40px de alto, como en las otras dos.
+- **El Informe también**, en el mismo PR: se le preguntó al cliente, que
+  elegía el periodo con un desplegable, y dijo *"sí, llévalo también al
+  Informe"*. Ahora es *Mes · Semana · Día · Personalizado* —el orden y las
+  palabras de Estadísticas; antes *Por día · Por semana · Por mes · Otro
+  rango*— con ◀ ▶ en vez del desplegable. El desplegable traía solo los
+  periodos con turnos; las flechas van a cualquiera. En *Día* se fue el campo
+  de fecha: se mueve con ◀ ▶, y un día lejano se elige con *Personalizado*
+  (las dos fechas iguales). **Sigue abriendo en la semana pasada**, y las
+  claves (`dia`, `semana`, `mes`, `rango`) no cambiaron: el link de *Pagarle*
+  desde Vendedores sigue abriendo un rango. Las descargas van a la derecha
+  (`ml-auto`), también cuando en *Personalizado* bajan a la fila siguiente.
+- **Las dos fechas de *Personalizado* son una pieza** (`DesdeHasta`, en
+  `ElegirPeriodo.tsx`), en Estadísticas y en el Informe: estaban copiadas, y
+  en el celular *Hasta* quedaba 5px corrido respecto de *Desde*. Ahora los
+  nombres miden lo mismo y los dos campos parten en la misma vertical.
+- **Se fue *Mostrando: …***, en la Lista y en Estadísticas: lo dicen el marco
+  y los botones elegidos.
+- **`TarjetaNumero`, más compacta** (en las tres pantallas que la usan): 8px
+  de relleno arriba y abajo (eran 12), el número a 22px (era 24) y el botón de
+  40px (era 44). Ninguna letra baja de 13px.
+
+| A 1280×650 | Antes | Ahora |
+|---|---|---|
+| Lista: de la cabecera a los estados, en *Mes* | 357px | 280px |
+| Lo mismo en *Todo* | 399px | 384px (trae *Ganado mes a mes*) |
+| Lista en el celular, lo mismo | 1.076px | 982px |
+
+- **`npm run ventanas`**: la vista medida de la Lista pasó a ser *Todo* (la
+  de *Mes* es la que abre), y se suma *Estadísticas → Personalizado*. Son 19
+  pantallas.
+- **Ayuda**: el `?` de Cotizaciones, el de Estadísticas y el de Vendedores
+  describen el marco; también el del Informe y sus dos misiones. Se
+  rehicieron las fotos de Vendedores (`ven-resumen`, `pag-vendedores`,
+  `ger-vendedores`) y del Informe (`pag-informe`, `ger-informe`,
+  `ope-informe`, `pag-pagar`, `ger-pagar`).
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
 ## *✕ Se cayó…*: dar por perdida una cotización en un toque (2026-11-22)
 
@@ -1942,7 +2023,9 @@ ejemplo, con capturas de antes y después, y el cliente dijo que sí. Todo en
   de 44 a 40px, los grandes de 56 a 48px, nombre y monto un punto menos,
   márgenes de 12px. El periodo en una fila (*Día · Semana · Mes · Rango*) y
   las descargas también (*Sueldos · Propinas · Completa*); en el computador
-  dicen lo de siempre. **Esto cambió la regla PlayStation**: 44px lo que se
+  dicen lo de siempre (desde el 2026-11-22 el periodo va en el marco de
+  `ElegirPeriodo`: ver "El periodo en un marco"). **Esto cambió la regla
+  PlayStation**: 44px lo que se
   usa seguido en el computador, **40px en el celular** (lo pidió el
   cliente). La página, con una persona abierta, bajó de 6.026 a unos 5.500px.
 - **La transferencia masiva va plegada**: una fila *🏦 Transferencia masiva
@@ -4284,7 +4367,9 @@ coherencia). Decidido con el cliente:
   **por fecha del evento** o **por fecha en que se cotizó** (`Creado`). Una
   cotización sin día entra en un mes si su periodo escrito lo nombra
   (*"marzo o abril"*, con el año si lo dice; `periodoTocaRango()`); si no
-  nombra ningún mes, solo sale en *Todo*. Parte en *Todo*.
+  nombra ningún mes, solo sale en *Todo*. Parte en *Todo*; **desde el
+  2026-11-22, en el mes en curso**, con el periodo en un marco (`ElegirPeriodo`):
+  ver "El periodo en un marco".
 - **Seis tarjetas**, sobre lo que se mira (de quién y cuándo), y un grupo
   de alternativas cuenta una vez (`resumenLista()`):
 
@@ -4824,6 +4909,7 @@ pueda ver también números en grandes rasgos"*. Aprobó la propuesta entera
   el mismo día.
 - **Cuándo**: *Día · Semana · Mes · Personalizado* (dos fechas, tope de dos
   años), con ◀ ▶ como la Lista de cotizaciones; parte en el mes en curso.
+  Desde el 2026-11-22, en el mismo marco que la Lista (`ElegirPeriodo`).
   **Por fecha de la visita** o **por fecha en que se reservó** (`Creada`, en
   hora de Chile). **Todo · Visitas · Eventos**: visitas son Shopify y a
   mano; eventos, las reservas que nacieron de una cotización, que son

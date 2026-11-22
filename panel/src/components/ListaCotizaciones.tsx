@@ -18,6 +18,7 @@
  * El vendedor ve sus números: sin *Por vendedor*, y las tarjetas de lo suyo.
  */
 import { useMemo, useState, type ReactNode } from 'react';
+import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
 import BuscarEnLista from './BuscarEnLista';
@@ -69,7 +70,9 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   const [filtro, setFiltro] = useState<FiltroLista>('enCarrera');
   const [busqueda, setBusqueda] = useState('');
   /** `''`: todo; `AAAA-MM`: un mes; `AAAA-MM-DD`: la semana que parte ese lunes. */
-  const [periodo, setPeriodo] = useState('');
+  // **Parte en el mes en curso** (2026-11-22, lo pidió el cliente: *"por
+  // defecto debería estar puesto mes"*): *Semana* y *Todo* quedan a un toque.
+  const [periodo, setPeriodo] = useState(ctx.hoy.slice(0, 7));
   const [porFecha, setPorFecha] = useState<PorFecha>('evento');
   const [vendedor, setVendedor] = useState('');
   const [socio, setSocio] = useState('');
@@ -95,16 +98,9 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   const esMes = periodo.length === 7;
   const titulo = !rango ? '' : esMes ? mesEnPalabras(periodo) : rangoEnPalabras([rango.desde, rango.hasta]);
   const alternar = (f: FiltroLista) => setFiltro(filtro === f ? 'enCarrera' : f);
-  const mostrando = [vendedor && `👤 ${vendedor}`, socio && `🤝 ${nombreSocio(socio)}`,
-    rango && `${titulo}, por ${porFecha === 'evento' ? 'fecha del evento' : 'fecha en que se cotizó'}`]
-    .filter(Boolean).join(' · ');
-
   /** De quién es lo ganado mes a mes: lo que eligió en *De quién*, dicho en el título. */
   const deQuienGanado = [vendedor, socio && nombreSocio(socio)].filter(Boolean).join(' · ')
     || (!equipo || soloMias ? 'Tuyas' : 'Todo el equipo');
-
-  const queSeMira = mostrando ? <>Mostrando: <b className="text-hueso">{mostrando}</b></>
-    : equipo ? 'Todo el equipo, todas las fechas.' : 'Tus cotizaciones, todas las fechas.';
 
   return (
     <div>
@@ -128,19 +124,22 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
             )}
           </div>
         )}
-        {/* En el computador, lo que se está mirando va en esta misma fila
-            (2026-11-22, la regla del espacio): tenía su renglón aparte. */}
-        <p className="hidden min-w-0 text-[14px] text-hueso/70 lg:block">{queSeMira}</p>
         <span className="flex-1" />
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Periodo">
-          {([['Todo', ''], ['Mes', ctx.hoy.slice(0, 7)], ['Semana', semanaDe(ctx.hoy)]] as const).map(([rotulo, p]) => {
-            const elegido = rotulo === 'Todo' ? !periodo : rotulo === 'Mes' ? esMes : !!periodo && !esMes;
-            return (
-              <button key={rotulo} type="button" aria-pressed={elegido} onClick={() => setPeriodo(p)}
-                className={`boton min-h-[44px] ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>{rotulo}</button>
-            );
-          })}
-        </div>
+        {/* **El periodo es una sola pieza** (`ElegirPeriodo`, 2026-11-22, lo
+            pidió el cliente): *Mes · Semana · Todo*, el mes o la semana con sus
+            flechas y por qué fecha se cuenta, en un mismo marco y en la fila de
+            *De quién*. La frase *Mostrando…* que había acá se fue: repetía lo
+            que dicen los botones. */}
+        <ElegirPeriodo
+          modos={[{ clave: 'mes', rotulo: 'Mes' }, { clave: 'semana', rotulo: 'Semana' }, { clave: 'todo', rotulo: 'Todo' }]}
+          modo={!periodo ? 'todo' : esMes ? 'mes' : 'semana'}
+          onModo={(m) => setPeriodo(m === 'mes' ? ctx.hoy.slice(0, 7) : m === 'semana' ? semanaDe(ctx.hoy) : '')}
+          titulo={rango ? titulo : undefined}
+          onMover={(n) => setPeriodo(esMes ? moverMes(periodo, n) : sumarDias(periodo, 7 * n))}
+          fechas={rango ? [
+            { clave: 'evento', icono: '📅', largo: 'Fecha del evento', corto: 'Evento' },
+            { clave: 'cotizada', icono: '✍', largo: 'Fecha de cotización', corto: 'Cotización' }] : undefined}
+          fecha={porFecha} onFecha={(k) => setPorFecha(k as PorFecha)} />
       </div>
 
       {eligiendo && (
@@ -162,29 +161,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         </div>
       )}
 
-      {/* El periodo y por qué fecha: solo si no es *Todo*. */}
-      {rango && (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <div className="flex min-w-[15rem] flex-1 items-center gap-2 rounded-xl border-2 border-oro/50 bg-oro/[0.06] p-1 sm:w-72 sm:flex-none">
-            <button type="button" aria-label="Periodo anterior" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-              onClick={() => setPeriodo(esMes ? moverMes(periodo, -1) : sumarDias(periodo, -7))}>◀</button>
-            <span className="min-w-0 flex-1 truncate text-center text-[17px] font-bold first-letter:uppercase">{titulo}</span>
-            <button type="button" aria-label="Periodo siguiente" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-              onClick={() => setPeriodo(esMes ? moverMes(periodo, 1) : sumarDias(periodo, 7))}>▶</button>
-          </div>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Por qué fecha">
-            {([['evento', '📅 Fecha del evento'], ['cotizada', '✍ Fecha en que se cotizó']] as const).map(([k, t]) => (
-              <button key={k} type="button" aria-pressed={porFecha === k} onClick={() => setPorFecha(k)}
-                className={`boton min-h-[44px] ${porFecha === k ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>{t}</button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <p className="mt-2 text-[14px] text-hueso/70 lg:hidden">{queSeMira}</p>
-
       {/* 2. Las tarjetas. */}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
           nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}
           tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'enCarrera'} onClick={() => setFiltro('enCarrera')} />
@@ -234,7 +212,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       )}
 
       {/* 4. Estado, el buscador y la lista. */}
-      <div className="mt-4 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
+      <div className="mt-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Estado">
         {ESTADOS.map(([k, t]) => (
           <button key={k} type="button" onClick={() => setFiltro(k)} aria-pressed={filtro === k}

@@ -28,8 +28,8 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
     : cambio.sentido === bueno ? 'text-verde-texto' : 'text-rojo-texto';
   const cuerpo = (
     <>
-      <span className="block text-[24px] font-bold leading-none tabular-nums">{valor}</span>
-      {nota && <span className="mt-1 block text-[13px] leading-snug text-hueso/75">{nota}</span>}
+      <span className="block text-[22px] font-bold leading-none tabular-nums">{valor}</span>
+      {nota && <span className="mt-1 block text-[13px] leading-tight text-hueso/75">{nota}</span>}
       {cambio && (
         <span className={`mt-1 block text-[13px] font-semibold leading-snug ${colorCambio}`}>
           {cambio.texto}{contra && <span className="font-normal text-hueso/60"> vs. {contra}</span>}
@@ -38,16 +38,16 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
     </>
   );
   return (
-    <div className={`min-w-0 rounded-xl border-2 p-3 ${tono} ${activa ? 'ring-2 ring-oro ring-offset-2 ring-offset-tinta' : ''}`}>
+    <div className={`min-w-0 rounded-xl border-2 px-3 py-2 ${tono} ${activa ? 'ring-2 ring-oro ring-offset-2 ring-offset-tinta' : ''}`}>
       <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
         {que}<AyudaCorta tema={ayuda} />
       </p>
       {onClick ? (
         <button type="button" aria-pressed={!!activa} onClick={onClick}
-          className="tecla mt-1 block min-h-[44px] w-full rounded-lg text-left">
+          className="tecla mt-0.5 block min-h-[40px] w-full rounded-lg text-left">
           {cuerpo}
         </button>
-      ) : <div className="mt-1 min-h-[44px]">{cuerpo}</div>}
+      ) : <div className="mt-0.5 min-h-[40px]">{cuerpo}</div>}
     </div>
   );
 }

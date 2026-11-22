@@ -80,9 +80,13 @@ export const ESPACIO_ACEPTADO = {
 export const PANTALLAS = [
   ['calendario', '/'], ['cotizaciones', '/presupuestos'],
   ['cotizaciones-lista', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); }],
-  ['cotizaciones-lista-mes', '/presupuestos', async (p) => {
+  // La Lista abre en *Mes* desde el 2026-11-22: la otra vista que se mide es *Todo*,
+  // la que trae *Ganado mes a mes*.
+  ['cotizaciones-lista-todo', '/presupuestos', async (p) => {
     await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
-    await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes' }).click(); }],
+    await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }).click(); }],
+  ['estadisticas-personalizado', '/estadisticas', async (p) => {
+    await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Personalizado' }).click(); }],
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
@@ -119,7 +123,8 @@ const cotizacion = async (paso) => {
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
 const personaDelInforme = async () => {
-  await ir('/informe'); await clic(boton(/Por mes/)); await p.waitForTimeout(1300);
+  // *Mes* va en el marco del periodo desde el 2026-11-22 (antes, *Por mes*).
+  await ir('/informe'); await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes', exact: true })); await p.waitForTimeout(1300);
   await clic(p.locator('main button[aria-expanded="false"]'), 1);
 };
 const vendedor = async () => { await ir('/vendedores'); await clic(boton(/^Daniela/)); };
@@ -196,7 +201,10 @@ export const ESCENAS = {
   // no estaban medidas. Solo se abren; ninguna guarda nada. *¿La mandaste?*
   // sale la primera vez que se copia el link de una que no se ha mandado.
   'v-cotizar-la-mandaste': async () => {
-    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
+    // Su evento es en diciembre y la Lista abre en el mes en curso (2026-11-22): a *Todo*.
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
   },
@@ -204,6 +212,7 @@ export const ESCENAS = {
   // la fila de la lista, que es la misma que se abre en la cotización.
   'v-se-cayo': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
     // Se dibuja dos veces (computador y celular): se pide el que se ve.
     await clic(p.locator('button:visible[aria-label="Se cayó la cotización de Marisol Cáceres"]'));
   },

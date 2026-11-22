@@ -192,7 +192,7 @@ const OPERACIONES: Mision[] = [
   },
   {
     id: 'informe', emoji: '📊', titulo: 'El informe: lo que cuesta el equipo', escena: 'ope-informe',
-    intro: 'Por persona: cuántos días vino, sus jornadas, ajustes y total, y cuánto tiene que boletear. El periodo se elige arriba: día, semana, mes u otro rango.',
+    intro: 'Por persona: cuántos días vino, sus jornadas, ajustes y total, y cuánto tiene que boletear. El periodo se elige arriba, en el marco dorado: mes, semana, día o dos fechas, con ◀ ▶.',
     puntos: [
       'Sin marcar: quién tiene días sin cerrar. Esos días no suman: el total está incompleto.',
       'Trabajadores y extras, cada uno con lo que falta.',
@@ -207,7 +207,7 @@ const PAGOS: Mision[] = [
     id: 'informe', emoji: '📊', titulo: 'El informe: qué se paga', escena: 'pag-informe',
     intro: 'Parte en la semana pasada, que es la que se paga. Todo lo de pagar al equipo sale de aquí.',
     puntos: [
-      'El periodo: semana, mes, día u otro rango.',
+      'El periodo, en el marco dorado: mes, semana, día o dos fechas, con ◀ ▶.',
       'La planilla para el banco: sueldos, propinas o completa.',
       'La transferencia masiva va plegada: la abres, bajas la planilla, la subes al banco y marcas todos pagados.'
     ],
