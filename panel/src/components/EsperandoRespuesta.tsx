@@ -6,8 +6,9 @@
  *
  * Arriba de Cotizaciones, una tarjeta por cotización mandada a la que le
  * toca seguimiento (`seguimientoDe()`), con los tres botones a la vista: se
- * contesta sin abrir nada. *Se perdió* pide el motivo ahí mismo, con los
- * mismos botones de la ventana de cotizar.
+ * contesta sin abrir nada. *✕ Se cayó…* abre la misma ventanita de la
+ * cotización y de la lista (`SeCayo`, 2026-11-22): antes era *Se perdió* con
+ * sus propios botones de motivo, el mismo dato con otra forma.
  *
  * Los cambios van por el `PATCH` de siempre: el servidor pone las fechas
  * (`Último seguimiento`) y comprueba que la cotización sea de quien la toca.
@@ -17,7 +18,8 @@ import { useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import { avisar } from './AvisoFlotante';
 import { ESTADO_PRESUPUESTO, estadoNormal, folioDe, type Presupuesto } from '@/lib/presupuestos';
-import { MOTIVOS_PERDIDA } from '@/lib/cotizar';
+import SeCayo from './SeCayo';
+import { alternativasDe, enCarrera } from '@/lib/cotizar';
 import { enPalabras } from '@/lib/fechas';
 
 export interface PorSeguir {
@@ -27,8 +29,10 @@ export interface PorSeguir {
   puedeTocar: boolean;
 }
 
-export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida = false }: {
+export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida = false, todas = [] }: {
   lista: PorSeguir[];
+  /** Todas las cotizaciones, para contar las alternativas que se caen con ella. */
+  todas?: Presupuesto[];
   onCambio: () => void;
   onAbrir: (p: Presupuesto, paso?: number) => void;
   /**
@@ -37,7 +41,7 @@ export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida 
    */
   embebida?: boolean;
 }) {
-  const [perdiendo, setPerdiendo] = useState('');
+  const [cayendo, setCayendo] = useState<Presupuesto | null>(null);
   // Con vista gerencia y sin el permiso de cotizar, se ve qué espera
   // respuesta pero no se contesta.
   const soloMira = usarSoloMira('presupuestos');
@@ -53,7 +57,7 @@ export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida 
       });
       const d = await r.json().catch(() => ({}));
       if (d.error) return avisar(d.error, 'atencion');
-      avisar(aviso); setPerdiendo(''); onCambio();
+      avisar(aviso); onCambio();
     } finally { setEnviando(''); }
   }
 
@@ -94,7 +98,7 @@ export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida 
                   className="boton min-h-[44px]">Todavía no</button>
               </div>
             )}
-            {puedeTocar && !soloMira && motivo !== 'contratoSinFirmar' && perdiendo !== p.id && (
+            {puedeTocar && !soloMira && motivo !== 'contratoSinFirmar' && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {motivo === 'eventoCerca' && (
                   <button type="button" onClick={() => onAbrir(p)}
@@ -107,29 +111,25 @@ export default function EsperandoRespuesta({ lista, onCambio, onAbrir, embebida 
                     onClick={() => void cambiar(p, { estado: ESTADO_PRESUPUESTO.negociacion }, 'Pasó a Negociación')}
                     className="boton min-h-[44px]">Está negociando</button>
                 )}
-                <button type="button" onClick={() => setPerdiendo(p.id)}
-                  className="boton min-h-[44px] hover:!border-rojo-fuerte hover:text-rojo-texto">Se perdió</button>
+                {enCarrera(p) && (
+                  <button type="button" onClick={() => setCayendo(p)}
+                    className="boton min-h-[44px] !border-2 !border-rojo-fuerte/50 font-semibold text-rojo-texto
+                               hover:!border-rojo-fuerte hover:!text-rojo-texto">✕ Se cayó…</button>
+                )}
                 <button type="button" disabled={enviando === p.id}
                   onClick={() => void cambiar(p, { seguimiento: 'esperando' }, 'Te pregunto de nuevo más adelante')}
                   className="boton min-h-[44px]">Sigue esperando</button>
               </div>
             )}
-            {perdiendo === p.id && (
-              <div className="mt-2">
-                <p className="mb-1 text-[14px] font-semibold">¿Por qué se perdió?</p>
-                <div className="flex flex-wrap gap-2">
-                  {MOTIVOS_PERDIDA.map((m) => (
-                    <button key={m} type="button" disabled={enviando === p.id}
-                      onClick={() => void cambiar(p, { estado: ESTADO_PRESUPUESTO.rechazado, motivo: m }, 'Marcada perdida')}
-                      className="boton min-h-[44px]">{m}</button>
-                  ))}
-                  <button type="button" onClick={() => setPerdiendo('')} className="boton min-h-[44px]">Volver</button>
-                </div>
-              </div>
-            )}
           </li>
         ))}
       </ul>
+      {cayendo && (
+        <SeCayo id={cayendo.id} cliente={cayendo.cliente}
+          alternativas={alternativasDe(cayendo, todas.length ? todas : [cayendo]).filter((a) => a.id === cayendo.id || enCarrera(a)).length}
+          onCerrar={() => setCayendo(null)}
+          onListo={() => { setCayendo(null); onCambio(); }} />
+      )}
     </div>
   );
 }

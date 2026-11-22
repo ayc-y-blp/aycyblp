@@ -40,7 +40,7 @@ import {
 import {
   prepararLineas, esDiaPublico, lineaDeProducto, yaEstaEnLaCotizacion, productoDe, showDe, cambiarCantidad,
   alternativasDe, letraDe, grupoDe, vivasDelGrupo, sigueViva, paraElLink,
-  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, type ReglaShow
+  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow
 } from '@/lib/cotizar';
 import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, type Menu } from '@/lib/menus';
 import {
@@ -53,6 +53,7 @@ import { faltaDelCliente, partirHorario, textoHorario, moverHora, PASO_HORARIO }
 import CampoRut from './CampoRut';
 import { frasesCancelacion } from '@/lib/cancelacion';
 import CancelarEvento from './CancelarEvento';
+import SeCayo from './SeCayo';
 import CorregirGanada from './CorregirGanada';
 import BloqueCancelada from './BloqueCancelada';
 import { enPesos } from '@/lib/ocupacion';
@@ -304,6 +305,8 @@ export default function CotizacionDialogo({
   /** El día en que se le mandó el contrato (lo pone el servidor). */
   const [contratoEnviado, setContratoEnviado] = useState(p?.contratoEnviado ?? '');
   const [cancelando, setCancelando] = useState(false);
+  /** La ventanita *¿Se cayó?* abierta (2026-11-22). */
+  const [cayendo, setCayendo] = useState(false);
   const [acuerdos, setAcuerdos] = useState(p?.acuerdos ?? '');
   /** El contrato firmado subido: quién y cuándo. Que esté es lo que dice "firmado". */
   const [firmado, setFirmado] = useState<null | { por: string; cuando: string }>(
@@ -1271,6 +1274,26 @@ export default function CotizacionDialogo({
       )}
     </>
   );
+
+  /**
+   * **✕ Se cayó…, en el pie de cada paso** (2026-11-22, lo pidió el cliente:
+   * *"el vendedor responsable de su venta debería tener en cada página del
+   * pop-up de cotizaciones el botón se cayó… da igual en qué fase está"*, y
+   * después, al verlo arriba a la derecha: *"prefiero que se cayó esté al
+   * lado abajo de donde sale ir al próximo paso. Como botón clave"*). Va al
+   * lado del dorado, del mismo alto, con borde rojo. Abre la ventanita que
+   * pide el motivo y confirma (`SeCayo`). Solo en una cotización en carrera:
+   * una ganada se cancela, con su propio botón (*Cancelar evento*). Lo ve
+   * quien puede tocarla: el vendedor la suya; pagos, la gerencia y el
+   * administrador, todas.
+   */
+  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva }) ? (
+    <button type="button" disabled={guardando} onClick={() => setCayendo(true)}
+      className="boton min-h-[52px] !border-2 !border-rojo-fuerte/60 !px-4 !text-[15px] !font-bold text-rojo-texto
+                 hover:!border-rojo-fuerte hover:!text-rojo-texto lg:min-h-[44px]">
+      ✕ Se cayó…
+    </button>
+  ) : null;
 
   /** Lo mismo, del paso 5: corregir la ganada y cancelar el evento. */
   const secundariosContrato = (
@@ -2557,8 +2580,9 @@ export default function CotizacionDialogo({
                       }
                     }}>Todavía no se mandó</button>
                 )}
-                <button type="button" className="boton min-h-[44px] hover:!border-rojo-fuerte hover:text-rojo-texto lg:min-h-[40px]"
-                  onClick={() => setEstado(ESTADO_PRESUPUESTO.rechazado)}>Se perdió…</button>
+                {/* *Se perdió…* se fue de acá el 2026-11-22: ahora es *✕ Se cayó…*,
+                    arriba, en todos los pasos y con su motivo. Dos botones para
+                    lo mismo era no saber cuál apretar. */}
                 <AyudaCorta tema="estadoCotizacion" />
               </div>
             )}
@@ -2891,6 +2915,7 @@ export default function CotizacionDialogo({
                 {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
               </> : null}
+          antesDeSeguir={botonSeCayo}
           onVolver={() => void irA(paso - 1)} onSeguir={() => void irA(paso + 1)} />
       )}
       {paso === 5 && (
@@ -2902,6 +2927,7 @@ export default function CotizacionDialogo({
             {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
             {secundariosContrato}
           </div>
+          {botonSeCayo && <><span className="flex-1" />{botonSeCayo}</>}
         </div>
       )}
 
@@ -3082,6 +3108,13 @@ export default function CotizacionDialogo({
           onCancelarEvento={() => { setCorrigiendo(false); setCancelando(true); }}
           onListo={(hacia) => { setCorrigiendo(false); onCambio(); if (onAbrir) onAbrir(hacia || p.id, 4); else onCerrar(); }} />
       )}
+      {cayendo && p && (
+        <SeCayo id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''}
+          alternativas={alts.filter((a) => a.id === p.id || enCarrera(a)).length}
+          antes={async () => { if (autoActivo) await auto.forzar(); }}
+          onCerrar={() => setCayendo(false)}
+          onListo={() => { setCayendo(false); onCambio(); onCerrar(); }} />
+      )}
       {cancelando && p && (
         <CancelarEvento p={p} onCerrar={() => setCancelando(false)}
           onListo={() => { setCancelando(false); onCambio(); onCerrar(); }} />
@@ -3103,10 +3136,16 @@ export default function CotizacionDialogo({
  *   pasar de Evento a Productos guarda (`irA()`), y eso se dice antes.
  * - **A la izquierda, volver**, delineado.
  */
-function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, onVolver, onSeguir }: {
+function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, antesDeSeguir, onVolver, onSeguir }: {
   paso: number; guardando: boolean; puede: boolean; porQueNo: string; aviso: string;
   /** Lo que va en el pie **solo en el computador**, entre *volver* y *seguir*. */
   medio?: React.ReactNode;
+  /**
+   * Un botón clave al lado del dorado, en el computador y en el celular:
+   * *✕ Se cayó…* (2026-11-22). En el celular comparte la fila con *volver*
+   * y el dorado baja a todo el ancho, para no dejar un hueco.
+   */
+  antesDeSeguir?: React.ReactNode;
   onVolver: () => void; onSeguir: () => void;
 }) {
   return (
@@ -3125,8 +3164,10 @@ function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, onVolver, o
             {puede ? aviso : porQueNo}
           </span>
         )}
+        {antesDeSeguir}
         <button type="button" disabled={guardando || !puede} onClick={onSeguir}
-          className="boton boton-relleno min-h-[52px] px-5 text-[16px] disabled:opacity-50 lg:min-h-[44px]">
+          className={`boton boton-relleno min-h-[52px] px-5 text-[16px] disabled:opacity-50 lg:min-h-[44px] ${
+            antesDeSeguir ? 'max-lg:basis-full' : ''}`}>
           {guardando ? 'Guardando…' : <>Ir al paso {paso + 1}: {PASOS[paso]} →</>}
         </button>
       </div>

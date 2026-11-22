@@ -142,6 +142,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   pagos en dos renglones** (la pastilla del pago con su nota al lado; 247 →
   176px en el computador). `verificar.sh` dio 15 de 15 después. Detalle en
   `panel/CLAUDE.md`, "La bandeja de lo que revisa pagos, en dos renglones".
+- **PR #307, mergeado el 22-11-2026** con el *"mergea"* del cliente: la
+  página del día con los marcos de la regla (*← Calendario* con presencia, la
+  bandeja como grupo) y, en *Productos*, el nombre de un producto nuevo ya no
+  se bloquea al escribir el de uno vendido. Para *A Brasas Abiertas* de
+  empresas se recomendó **no crear un segundo producto**: activar *Se puede
+  cotizar* con $70.000 + IVA en el mismo (lo hace el cliente en *Productos*).
+- **✕ Se cayó…** (22-11-2026, en preview): dar por perdida una cotización con
+  su motivo, desde cualquier paso, la lista o *Esperando respuesta*. Ver
+  `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1129,7 +1138,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 49 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 50 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

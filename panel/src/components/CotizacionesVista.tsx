@@ -32,7 +32,8 @@ import {
 import { estaCerrado, esPrivada, esExclusiva } from '@/lib/columnas';
 import { semanaDe, sumarDias, rangoEnPalabras, enPalabras, esFecha } from '@/lib/fechas';
 import { enPesos } from '@/lib/ocupacion';
-import { grupoDe, alternativasDe, principalDe } from '@/lib/cotizar';
+import { grupoDe, alternativasDe, principalDe, enCarrera } from '@/lib/cotizar';
+import SeCayo from './SeCayo';
 import { avisosDeCobro, porRevisar } from '@/lib/cobros';
 import { faltaDevolver } from '@/lib/cancelacion';
 import { puede, puedeTocarPresupuesto, esSuya, ROL, type Rol } from '@/lib/auth';
@@ -126,6 +127,8 @@ export default function CotizacionesVista() {
   /** Qué día está abierto en el calendario, para ver sus cotizaciones. */
   const [diaAbierto, setDiaAbierto] = useState<string | null>(null);
   /** La ventana: una cotización existente, o una nueva (con fecha opcional). */
+  /** La cotización a la que se le está diciendo *Se cayó* desde la lista. */
+  const [cayendo, setCayendo] = useState<Presupuesto | null>(null);
   const [abierta, setAbierta] = useState<
     { p: Presupuesto | null; fecha?: string; cliente?: string; paso?: number } | null>(null);
   /**
@@ -317,11 +320,37 @@ export default function CotizacionesVista() {
    * día y la Lista. `detalle` es la segunda línea que la Lista le suma
    * (2026-11-17): quién la vende y el próximo paso.
    */
-  const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => (
-    <li key={p.id}>
-      <button type="button" onClick={() => setAbierta({ p })}
-        className="tecla flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded border
-                   border-hueso/15 bg-panel px-3 py-2.5 text-left min-h-[52px] hover:border-oro/60">
+  /**
+   * **Se cayó…, también en la lista** (2026-11-22, lo pidió el cliente:
+   * *"hasta en el enlistado… ahí cabe también un botón se cayó"*, y al verlo
+   * afuera de la fila: *"deja los valores al borde derecho e integra el botón
+   * se cayó en el mismo panel antes de los valores… dentro del panel como un
+   * botón presente"*). Solo en las que siguen en carrera y esta cuenta puede
+   * tocar. Abre la misma ventanita que en la cotización (`SeCayo`).
+   *
+   * **La fila ya no es un botón entero**, porque un botón no puede ir dentro
+   * de otro: es una caja con un botón invisible que la cubre (`abrir`, el que
+   * abre la cotización) y *Se cayó…* encima, con `z-10`. En el computador va
+   * en la línea del nombre, antes de los valores; en el celular, al final de
+   * la línea del vendedor, a la derecha, para no sumar un renglón.
+   */
+  const puedeCaerse = (p: Presupuesto) => !soloMira && enCarrera(p)
+    && puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor);
+  const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => {
+    const caerse = puedeCaerse(p);
+    const botonCaer = (donde: string) => (
+      <button type="button" onClick={() => setCayendo(p)} aria-label={`Se cayó la cotización de ${p.cliente || 'sin cliente'}`}
+        className={`boton relative z-10 shrink-0 !min-h-[40px] !border-2 !border-rojo-fuerte/50 !px-2.5 !text-[14px]
+                    !font-semibold text-rojo-texto hover:!border-rojo-fuerte hover:!text-rojo-texto ${donde}`}>
+        ✕ Se cayó…
+      </button>
+    );
+    return (
+      <li key={p.id} className="relative flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 rounded border
+                                border-hueso/15 bg-panel px-3 py-2.5 hover:border-oro/60
+                                [&:has(>.abrir:active)]:translate-y-px">
+        <button type="button" onClick={() => setAbierta({ p })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
+          className="abrir absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
         <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
         <PastillaEstado estado={estadoDe(p)} />
         {conFecha && (
@@ -333,6 +362,7 @@ export default function CotizacionesVista() {
           </span>
         )}
         <span className="flex-1" />
+        {caerse && botonCaer('hidden lg:inline-flex')}
         <span className="text-[14px] text-hueso/70">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
@@ -343,12 +373,15 @@ export default function CotizacionesVista() {
           </span>
         )}
         <span className="text-[13px] text-hueso/55">N° {folioDe({ id: grupoDe(p) })}</span>
-        {detalle && (
-          <span className="flex basis-full flex-wrap gap-x-3 gap-y-0.5 text-[13px] text-hueso/70">{detalle}</span>
+        {(detalle || caerse) && (
+          <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70">
+            <span className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5">{detalle}</span>
+            {caerse && botonCaer('lg:hidden')}
+          </span>
         )}
-      </button>
-    </li>
-  );
+      </li>
+    );
+  };
 
   // ---- El calendario: semanas desde la en curso, con los días que importan.
   /** Lo que esta cuenta ve en la tarjeta de un día: lo mandado, una ganada, o lo suyo sin mandar. */
@@ -595,7 +628,7 @@ export default function CotizacionesVista() {
         ...(porSeguir.length ? [{
           clave: 'seguir', icono: '📨', tono: 'rosa' as const,
           texto: porSeguir.length === 1 ? '1 esperando respuesta' : `${porSeguir.length} esperando respuesta`,
-          lista: <EsperandoRespuesta embebida lista={porSeguir} onCambio={() => void cargar()}
+          lista: <EsperandoRespuesta embebida lista={porSeguir} todas={datos.presupuestos} onCambio={() => void cargar()}
             onAbrir={(p, paso) => setAbierta({ p, paso: paso ?? 4 })} />
         }] : []),
         ...(pronto.length ? [{
@@ -681,6 +714,12 @@ export default function CotizacionesVista() {
         );
       })()}
 
+      {cayendo && (
+        <SeCayo id={cayendo.id} cliente={cayendo.cliente}
+          alternativas={alternativasDe(cayendo, datos.presupuestos).filter((a) => a.id === cayendo.id || enCarrera(a)).length}
+          onCerrar={() => setCayendo(null)}
+          onListo={() => { setCayendo(null); void cargar(); setVersionOcupacion((v) => v + 1); }} />
+      )}
       {abierta && (
         <CotizacionDialogo
           key={abierta.p?.id ?? `nueva-${abierta.fecha ?? ''}`}

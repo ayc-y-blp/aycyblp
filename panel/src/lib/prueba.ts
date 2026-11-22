@@ -24,7 +24,7 @@ import { aReserva, estadoDe, telefonoDe, emailDe, nombreDe, personasDe, menuDe,
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos,
          POR_DEFECTO, CLAVES } from './config.ts';
-import { prepararLineas, esDiaPublico, clienteDe, otrasAlternativas, grupoSinGanar, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
+import { prepararLineas, esDiaPublico, clienteDe, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
          alternativasDe, letraDe, principalDe, sigueViva, vivasDelGrupo, faltaElegir, paraElLink,
          ESTADOS_A_MANO, productoDe, showDe, reglaShowDe, showQuedaBajoMinimo, showBajoMinimoDe } from './cotizar.ts';
 import { estadoNormal, cuentasDe, documentoDe, DOCUMENTO, numeroONulo } from './presupuestos.ts';
@@ -4342,6 +4342,27 @@ console.log('\nCotizaciones, fase 2');
     ok(grupoSinGanar(pre({ id: 'X', estado: ESTADO_PRESUPUESTO.aceptado, enviada: '' }), [])[0].estado
          === ESTADO_PRESUPUESTO.borrador,
        'una ganada que nunca se mandó vuelve a borrador, no a enviada');
+  }
+  // **Se cayó** (2026-11-22): la cotización y las alternativas del grupo que
+  // siguen en carrera pasan a Perdida con el motivo; una ganada no.
+  {
+    const g = [
+      pre({ id: 'A', grupo: 'A', estado: ESTADO_PRESUPUESTO.enviado }),
+      pre({ id: 'B', grupo: 'A', estado: ESTADO_PRESUPUESTO.negociacion }),
+      pre({ id: 'C', grupo: 'A', estado: ESTADO_PRESUPUESTO.rechazado, motivo: 'Precio' }),
+      pre({ id: 'D', grupo: 'D', estado: ESTADO_PRESUPUESTO.borrador })
+    ];
+    const r = seCayo(g[0], g, '  No respondió ', '2026-11-22');
+    ok(!('error' in r) && r.cambios.map((x) => `${x.id}:${x.estado}:${x.motivo}:${x.ultimoSeguimiento}`).join()
+         === 'A:Perdida:No respondió:2026-11-22,B:Perdida:No respondió:2026-11-22',
+       'se cae con la alternativa en carrera; la ya perdida y otro grupo no se tocan');
+    ok('error' in seCayo(g[0], g, ' ', '2026-11-22'), 'sin motivo no se cae');
+    ok('error' in seCayo(pre({ id: 'G', estado: ESTADO_PRESUPUESTO.aceptado, idReserva: 'R9' }), [], 'Precio', '2026-11-22'),
+       'una ganada no se da por caída: se cancela');
+    ok('error' in seCayo(g[2], g, 'Precio', '2026-11-22'), 'una perdida no se vuelve a caer');
+    ok(enCarrera(pre({ id: 'K', estado: ESTADO_PRESUPUESTO.candidato }))
+       && !enCarrera(pre({ id: 'L', estado: ESTADO_PRESUPUESTO.noElegida })),
+       'un candidato está en carrera; una No elegida no');
   }
   ok(!cuentaComoPosible(pre({ estado: ESTADO_PRESUPUESTO.noElegida }), HOY),
      'una no elegida ya no es gente posible');

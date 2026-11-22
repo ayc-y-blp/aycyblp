@@ -384,6 +384,43 @@ export const ESTADOS_A_MANO: string[] = [
   ESTADO_PRESUPUESTO.negociacion, ESTADO_PRESUPUESTO.rechazado
 ];
 
+/**
+ * **En carrera**: se sigue conversando y todavía no hay reserva —candidato,
+ * borrador, enviada o en negociación—. Es lo que se puede dar por caído con
+ * *Se cayó…* (`seCayo()`). Una ganada no: esa se cancela, porque ya tomó
+ * cupo y puede haber plata que devolver.
+ */
+export function enCarrera(p: Pick<Presupuesto, 'estado' | 'idReserva'>): boolean {
+  if (p.idReserva) return false;
+  const e = estadoNormal(p.estado);
+  return e === ESTADO_PRESUPUESTO.candidato || e === ESTADO_PRESUPUESTO.borrador
+    || e === ESTADO_PRESUPUESTO.enviado || e === ESTADO_PRESUPUESTO.negociacion;
+}
+
+/**
+ * **Se cayó** (2026-11-22, lo pidió el cliente: *"en cualquier momento el
+ * vendedor puede decir, ok, se cayó… con reconfirmación, se cayó y darle una
+ * razón, pero hacerlo muy fácil… para que desaparezca de la lista"*). La
+ * cotización pasa a *Perdida* con su motivo, y con ella **las alternativas
+ * del grupo que siguen en carrera**: es la conversación con el cliente la
+ * que se cayó, igual que *Se perdió* se copiaba a todas al guardar.
+ *
+ * Devuelve qué escribir en cada una, o por qué no se puede. Puro: lo usa la
+ * ruta `/api/presupuestos/perdida`.
+ */
+export function seCayo(
+  p: Presupuesto, lista: Presupuesto[], motivo: string, dia: string
+): { error: string } | { cambios: { id: string; estado: string; motivo: string; ultimoSeguimiento: string }[] } {
+  if (p.idReserva) {
+    return { error: 'Esta cotización ya es una reserva: si se cayó, usa "Cancelar evento", que libera el cupo y calcula la devolución.' };
+  }
+  if (!enCarrera(p)) return { error: 'Esta cotización ya no está en carrera.' };
+  const m = String(motivo ?? '').trim().slice(0, 200);
+  if (m.length < 2) return { error: 'Falta el motivo: elige uno o escríbelo.' };
+  const del = alternativasDe(p, lista).filter((a) => a.id === p.id || enCarrera(a));
+  return { cambios: del.map((a) => ({ id: a.id, estado: ESTADO_PRESUPUESTO.rechazado, motivo: m, ultimoSeguimiento: dia })) };
+}
+
 /** Los motivos de pérdida que se ofrecen con un botón. Igual se escribe otro. */
 export const MOTIVOS_PERDIDA = [
   'Precio', 'Fecha no disponible', 'Eligió otra opción', 'No respondió', 'Se canceló el evento'
