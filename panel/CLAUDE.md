@@ -146,7 +146,7 @@ revisan antes de cada cambio en esta carpeta.
   | Lo cotizado (solo lo mandado) y la gente posible, ganadas, esperando, lo tuyo sin mandar | `Pastilla` / `PastillaCotizado` |
   | En las celdas de Turnos y Extras: el equipo del día (👥, dorado) y las actividades y su costo (🎠, añil) | `Pastilla` tipo `equipo` / `extras` |
   | Lo que le falta a una ficha para poder pagarle: *falta su cuenta*, *falta su factura* | `Pastilla` tipo `falta`: un aviso fino, nunca con forma de botón (Informe, Vendedores, Equipo y Extras) |
-  | Cómo va el pago de una reserva | `PastillaPago` |
+  | Cómo va el pago de una reserva | `PastillaPago`; la pastilla sola, para ponerla en una línea de texto, `EstadoDelPago` (la bandeja de lo que revisa pagos) |
   | Lo de la cuenta y lo de todos | `BotonMias` / `BotonTodos` |
   | Un texto fijo que explica la pantalla | `AvisoFijo` (con su ✕) |
   | Guardar | `BotonGuardar` / `AvisoGuardado` |
@@ -209,6 +209,46 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## La bandeja de lo que revisa pagos, en dos renglones (2026-11-22)
+
+Lo pidió el cliente con una foto del aviso *2 cosas que revisar* de la
+portada, con dos pagos del sitio viejo: *"en este aviso también puedes
+aprovechar el espacio de la mejor forma… para achicar esta sección completa
+sin perder información"*. Y eligió cómo: *"el subtítulo sube a la línea de
+pagado y así ya puedes achicar la fila sin grandes cambios"*.
+
+- **Cada aviso de un pago va en dos renglones**: arriba la frase (*brasas
+  anotó el pago de … · $390.000 · sábado 28 de noviembre*), y debajo la
+  pastilla del pago con su nota al lado (*✓ Pagada · Pedido LP4450 del sitio
+  viejo…*). Antes eran tres: la frase, la pastilla y la nota.
+- **La pastilla parte en la misma vertical en todos los avisos**, y la nota
+  corre detrás de ella como texto: si es larga, se dobla debajo en vez de
+  bajar entera.
+- **`EstadoDelPago`**, la pastilla sola, sale de `PastillaPago`, que la sigue
+  usando: el mismo ícono, color y palabra. Ninguna otra pantalla cambió.
+- **Abierto un aviso**, en el computador *Ver el día →* (o *Ver la reserva
+  →*, *Ver la ficha →*) va al lado de la explicación y no solo en su fila. Lo
+  que pregunta —rechazar, aprobar un exclusivo— o trae un motivo sigue debajo.
+- **Menos aire en el computador**: el marco, la separación entre avisos y el
+  relleno de cada uno.
+- **Es la misma pieza en la portada y en la página del día**
+  (`BandejaAprobaciones`), así que cambió en las dos. Los avisos de los demás
+  tipos ya eran de un renglón.
+
+| A 1280×650, con dos pagos | Antes | Ahora |
+|---|---|---|
+| La sección | 247px | 176px |
+| Cada aviso | 91px | 62px |
+| Con uno abierto | 337px | 237px |
+
+En el celular, de 440 a 423px: ahí los botones van debajo de cada aviso.
+
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe cómo se ve la bandeja, y el panel de ejemplo no trae pagos por
+  revisar, así que ninguna foto cambia. Se probó marcando dos reservas a
+  mano como pagadas en la copia de prueba, como el encargado, y mirando la
+  portada como pagos.
 
 ## El espacio se usa bien: una prueba que mira todas las pantallas (2026-11-22)
 
