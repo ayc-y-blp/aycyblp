@@ -140,6 +140,58 @@ export async function revisarTarjetasParejas(page) {
 }
 
 /**
+ * **La línea de la fecha no se dobla** (2026-11-22, lo marcó el cliente con
+ * una foto: *"el hoy hace que exclusivo baja una fila… debería ser regla y
+ * parece que se anotó, pero aquí veo que no se cumple"*). En las tarjetas de
+ * Reservas y de Cotizaciones, la fecha —con *HOY* si es hoy— y el estado del
+ * día van en una línea (`data-linea-fecha`). `revisarTarjetasParejas()` no lo
+ * veía: compara tarjetas vecinas, y hoy puede quedar sola en su fila.
+ *
+ * **Mide el peor caso, no el que tocó**: en cada línea prueba los siete
+ * nombres de día y la palabra de estado más larga, y exige que sobren
+ * `MARGEN` pixeles. **El margen es por la letra**: el panel usa la del
+ * sistema, y la de un Mac es más ancha que la Inter de este entorno —en la
+ * foto del cliente, *DOM 22 HOY* medía unos 8px más que acá—.
+ */
+export async function revisarLineaDeLaFecha(page) {
+  return page.evaluate(() => {
+    const MARGEN = 10;
+    const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const PALABRAS = ['exclusivo', 'sin abrir', 'sin cupo', 'cerrado', 'privado', 'público'];
+    const salida = [];
+    for (const fila of document.querySelectorAll('[data-linea-fecha]')) {
+      if (!fila.offsetParent) continue;
+      const fecha = fila.querySelector('span[aria-label]');
+      const estado = [...fila.children].find((c) => !c.contains(fecha));
+      if (!fecha || !estado) continue;
+      const nombre = fecha.getAttribute('aria-label');
+      const rf = fecha.getBoundingClientRect(), re = estado.getBoundingClientRect();
+      if (re.top > rf.bottom - 4 || rf.top > re.bottom - 4) {
+        salida.push(`la línea de la fecha se dobla: ${nombre} · ${estado.innerText.replace(/\s+/g, ' ')}`);
+        continue;
+      }
+      const dia = fecha.firstElementChild, palabra = estado.lastElementChild;
+      const antes = [dia.textContent, palabra.textContent];
+      const s = getComputedStyle(fila);
+      const cabe = fila.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+      const gap = parseFloat(s.columnGap) || 0;
+      let peor = { necesita: 0 };
+      for (const d of DIAS) for (const w of PALABRAS) {
+        dia.textContent = d; palabra.textContent = w;
+        const n = fecha.getBoundingClientRect().width + gap + estado.getBoundingClientRect().width;
+        if (n > peor.necesita) peor = { necesita: n, d, w };
+      }
+      [dia.textContent, palabra.textContent] = antes;
+      if (cabe - peor.necesita < MARGEN) {
+        salida.push(`la línea de la fecha queda justa: ${nombre} con ${peor.d.toUpperCase()} y ${peor.w.toUpperCase()} pide ${Math.round(peor.necesita)}px de ${Math.round(cabe)} (tienen que sobrar ${MARGEN})`);
+      }
+    }
+    // Una sola frase por problema: las tarjetas que no son hoy repiten lo mismo.
+    return [...new Set(salida.map((x) => x.replace(/: (Hoy, )?\S+ \d+ de \S+ con/, (m, h) => `: ${h ? 'hoy' : 'un día'} con`)))];
+  });
+}
+
+/**
  * **El espacio se usa bien** (2026-11-22, regla del cliente: *"hay mucho
  * espacio libre… que lo anotas también como regla para que no te tengo que
  * acordar todo el rato de aprovechar bien los espacios"*). Mira lo que se ve

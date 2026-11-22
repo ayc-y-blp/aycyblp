@@ -326,8 +326,10 @@ export default function CotizacionesVista() {
         <PastillaEstado estado={estadoDe(p)} />
         {conFecha && (
           <span className="text-[14px] text-hueso/70">
-            {p.fecha ? <span className="first-letter:uppercase inline-block">{enPalabras(p.fecha)}</span>
-              : p.periodo}
+            {/* *DOM 22 nov 2026* (2026-11-22, lo pidió el cliente): la misma
+                pieza de la fecha que los calendarios, con el año, porque la
+                lista mezcla años. */}
+            {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
           </span>
         )}
         <span className="flex-1" />
@@ -399,12 +401,14 @@ export default function CotizacionesVista() {
          (`FechaDia`), lo reservado en grande con la misma barra (`BarraDia`)
          y el botón en un pie separado por una línea. Encima de eso, lo que es
          propio de Cotizaciones: las pastillas de lo cotizado. */
-      <div key={f} className={`flex h-full min-w-0 flex-col rounded border p-4 lg:p-2.5 ${occ ? COLOR_TARJETA(occ) : 'border-hueso/15 bg-panel'}
+      <div key={f} className={`flex h-full min-w-0 flex-col rounded border p-4 lg:px-2 lg:py-2.5 ${occ ? COLOR_TARJETA(occ) : 'border-hueso/15 bg-panel'}
         ${abiertaEsta ? 'ring-2 ring-oro' : ''} ${f === hoy ? MARCO_HOY : ''}`}>
         <button type="button" onClick={() => setDiaAbierto(abiertaEsta ? null : f)}
           aria-expanded={abiertaEsta}
           className="tecla flex flex-1 flex-col items-stretch gap-3 rounded text-left lg:gap-1.5">
-          <span className="flex w-full items-start justify-between gap-2 lg:flex-wrap lg:items-center lg:gap-y-0.5">
+          {/* En una línea también con *HOY* y *EXCLUSIVO* (2026-11-22), como
+              en Reservas: ver `TarjetaDia`. */}
+          <span data-linea-fecha className="flex w-full items-start justify-between gap-2 lg:items-center lg:gap-1">
             <FechaDia fecha={f} />
             {/* El punto y su palabra debajo, como en los demás calendarios. */}
             {occ ? <PuntoDia d={occ} enLinea /> : <PuntoYPalabra {...palabra} enLinea />}

@@ -153,7 +153,7 @@ const ALTO_COMPUTADOR = { conEquipo: 'lg:min-h-[14.75rem]', sinEquipo: 'lg:min-h
 /** El tramo de las abonadas: el verde de las pagadas, rayado (falta el resto). */
 const RAYAS = 'repeating-linear-gradient(135deg, rgb(var(--verde-fuerte)) 0 4px, rgb(var(--verde-fuerte) / 0.4) 4px 7px)';
 
-const CARA = `col-start-1 row-start-1 flex h-full flex-col rounded border p-4 lg:p-2.5 ` +
+const CARA = `col-start-1 row-start-1 flex h-full flex-col rounded border p-4 lg:px-2 lg:py-2.5 ` +
              `${ALTO_ESTANDAR} [backface-visibility:hidden]`;
 
 const PIE = 'mt-auto flex items-center gap-2 border-t border-hueso/10 pt-3 lg:pt-1.5';
@@ -236,7 +236,11 @@ export default function TarjetaDia({
         {/* ---------- el frente: la ocupación ---------- */}
         <div className={`${CARA} ${alto} ${COLOR_TARJETA(d)} ${d.fecha === hoy() ? MARCO_HOY : ''} ${volteada ? 'pointer-events-none' : ''}`}
              aria-hidden={volteada}>
-          <div className="flex items-start justify-between gap-2 lg:flex-wrap lg:items-center lg:gap-y-0.5">
+          {/* **La línea de la fecha no se dobla** (2026-11-22): con *HOY* y
+              *EXCLUSIVO* el estado bajaba un renglón. Cede el aire —8px de
+              relleno a los lados en el computador, menos espacio entre las
+              piezas—, no la letra. Lo mide `revisarLineaDeLaFecha()`. */}
+          <div data-linea-fecha className="flex items-start justify-between gap-2 lg:items-center lg:gap-1">
             {/* **El pronóstico ya no va acá.** Estaba bajo la fecha a 10px,
                 donde no lo veía nadie; ahora es una pastilla al lado del
                 número, que es lo que se mira. Ver el bloque de abajo. */}

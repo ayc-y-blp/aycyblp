@@ -231,7 +231,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
       + 'que esperan que alguien las siga y lo que falta cobrar. Se filtra por '
       + 'periodo —por fecha del evento o por fecha en que se cotizó—, por estado '
-      + 'y con el buscador; la gerencia, además, por vendedor o por socio.'
+      + 'y con el buscador; la gerencia, además, por vendedor o por socio. '
+      + 'La lista va por fecha del evento, de la más próxima a la más lejana; '
+      + 'las que no tienen día exacto, al final.'
     ],
     pasos: [
       '“+ Cotizar” (o “Cotizar este día” en una tarjeta).',

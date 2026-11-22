@@ -107,9 +107,9 @@ export function PuntoYPalabra({ punto, texto, clase, enLinea = false }: {
   punto: string; texto: string; clase: string; enLinea?: boolean;
 }) {
   return (
-    <span className={`flex shrink-0 flex-col items-end leading-none ${enLinea ? 'lg:ml-auto lg:flex-row lg:items-center lg:gap-1' : ''}`}>
-      <span aria-hidden className="text-[15px]">{punto}</span>
-      <span className={`mt-1 text-[13px] font-semibold uppercase tracking-wide ${enLinea ? 'lg:mt-0' : ''} ${clase}`}>
+    <span className={`flex shrink-0 flex-col items-end leading-none ${enLinea ? 'lg:ml-auto lg:flex-row lg:items-center lg:gap-0.5' : ''}`}>
+      <span aria-hidden className={`text-[15px] ${enLinea ? 'lg:text-[13px]' : ''}`}>{punto}</span>
+      <span className={`mt-1 text-[13px] font-semibold uppercase tracking-wide ${enLinea ? 'lg:mt-0 lg:tracking-normal' : ''} ${clase}`}>
         {texto}
       </span>
     </span>

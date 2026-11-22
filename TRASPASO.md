@@ -125,6 +125,17 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   una. La primera pasada arregló Cotizaciones → Lista, Equipo, Turnos,
   Configuración y Cuentas. Detalle en `panel/CLAUDE.md`, "El espacio se usa
   bien".
+- **SEO del sitio, PR #298, mergeado y publicado el 22-11-2026**: canonical,
+  vista previa al compartir y los datos del negocio para Google, comprobados
+  en `brasasdelopirque.cl`. Lo que no es código está paso a paso en el
+  documento *Traspaso a producción*, sección *SEO*.
+- **PR #300 (22-11-2026, camino chico)**: en las tarjetas de Reservas y
+  Cotizaciones, *HOY* ya no baja el estado (*EXCLUSIVO*) a otro renglón, con
+  una prueba que mide el peor caso (`revisarLineaDeLaFecha()`); y la lista de
+  cotizaciones va por fecha del evento, con la fecha como *SÁB 21 nov 2026*.
+  **Queda abierta**: el cliente encontró confuso *Ganado por mes* en la lista
+  (sigue a *De quién* y no al periodo); se le propuso cambiarle el título y
+  el lugar, y decide él.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

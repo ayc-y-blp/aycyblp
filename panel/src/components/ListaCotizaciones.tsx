@@ -86,7 +86,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
   const meses = useMemo(() => ganadoPorMes(unaPorGrupo(deQuien, ctx), ctx), [deQuien, ctx]);
   const cuantas = useMemo(() => cuentasPorFiltro(base, ctx), [base, ctx]);
   const lista = useMemo(() => ordenarLista(
-    base.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), filtro, ctx),
+    base.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx),
   [base, filtro, busqueda, ctx]);
 
   const nombreSocio = (id: string) => socios.find((s) => s.id === id)?.nombre ?? id;
