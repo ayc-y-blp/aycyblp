@@ -21,12 +21,15 @@ export function origenDe(r: Pick<Reserva, 'id' | 'tipoPago'>, deCotizacion = fal
   return r.tipoPago ? `Shopify · ${r.tipoPago}` : 'Shopify';
 }
 
-export default function PastillaPago({ r, deCotizacion = false, sinOrigen = false }: {
-  r: Pick<Reserva, 'id' | 'tipoPago' | 'estadoPago' | 'notaPago'> & { abonado?: number | null; liberada?: string };
-  deCotizacion?: boolean;
-  /** Sin la línea de origen, cuando ya la dice lo que rodea a la pastilla. */
-  sinOrigen?: boolean;
-}) {
+type ConPago = Pick<Reserva, 'id' | 'tipoPago' | 'estadoPago' | 'notaPago'> & { abonado?: number | null; liberada?: string };
+
+/**
+ * **La pastilla sola**, sin el origen ni la nota (2026-11-22): para ponerla
+ * en la línea de una frase, como en la bandeja de lo que revisa pagos, donde
+ * en su propio renglón alargaba cada aviso. Es la misma que dibuja
+ * `PastillaPago`: el mismo ícono, color y palabra.
+ */
+export function EstadoDelPago({ r, className = '' }: { r: ConPago; className?: string }) {
   const e = String(r.estadoPago || '').trim().toLowerCase();
   // Se cayó por cupo (2026-11-12): libera el lugar aunque el estado del pago
   // siga diciendo *por pagar*, y se dice con esas palabras.
@@ -36,6 +39,27 @@ export default function PastillaPago({ r, deCotizacion = false, sinOrigen = fals
     : e === ESTADO_PAGO.pagado ? ['✓', 'border-verde-fuerte/60 bg-verde/10 text-verde-texto']
     : e === ESTADO_PAGO.abonado ? ['½', 'border-cielo-fuerte/60 bg-cielo/10 text-cielo-texto']
     : ['○', 'border-ambar-fuerte/60 bg-ambar/10 text-ambar-texto'];
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 px-2.5 py-0.5
+                      text-[14px] font-bold ${clase} ${className}`}>
+      <span aria-hidden>{icono}</span>
+      {/* Por un evento exclusivo (2026-11-12) dice eso, no "por cupo". */}
+      {cayo ? (liberadaPorExclusivo(r.liberada) ? 'Liberada: evento exclusivo' : 'Se cayó por cupo')
+        : pagoEnEspanol(e) || 'Por pagar'}
+      {e === ESTADO_PAGO.abonado && (r.abonado ?? 0) > 0 && (
+        <span className="font-semibold">· {pesos(r.abonado ?? 0)}</span>
+      )}
+    </span>
+  );
+}
+
+export default function PastillaPago({ r, deCotizacion = false, sinOrigen = false }: {
+  r: ConPago;
+  deCotizacion?: boolean;
+  /** Sin la línea de origen, cuando ya la dice lo que rodea a la pastilla. */
+  sinOrigen?: boolean;
+}) {
+  const cayo = !!String(r.liberada ?? '').trim();
   const directo = !deCotizacion && !esManual(r.id) && r.tipoPago === TIPO_PAGO.directo;
   return (
     <div className="space-y-1">
@@ -44,16 +68,7 @@ export default function PastillaPago({ r, deCotizacion = false, sinOrigen = fals
           {origenDe(r, deCotizacion)}
         </p>
       )}
-      <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border-2 px-2.5 py-0.5
-                        text-[14px] font-bold ${clase}`}>
-        <span aria-hidden>{icono}</span>
-        {/* Por un evento exclusivo (2026-11-12) dice eso, no "por cupo". */}
-        {cayo ? (liberadaPorExclusivo(r.liberada) ? 'Liberada: evento exclusivo' : 'Se cayó por cupo')
-          : pagoEnEspanol(e) || 'Por pagar'}
-        {e === ESTADO_PAGO.abonado && (r.abonado ?? 0) > 0 && (
-          <span className="font-semibold">· {pesos(r.abonado ?? 0)}</span>
-        )}
-      </span>
+      <EstadoDelPago r={r} />
       {cayo && <p className="text-[13px] text-rojo-texto">{r.liberada}</p>}
       {r.notaPago && <p className="text-[13px] text-hueso/65">{r.notaPago}</p>}
     </div>

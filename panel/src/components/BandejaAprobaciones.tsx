@@ -26,7 +26,7 @@
  */
 import { useState } from 'react';
 import { DE_PAGOS, type Pendiente } from '@/lib/aprobaciones';
-import PastillaPago from './PastillaPago';
+import { EstadoDelPago } from './PastillaPago';
 import { enPalabras, hoy } from '@/lib/fechas';
 import { avisar } from './AvisoFlotante';
 
@@ -135,11 +135,16 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
   };
 
   return (
-    <section aria-label="Por aprobar" className="mb-4 rounded-xl border-2 border-ambar-fuerte/60 bg-ambar/[0.08] p-2 sm:p-3">
+    <section aria-label="Por aprobar" className="mb-4 rounded-xl border-2 border-ambar-fuerte/60 bg-ambar/[0.08] p-2 sm:p-3 lg:px-3 lg:py-2">
       {/* **En filas, no en tarjetas** (2026-11-13, lo pidió el cliente: dos
           tarjetas grandes medían 420px y empujaban el calendario). Cada pedido
           es una línea con su botón principal a la vista; lo que necesita más
-          explicación —el exclusivo, el motivo, el plazo— se abre en la fila. */}
+          explicación —el exclusivo, el motivo, el plazo— se abre en la fila.
+          **Y cada fila en dos renglones a lo más** (2026-11-22, lo pidió el
+          cliente con una foto: *"aprovechar el espacio de la mejor forma…
+          para achicar esta sección completa sin perder información"*, y
+          eligió cómo: *"el subtítulo sube a la línea de pagado"*): la nota
+          del pago va al lado de su pastilla, bajo la frase, con menos aire. Antes eran tres renglones por aviso. */}
       <h2 className="flex flex-wrap items-baseline gap-x-2 px-1 text-[15px] font-bold text-ambar-texto">
         <span aria-hidden>🔔</span>
         {(() => {
@@ -155,7 +160,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
             : 'mientras no respondas, no cambia nada'}</span>
       </h2>
 
-      <ul className="mt-2 space-y-1.5">
+      <ul className="mt-1.5 space-y-1.5 lg:space-y-1">
         {visibles.map((p) => {
           const ocupado = guardando === p.clave;
           const abierto = detalle === p.clave || rechazando === p.clave || aprobando === p.clave;
@@ -172,17 +177,60 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                 : `✓ Ampliar a ${p.ampliarA}`}
             </button>
           ) : null;
+          /** Abierto, lo simple —una explicación y *Ver el día →*— va en una fila en
+           *  el computador (2026-11-22, regla *el espacio se usa bien*); lo que
+           *  pregunta o trae un motivo sigue debajo. */
+          const enFila = p.tipo !== 'exclusivo' && !(p.motivo || p.comentario)
+            && rechazando !== p.clave && aprobando !== p.clave;
+          const acciones = (
+            <div className={`flex flex-wrap gap-2 ${enFila ? 'mt-2 lg:mt-0 lg:shrink-0' : ''}`}>
+              {p.tipo === 'exclusivo' && (p.pausado ? (
+                <span className="rounded-lg border-2 border-dashed border-morado-fuerte/60 px-3 py-2 text-[14px] font-semibold">
+                  ⏸ Este día ya no se vende mientras decides.
+                </span>
+              ) : (
+                <button type="button" disabled={ocupado} onClick={() => void pausar(p)}
+                  className="boton min-h-[44px] !border-morado-fuerte/70 !text-[15px] !font-semibold text-morado-texto">
+                  ⏸ Dejar de vender el día
+                </button>
+              ))}
+              {p.tipo === 'exclusivo' && (
+                <button type="button" disabled={ocupado}
+                  className="boton min-h-[44px] !border-verde-fuerte bg-verde-fuerte !text-[15px] !font-bold text-tinta"
+                  onClick={() => { setAprobando(p.clave); setRechazando(''); setMotivo(''); }}>✓ Aprobar</button>
+              )}
+              {/* Lo de pagos ya rige: no se rechaza, se corrige donde está. */}
+              {!DE_PAGOS.has(p.tipo) && (
+                <button type="button" disabled={ocupado}
+                  className="boton min-h-[44px] !border-rojo-fuerte/60 !text-[15px] !font-semibold text-rojo-texto"
+                  onClick={() => { setRechazando(p.clave); setAprobando(''); setMotivo(''); }}>
+                  ✕ Rechazar
+                </button>
+              )}
+              {p.tipo === 'cuenta'
+                ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
+                : (p.tipo === 'descuento' || p.tipo === 'pago' || p.tipo === 'descuentoVisto') && verReserva
+                ? <button type="button" className="boton min-h-[44px]" onClick={() => verReserva(p)}>Ver la reserva →</button>
+                : <a href={`/dia/${p.fecha}`} className="tecla boton min-h-[44px]">Ver el día →</a>}
+            </div>
+          );
           return (
-            <li key={p.clave} className={`rounded-lg border bg-panel px-3 py-1.5 ${abierto ? 'border-oro/60' : 'border-hueso/15'}`}>
+            <li key={p.clave} className={`rounded-lg border bg-panel px-3 py-1.5 lg:py-1 ${abierto ? 'border-oro/60' : 'border-hueso/15'}`}>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <div className="min-w-[14rem] flex-1">
                   <p className="text-[15px] leading-snug">{frase(p)}</p>
-                  {/* El pago con la misma pastilla de la reserva (`PastillaPago`). */}
+                  {/* El pago con la misma pastilla de la reserva (`EstadoDelPago`
+                      de `PastillaPago`) y su nota al lado, en un renglón: la
+                      pastilla parte en la misma vertical en todos los avisos. */}
                   {p.tipo === 'pago' && (
-                    <div className="mt-1">
-                      <PastillaPago sinOrigen r={{ id: 'MANUAL', tipoPago: '', estadoPago: p.estado === 'Abonada' ? 'partially_paid' : 'paid',
-                        notaPago: p.nota, abonado: p.abonado }} />
-                    </div>
+                    <p className="mt-1 text-[13px] leading-snug text-hueso/65">
+                      {/* En la línea del texto, no en una fila flexible: así la
+                          nota sigue detrás de la pastilla y, si es larga, se
+                          dobla debajo en vez de bajar entera. */}
+                      <EstadoDelPago className="mr-2 align-middle" r={{ id: 'MANUAL', tipoPago: '', notaPago: '',
+                        estadoPago: p.estado === 'Abonada' ? 'partially_paid' : 'paid', abonado: p.abonado }} />
+                      {p.nota && <span className="align-middle">{p.nota}</span>}
+                    </p>
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +256,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
 
               {abierto && (
                 <div className="mt-2 space-y-2 border-t border-hueso/10 pt-2">
-                  <p className="text-[14px] text-hueso/80">
+                  <div className={enFila ? 'lg:flex lg:items-center lg:gap-3' : ''}>
+                  <p className="text-[14px] text-hueso/80 lg:flex-1">
                     {p.tipo === 'descuento' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'}</>}
                     {p.tipo === 'cupo' && <>Hoy es <b>{p.cupoActual}</b> · ya reservaron <b>{p.tomadas}</b></>}
                     {p.tipo === 'pago' && <>Ya rige: la reserva cuenta como {p.estado.toLowerCase()}. Revísalo contra el banco o la caja; si algo no calza, corrígelo en la reserva</>}
@@ -220,6 +269,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                     {p.cuando && <> · {DE_PAGOS.has(p.tipo) ? 'lo anotó' : 'lo pidió'} {p.tipo === 'cuenta' ? `el ${enPalabras(p.cuando.slice(0, 10))} a las` : 'a las'} {p.cuando.slice(11) || p.cuando}</>}
                     {p.fecha === hoy() && p.tipo !== 'cuenta' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
                   </p>
+                  {enFila && acciones}
+                  </div>
                   {(p.motivo || p.comentario) && (
                     <p className="rounded-lg border border-hueso/15 bg-hueso/[0.04] px-3 py-2 text-[14px]">
                       {p.motivo && <b>{p.motivo}</b>}{p.motivo && p.comentario && ' · '}
@@ -284,36 +335,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {p.tipo === 'exclusivo' && (p.pausado ? (
-                        <span className="rounded-lg border-2 border-dashed border-morado-fuerte/60 px-3 py-2 text-[14px] font-semibold">
-                          ⏸ Este día ya no se vende mientras decides.
-                        </span>
-                      ) : (
-                        <button type="button" disabled={ocupado} onClick={() => void pausar(p)}
-                          className="boton min-h-[44px] !border-morado-fuerte/70 !text-[15px] !font-semibold text-morado-texto">
-                          ⏸ Dejar de vender el día
-                        </button>
-                      ))}
-                      {p.tipo === 'exclusivo' && (
-                        <button type="button" disabled={ocupado}
-                          className="boton min-h-[44px] !border-verde-fuerte bg-verde-fuerte !text-[15px] !font-bold text-tinta"
-                          onClick={() => { setAprobando(p.clave); setRechazando(''); setMotivo(''); }}>✓ Aprobar</button>
-                      )}
-                      {/* Lo de pagos ya rige: no se rechaza, se corrige donde está. */}
-                      {!DE_PAGOS.has(p.tipo) && (
-                        <button type="button" disabled={ocupado}
-                          className="boton min-h-[44px] !border-rojo-fuerte/60 !text-[15px] !font-semibold text-rojo-texto"
-                          onClick={() => { setRechazando(p.clave); setAprobando(''); setMotivo(''); }}>
-                          ✕ Rechazar
-                        </button>
-                      )}
-                      {p.tipo === 'cuenta'
-                        ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
-                        : (p.tipo === 'descuento' || p.tipo === 'pago' || p.tipo === 'descuentoVisto') && verReserva
-                        ? <button type="button" className="boton min-h-[44px]" onClick={() => verReserva(p)}>Ver la reserva →</button>
-                        : <a href={`/dia/${p.fecha}`} className="tecla boton min-h-[44px]">Ver el día →</a>}
-                    </div>
+                    !enFila && acciones
                   )}
                 </div>
               )}
