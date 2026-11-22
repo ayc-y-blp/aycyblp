@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas, revisarEspacio } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -307,19 +307,32 @@ for (const [nombre, abrir] of Object.entries(ESCENAS)) {
 // **Las tarjetas del calendario, parejas por dentro** (2026-11-22). Con el
 // peor caso puesto a mano: pronóstico en todos los días menos hoy, y un cupo
 // de tres cifras lleno en uno de cada dos (*150/150 personas* más el tiempo
-// es lo que hacía bajar un renglón).
+// es lo que hacía bajar un renglón). **Y hoy, exclusivo** (2026-11-22): la
+// pastilla *HOY* más la palabra más larga del estado es lo que bajaba el
+// estado a otro renglón (`revisarLineaDeLaFecha()`).
 if (!SOLO_MEDIR && !process.argv.slice(2).length) {
+  const hoyEjemplo = new Date(process.env.AYUDA_RELOJ ?? '2026-11-13T17:25:00Z').toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
   await p.route('**/api/clima', (r) => r.fulfill({ json: { clima: Array.from({ length: 120 }, (_, i) => ({
     fecha: new Date(Date.UTC(2026, 10, 14 + i)).toISOString().slice(0, 10), simbolo: 'partlycloudy_day', max: 23, min: 9, lluvia: null, mm: 0 })) } }));
   await p.route('**/api/ocupacion*', async (r) => {
     const d = await (await r.fetch()).json();
     (d.ocupacion ?? []).forEach((o, i) => { if (o.capacidad > 0) { o.capacidad = 150; if (i % 2) { o.tomadas = 150; o.porPagar = 150; o.pagadas = 0; o.quedan = 0; } } });
+    let deHoy = (d.ocupacion ?? []).find((o) => o.fecha === hoyEjemplo);
+    const molde = (d.ocupacion ?? []).find((o) => o.capacidad > 0);
+    if (!deHoy && molde) { deHoy = { ...molde, fecha: hoyEjemplo }; d.ocupacion.push(deHoy); d.ocupacion.sort((a, c) => a.fecha.localeCompare(c.fecha)); }
+    if (deHoy) Object.assign(deHoy, { privada: true, exclusiva: true, bloqueada: false });
     await r.fulfill({ json: d });
   });
   await ir('/');
   const desparejas = await revisarTarjetasParejas(p);
   console.log(`  ${desparejas.length ? 'FALLA ' : 'ok     '} calendario: las tarjetas de cada fila${desparejas.length ? '\n           · ' + desparejas.join('\n           · ') : ', parejas por dentro'}`);
   if (desparejas.length) fallas.push('calendario');
+  for (const [nombre, ruta] of [['calendario', null], ['cotizaciones', '/presupuestos']]) {
+    if (ruta) await ir(ruta);
+    const dobladas = await revisarLineaDeLaFecha(p);
+    console.log(`  ${dobladas.length ? 'FALLA ' : 'ok     '} ${nombre}: la línea de la fecha${dobladas.length ? '\n           · ' + dobladas.join('\n           · ') : ', en una línea con hoy exclusivo'}`);
+    if (dobladas.length) fallas.push(`${nombre} · línea de la fecha`);
+  }
 }
 // **El espacio de cada pantalla** (2026-11-22): dos filas seguidas que cabrían
 // en una. Solo en el computador y en una pasada completa.

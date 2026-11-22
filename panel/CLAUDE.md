@@ -48,7 +48,9 @@ revisan antes de cada cambio en esta carpeta.
   si falta ancho, cede lo secundario (un tamaño, una palabra), no se dobla
   la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
   tarjetas llenas y vacías juntas. En el calendario lo mide
-  `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
+  `revisarTarjetasParejas()`, dentro de `npm run ventanas`, y **la línea de
+  la fecha** —con *HOY* y el estado más largo, aunque la tarjeta esté sola
+  en su fila— `revisarLineaDeLaFecha()`.
 - **El espacio se usa bien: lo que cabe en una fila no se apila** (regla del
   cliente, 2026-11-22: *"hay mucho espacio libre… que lo anotas también como
   regla para que no te tengo que acordar todo el rato de aprovechar bien los
@@ -542,6 +544,59 @@ dentro* (arriba).
   lleno en uno de cada dos, la barra de cada tarjeta de una fila tiene que
   estar a la misma altura. Antes del cambio daba dos alturas.
 - Medido a 1024, 1280 y 1440px: todas las filas parejas.
+
+## La línea de la fecha: *HOY* no baja el estado (2026-11-22)
+
+Lo marcó el cliente con una foto de Cotizaciones, el domingo 22 —hoy y
+exclusivo—: *"El hoy hace que exclusivo baja una fila. Lo he mencionado en
+este chat, lo he mencionado en Fable… debería ser regla y parece que se
+anotó, pero aquí veo que no se cumple."* La regla estaba (*las tarjetas de
+una fila van parejas por dentro*); la prueba no lo veía.
+
+**Qué pasaba**: en el computador, la línea de la fecha de la tarjeta
+—*DOM 22* con su pastilla *HOY*, y a la derecha *🟣 EXCLUSIVO*— llevaba
+`lg:flex-wrap`. Con hoy y la palabra más larga pedía 220px en una tarjeta de
+214–216, y el estado bajaba a otro renglón: todo lo de abajo quedaba corrido
+respecto de las tarjetas vecinas. Igual en Reservas (`TarjetaDia`) y en
+Cotizaciones (`CotizacionesVista`), que son la misma pieza.
+
+**Qué hace ahora**, solo desde 1024px (`lg:`):
+
+- **La línea no se dobla**: sin `flex-wrap`.
+- **Cede el aire, no la letra** (regla: *cede lo secundario*): la tarjeta
+  pasa de 10 a 8px de relleno a los lados; dentro de la fecha, 4px entre las
+  piezas en vez de 6; la pastilla *HOY* rellena, 4px a los lados (su borde
+  es del mismo color, así que se ve igual de holgada); el punto del estado
+  a 13px; y el espaciado de las letras en mayúscula (*DOM*, *HOY*,
+  *EXCLUSIVO*) pasa a normal. **Toda la letra sigue en 13px o más.**
+- **El peor caso pide 205px** —*DOM*, *HOY* y *EXCLUSIVO*— y caben 218 a
+  1024px y 220 desde 1280: sobran 13 y 15. El margen es a propósito: el
+  panel usa la letra del sistema, y en un Mac es unos 8px más ancha en esta
+  línea que la Inter de este entorno (medido sobre la foto del cliente).
+- **Es la misma pieza en los cuatro calendarios**: `FechaDia` y `MarcaAhora`
+  también achican su espacio en Turnos y Extras, donde solo ayuda.
+- **La tarjeta de hoy mide un renglón menos** (17px) cuando era la que
+  doblaba.
+- **El celular no cambió**: ahí el punto va sobre la palabra y sobran 78px;
+  medido antes y después a 393px, igual.
+
+**La prueba, para que no vuelva** (`revisarLineaDeLaFecha()` en
+`pruebas/alineacion.mjs`, dentro de `npm run ventanas`):
+
+- Pasa por cada línea de la fecha (`data-linea-fecha`) de Reservas y
+  Cotizaciones, con **hoy exclusivo** puesto a mano en la escena, y falla si
+  la fecha y el estado no van en el mismo renglón.
+- **Mide el peor caso, no el que tocó**: en cada línea prueba los siete
+  nombres de día con cada palabra de estado y exige que sobren 10px. El
+  reloj del ejemplo es un viernes, y *VIE* es más angosto que *DOM*.
+- **Por qué no la veía `revisarTarjetasParejas()`**: compara la barra entre
+  tarjetas de una misma fila, y el día de la foto era domingo, solo en su
+  semana. Con hoy exclusivo en la escena, ahora también la ve.
+- Comprobada contra el código de antes: falla en las dos pantallas, a 1024
+  y a 1280.
+
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe esta línea, y las fotos se sacan a 400px.
 
 ## Las fechas se escriben como texto (2026-11-22)
 

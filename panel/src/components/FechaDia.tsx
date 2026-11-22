@@ -31,8 +31,8 @@ export function MarcaAhora({ children, relleno = false }: { children: ReactNode;
   relleno?: boolean }) {
   return (
     <span className={`inline-block whitespace-nowrap rounded-full border-2 border-hueso/60 px-2 py-px
-                     text-[13px] font-bold uppercase leading-tight tracking-wide ${relleno
-                       ? '!border-hueso bg-hueso text-tinta' : 'text-hueso'}`}>
+                     text-[13px] font-bold uppercase leading-tight tracking-wide lg:tracking-normal ${relleno
+                       ? '!border-hueso bg-hueso text-tinta lg:px-1' : 'text-hueso'}`}>
       {children}
     </span>
   );
@@ -67,9 +67,9 @@ export default function FechaDia({ fecha, tamano = 'tarjeta', chica = false, con
 }) {
   const t = chica ? 'chica' : tamano;
   return (
-    <span className={`inline-flex items-baseline gap-1.5 leading-none ${apagada ? 'text-hueso/55' : ''}`}
+    <span className={`inline-flex items-baseline gap-1.5 leading-none lg:gap-1 ${apagada ? 'text-hueso/55' : ''}`}
       aria-label={fecha === hoy() ? `Hoy, ${enPalabras(fecha)}` : enPalabras(fecha)}>
-      <span aria-hidden className="text-[13px] font-bold uppercase tracking-wide opacity-75">
+      <span aria-hidden className="text-[13px] font-bold uppercase tracking-wide opacity-75 lg:tracking-normal">
         {DIAS[diaSemana(fecha)]}
       </span>
       <span aria-hidden className={`tabular-nums ${NUMERO[t]} ${apagada ? 'font-medium' : 'font-black'}`}>
