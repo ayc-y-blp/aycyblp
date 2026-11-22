@@ -43,7 +43,12 @@ const PUBLICAS = [
   // La pantalla de entrada y la ruta que la atiende. Si pidieran sesión,
   // no habría forma de conseguir una.
   '/login',
-  '/api/sesion'
+  '/api/sesion',
+  // El ícono de la pestaña y el del teléfono (2026-11-22): sin sesión, la
+  // entrada y los links de cotización, contrato y trabajador quedaban con el
+  // ícono genérico del navegador. Son dos imágenes fijas, sin datos.
+  '/icon.svg',
+  '/apple-icon.png'
 ];
 
 /**

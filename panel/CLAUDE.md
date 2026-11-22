@@ -1387,6 +1387,23 @@ entregan un Client ID y un Client secret, y con ellos se pide un token que
   responde *"Missing or invalid client secret"*. El secreto de una app de
   Shopify empieza con `shpss_` y tiene 38 caracteres.
 
+## El ícono de la pestaña (2026-11-22)
+
+El mismo huaso a caballo del sitio (ver "El ícono de la pestaña" en el
+`CLAUDE.md` de la raíz), **con los colores invertidos: blanco sobre negro**.
+Lo pidió el cliente: *"para que se nota cuando estoy en el sitio o cuando
+estoy en el panel"*; el del sitio es negro sobre blanco. Está en
+`src/app/icon.svg`, `src/app/favicon.ico` y `src/app/apple-icon.png`, que
+Next.js enlaza solo en todas las páginas. Si se cambia el dibujo, se cambia
+también en el sitio (`assets/icono/`).
+
+- **`/icon.svg` y `/apple-icon.png` están en `PUBLICAS`** de
+  `middleware.ts`: sin eso, la entrada y los links de cotización, contrato y
+  trabajador, que se abren sin sesión, quedaban con el ícono genérico. Son
+  dos imágenes fijas, sin datos. `favicon.ico` ya estaba fuera del
+  middleware.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
 ## Lo que explica, a su `?`: la pasada por todo el panel (2026-11-21)
 
 Lo pidió el cliente mirando Turnos: *"este texto… debería ser un botón de

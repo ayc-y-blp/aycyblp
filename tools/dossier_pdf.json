@@ -1,10 +1,10 @@
 {
   "_que_es": "Huella de las páginas con que se generaron los PDF (dossier y socios comerciales). La escribe tools/dossier_pdf.mjs y la revisa traducir.py --revisar.",
-  "dossier.html": "10fbab3df9797306",
-  "en/dossier.html": "7a3c0405e3a028a6",
-  "pt/dossier.html": "eb97b7191aafbfd2",
-  "landing-afiliados.html": "1113354e5c2fe22f",
-  "en/landing-afiliados.html": "904c59a008224159",
-  "pt/landing-afiliados.html": "b0f395f595fa3020",
+  "dossier.html": "9c617f0af7fbc0ab",
+  "en/dossier.html": "7100711e23115685",
+  "pt/dossier.html": "f6630bf96b6760bf",
+  "landing-afiliados.html": "a544cad6f5c79513",
+  "en/landing-afiliados.html": "a7aca9108bdb5436",
+  "pt/landing-afiliados.html": "b65d6b3671781d50",
   "script": "270c45f29ef8dc00"
 }
