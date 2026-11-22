@@ -386,7 +386,8 @@ existe en la lista o una marca mal escrita.
   una fecha que nadie mantiene enseña a Google a no creerla. `robots.txt`
   es fijo y apunta a él.
 - **Es lo segundo que el script escribe en los archivos españoles**,
-  después del `?v=` de los assets. `--revisar` nombra las páginas con
+  después del `?v=` de los assets (y desde el 2026-11-22 hay un tercero, el
+  bloque de la cabecera: ver "Lo que el sitio le dice a Google"). `--revisar` nombra las páginas con
   precios viejos como *(precios de la lista)*.
 - **Qué precio usa cada página es una decisión que vive en la marca**, no
   en la lista: el sitio público anuncia `linea` (pagar por adelantado) al
@@ -888,6 +889,54 @@ madera asomando bajo la panza.
   `favicon.ico` y `apple-icon.png`, que Next.js pone solo: ver
   `panel/CLAUDE.md`. **Si se cambia el dibujo, se cambia en los dos**, con el
   negro y el blanco dados vuelta.
+
+### Lo que el sitio le dice a Google y a quien comparte un link (2026-11-22)
+
+Lo preguntó el cliente después del lanzamiento: *"si se hizo algún trabajo,
+alguna configuración respecto al Search Engine Optimization"*. Había una base
+técnica —títulos, descripciones, `hreflang`, `sitemap.xml`, `robots.txt`, las
+301 del sitio viejo, `noindex` en la 404— y faltaban cuatro cosas, que se
+sumaron ese día. **Lo que no es código** (Search Console, la ficha de Google
+Maps, medir visitas, las palabras clave, los enlaces de otros sitios) quedó
+como guía paso a paso en el documento *Traspaso a producción*, sección
+*SEO*.
+
+- **El bloque `<!--i18n:alternate-->` del `<head>` lo arma entero
+  `cabecera()` de `traducir.py`**, en los tres idiomas **y también en el
+  español de la raíz**: es lo tercero que el script escribe ahí, después del
+  `?v=` y los precios. Sale del `<title>` y la descripción de la misma
+  página, ya traducidos: no hay un segundo texto que mantener. Trae:
+  - los `hreflang`, como antes;
+  - **el `canonical`**: la dirección oficial de esa página en ese idioma;
+  - **la vista previa al compartir** (Open Graph y `twitter:card`): título,
+    descripción, idioma (`es_CL`, `en_US`, `pt_BR`) y la foto;
+  - **en la portada, los datos del negocio para Google** (schema.org
+    `Restaurant`): nombre, dirección, el WhatsApp de reservas, el correo, el
+    mapa, la cocina y el link de reservas.
+- **La portada es `/`, no `/index.html`** (`url_publica()`): las dos
+  muestran lo mismo y Google tiene que saber cuál es la oficial. La usan el
+  canonical, los `hreflang`, la vista previa y `sitemap.xml`, que dicen la
+  misma dirección.
+- **La foto para compartir es la de la portada, recortada en horizontal**
+  (`assets/compartir/portada.jpg`, 795×416): la original es vertical y
+  WhatsApp y Facebook la cortarían por la mitad. La eligió el cliente *"por
+  ahora"*; cambiarla es reemplazar ese archivo y `IMAGEN_COMPARTIR`.
+- **Los datos del negocio no llevan horario**: Google lo pide con hora de
+  cierre, y el cliente prefirió *hasta el cierre*. El horario va en la ficha
+  de Google Maps. **Ni precio, ni coordenadas, ni redes**: no están
+  confirmados. Es un bloque de datos (`application/ld+json`), no un script
+  que corra: no toca la regla de cero JavaScript.
+- **Los tres landings ganaron su descripción** (socios, promociones y
+  dossier), con sus traducciones en los diccionarios. La de promociones es
+  neutra, como su cabecera: no nombra una oferta.
+- **Cambiar un título o una descripción es lo de siempre**: se edita el
+  español, `python3 tools/traducir.py`, y la vista previa y el canonical se
+  rehacen solos. `--revisar` avisa *(cabecera: hreflang y vista previa)* si
+  quedó viejo. Si cambia el `<head>` del dossier o de socios, la guarda pide
+  `node tools/dossier_pdf.mjs`.
+- **Se comprueba después de publicar**, con las herramientas de Google y de
+  Facebook que están en la guía del documento: la prueba de resultados
+  enriquecidos y el depurador de vista previa.
 
 ### Trampas de layout ya resueltas (no las reintroduzcas)
 

@@ -281,18 +281,110 @@ def selector_idiomas(pagina, idioma):
     return ''.join(partes)
 
 
-def enlaces_alternate(pagina):
-    """Los <link rel="alternate" hreflang> del <head>: le dicen a Google
-    que estas tres páginas son la misma en distinto idioma. Son iguales en
-    los tres idiomas y x-default apunta al español."""
+def url_publica(pagina, idioma):
+    """La dirección con que se publica `pagina` en `idioma`, completa.
+
+    **La portada va sin `index.html`** (2026-11-22): `/` y `/index.html`
+    muestran lo mismo, y Google tiene que saber cuál es la oficial. Es la
+    que la gente escribe y la que comparte, así que esa es: `/`, `/en/` y
+    `/pt/`. La usan los hreflang, el canonical, la vista previa al compartir
+    y el sitemap, para que las cuatro digan la misma dirección."""
+    carpeta = '' if idioma == 'es' else idioma + '/'
+    if pagina == 'index.html':
+        return '%s/%s' % (SITIO, carpeta)
+    return '%s/%s%s' % (SITIO, carpeta, pagina)
+
+
+# La vista previa al compartir un link (WhatsApp, Instagram, Facebook): la
+# foto de la portada, recortada en horizontal porque así la piden; la
+# original es vertical y la cortarían por la mitad.
+IMAGEN_COMPARTIR = ('assets/compartir/portada.jpg', 795, 416)
+LOCALE = {'es': 'es_CL', 'en': 'en_US', 'pt': 'pt_BR'}
+COCINA = {'es': 'Chilena', 'en': 'Chilean', 'pt': 'Chilena'}
+
+
+def datos_del_negocio(idioma):
+    """Los datos del negocio para Google (schema.org), solo en la portada.
+
+    **Solo lo confirmado**: nombre, dirección, el WhatsApp de reservas, el
+    correo y el mapa. **Sin horario**: Google lo pide con hora de cierre, y
+    el sitio dice *hasta el cierre* (lo decidió el cliente el 2026-11-22).
+    El horario va en la ficha de Google Maps. Es un bloque de datos, no un
+    script que corra: no toca la regla de cero JavaScript."""
+    datos = {
+        '@context': 'https://schema.org',
+        '@type': 'Restaurant',
+        'name': 'Brasas de Lo Pirque',
+        'url': url_publica('index.html', idioma),
+        'image': '%s/%s' % (SITIO, IMAGEN_COMPARTIR[0]),
+        'logo': '%s/assets/logo-brasas-wordmark.png' % SITIO,
+        'telephone': '+56 9 4009 6228',
+        'email': 'contacto@lopirque.cl',
+        'address': {
+            '@type': 'PostalAddress',
+            'streetAddress': 'Casas de San Vicente, lote 4',
+            'addressLocality': 'Pirque',
+            'addressRegion': 'Región Metropolitana',
+            'addressCountry': 'CL',
+        },
+        'hasMap': 'https://maps.app.goo.gl/NPkmd1foma1Uc8nB8',
+        'servesCuisine': COCINA[idioma],
+        'acceptsReservations': url_publica('reservas.html', idioma),
+    }
+    return ('<script type="application/ld+json">%s</script>'
+            % json.dumps(datos, ensure_ascii=False, separators=(',', ':')))
+
+
+def cabecera(pagina, idioma, html):
+    """El bloque `<!--i18n:alternate-->` del `<head>`, que arma el script.
+
+    - Los `hreflang`: le dicen a Google que las tres páginas son la misma en
+      distinto idioma (x-default, el español).
+    - El `canonical` (2026-11-22): la dirección oficial de esta página en
+      este idioma.
+    - La vista previa al compartir (Open Graph), con el título y la
+      descripción **ya traducidos**, sacados de la misma página: no hay un
+      segundo texto que mantener.
+    - En la portada, los datos del negocio para Google.
+
+    En el español de la raíz también lo escribe el script, como el `?v=` y
+    los precios: sale del título y la descripción de la propia página."""
+    titulo = re.search(r'<title>(.*?)</title>', html, re.S)
+    descr = re.search(r'<meta name="description" content="([^"]*)"', html)
+    attr = lambda t: escapar(desescapar(t.strip()))
+    yo = url_publica(pagina, idioma)
     filas = ['<!--i18n:alternate-->']
     for otro in IDIOMAS:
-        filas.append('<link rel="alternate" hreflang="%s" href="%s/%s">'
-                     % (otro, SITIO, ruta_relativa(pagina, 'es', otro)))
-    filas.append('<link rel="alternate" hreflang="x-default" href="%s/%s">'
-                 % (SITIO, pagina))
+        filas.append('<link rel="alternate" hreflang="%s" href="%s">'
+                     % (otro, url_publica(pagina, otro)))
+    filas.append('<link rel="alternate" hreflang="x-default" href="%s">'
+                 % url_publica(pagina, 'es'))
+    filas.append('<link rel="canonical" href="%s">' % yo)
+    filas.append('<meta property="og:type" content="website">')
+    filas.append('<meta property="og:site_name" content="Brasas de Lo Pirque">')
+    filas.append('<meta property="og:locale" content="%s">' % LOCALE[idioma])
+    filas.append('<meta property="og:url" content="%s">' % yo)
+    if titulo:
+        filas.append('<meta property="og:title" content="%s">' % attr(titulo.group(1)))
+    if descr:
+        filas.append('<meta property="og:description" content="%s">' % attr(descr.group(1)))
+    img, ancho, alto = IMAGEN_COMPARTIR
+    filas.append('<meta property="og:image" content="%s/%s">' % (SITIO, img))
+    filas.append('<meta property="og:image:width" content="%d">' % ancho)
+    filas.append('<meta property="og:image:height" content="%d">' % alto)
+    filas.append('<meta name="twitter:card" content="summary_large_image">')
+    if pagina == 'index.html':
+        filas.append(datos_del_negocio(idioma))
     filas.append('<!--/i18n:alternate-->')
     return '\n'.join(filas)
+
+
+def poner_cabecera(html, pagina):
+    """Escribe el bloque de la cabecera en el español de la raíz."""
+    if pagina in SIN_ALTERNATE or not BLOQUE_ALTERNATE.search(html):
+        return html
+    bloque = cabecera(pagina, 'es', html)
+    return BLOQUE_ALTERNATE.sub(lambda m: bloque, html, count=1)
 
 
 # ----------------------------------------------------------------------
@@ -385,7 +477,7 @@ def traducir_pagina(fuente, pagina, traducir, idioma, lista):
 
     texto = aplicar_lista(''.join(salida), lista, idioma, pagina)
     texto = texto.replace(MARCA_IDIOMAS, selector_idiomas(pagina, idioma))
-    texto = texto.replace(MARCA_ALTERNATE, enlaces_alternate(pagina))
+    texto = texto.replace(MARCA_ALTERNATE, cabecera(pagina, idioma, texto))
     return texto
 
 
@@ -665,12 +757,12 @@ def sitemap():
             continue
         for idioma in IDIOMAS:
             filas.append('  <url>')
-            filas.append('    <loc>%s/%s</loc>' % (SITIO, ruta_relativa(pagina, 'es', idioma)))
+            filas.append('    <loc>%s</loc>' % url_publica(pagina, idioma))
             for otro in IDIOMAS:
-                filas.append('    <xhtml:link rel="alternate" hreflang="%s" href="%s/%s"/>'
-                             % (otro, SITIO, ruta_relativa(pagina, 'es', otro)))
-            filas.append('    <xhtml:link rel="alternate" hreflang="x-default" href="%s/%s"/>'
-                         % (SITIO, pagina))
+                filas.append('    <xhtml:link rel="alternate" hreflang="%s" href="%s"/>'
+                             % (otro, url_publica(pagina, otro)))
+            filas.append('    <xhtml:link rel="alternate" hreflang="x-default" href="%s"/>'
+                         % url_publica(pagina, 'es'))
             filas.append('  </url>')
     filas.append('</urlset>')
     return '\n'.join(filas) + '\n'
@@ -706,20 +798,27 @@ def main():
         # Los precios de la lista se escriben ahí mismo, y por lo mismo: no
         # son contenido que alguien redacte en la página, son un dato que
         # vive en precios.json y que el script copia.
+        #
+        # Y desde el 2026-11-22, el bloque de la cabecera (hreflang,
+        # canonical, vista previa al compartir y datos del negocio): sale del
+        # título y la descripción de la misma página, ver cabecera().
         sellado = sellar_assets(original)
         con_precios = aplicar_lista(sellado, lista, 'es', pagina, problemas)
-        if con_precios != original:
+        con_cabecera = poner_cabecera(con_precios, pagina)
+        if con_cabecera != original:
             if args.revisar:
                 if sellado != original:
                     desfasados.append(pagina + ' (versión de los assets)')
                 if con_precios != sellado:
                     desfasados.append(pagina + ' (precios de la lista)')
+                if con_cabecera != con_precios:
+                    desfasados.append(pagina + ' (cabecera: hreflang y vista previa)')
             else:
                 with open(ruta, 'w', encoding='utf-8') as f:
-                    f.write(con_precios)
+                    f.write(con_cabecera)
                 sellados += 1
 
-        fuentes[pagina] = con_precios
+        fuentes[pagina] = con_cabecera
         verificar_fuente(fuentes[pagina], pagina, problemas)
         precios_sueltos(fuentes[pagina], pagina, problemas)
 
