@@ -240,8 +240,16 @@ Y la Lista partía en *Todo*.
 - **Estadísticas usa la misma pieza** (*Mes · Semana · Día · Personalizado*):
   en *Personalizado*, *Desde* y *Hasta* van dentro del marco, donde estaban
   las flechas, con cuántos días son. En la vista *👥 Equipo* no hay *por qué
-  fecha*: el marco lleva solo el periodo. *Todo · Visitas · Eventos* sube a la
-  fila de *Volver* y *Reservas / Equipo*, a la derecha.
+  fecha*: el marco lleva solo el periodo. **Desde 1280px, *Todo · Visitas ·
+  Eventos* va a la derecha del marco**, en su misma fila (lo pidió la prueba
+  de espacio: *dos filas que cabrían en una*); más angosto y en
+  *Personalizado* —el marco, con sus dos fechas, ocupa casi todo el ancho—,
+  en la fila de *Volver*. Van en una fila que no se parte: si falta ancho,
+  cede el marco, y *Todo · Visitas · Eventos* nunca queda solo en otra fila.
+- **Un título largo se dobla, el marco no**: desde 1280px el título entre las
+  flechas tiene un tope de 12,5rem, y *26 de octubre – 1 de noviembre 2026* va
+  en dos renglones en vez de mandar las fechas a otra línea del marco. Vale en
+  las tres pantallas.
 - **Vendedores también**, en el mismo PR (regla *un cambio de diseño se
   lleva a sus parecidos*): tenía el mismo dibujo que la Lista antes del
   cambio —de ahí se había copiado—, *Mes · Semana* sueltos y el mes con ◀ ▶

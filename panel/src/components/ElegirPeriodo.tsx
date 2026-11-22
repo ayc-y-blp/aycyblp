@@ -54,7 +54,11 @@ export default function ElegirPeriodo({ modos, modo, onModo, titulo, onMover, en
         <div className="flex w-full items-center gap-1 lg:w-auto">
           <button type="button" aria-label="Periodo anterior" className="boton h-10 w-10 shrink-0 bg-panel !p-0 text-[16px]"
             onClick={() => onMover(-1)}>◀</button>
-          <span className="min-w-[9.5rem] flex-1 text-center text-[16px] font-bold first-letter:uppercase lg:flex-none">{titulo}</span>
+          {/* **Un título largo se dobla, el marco no** (desde 1280px, tope de
+              12,5rem): *26 de octubre – 1 de noviembre 2026* va en dos
+              renglones y el marco sigue en una línea, con lo de al lado en su
+              fila. */}
+          <span className="min-w-[9.5rem] flex-1 text-balance text-center text-[16px] font-bold leading-tight first-letter:uppercase lg:flex-none xl:max-w-[12.5rem]">{titulo}</span>
           <button type="button" aria-label="Periodo siguiente" className="boton h-10 w-10 shrink-0 bg-panel !p-0 text-[16px]"
             onClick={() => onMover(1)}>▶</button>
         </div>
