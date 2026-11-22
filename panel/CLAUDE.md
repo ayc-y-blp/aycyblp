@@ -600,10 +600,37 @@ propósito: el marco y su título son el formato, no una cosa del computador.
   (`ven-cotizar`, `ven-envio`, `pag-cobros`, `ger-cobros`); `ven-cotizar`
   pide 920px de alto, porque la lista de clientes creció. Ningún texto de
   ayuda describe los marcos.
-- **Lo que no se tocó, a propósito**: las ventanitas que se abren desde la
-  cotización (*¿La mandaste?*, *Corregir la ganada*, *Cancelar evento*, los
-  datos de la factura) son de una sola pregunta, sin secciones.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
+**Y las ventanitas que se abren desde la cotización** (el mismo día; se le
+preguntó al cliente y dijo *"sí, ponle marco también a las ventanitas"*).
+Cada una agrupa lo suyo en un marco de grupo con su título en negrita, y los
+botones van fuera, al pie:
+
+| Ventanita | El marco |
+|---|---|
+| *¿La mandaste?* | rosado (el envío), con la pregunta como título |
+| *¿Marcarla ganada?* | verde, *Al marcarla ganada*; el aviso de sin anticipo, en su grupo ámbar |
+| *Datos de facturación* | neutro, con el nombre del cliente: se sabe de quién es la ficha |
+| *Corregir la ganada* (`CorregirGanada`) | neutro, *¿Qué pasó?*, con las salidas como botones de adentro |
+| *Cancelar el evento* (`CancelarEvento`) | cielo, *Lo que dice el contrato*, y neutro, *Al cancelar*; en el computador, lado a lado |
+| *Cambiar vendedor* (`CambiarVendedor`) | neutro, *Pasa a* |
+| *Agregar socio comercial* (`AgregarVendedor`) | sus tres pasos, cada uno un grupo; es la misma ventana de *Agregar vendedor* en Vendedores |
+| *Lo que cambia* al corregir un día cerrado (`PieCorreccion`) | ámbar. **Es la misma pieza en el equipo, los extras, las reservas y la cotización ganada**, así que cambió en todos |
+
+- ***Cancelar el evento* no cabía**: con los marcos medía 797px a 1280×650,
+  y antes tampoco cabía —no estaba en la prueba—. En el computador es ancha
+  (`lg:max-w-4xl`), con los dos grupos lado a lado, y la explicación de la
+  devolución pasó a su `?`: 518px.
+- **Tres escenas nuevas en `npm run ventanas`**, que no estaban medidas:
+  `v-cotizar-la-mandaste` (238px), `v-cotizar-corregir-ganada` (572) y
+  `v-cotizar-cancelar-evento` (518). Son 49. *¿Marcarla ganada?* no tiene
+  escena: ninguna cotización del ejemplo está lista para ganar sin anotar
+  antes un pago, y una escena no escribe. Medida a mano, con un anticipo
+  anotado en la copia de prueba: 248px.
+- Con el grupo, *Agregar vendedor* pasó de 469 a 499px y *Cambiar vendedor*
+  de 307 a 341; la ventana del equipo de un día cerrado corrigiendo, 622.
+  Todo cabe; las dos anotadas en `NO_CABEN` no crecieron.
 
 ## La lista de cotizaciones, por fecha del evento y con el año (2026-11-22)
 
@@ -2096,7 +2123,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 46 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 49 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

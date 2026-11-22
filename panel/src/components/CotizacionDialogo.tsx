@@ -2263,14 +2263,21 @@ export default function CotizacionDialogo({
               )}
               {facturaAbierta && (
                 <Dialogo titulo="Datos de facturación" onCerrar={() => setFacturaAbierta(false)} ancho="max-w-xl">
-                  <p className="mb-3 mt-2 text-[14px] text-hueso/75">Se guardan en la ficha del cliente.</p>
-                  {camposFactura}
+                  {/* En su marco de grupo (2026-11-22), con el nombre del cliente:
+                      se sabe de quién es la ficha que se está llenando. */}
+                  <div className={`mt-2 ${marcoGrupo()} p-3`}>
+                  <p className={`flex items-center gap-2 ${TITULO_GRUPO}`}>
+                    <span aria-hidden>🧾</span>{cliente?.nombre ?? 'El cliente'}
+                    <span className="text-[14px] font-normal text-hueso/70">· se guarda en su ficha</span>
+                  </p>
+                  <div className="mt-3">{camposFactura}</div>
                   {faltaFactura.length > 0 && (
                     <p className="mt-3 rounded border border-ambar/50 bg-ambar/5 px-3 py-2 text-[14px]
                                   font-semibold text-ambar-texto">
                       Para facturarle falta: {faltaFactura.join(', ')}.
                     </p>
                   )}
+                  </div>
                   <div className="mt-4 flex justify-end">
                     <button type="button" className="boton boton-relleno min-h-[44px] px-5"
                       onClick={() => setFacturaAbierta(false)}>✓ Listo</button>
@@ -2923,9 +2930,13 @@ export default function CotizacionDialogo({
       )}
       {preguntaEnvio && (
         <Dialogo titulo="¿La mandaste?" onCerrar={() => setPreguntaEnvio('')}>
-          <p className="mt-3 text-[17px]">
+          {/* **En su marco de grupo** (2026-11-22, lo pidió el cliente: *"ponle
+              marco también a las ventanitas"*): rosado, el color del envío, con
+              la pregunta como título. Los botones van fuera, al pie. */}
+          <div className={`mt-3 ${marcoGrupo('rosa')} p-3`}>
+          <p className={TITULO_GRUPO}>
             ¿Le mandaste {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
-            <strong>{cliente?.nombre ?? 'tu cliente'}</strong>?
+            {cliente?.nombre ?? 'tu cliente'}?
           </p>
           <p className="mt-2 text-[14px] text-hueso/75">
             {preguntaEnvio === 'contrato'
@@ -2944,7 +2955,7 @@ export default function CotizacionDialogo({
             const texto = viaEnvio === 'whatsapp' ? (contrato ? textoWhatsappContrato : textoWhatsapp)
               : (contrato ? linkContrato : link);
             return (
-              <div className="mt-4 rounded-lg border border-hueso/20 bg-hueso/[0.04] p-3">
+              <div className="mt-3 rounded-lg border border-hueso/20 bg-panel p-3">
                 <p className="text-[15px] font-semibold">
                   ¿No se abrió {viaEnvio === 'whatsapp' ? 'WhatsApp' : 'el correo'}?
                 </p>
@@ -2966,6 +2977,7 @@ export default function CotizacionDialogo({
               </div>
             );
           })()}
+          </div>
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button type="button" className="boton min-h-[48px]" onClick={() => setPreguntaEnvio('')}>
               Todavía no
@@ -2998,8 +3010,12 @@ export default function CotizacionDialogo({
             {/* **La letra en grande** (2026-11-12, lo pidió el cliente): se
                 marcó ganada la A cuando era la B. Acá se ve cuál es antes de
                 apretar, con su total, y qué pasa con las demás. */}
+            {/* **En su marco de grupo** (2026-11-22): lo que pasa al ganarla,
+                en verde; el aviso de sin anticipo, en su grupo ámbar. */}
+            <div className={`mt-3 ${marcoGrupo('verde')} p-3`}>
+            <p className={`${TITULO_GRUPO} text-verde-texto`}>Al marcarla ganada</p>
             {alts.length > 1 && (
-              <div className="mt-3 flex items-center gap-4 rounded-xl border-2 border-verde-fuerte bg-verde/10 p-3">
+              <div className="mt-3 flex items-center gap-4 rounded-xl border-2 border-verde-fuerte/60 bg-panel p-3">
                 <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-verde-fuerte
                                  text-[36px] font-extrabold text-tinta">{l}</span>
                 <span>
@@ -3020,9 +3036,10 @@ export default function CotizacionDialogo({
                   ? ` Los pagos anotados en otra alternativa pasan a la ${l}.` : ''}
               </p>
             )}
+            </div>
             {sinRespaldo && (
-              <div className="mt-3 rounded-lg border-2 border-ambar/60 bg-ambar/10 p-3 text-[15px]">
-                <p className="text-[17px] font-bold text-ambar-texto">
+              <div className={`mt-3 ${marcoGrupo('ambar')} p-3 text-[15px]`}>
+                <p className={`${TITULO_GRUPO} text-ambar-texto`}>
                   {nada ? '✋ ¿Por qué la marcas ganada sin anticipo?' : 'No tienes el anticipo pagado ni contrato firmado.'}
                 </p>
                 <p className="mt-1 text-hueso/85">

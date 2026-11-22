@@ -16,6 +16,7 @@
  */
 import { useState } from 'react';
 import Dialogo from './Dialogo';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import { avisar } from './AvisoFlotante';
 import { enPesos } from '@/lib/ocupacion';
 import { enPalabras, esFecha } from '@/lib/fechas';
@@ -62,10 +63,14 @@ export default function CorregirGanada({ p, letra, gente, otras, onCerrar, onCan
     <Dialogo titulo="Corregir la ganada" onCerrar={onCerrar}>
       <p className="mt-3 text-[16px]">
         {letra ? <>La <strong>alternativa {letra}</strong> está</> : 'Esta cotización está'} marcada ganada:
-        su reserva de <strong>{gente} personas</strong> {cuando} está en el calendario. ¿Qué pasó?
+        su reserva de <strong>{gente} personas</strong> {cuando} está en el calendario.
       </p>
 
-      <div className="mt-4 space-y-3">
+      {/* **Las salidas, en su marco de grupo** (2026-11-22, lo pidió el
+          cliente: *"ponle marco también a las ventanitas"*): la pregunta es el
+          título y cada salida, un botón de adentro. */}
+      <div className={`mt-4 space-y-3 ${marcoGrupo()} p-3`}>
+        <p className={TITULO_GRUPO}>¿Qué pasó?</p>
         {otras.map((o) => (
           <button key={o.id} type="button" disabled={guardando} onClick={() => void corregir(o.id)}
             className="tecla flex w-full items-center gap-4 rounded-xl border-2 border-cielo-fuerte/70 bg-cielo/10

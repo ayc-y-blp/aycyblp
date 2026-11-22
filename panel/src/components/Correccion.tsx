@@ -17,6 +17,7 @@
  */
 import type { Cierre } from '@/lib/cierres';
 import AyudaCorta from './AyudaCorta';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 
 export function AvisoCierre({ cierre, puedeCorregir, corrigiendo, onCorregir }: {
   cierre?: Cierre;
@@ -101,11 +102,16 @@ export function PieCorreccion({
 }) {
   const sinCambios = cambios.length === 0;
   const fila = modo === 'fila', dos = modo === 'dosFilas', ancho = fila || dos;
+  // **Un marco de grupo ámbar** (2026-11-22, lo pidió el cliente al ponerle
+  // marco a las ventanitas de la cotización): *Lo que cambia* es una sección,
+  // con el borde más marcado que la casilla y los botones de adentro, y el
+  // título en negrita. Es la misma pieza en el equipo, los extras, las
+  // reservas y la cotización ganada, así que cambió en todos.
   return (
-    <div className={`mt-4 rounded border border-ambar/50 p-3 ${
-      ancho ? 'lg:mt-2 lg:bg-ambar/[0.06] lg:px-3 lg:py-2' : ''} ${fila ? 'lg:flex lg:items-center lg:gap-4' : ''}`}>
+    <div className={`mt-4 ${marcoGrupo('ambar')} p-3 ${
+      ancho ? 'lg:mt-2 lg:px-3 lg:py-2' : ''} ${fila ? 'lg:flex lg:items-center lg:gap-4' : ''}`}>
       <div className={`min-w-0 ${fila ? 'lg:flex-1' : ''}`}>
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-hueso/70">
+        <p className={TITULO_GRUPO}>
           {ancho && <span className="hidden text-ambar-texto lg:inline">Estás corrigiendo un día cerrado · </span>}
           Lo que cambia<span className={ancho ? 'lg:hidden' : ''}> en este día cerrado</span>
         </p>
