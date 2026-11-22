@@ -41,19 +41,17 @@ más abajo; esto es la lista para revisar.
   importa, como una pregunta antes de confirmar— en la misma pasada en que
   se termina, sin esperar a que lo pida y sin preguntar si quiere verlo.
   Pocas preguntas: se pregunta solo lo que de verdad decide el cliente.
-- **Desde el lanzamiento, dos caminos para mergear** (regla del cliente,
-  2026-11-20; el lanzamiento es el domingo 22-11-2026, y si no se sabe si
-  ya pasó, se trata como que sí). Todo cambio pasa primero por la versión
-  de prueba (preview) del PR; lo que se decide es cuándo se mergea a
-  producción. **Chico** —textos, ayudas, colores, lo que se ve y no mueve
-  nada—: se mergea solo con Vercel en verde, como hasta ahora, y se mandan
-  las capturas. **Con prueba** —plata, la reserva o el pago en Shopify, el
-  cupo, columnas nuevas en la planilla, permisos—: el PR queda **abierto
-  sin mergear**, se le manda al cliente el link de la preview y se mergea
-  recién cuando diga *"mergea"*. **Cada PR dice en qué camino va.** Si el
-  cliente dice *"déjalo en preview"*, ese PR espera su OK aunque sea chico.
-  Un arreglo urgente de algo roto en producción va directo, avisando en el
-  mismo momento. Detalle en "Git".
+- **Nada se mergea a producción sin preguntar** (regla del cliente,
+  2026-11-22: *"eso me tienes que preguntar siempre antes. Puedes mergear
+  preview sin aviso pero no producción"*). Reemplaza a los *dos caminos*
+  del 2026-11-20, en que los cambios chicos se mergeaban solos con Vercel
+  en verde. Ahora: **la versión de prueba, sin aviso** —se commitea, se
+  empuja a la rama y se abre el PR, que arma la preview—, y **mergear a
+  `main`, que publica en producción, solo cuando el cliente dice
+  *"mergea"*, también lo chico**. Al terminar se le mandan las capturas y
+  el link de la preview, y se le pregunta si se mergea. **Un arreglo urgente
+  de algo roto en producción también se pregunta**, diciendo que es urgente
+  y qué está roto. Detalle en "Git".
 - **Coherencia: el mismo tipo de información, con el mismo formato y el
   mismo peso en todo el sitio** (regla del cliente, 2026-11-13: *"ya estoy
   en el mismo mundo… me lo muestras un poco distinto, de tamaño, por la
@@ -2439,16 +2437,31 @@ paso extra. El PR lleva **qué cambió y por qué**, no un listado de archivos:
 es el lugar donde queda escrito el motivo de una decisión, y buena parte de
 este CLAUDE.md salió de ahí.
 
-**Se mergea solo, en cuanto Vercel da `success`** (decidido el 2026-11-11;
-antes era caso a caso). Se abre el PR, se espera a que la construcción de
-Vercel diga `success` y se mergea, salvo que el cliente diga lo contrario
-para ese PR. "Propone antes de aplicar" no cambia: la revisión ocurre al
-proponer el cambio. Si el merge se bloquea, se avisa y el PR queda abierto.
+**Nada se mergea a producción sin preguntar** (regla del cliente,
+2026-11-22, después de que se mergearan solos cinco PR chicos en una tarde:
+*"¿mergeaste ya a producción? En caso que sí, eso me tienes que preguntar
+siempre antes. Puedes mergear preview sin aviso pero no producción"*).
 
-**Desde el lanzamiento eso vale solo para los cambios chicos** (regla del
-cliente, 2026-11-20, pensando en después de salir a producción: *"necesito
-hacer un cambio, pero tiene que ser en preview"*). Producción pasa a ser
-gente de verdad pagando, así que hay dos caminos:
+- **La versión de prueba va sin aviso**: se commitea, se empuja a la rama y
+  se abre el PR; Vercel arma la preview sola.
+- **Mergear a `main` es publicar en producción, y se hace solo con un
+  *"mergea"* del cliente**, sea el cambio chico o grande. Al terminar un
+  cambio se le mandan las capturas y el link de la preview, y se le
+  pregunta.
+- **Antes de preguntar** se espera a que pasen `npm run revisar` y los dos
+  chequeos de Vercel: se pregunta por algo que ya está listo.
+- **Un arreglo urgente de algo roto en producción también se pregunta**,
+  diciendo que es urgente y qué está roto.
+- **Lo de abajo queda como historia**: del 2026-11-11 al 20 se mergeaba
+  solo con Vercel en verde, y del 20 al 22 regían los dos caminos de la
+  tabla. La distinción entre *chico* y *con prueba* sigue sirviendo para
+  decirle al cliente qué conviene probar en la preview antes de decir
+  *"mergea"*.
+
+**Lo de antes: dos caminos desde el lanzamiento** (regla del cliente,
+2026-11-20, pensando en después de salir a producción: *"necesito hacer un
+cambio, pero tiene que ser en preview"*). Reemplazada el 2026-11-22 por la
+de arriba:
 
 | Camino | Qué cambios | Cómo se mergea |
 |---|---|---|

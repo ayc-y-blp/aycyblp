@@ -26,8 +26,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   22-11-2026** (el lanzamiento): el dominio pasó del sitio viejo de Shopify a
   Vercel, y `tienda.brasasdelopirque.cl` es el dominio principal de la
   tienda. Antes, ese mismo día, el cliente dejó la base en cero en producción
-  e importó el CRM y los pedidos del sitio viejo. **Rigen los dos caminos
-  para mergear** (sección 9). Comprobado desde el entorno al terminar: la
+  e importó el CRM y los pedidos del sitio viejo. **Nada se mergea a
+  producción sin un *"mergea"* del cliente** (sección 9, desde el
+  22-11-2026). Comprobado desde el entorno al terminar: la
   portada, `reservas.html`, `/en/` y el sitemap responden desde Vercel;
   `/pages/ticket` y el link viejo del producto redirigen a reservas;
   `/cart/c/…` va a `tienda.`; `/CLAUDE.md` da 404; y el panel le entrega al
@@ -1171,9 +1172,11 @@ PR, documentación—, con tuteo y sin voseo.
 - La rama la asigna cada sesión (`claude/…`). Se commitea y empuja a medida
   que se avanza, y **al terminar un lote se abre el PR en la misma pasada**.
 - Commits en español: título *"Área: qué cambió"*, cuerpo con el porqué.
-- **El PR dice qué cambió y por qué, en qué camino va (chico o con
-  prueba), cuántas lecturas de Google cuesta, si cambió algún permiso y qué
-  ayuda se actualizó**, con capturas.
+- **El PR dice qué cambió y por qué, qué conviene probar en la preview,
+  cuántas lecturas de Google cuesta, si cambió algún permiso y qué ayuda se
+  actualizó**, con capturas.
+- **Abrir el PR va sin aviso; mergearlo a `main` es publicar en producción
+  y espera el *"mergea"* del cliente** (22-11-2026), también lo chico.
 - Si el PR de la rama ya se mergeó, lo nuevo va rebasado sobre `main` en un
   PR propio. Nunca commits nuevos sobre historia ya mergeada.
 - **Cada cambio deja escrito en `CLAUDE.md` o `panel/CLAUDE.md` qué cambió y
@@ -1200,13 +1203,12 @@ misma pasada.
 - **Mostrar sin preguntar**: todo cambio que se ve se manda con capturas
   —computador y celular, y el estado que importa— en la misma pasada. Pocas
   preguntas: solo lo que de verdad decide el cliente.
-- **Dos caminos para mergear desde el lanzamiento**: **chico** (textos,
-  ayudas, colores) se mergea solo con los dos chequeos de Vercel en verde;
-  **con prueba** (plata, la reserva o el pago en Shopify, el cupo, columnas
-  nuevas, permisos) queda abierto y se manda el link de la preview hasta que
-  el cliente diga *"mergea"*. Cada PR dice su camino; en la duda, con prueba.
-  *"Déjalo en preview"* pone cualquier PR en con prueba. Un arreglo urgente
-  de algo roto en producción va directo, avisando.
+- **Nada se mergea a producción sin preguntar** (22-11-2026, reemplaza a
+  los *dos caminos*): la versión de prueba va sin aviso —commit, push y PR—,
+  y **mergear a `main` solo con un *"mergea"* del cliente**, también lo
+  chico y también un arreglo urgente (se pregunta diciendo que es urgente).
+  Antes de preguntar, `npm run revisar` y los dos chequeos de Vercel en
+  verde; se le mandan las capturas y el link de la preview.
 - **Coherencia**: el mismo tipo de dato con la misma pieza y el mismo peso
   en todas las pantallas; puede cambiar el tamaño, no el formato.
 - **Un cambio de diseño se lleva a sus parecidos**: en el mismo PR si es la
