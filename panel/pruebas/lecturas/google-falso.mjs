@@ -3,6 +3,13 @@
  * lectura**, que es lo que gasta el límite de 60 por minuto de la planilla.
  */
 const store = globalThis.__gstore ??= new Map();
+/**
+ * Lo que queda en la celda, como en Sheets: el `'` de adelante dice "esto es
+ * texto" y **no se guarda**. El panel lo pone en teléfonos, ajustes, fechas y
+ * horas (`valorSeguro()`).
+ */
+const comoSheets = (v) => { const t = String(v); return t.startsWith("'") ? t.slice(1) : t; };
+
 export const lecturas = globalThis.__glecturas ??= [];
 export const escrituras = globalThis.__gescrituras ??= [];
 const TODAS = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas',
@@ -42,13 +49,13 @@ const sheetsApi = {
       },
       append: async ({ range, requestBody }) => {
         escrituras.push('append:' + nombre(range));
-        hoja(range).push(...requestBody.values.map((f) => f.map(String)));
+        hoja(range).push(...requestBody.values.map((f) => f.map(comoSheets)));
         return { data: {} };
       },
       update: async ({ range, requestBody }) => {
         escrituras.push('update:' + nombre(range));
         const t = hoja(range); let n = filaDe(range);
-        for (const f of requestBody.values) { while (t.length < n) t.push([]); t[n - 1] = f.map(String); n++; }
+        for (const f of requestBody.values) { while (t.length < n) t.push([]); t[n - 1] = f.map(comoSheets); n++; }
         return { data: {} };
       },
       clear: async () => ({ data: {} })
