@@ -334,7 +334,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'todas sus cotizaciones.',
       'Si eres vendedor, ves el contacto, el RUT y el domicilio de tus '
       + 'clientes —los que creaste o a los que les cotizaste—. De los de otro '
-      + 'vendedor ves el nombre y el teléfono tapado, con 🔒, y no se editan.'
+      + 'vendedor ves el nombre y el teléfono tapado, con 🔒, y no se editan.',
+      '*Míos* muestra los clientes que creaste o a los que les cotizaste; '
+      + '*Todos*, la lista entera. El buscador busca dentro de lo que estés mirando.',
+      'La gerencia, el encargado de pagos y el administrador pueden cambiar '
+      + 'el vendedor de un cliente: al abrir su ficha, *Vendedor: … · Cambiar…*. '
+      + 'Lo mismo en una cotización, en el paso Evento.'
     ],
     pasos: [
       'Busca primero: por nombre, empresa, teléfono, correo o RUT.',
@@ -368,7 +373,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'turnos, ajustes y la bitácora— y conserva el equipo, las cuentas, los productos '
       + 'y la configuración. Arriba dice cuál planilla se va a vaciar y si es '
       + 'producción o una versión de prueba. Pide antes una copia de la planilla y escribir BORRAR. '
-      + 'Al terminar, vuelve a abrir solos los días que se abre.'
+      + 'Al terminar, vuelve a abrir solos los días que se abre.',
+      'También en Mantención, «Importar del CRM» trae de una vez lo del sistema anterior, desde un '
+      + 'Excel que se sube ahí mismo: las fichas de los clientes; lo que viene a futuro —quien '
+      + 'preguntó entra como candidato, lo cotizado como borrador y lo ganado como ganada, con su reserva—; '
+      + 'y los pedidos del sitio viejo, como reservas pagadas o por pagar. Antes de escribir nada muestra '
+      + 'cuánto entra, a nombre de qué cuenta queda, qué filas no entran y cómo queda el cupo de cada día. '
+      + 'Se puede apretar dos veces: lo que ya entró no se duplica.'
     ],
     ojo: 'Esto cambia lo que ve el público. Un día suelto se abre o se cierra '
        + 'desde el calendario, sin tocar esta pantalla.'
@@ -712,6 +723,17 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'La cantidad de personas completa, adultos y niños.',
       'Los menús se reparten este número; la once y el desayuno nacen con todos y se ajustan con − y +.'
+    ]
+  },
+  cambiarVendedor: {
+    titulo: 'Cambiar el vendedor',
+    texto: [
+      'Lo hacen la gerencia, el encargado de pagos y el administrador. Sirve cuando un vendedor se va y el cliente se queda, o para algo que quedó sin vendedor.',
+      'El vendedor nuevo pasa a ver el contacto y a poder editar; el anterior deja de poder.',
+      'En una cotización, su comisión pasa también, salvo que la venta ya esté cerrada: el cliente pagó todo y pagos lo revisó.',
+      'En un cliente, se puede pasar junto con sus cotizaciones abiertas. Las ganadas se quedan con quien las tiene.',
+      'Se le puede pasar a cualquier cuenta activa que cotiza: los vendedores primero, y los demás con su rol al lado.',
+      'Queda en la bitácora.'
     ]
   },
   comisionSocio: {

@@ -119,6 +119,18 @@ más abajo; esto es la lista para revisar.
   anotado con su alto en `NO_CABEN` y solo puede bajar. **Una ventana o una
   ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el mismo PR
   que la crea**: lo que no está en la lista no se mide.
+- **Las tarjetas de una fila van parejas por dentro, y el espacio se usa
+  bien** (regla del cliente, 2026-11-22: *"mantén esto como regla de revisar
+  los diseños respecto a estos problemas, que se desordena o verticalmente o
+  horizontalmente la información dentro de una tarjeta y ocupar el espacio
+  lo más eficiente posible"*). En tarjetas que se ven lado a lado —los días
+  de una semana, las personas de un puesto—, **el mismo dato queda a la
+  misma altura en todas**: nada baja de renglón en una y en la otra no. Se
+  diseña con el peor caso —el número más largo, con todas las pastillas— y,
+  si falta ancho, cede lo secundario (un tamaño, una palabra), no se dobla
+  la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
+  tarjetas llenas y vacías juntas. En el calendario lo mide
+  `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
@@ -1473,9 +1485,21 @@ token público del canal **Brasas De Lo Pirque Headless** y los ocho IDs.
   domingo 27 de diciembre: **quien compró ahí para una fecha posterior al
   lanzamiento no le descuenta cupo al panel** hasta que alguien lo anote.
   **Se anotan a mano en el panel** (lo decidió el cliente el 2026-11-21): no
-  se le enseña al panel a leer el modelo viejo. Y al lanzar, ese producto
+  se le enseña al panel a leer el modelo viejo. **Ese mismo día quedó cómo
+  anotarlos de una vez**: el export de pedidos de Shopify trae el día en el
+  nombre de la variante y si está pagado, y *Importar del CRM* los lee desde
+  una pestaña `Importar reservas` (ver `panel/CLAUDE.md`, "Importar del CRM
+  y del sitio viejo"). **El export tiene que ser de todos los pedidos**: la
+  *página actual* trae solo los últimos 50. Y al lanzar, ese producto
   hay que sacarlo de Tienda online: en `tienda.` el tema viejo lo seguiría
   vendiendo.
+- **Los días que vendía el sitio viejo no son los de la regla del panel**
+  (mirado en su catálogo público el 2026-11-21). Vendía tres días que no son
+  fin de semana —viernes 4, martes 8 y viernes 11 de diciembre— y tenía
+  **bloqueado el domingo 22 de noviembre**. Después de la base en cero, la
+  regla abre los sábados y domingos como públicos: el 22 hay que cerrarlo o
+  dejarlo privado a mano, y los otros tres abrirlos a mano si se van a
+  seguir vendiendo.
 - **El medio de pago "Pago en el local" ya existe en la tienda real**
   (confirmado por el cliente el 2026-11-21). Que la regla por SKU oculte el
   medio que no corresponde se ve en la compra de prueba de cada modalidad.
@@ -2219,6 +2243,20 @@ cambios antes de que se hagan. En la práctica:
 
 Al proponer, di qué archivos toca y qué efecto tiene, para que se pueda
 decidir con la información a mano.
+
+**Las planillas se pueden mirar con el conector de Google Drive** (lo
+autorizó el cliente el 2026-11-22, para la de pruebas —*BBDD Prueba*— y para
+la de producción: *"deberías poder mirar las planillas Google"*). Sirve para
+diagnosticar sin pedirle fotos: ese día, los días *sin cupo* se resolvieron
+recién al ver que la columna `Fecha` tenía números.
+
+- **Para mirar, no para escribir.** Lo que haya que cambiar en una planilla
+  lo hace el panel, o el cliente; escribir en la de producción desde acá,
+  solo si él lo pide para algo concreto.
+- **Se lee lo justo**: la pestaña y las filas que hacen falta. La de
+  producción tiene datos de clientes: no se copian al repo, que es público,
+  ni se repiten en el chat más allá de lo necesario.
+- Primero la de pruebas; la de producción, cuando el problema está allá.
 
 **No inventes datos del negocio.** Precios, horarios, direcciones,
 distancias y capacidades salen del cliente o de material que él entregó. Si

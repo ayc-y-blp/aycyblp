@@ -14,6 +14,7 @@ import AyudaCorta from './AyudaCorta';
 import { useEffect, useState } from 'react';
 import Ayuda from './Ayuda';
 import PasoAProduccion from './PasoAProduccion';
+import ImportarCRM from './ImportarCRM';
 import { usarSoloMira } from './SesionCliente';
 import { Aviso } from './CalendarView';
 import { deDiasSemana, idDeDrive, type Config } from '@/lib/config';
@@ -319,6 +320,7 @@ export default function ConfigEditor() {
             </AyudaCorta>
             {resumen && <span className="text-[14px] text-hueso/70">{resumen}</span>}
           </div>
+          <ImportarCRM />
           <PasoAProduccion />
         </div>
       )

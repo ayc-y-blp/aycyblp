@@ -418,9 +418,43 @@ H['Bitácora'] = [bit.ENCABEZADO_BITACORA,
 
 H['Comentarios'] = [['Cuándo', 'Quién', 'Rol', 'Pantalla', 'Comentario']];
 
+/* ---------- Las pestañas de importar (2026-11-21) ----------
+ * Lo que se sube para importar del CRM viejo y del sitio viejo, con gente
+ * inventada. Tienen de todo lo que la vista previa tiene que decir: una
+ * ficha que ya estaba, un vendedor sin cuenta, una fila sin contacto, un
+ * producto que no está en el catálogo, una ganada que deja el día sobre su
+ * cupo y reservas pagadas y por pagar. */
+H['Importar clientes'] = [
+  ['Ref', 'Nombre', 'Teléfono', 'Correo', 'Empresa del cliente', 'Vendedor', 'Notas', 'Etapa (CRM)'],
+  ['CRM-0001', 'Ignacio Salas', '+56 9 2111 0001', 'ignacio.salas@ejemplo.cl', 'Constructora Maipo', 'Jorge', 'Del CRM: corporativo, fin de año.', 'Contactado'],
+  ['CRM-0002', 'Carolina Vera', '+56 9 2111 0002', 'carolina.vera@ejemplo.cl', '', 'Daniela', 'Del CRM: matrimonio en verano.', 'Nuevo'],
+  ['CRM-0003', 'Andrés Pino', '+56 9 8123 4567', 'andres.pino@ejemplo.cl', 'Empresa Andes SpA', 'Jorge', '', 'Cotizado'],
+  ['CRM-0004', 'Teresa Lobos', '', 'teresa.lobos@ejemplo.cl', '', 'Ramiro', 'Del CRM: cumpleaños.', 'Contactado'],
+  ['CRM-0005', 'Raúl Medina', '+56 9 2111 0005', 'raul.medina@ejemplo.cl', 'Viña El Litre', 'Jorge', 'Del CRM: ganado el 02-11.', 'Ganado'],
+  ['CRM-0006', 'Sin contacto', '', '', '', 'Daniela', '', 'Perdido'],
+  ['CRM-0007', 'Olga Paredes', '+56 9 2111 0007', '', '', 'Daniela', 'Del CRM: vino en octubre.', 'Ganado']
+];
+H['Importar cotizaciones'] = [
+  ['Ref', 'Ref cliente', 'Estado', 'Fecha del evento', 'Periodo', 'Invitados', 'Tipo de evento', 'Vendedor', 'Notas', 'Productos'],
+  ['CRM-0001-a', 'CRM-0001', 'Candidato', '2026-12-11', '', '60', 'Empresa', 'Jorge', 'Del CRM: pidió precios por WhatsApp.', ''],
+  ['CRM-0002-a', 'CRM-0002', 'Candidato', '', 'entre el 01-01-2027 y el 31-01-2027', '40', 'Matrimonio', 'Daniela', 'Del CRM: todavía sin día.', ''],
+  ['CRM-0003-a', 'CRM-0003', 'Borrador', '2026-12-17', '', '45', 'Empresa', 'Jorge', 'Cotizado en el CRM.', 'Lo Pirque | 45 | 50000 | + IVA\nTaller de quesos | 1 | 180000 | + IVA'],
+  ['CRM-0004-a', 'CRM-0004', 'Candidato', '2027-02-06', '', '25', 'Otro', 'Ramiro', '', ''],
+  ['CRM-0005-a', 'CRM-0005', 'Ganada', '2026-11-27', '', '50', 'Empresa', 'Jorge', 'Ganada en el CRM el 02-11.', 'Sommelier | 50 | 90000 | + IVA'],
+  ['CRM-0005-b', 'CRM-0005', 'Ganada', '2026-11-22', '', '130', 'Empresa', 'Jorge', 'Ganada en el CRM el 09-11.', 'Brasas | 130 | 70000 | + IVA'],
+  ['CRM-0001-b', 'CRM-0001', 'Borrador', '2026-10-01', '', '30', 'Empresa', 'Jorge', '', '']
+];
+H['Importar reservas'] = [
+  ['Ref', 'Fecha', 'Nombre', 'Teléfono', 'Correo', 'Menú', 'Personas', 'Monto', 'Pago', 'Nota de pago', 'Comprado'],
+  ['LP9001', '2026-11-28', 'Marta Sepúlveda', '+56 9 2222 0001', 'marta.sepulveda@ejemplo.cl', '8 × Tradiciones + 2 × Niños', '10', '390000', 'Pagada', 'Pedido LP9001 del sitio viejo · Mercado Pago', '2026-11-08'],
+  ['LP9002', '2026-11-28', 'Hugo Leiva', '+56 9 2222 0002', 'hugo.leiva@ejemplo.cl', '6 × Tradiciones', '6', '264000', 'Por pagar', 'Pedido LP9002 del sitio viejo · paga en el local', '2026-11-12'],
+  ['LP9003', '2026-12-04', 'Pilar Osorio', '+56 9 2222 0003', 'pilar.osorio@ejemplo.cl', '2 × Tradiciones', '2', '88000', 'Por pagar', 'Pedido LP9003 del sitio viejo · paga en el local', '2026-11-17'],
+  ['LP9004', '2026-12-27', 'Nelson Araya', '+56 9 2222 0004', 'nelson.araya@ejemplo.cl', '9 × Tradiciones', '9', '396000', 'Por pagar', 'Pedido LP9004 del sitio viejo · paga en el local', '2026-11-18']
+];
+
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

@@ -259,8 +259,8 @@ export default function TarjetaDia({
                   pero nadie le puso cupo. Se muestran las personas igual
                   —si no, una reserva quedaría invisible otra vez— y se
                   dice qué falta. */}
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 lg:mt-1.5 lg:gap-x-2">
-                <p className="text-3xl font-bold leading-none lg:text-[22px]">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 lg:mt-1.5 lg:h-6 lg:flex-nowrap lg:gap-x-2">
+                <p className="text-3xl font-bold leading-none lg:whitespace-nowrap lg:text-[22px]">
                   {d.tomadas}
                   <span className="ml-1.5 text-[13px] font-medium text-hueso/70">
                     {d.tomadas === 1 ? 'persona' : 'personas'}
@@ -281,10 +281,18 @@ export default function TarjetaDia({
             </>
           ) : (
             <>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 lg:mt-1.5 lg:gap-x-2">
-                <p className="text-3xl font-bold leading-none lg:text-[22px]">
-                  {d.tomadas}<span className="text-hueso/45">/{d.capacidad}</span>
-                  <span className="ml-1.5 text-[13px] font-medium text-hueso/70">personas</span>
+              {/* **En el computador esta fila no se dobla nunca** (2026-11-22,
+                  lo marcó el cliente con una foto: en un día con *150/150
+                  personas* el tiempo bajaba a otro renglón, y la barra y lo
+                  de abajo quedaban más abajo que en la tarjeta de al lado).
+                  El cupo —lo que va después de la barra— va más chico que lo tomado, que es el
+                  dato; con eso caben tres cifras por lado, la palabra y el
+                  tiempo. Si aun así faltara ancho (un cupo de cuatro cifras),
+                  cede la palabra, que se recorta: nada baja de renglón. */}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 lg:mt-1.5 lg:h-6 lg:flex-nowrap lg:gap-x-2">
+                <p className="text-3xl font-bold leading-none lg:flex lg:min-w-0 lg:items-baseline lg:overflow-hidden lg:whitespace-nowrap lg:text-[22px]">
+                  <span className="lg:shrink-0">{d.tomadas}<span className="text-hueso/45 lg:text-[15px]">/{d.capacidad}</span></span>
+                  <span className="ml-1.5 text-[13px] font-medium text-hueso/70 lg:min-w-0 lg:overflow-hidden">personas</span>
                 </p>
                 {/* La pastilla del tiempo ocupa el aire que antes quedaba
                     muerto a la derecha del número, así que no alarga nada. */}

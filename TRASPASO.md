@@ -66,11 +66,48 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Ajustes sueltos` entra en lo que se vacía —no estaba—; una prueba obliga
   a decidir cada pestaña nueva; la ventana dice arriba cuál planilla es y si
   es producción o una versión de prueba; y un pedido de Shopify cancelado o
-  devuelto que no está anotado ya no se anota. **No hay ningún PR abierto.**
+  devuelto que no está anotado ya no se anota.
   Detalle en `panel/CLAUDE.md`, "La revisión antes de apretarlo".
   https://github.com/ayc-y-blp/aycyblp/pull/291
-- **Lo que sigue lo hace el cliente: la base en cero en producción**
-  (pendiente 1 de la sección 7), y después subir al chat el Excel del CRM.
+- **Hay un PR abierto, *con prueba*: el importador** (PR #293,
+  https://github.com/ayc-y-blp/aycyblp/pull/293). El
+  cliente subió al chat el respaldo del CRM y el export de pedidos de Shopify.
+  *Importar del CRM*, en Configuración → Mantención, trae desde tres pestañas
+  de la planilla: las fichas de los clientes de Lo Pirque; lo que viene a
+  futuro —candidato, borrador o **ganada, con su reserva y tomando cupo**—; y
+  los pedidos del sitio viejo, como reservas pagadas o por pagar. Muestra
+  todo antes de escribir y se puede apretar dos veces. **No se mergea hasta
+  que el cliente diga *"mergea"***: primero lo ensaya en la versión de
+  prueba. Detalle en la sección 4 y en `panel/CLAUDE.md`, "Importar del CRM y
+  del sitio viejo".
+- **En el mismo PR #293, el 22-11-2026**: el Excel se sube desde el
+  formulario (sin Google Drive); un vendedor del CRM calza con la cuenta que
+  lleva su apodo; y **cambiar el vendedor de un cliente o de una cotización**
+  (permiso nuevo `asignarVendedor`: gerencia, pagos y administrador). De paso
+  se corrigió que el importador escribía el usuario y no el nombre de la
+  cuenta como dueño. Detalle en `panel/CLAUDE.md`, "Cambiar el vendedor de un
+  cliente o de una cotización".
+- **Los días *sin cupo* de la versión de prueba, resuelto el 22-11-2026**:
+  Sheets guardaba las fechas como número en una pestaña recién vaciada y el
+  panel no las reconocía. Ahora las fechas y las horas se escriben como
+  texto (`valorSeguro()`). **Importa para producción**: habría pasado igual
+  después de la base en cero. Detalle en `panel/CLAUDE.md`, "Las fechas se
+  escriben como texto".
+- **El cliente dejó "BBDD Prueba" en cero e importó ahí el 22-11-2026**, con
+  el arreglo de las fechas ya puesto; dijo que parece que funcionó. **No se
+  pudo mirar con el conector de Drive**: esa planilla no le aparece a la
+  cuenta de Google conectada (falta compartírsela).
+- **Clientes tiene filtro *Míos / Todos*** (22-11-2026, en el PR #293).
+- **El cliente autorizó mirar las dos planillas con el conector de Google
+  Drive** (22-11-2026): la de pruebas y la de producción. Para diagnosticar,
+  sin escribir. Ver `CLAUDE.md`, "Cómo trabajar con este proyecto".
+- **Los dos Excel se le mandaron al cliente por el chat** (no están en el
+  repo): el que se sube a la planilla y el de lo que hay que decidir. Se
+  arman con un script que tampoco está en el repo; si llega un respaldo o un
+  export nuevo, se vuelven a armar.
+- **Lo que sigue lo hace el cliente**: ensayar el importador en la versión de
+  prueba, **la base en cero en producción** (pendiente 1 de la sección 7) y,
+  después, importar en producción.
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -603,6 +640,58 @@ piezas, no tamaño de botones ni de letra.**
     escena abría *Editar actividades*). Medido, el más largo daba 760px; en
     el computador ahora mide 589.
 
+### PR #293, abierto (*con prueba*): el importador del CRM y del sitio viejo
+
+Lo pidió el cliente el 21-11-2026 (*"una importación lo más completa posible
+para que los chicos no tienen que hacer muchas cosas de forma manual.
+Controlarlo, claro"*; *"si hay una cotización ganada en el CRM, entonces se
+puede guardar como ganada"*), y después mandó el export de pedidos de Shopify
+preguntando si servía para preparar la producción.
+
+- **`lib/importar.ts`** (pura, con pruebas): arma el plan desde tres pestañas
+  de la planilla —`Importar clientes`, `Importar cotizaciones` e `Importar
+  reservas`— contra lo que ya hay en el panel.
+- **`/api/mantencion/importar`**: `GET` es la vista previa (sin datos de
+  clientes), `PUT` sube el Excel y `POST` importa, solo con `mantencion` y
+  con la casilla marcada.
+- **El Excel se sube desde el mismo formulario** (lo pidió el cliente al
+  ensayarlo: mandarlo a Google Sheets lo dejó frente a un *pide acceso*):
+  `lib/xlsx.ts` lee el `.xlsx` en el navegador, sin librería, y el panel
+  copia sus hojas a las tres pestañas.
+- **`ImportarCRM.tsx`**, en Configuración → Mantención, y **`CualBase`**, la
+  pastilla de cuál planilla es, que pasó a ser una pieza.
+- **En `datos.ts`**: `agregarImportados()`, `agregarReservas()`,
+  `abrirDiasSiHaceFalta()` y `ganarImportadas()`, todas en lote.
+- **En `sheets.ts`**: una tanda que pregunta por varias pestañas que no
+  existen mira el libro una sola vez.
+- **`DE_PASO`** en `lib/produccion.ts`: las tres pestañas no se vacían ni se
+  conservan con la base en cero.
+- **El panel de ejemplo** trae las tres pestañas con gente inventada, y hay
+  una escena nueva en `npm run ventanas` (son 45).
+- **Ninguna columna nueva, ningún permiso cambió.** La vista previa cuesta
+  una tanda de lecturas (dos si faltan pestañas).
+
+**Lo que salió de mirar los dos archivos del cliente**, que no es código:
+
+- **El export de Shopify venía incompleto**: 50 pedidos seguidos, que es una
+  página. Hay que exportar *todos los pedidos* para no dejar afuera a quien
+  compró antes para una fecha futura.
+- **Las compras de prueba en la tienda real seguían vivas** en ese export:
+  hay que devolverlas o cancelarlas antes de la base en cero.
+- **El sitio viejo tenía bloqueado el domingo 22-11** y vendía tres días que
+  no son fin de semana (4, 8 y 11 de diciembre): ver el pendiente 1.
+- **Dos de las tres ganadas a futuro del CRM no calzan con su propia
+  cotización** (la fecha en una, la gente en la otra): quedaron como borrador
+  en el Excel hasta que el cliente diga cuál vale. Lo va a ver con los
+  vendedores; está anotado en la guía *Traspaso a producción*, en *Lo que
+  falta*, junto con cerrar el domingo 22, abrir los tres días de diciembre y
+  ver el anticipo de las ganadas importadas.
+- **Las compras de prueba vivas: el cliente dijo que se ignoran** (21-11-2026).
+- **Para que cada vendedor del CRM quede dueño de lo suyo, tiene que existir
+  una cuenta del panel con su nombre** (o su primer nombre, si es de una sola
+  cuenta): si no, sale *sin cuenta* en la vista previa. Los nombres se los
+  di al cliente por el chat.
+
 ### PR #289, mergeado el 21-11-2026: una cotización ganada en un día cerrado, y el encabezado del día
 
 Era lo que quedaba sin dónde confirmarse. Se le preguntó al cliente: *"Sí,
@@ -680,7 +769,30 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   `hreflang` y las redirecciones.
 - **Los pedidos del sitio viejo para fechas futuras se anotan a mano**
   (21-11-2026); no se le enseña al panel a leer el modelo viejo (una
-  variante por fecha).
+  variante por fecha). Ese mismo día quedó cómo anotarlos de una vez, desde
+  el export de pedidos, con *Importar del CRM*.
+- **El importador arma su plan desde pestañas de la planilla** (21-11-2026):
+  lo que va a entrar queda a la vista, y la etapa de cada fila está escrita
+  en una columna que el cliente puede cambiar antes de importar.
+- **El Excel se sube desde el formulario, no en Google Sheets**
+  (21-11-2026): quien importa no siempre está con la cuenta de Google de la
+  planilla. El panel lo lee sin librería —un `.xlsx` es un zip con XML y el
+  navegador ya descomprime— y lo copia a esas pestañas, todo como texto.
+- **Una ganada del CRM entra ganada, con su reserva** (21-11-2026, lo decidió
+  el cliente), aunque deje el día sobre su cupo: se avisa antes y el panel lo
+  muestra como sobrecupo. Entra **por pagar**, porque el CRM no enlaza los
+  pagos con cada cliente.
+- **Nada se importa como *Enviada***: correría la vigencia y contaría gente
+  posible por un link que el cliente nunca vio.
+- **Un producto del CRM calza con el del catálogo aunque se llame un poco
+  distinto** (21-11-2026, lo pidió el cliente: *"estos productos existen,
+  solo tienen un poco otro nombre"*): un nombre dentro del otro, o el único
+  producto de tipo Arriendo. Solo si calza uno, y la vista previa dice cuál
+  eligió. El Excel lleva los nombres del CRM y el panel los resuelve.
+- **Una ganada importada se escribe primero como borrador y se gana al
+  final**: si se corta, *Marcar ganada* la termina sin duplicar la reserva.
+- **Las reservas importadas como pagadas le llegan a pagos sin revisar**,
+  aunque importe alguien con `pagar`: importar en lote no es mirar cada pago.
 
 **Del sitio**
 
@@ -810,7 +922,15 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   sin aviso: un visitante en inglés paga en español. Tres idiomas de verdad
   sería Shopify Markets.
 - **Los pedidos del sitio viejo** con fecha posterior al lanzamiento **no
-  descuentan cupo** hasta que alguien los anote a mano.
+  descuentan cupo** hasta que alguien los anote a mano o los importe.
+- **Una ganada importada no tiene preferencia hasta que se anote su
+  anticipo**: entra por pagar, así que el sitio sigue ofreciendo ese día a
+  quien paga ahora. La ventana lo avisa antes y después de importar.
+- **Un día creado por la importación nace privado**, como al anotar a mano:
+  el sitio no lo ofrece, y la regla diaria no lo toca porque ya tiene fila.
+  Si se quiere seguir vendiendo, se pasa a público desde el calendario.
+- **El importador no trae cobros, ni marca días exclusivos, ni trae lo de
+  Calicanto u otros lugares.**
 - **Límite de 60 lecturas por minuto** de Google para todo el panel; si
   vuelve a aparecer con uso normal, lo siguiente es pedir más cupo en Google
   Cloud (gratis).
@@ -904,16 +1024,16 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **La base en cero, en producción** | El ensayo en la versión de prueba (planilla "Pruebas") salió bien el 21-11-2026 y el PR #291 está mergeado. **Antes de apretar el botón en producción**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —una que siga pagada o por pagar vuelve al día siguiente ocupando cupo; devuelta o cancelada ya no vuelve—; (b) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (c) copia de la planilla real. En la ventana tiene que decir *🔴 Producción* con el nombre de la planilla real, y **no** tiene que salir el aviso ámbar de Shopify (si sale, falta `SHOPIFY_DOMINIO`). Después: abrir a mano los días especiales y anotar los pedidos del sitio viejo (pendiente 7) | Cliente |
+| 1 | **La base en cero, en producción** | El ensayo en la versión de prueba (planilla "Pruebas") salió bien el 21-11-2026 y el PR #291 está mergeado. **Antes de apretar el botón en producción**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —una que siga pagada o por pagar vuelve al día siguiente ocupando cupo; devuelta o cancelada ya no vuelve—; (b) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (c) copia de la planilla real. En la ventana tiene que decir *🔴 Producción* con el nombre de la planilla real, y **no** tiene que salir el aviso ámbar de Shopify (si sale, falta `SHOPIFY_DOMINIO`). Después: **cerrar o dejar privado el domingo 22-11** (el sitio viejo lo tenía bloqueado y la regla lo abre público), abrir a mano los días que el sitio viejo vendía y no son fin de semana (**vie 4, mar 8 y vie 11 de diciembre**), e importar (pendientes 7 y 10) | Cliente |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
 | 3 | ~~Compras de prueba en la tienda real~~ | **Hecho el 21-11-2026**, lo dijo el cliente: pasaron varias de pago y de solo reserva. Queda devolverlas o cancelarlas en Shopify antes de la base en cero (pendiente 1) | — |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |
 | 5 | **El link de estado de un pedido viejo** | Abrir uno `brasasdelopirque.cl/<id>/orders/…?key=…` después del lanzamiento y ver que llegue a `tienda.` con su `?key=` | Cliente |
 | 6 | ~~Base en cero~~ | Pasó a ser el pendiente 1 | — |
-| 7 | **Pedidos del sitio viejo** | Anotar a mano en el panel los de fechas posteriores al lanzamiento (el producto viejo vendía hasta el 27-12) | Cliente |
+| 7 | **Pedidos del sitio viejo** | **Exportar de Shopify *todos* los pedidos** (el export del 21-11 traía solo la última página, 50) y subirlo al chat: se rearma la pestaña `Importar reservas` y entran con el importador (pendiente 10). El producto viejo vendía hasta el 27-12 | Cliente sube; Claude arma |
 | 8 | **Lanzamiento** (domingo 22-11, en la noche) | En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
 | 9 | **Después del lanzamiento** | Links en Maps, Instagram y WhatsApp; enviar el sitemap en Google Search Console; productos en Fudo; mirar en Vercel → Logs que las tres tareas diarias corran en 200 | Cliente |
-| 10 | **Importar el CRM** | El cliente sube el Excel **al chat** (nunca al repo); se diseña un importador en el panel, en un PR *con prueba*, que corre después de la base en cero | Cliente sube; Claude propone |
+| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en un PR *con prueba* (PR #293). (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) lo ensaya en la versión de prueba (escribe en la planilla "Pruebas"); (c) dice *"mergea"*; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el nombre del negocio en Maps; el desayuno y la once a $8.000 + IVA | Cliente |
@@ -972,7 +1092,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 44 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 46 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

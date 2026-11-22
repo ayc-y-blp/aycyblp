@@ -79,6 +79,13 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
 export const FUERA_DE_LA_PLANILLA: string[] = ['Comentarios'];
 
 /**
+ * **Pestañas de paso** (2026-11-21): las que se suben para importar del CRM
+ * y del sitio viejo (`lib/importar.ts`). No son datos del panel: no se
+ * vacían ni se "conservan"; quien importa las borra a mano cuando termina.
+ */
+export const DE_PASO: string[] = ['Importar clientes', 'Importar cotizaciones', 'Importar reservas'];
+
+/**
  * **En qué versión del panel se está por borrar**, dicho en la ventana: la
  * de prueba de un PR está conectada a la copia *Pruebas*; producción, a la
  * planilla real. Sale de `VERCEL_ENV`. En un computador no viene nada.

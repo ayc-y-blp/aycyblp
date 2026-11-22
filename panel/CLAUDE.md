@@ -37,6 +37,18 @@ revisan antes de cada cambio en esta carpeta.
   anotado con su alto en `NO_CABEN` y solo puede bajar. **Una ventana o una
   ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el mismo PR
   que la crea**: lo que no está en la lista no se mide.
+- **Las tarjetas de una fila van parejas por dentro, y el espacio se usa
+  bien** (regla del cliente, 2026-11-22: *"mantén esto como regla de revisar
+  los diseños respecto a estos problemas, que se desordena o verticalmente o
+  horizontalmente la información dentro de una tarjeta y ocupar el espacio
+  lo más eficiente posible"*). En tarjetas que se ven lado a lado —los días
+  de una semana, las personas de un puesto—, **el mismo dato queda a la
+  misma altura en todas**: nada baja de renglón en una y en la otra no. Se
+  diseña con el peor caso —el número más largo, con todas las pastillas— y,
+  si falta ancho, cede lo secundario (un tamaño, una palabra), no se dobla
+  la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
+  tarjetas llenas y vacías juntas. En el calendario lo mide
+  `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
@@ -133,6 +145,7 @@ revisan antes de cada cambio en esta carpeta.
   | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
+  | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -179,6 +192,386 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Importar del CRM y del sitio viejo (2026-11-21)
+
+Lo pidió el cliente al pasar a producción, en tres mensajes del mismo día.
+Sobre el CRM del socio: *"quiero una importación lo más completa posible para
+que los chicos no tienen que hacer muchas cosas de forma manual. Controlarlo,
+claro… no necesitamos las cotizaciones del pasado, pero sí los clientes… con
+todos sus datos, para que no hay que ingresar de nuevo el cliente. Pero todo
+lo que pasa hacia el futuro en el CRM, sí hay que llevarlo para acá"*, y
+**solo Lo Pirque**. Después: *"si hay una cotización ganada en el CRM,
+entonces se puede guardar como ganada y entonces sí ocuparía cupo en
+reservas"*. Y con el export de pedidos de Shopify en la mano: *"ve si se
+pueden identificar reservas a futuro, pagadas o no pagadas… y ver si nos
+puede ayudar también para preparar el sistema para la producción"*.
+
+**Dónde**: Configuración → Mantención → **📥 Importar del CRM**
+(`ImportarCRM.tsx`), solo con el permiso `mantencion` (el administrador). La
+ruta es `/api/mantencion/importar`: `GET` es la vista previa, `PUT` sube el
+Excel y `POST` importa. Qué entra y cómo calza cada cosa vive en
+**`lib/importar.ts`**, pura y con pruebas.
+
+### De dónde lee: tres pestañas de la planilla
+
+El plan se arma desde **tres pestañas de la misma planilla**: así **lo que se
+va a importar queda a la vista** y se puede corregir antes de apretar nada,
+que es el control que pidió el cliente. Se leen por nombre de columna; las
+columnas de más —las que sirven para revisar— se ignoran.
+
+### El Excel se sube desde el formulario
+
+La primera versión le pedía a quien importa subir el archivo en Google Sheets
+(Archivo → Importar → *Insertar hojas nuevas*). El cliente lo ensayó y se
+quedó ahí: *"en el formulario Ver qué entra cuando aprieto pide acceso a
+Google Drive. No deja subir el Excel"*. Quien importa no siempre está en el
+navegador con la cuenta de Google de esa planilla, y no tiene por qué.
+
+- **⬆ Subir el Excel…** en la misma ventana: el navegador lee el archivo, el
+  panel copia sus hojas a las tres pestañas —las crea si no están— y muestra
+  la vista previa. **No importa nada**: eso sigue pidiendo *Revisé lo que
+  entra*.
+- **`lib/xlsx.ts` lee el `.xlsx` sin librería.** Un Excel es un zip con XML,
+  y el navegador ya sabe descomprimir (`DecompressionStream`); lo que hace
+  falta —los nombres de las hojas y el texto de cada celda— cabe en un
+  archivo. Corre igual en Node, así que tiene pruebas, y **se comparó celda
+  por celda contra tres archivos de verdad** (los dos que arma el script y el
+  respaldo del CRM): calzan las 28.327.
+- **Solo las tres hojas del importador** viajan al servidor, por su nombre;
+  las demás se ignoran en el navegador. `hojasParaSubir()` vuelve a validar
+  allá: nombres, la columna `Ref`, y un tope de tamaño que frena un archivo
+  equivocado.
+- **Reemplaza la pestaña entera** (`escribirBloque()`) de cada hoja que
+  viene, y no toca las que no vienen: corregir el Excel y subirlo de nuevo
+  deja lo último. **Cada celda se escribe como texto** (el `'` adelante): lo
+  que queda en la planilla es lo que decía el Excel, sin que Sheets convierta
+  `2026-12-05` en fecha ni lea `44.000` según su idioma.
+- **Las fechas corregidas a mano se entienden** (`fechaDeCelda()`): además
+  de `2026-12-05`, el día primero (`05-12-2026`, `5/12/2026`), que es como
+  el Excel de revisión las muestra, y el número con que Excel guarda una
+  fecha.
+- **Queda en la bitácora** como *Subió el Excel para importar*, con cuántas
+  filas por pestaña y sin nombres.
+- **Lo de antes sigue sirviendo**: quien tiene la planilla abierta puede
+  importar el archivo ahí y apretar *↻ Volver a mirar*. Va explicado en el
+  `?` de la caja.
+
+| Pestaña | Una fila es | Columnas que se leen |
+|---|---|---|
+| `Importar clientes` | una persona | `Ref`, `Nombre`, `Teléfono`, `Correo`, `Empresa del cliente`, `Vendedor`, `Notas` |
+| `Importar cotizaciones` | una conversación a futuro | `Ref`, `Ref cliente`, `Estado`, `Fecha del evento`, `Periodo`, `Invitados`, `Tipo de evento`, `Vendedor`, `Notas`, `Productos` |
+| `Importar reservas` (opcional) | un pedido del sitio viejo | `Ref` (el número del pedido), `Fecha`, `Nombre`, `Teléfono`, `Correo`, `Menú`, `Personas`, `Monto`, `Pago`, `Nota de pago` |
+
+- **Las fechas van como `2026-12-05`.** `Productos` lleva un producto por
+  renglón, `Producto | cantidad | precio | + IVA` (sin *+ IVA*, el precio
+  trae el IVA). `Pago` es *Pagada* o *Por pagar*.
+- **Los Excel los arma un script fuera del repositorio**, desde el respaldo
+  del CRM y el export de pedidos que el cliente sube al chat. **Los datos de
+  los clientes nunca pasan por el repo**, que es público.
+- **Son pestañas de paso** (`DE_PASO` en `lib/produccion.ts`): *Dejar la base
+  en cero* no las vacía ni las cuenta, y quien importa las borra al terminar.
+
+### Cómo calzan las etapas del CRM
+
+La decisión queda escrita **fila por fila en la columna `Estado`**, que se
+puede cambiar en la planilla antes de importar. El panel acepta tres:
+
+| En el CRM | Acá |
+|---|---|
+| Nuevo, Contactado | **Candidato**: preguntó y todavía no se le cotiza. Con su día, su periodo, o *Sin día todavía* |
+| Cotizado | **Borrador**, con los productos y precios del CRM: se revisa y se manda desde acá |
+| Ganado, con fecha a futuro | **Ganada**, con su reserva: toma cupo |
+| Perdido, o con el evento ya pasado | solo la ficha, con su historia en la nota |
+
+- **Nunca se importa nada como *Enviada***: echaría a correr la vigencia y
+  contaría gente posible en el calendario por un link que el cliente no vio.
+- **Toda persona con algo de Lo Pirque entra como ficha**, también las de
+  eventos pasados y las perdidas. Las filas del CRM con el mismo teléfono o
+  correo son una sola ficha.
+- **Los productos pasan por `prepararLineas()`**, la misma función de una
+  cotización hecha a mano: solo los menús suman personas, un producto de
+  monto fijo va una vez y el show va incluido en un día público. Un nombre
+  que no está en *Productos* entra como línea libre, y la vista previa lo
+  dice.
+- **Un producto que en el catálogo se llama un poco distinto calza igual**
+  (`productoParecido()`). Lo pidió el cliente al ver la lista de los que no
+  calzaban: *"si está arriendo del recinto, eso es claramente arriendo. Y si
+  está el desayuno de campo, eso es desayuno… estos productos existen, solo
+  tienen un poco otro nombre"*. Primero el nombre tal cual; si no:
+  1. **un nombre dentro del otro** —*Desayuno de campo* con *Desayuno*,
+     *Brasas* con *A Brasas abiertas*, *Taller de quesos* con *Taller de
+     queso*—: todas las palabras de uno están en el otro, sin mirar el plural
+     ni *de, del, la, y…*, con dos palabras de diferencia a lo más y ninguna
+     que sea *sin* o *no* (*Barra abierta sin alcohol* no es *Barra
+     abierta*);
+  2. **un arriendo es el arriendo**: si el nombre dice *arriendo*, el
+     producto de tipo Arriendo.
+
+  **Siempre que calce uno solo**: con *Arriendo fin de semana* y *Arriendo
+  día de semana* no se adivina, y entra como línea libre. Solo mira lo
+  activo y que se puede cotizar. La línea queda con el nombre y las reglas
+  del producto del catálogo, y **con el precio del CRM**. La vista previa
+  dice cada calce con sus dos nombres —*Calzan con otro nombre: Brasas → A
+  Brasas abiertas*—: es una adivinanza acotada, y se controla ahí. Para
+  cambiar una, se escribe el nombre exacto en la columna `Productos`.
+
+### Una ganada del CRM entra ganada
+
+- **Necesita su día exacto y gente**: sin eso no hay dónde poner la reserva.
+- **Su reserva es la de *Marcar ganada*** (`reservaDesdePresupuesto()`): el
+  total negociado, al menú solo las líneas que son gente, y a nombre de la
+  cuenta de su vendedor —o de quien importa, si el vendedor no tiene cuenta—.
+- **Nace por pagar**: el CRM no dice qué pagó cada cliente. El anticipo se
+  anota en la cotización, con su comprobante, y ahí pasa a abonada. **Hasta
+  entonces no tiene la preferencia de quien pagó**: el sitio sigue ofreciendo
+  ese día a quien paga ahora. La ventana lo avisa a la vista, antes y después
+  de importar.
+- **Si el día queda sobre su cupo, entra igual y se avisa antes de
+  confirmar.** Es la salida de siempre: el panel lo muestra como sobrecupo y
+  en la página del día se amplía. Dejarla afuera escondería un evento que sí
+  viene.
+- **Un día arrendado en exclusiva a otro no se pisa**: esa fila no entra.
+- **No pasa por `/convertir`**: no pide anticipo ni contrato. Eso lo decide
+  quien importa, que es el administrador, con el aviso a la vista y una
+  casilla.
+
+### Las reservas del sitio viejo
+
+El sitio viejo vendía la fecha en la variante del producto, sin
+`_booking_date`, así que el panel no ve esos pedidos (se decidió no enseñarle
+el modelo viejo: *"se anotan a mano"*). El export de pedidos de Shopify trae
+el día en el nombre de la variante y si está pagado: alcanza para **anotarlos
+de una vez** en lugar de uno por uno.
+
+- Entran como **reservas anotadas a mano** (`MANUAL-…`, sin modalidad), con
+  su menú, su gente, su monto y *Pagada* o *Por pagar*. El número del pedido
+  queda en la nota —`(LP1234)`— y es lo que evita anotarlo dos veces.
+- **Las pagadas le llegan a pagos para revisar** (`marcasDePago()`), aunque
+  importe alguien con `pagar`: importar en lote no es haber mirado cada pago.
+- **Un día que no existe se crea privado**, como al anotar a mano
+  (`diaParaReservaManual()`): el sitio no lo ofrece. Si se quiere seguir
+  vendiendo, se pasa a público desde el calendario. La vista previa dice
+  cuáles son.
+- **El export de Shopify no trae las propiedades de línea**: los pedidos del
+  modelo nuevo salen sin su fecha. No hacen falta: esos ya llegan solos.
+
+### La ventana: ver antes de escribir
+
+Muestra, sin datos de clientes —solo cuentas, días y números de fila—:
+
+- **📥 Entra**: fichas, candidatos, borradores, ganadas y reservas; cuántas
+  reservas entran pagadas, y lo que ya estaba y no se duplica.
+- **A nombre de quién queda**: qué cuenta del panel calzó con cada vendedor
+  del CRM (`cuentaDelVendedor()`: el nombre o el usuario exacto, el primer
+  nombre si es de una sola cuenta, o **el apodo** —2026-11-22, lo pidió el
+  cliente: la cuenta se llama *Caro* y el CRM dice *Carolina Rojas*—: cada
+  palabra de la cuenta es el comienzo de una del nombre, con tres letras a
+  lo menos y solo si calza una cuenta). *Sin cuenta* queda sin dueño: lo ven la
+  gerencia y la administración.
+- **Días que toman cupo**: uno por renglón, con su gente, si se abre privado
+  y si queda sobre el cupo. Las reservas y las ganadas del mismo día, juntas.
+- **Avisos**: las filas que no entran y por qué, por pestaña y número de
+  fila.
+- **Productos de las cotizaciones**: los que calzaron con un producto que se
+  llama distinto, con los dos nombres, y los que no están en *Productos*.
+- Arriba, **cuál planilla es** (`CualBase`, la misma pieza de *Dejar la base
+  en cero*): *🔴 Producción* o *🧪 Versión de prueba*, con su nombre.
+- No importa sin ***Revisé lo que entra***. A la izquierda del pie, lo de
+  preparar: *⬆ Subir otro Excel*, *↻ Volver a mirar* —relee la planilla
+  después de corregir algo ahí— y *Planilla ↗*.
+
+### Cómo escribe, y por qué en ese orden
+
+Fichas → líneas → cotizaciones (**las ganadas, como borrador**) → reservas
+(las del sitio viejo y las de las ganadas, en una sola escritura) → días →
+y recién al final **gana las ganadas** (`ganarImportadas()`), que les escribe
+el estado, su reserva y qué se le hizo a su día.
+
+- **Las líneas antes que las cotizaciones**: si se corta entremedio quedan
+  líneas sin cotización, que nadie ve, y al apretar de nuevo se importa todo.
+- **La reserva antes que el vínculo**, como en *Marcar ganada*: si se corta
+  ahí, queda un borrador con su nota y una reserva que se ve. *Marcar ganada*
+  la termina —encuentra esa reserva por su nota y no la duplica—, y al volver
+  a mirar la ventana la nombra como pendiente.
+- **Se puede apretar dos veces.** Una ficha calza por teléfono o correo; una
+  cotización, por la referencia de su fila en la nota (`(CRM-0042-a)`); una
+  reserva, por el número del pedido en la suya.
+- **Todo en lote**: `agregarImportados()`, `agregarReservas()` y
+  `abrirDiasSiHaceFalta()` leen cada pestaña una vez y escriben una vez.
+
+### Lo de siempre
+
+- **Lecturas de Google**: la vista previa, **una tanda** con las pestañas
+  subidas (diez pestañas en un `batchGet`); antes de subirlas, una más para
+  mirar la lista de pestañas (`npm run lecturas`: 2). Subir el Excel gasta
+  dos tandas —lo del panel antes de escribir y las tres pestañas después— y
+  dos escrituras por pestaña. Importar gasta unas ocho. **De paso, una tanda que pregunta por varias pestañas que no existen
+  mira el libro una sola vez** (`nombreReal(…, reciente)` en `sheets.ts`):
+  gastaba una lectura por cada una.
+- **Ningún permiso cambió.** `mantencion` sigue siendo del administrador.
+- **Ninguna columna nueva.** Las tres pestañas son de paso.
+- **Importar va después de la base en cero**: lo importado es justo lo que
+  ese botón borra (clientes, cotizaciones, reservas).
+- **Ayuda**: el `?` de Configuración lo explica; cada caja de la ventana
+  tiene su `?`.
+- **Ventanas**: escena nueva `v-importar-crm` (634px a 1280×650, con el Excel recién subido). Son 45.
+- **Probado en el panel de ejemplo**, con gente inventada: entran 5 fichas, 3
+  candidatos, 1 borrador, 2 ganadas y 4 reservas; una ficha que ya estaba no
+  se duplica; un vendedor sin cuenta se dice; las dos ganadas quedan
+  *Ganada* con su reserva —una crea su día privado y la otra deja el domingo
+  con 19 personas sobre el cupo, que el calendario muestra como sobrecupo—;
+  la reserva pagada queda anotada y sin revisar. Al volver a mirar no hay
+  nada que importar, y apretar de nuevo responde 409. La gerencia y pagos
+  reciben 403.
+
+### Lo que no hace, a propósito
+
+- **No importa cobros.** El CRM no enlaza sus pagos con cada cliente; lo que
+  se pagó se anota en la cotización, que es donde vive el comprobante.
+- **No marca exclusivo ningún día**: el CRM no lo dice. Se marca en la
+  cotización.
+- **No trae Calicanto ni otros lugares**: se pidió solo Lo Pirque. Quedan en
+  el Excel de revisión.
+- **No le enseña al panel el modelo viejo de Shopify**: los pedidos del sitio
+  viejo entran una vez, por esta pestaña, y los nuevos siguen llegando solos.
+
+## Clientes: Míos / Todos (2026-11-22)
+
+Lo pidió el cliente después de importar: *"cuando uno entra a clientes, se
+debería también poder filtrar por todos, míos… por lo menos poder filtrar
+por los míos al tiro y buscar"*. Con el CRM importado la lista pasa de un
+puñado a más de cien fichas.
+
+- **Dos pastillas al lado del buscador**, *👤 Míos* y *👥 Todos*, con cuántos
+  son: las mismas piezas de Cotizaciones y del sobrecupo (`BotonMias`,
+  `BotonTodos`).
+- **Míos** son los clientes que la cuenta creó o a los que les cotizó: la
+  misma cuenta de `privacidad.ts` (`clientePropio()`). `/api/clientes` manda
+  solo sus ids (`mios`), de lo que ya leía: ninguna lectura más.
+- **Parte en *Míos*** si la cuenta tiene alguno. **No se dibuja** si no tiene
+  ninguno o si son todos: no separaría nada.
+- **El buscador busca dentro de lo que se mira**; sin calce en *Míos* dice
+  *Ninguno de los tuyos calza… Mira en Todos*.
+- En el celular el buscador ocupa su fila y las pastillas van debajo.
+- *Mejores clientes* y otros filtros quedaron para después: el cliente lo
+  dejó como idea.
+- **Ayuda**: el `?` de Clientes lo dice. **Ningún permiso cambió.**
+- Probado en el panel de ejemplo a 1280 y 393: el vendedor ve 4 en *Míos* y
+  6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, no ven
+  el filtro.
+
+## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
+
+Lo marcó el cliente con una foto del panel de verdad: en un día con *150/150
+personas*, la pastilla del tiempo bajaba a otro renglón y la barra, las
+pastillas del pago y los botones quedaban más abajo que en la tarjeta de al
+lado. De ahí salió la regla *las tarjetas de una fila van parejas por
+dentro* (arriba).
+
+- **En el computador la fila del número no se dobla** (`TarjetaDia`): el cupo
+  —lo que va después de la barra— va a 15px y lo tomado sigue a 22, así que
+  caben tres cifras por lado, la palabra *personas* y el tiempo en los 238px
+  de la tarjeta. Si aun así faltara ancho, se recorta la palabra; nada baja.
+- **La fila mide siempre 24px**, con o sin pastilla del tiempo: hoy y los
+  días sin pronóstico quedaban un pixel más arriba.
+- La pastilla del tiempo no se encoge (`shrink-0` en `Clima`).
+- **El celular no cambió**: todo va con `lg:`.
+- **Lo mide `revisarTarjetasParejas()`** (`pruebas/alineacion.mjs`), al final
+  de `npm run ventanas`: con pronóstico en todos los días y un cupo de 150
+  lleno en uno de cada dos, la barra de cada tarjeta de una fila tiene que
+  estar a la misma altura. Antes del cambio daba dos alturas.
+- Medido a 1024, 1280 y 1440px: todas las filas parejas.
+
+## Las fechas se escriben como texto (2026-11-22)
+
+Lo encontró el cliente en la versión de prueba, después de dejar la base en
+cero: los sábados y domingos salían *sin cupo* aunque `/api/fechas/regla`
+decía haberlos abierto. En la planilla, la columna `Fecha` tenía `46347` y
+`Hora Apertura`, `0,5416666667`.
+
+- **La causa**: el panel escribe con `USER_ENTERED`, que convierte
+  `2026-11-21` en el número de serie de ese día. La celda lo muestra como
+  fecha **solo si tiene formato de fecha**, y una fila agregada justo bajo el
+  encabezado hereda el formato del encabezado. Con filas de antes no pasaba
+  —la nueva heredaba el formato de la anterior—; **en una pestaña recién
+  vaciada, sí**. El panel leía `46347`, no lo reconocía como día y saltaba la
+  fila: el calendario la mostraba en cero, y cada llamada a la regla volvía a
+  agregar los mismos días.
+- **El arreglo, en un solo lugar** (`valorSeguro()` en `lib/celdas.ts`): todo
+  texto que parte con un dígito y no es un número —una fecha, una hora, un
+  `2026-11-21 09:20`, un `2026-11`, un `10%`— se escribe como texto, con el
+  `'` adelante. Lo que vuelve es lo que se escribió. Un número sigue siendo
+  número. Vale para todas las pestañas: es justo lo que habría pasado con
+  `Reservas`, `Turnos` y las demás después de la base en cero en producción.
+- **Lo que ya quedó como número se lee igual** en `Fechas Hábiles`
+  (`fechaDePlanilla()` y `horaDePlanilla()` en `lib/fechas.ts`): el
+  calendario, la regla y *Editar* un día.
+- **En la planilla, esas celdas son texto**: se ven igual, alineadas a la
+  izquierda. Una fórmula de fecha que alguien tenga sobre esas columnas no
+  las toma como fecha.
+- **Las filas repetidas de la planilla de pruebas** se van volviendo a dejar
+  la base en cero ahí, que además reescribe todo como texto.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
+## Cambiar el vendedor de un cliente o de una cotización (2026-11-22)
+
+Lo pidió el cliente al ensayar el importador: *"hay que agregar la función a
+la gerencia y al administrador de pagos que pueda asignar vendedores a un
+cliente o a una cotización… porque se va una vendedora, pero el cliente se
+queda, o porque hay una venta sin asignación"* —lo que entra *sin cuenta* al
+importar—. Lógica en `lib/asignar.ts` (pura, con pruebas), la ruta en
+`/api/vendedores/asignar` y la pieza en `CambiarVendedor.tsx`.
+
+- **Permiso nuevo, `asignarVendedor`**: la gerencia, pagos y el
+  administrador. El vendedor, operaciones y el encargado reciben 403.
+- **Qué se cambia**: el `Creado por` de la ficha o de la cotización. De ahí
+  salen qué puede editar un vendedor, de quién ve el contacto y a quién se le
+  cuenta la venta: el nuevo pasa a poder y el anterior deja de poder.
+- **Las dos reglas de plata, que decidió el cliente** (*"sí a los dos"*):
+  1. **Una cotización ganada que se reasigna se lleva su comisión**, salvo
+     que ya esté cerrada —el cliente pagó todo y pagos lo revisó, o sea
+     `Comisión vendedor` ya tiene su monto—. Esa no se cambia, y la ventana
+     lo dice.
+  2. **Al cambiar el vendedor de un cliente, sus ganadas se quedan** con
+     quien las tiene. Solo se mueven las abiertas —ni ganadas, ni perdidas,
+     ni canceladas—, con una casilla que viene marcada.
+- **Dónde**: al abrir la ficha en `/clientes`, *Vendedor: Jorge · Cambiar…*
+  (donde decía *creada por*), y en la cotización, en el paso **Evento**, bajo
+  *¿Viene por un socio comercial?*. Solo se dibuja para quien recibe la lista
+  de vendedores, que el servidor manda solo con el permiso.
+- **La ventana**: la lista con buscador (`BuscarEnLista`), la casilla de las
+  abiertas y **la frase de lo que va a pasar** —*Pasa de Jorge a Daniela, con
+  su cotización abierta. Su cotización ganada se queda con quien la tiene*—
+  antes del botón *Cambiar vendedor*. Se confirma a mano: toca de quién es
+  algo y su comisión.
+- **A quién**: toda cuenta activa que puede cotizar (`presupuestos`). Nació
+  solo para el rol Vendedor y el cliente lo amplió el mismo día
+  (*"amplíalo"*): en la planilla de verdad, uno de los vendedores del CRM
+  tiene cuenta con otro rol y no se le podía pasar un cliente. En la lista
+  van primero los vendedores, y los demás con su rol al lado.
+- **La bitácora**: *Cambió el vendedor de un cliente · Cliente C-0001: de
+  Jorge a Daniela · con 1 cotización abierta*. Sin datos del cliente.
+- **`Creado por` lleva el nombre de la cuenta, no su usuario.** Es lo que
+  trae la sesión (`/api/sesion`) y contra lo que el panel compara para decir
+  *esto es tuyo*. La ruta escribe el nombre; para leer calza con cualquiera
+  de los dos (`esDelVendedor()`). **El importador escribía el usuario** y se
+  corrigió en el mismo cambio: con una cuenta *Carla Rojas* / `carla`, lo
+  importado a su nombre no le habría quedado como suyo.
+- **Lecturas de Google**: ninguna más en las pantallas. `/api/clientes` suma
+  `Usuarios` a su tanda (`npm run lecturas`: 1 de 1) y `/api/presupuestos` ya
+  la traía. Cambiar lee una tanda y escribe una fila por ficha o cotización.
+- **Ninguna columna nueva.**
+- **Ayuda**: el `?` de Clientes, el `?` de la ventana (`cambiarVendedor`) y
+  la lista de lo que puede cada rol, que sale sola de `PERMISOS`.
+- **Ventanas**: escena nueva `v-cambiar-vendedor` (307px a 1280×650; 359 en
+  el celular). El paso Evento de cotizar pasó de 423 a 471px. Son 46.
+- **Probado en el panel de ejemplo**: pagos le pasa un cliente de un vendedor
+  a otro con su cotización abierta, la ficha queda con el nuevo y apretar de
+  nuevo responde *Ya es de …*. El anfitrión, el vendedor, el encargado y
+  operaciones reciben 403.
+- **Lo que no hace**: no cambia `Anotada por` de la reserva de una ganada, y
+  no deja algo *sin vendedor* a propósito.
 
 ## El computador, más compacto (2026-11-21)
 
@@ -499,7 +892,7 @@ Las dos ventanas crecen con lo que tenga el día. Con más gente o más
 puestos que el ejemplo (ocho personas, cuatro puestos), la de trabajadores
 también pasa de una pantalla.
 
-**La prueba** (`pruebas/ventanas.mjs`): 44 escenas. Fija el reloj del
+**La prueba** (`pruebas/ventanas.mjs`): 45 escenas. Fija el reloj del
 navegador a la hora del servidor de ejemplo —si no, *hoy* es un día para
 uno y otro para la página, y React avisa en rojo—, y **espera lo que se
 carga antes de medir**: *Dejar la base en cero* y la cara de reservas se
@@ -1463,7 +1856,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 43 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 46 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

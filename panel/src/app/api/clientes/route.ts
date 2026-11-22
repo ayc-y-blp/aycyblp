@@ -5,13 +5,15 @@ import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerClientes, crearCliente, editarCliente, borrarCliente, leerPresupuestos,
-  migrarPresupuestosAClientes, anotar, sincronizarReserva, leerLineasPresupuesto
+  migrarPresupuestosAClientes, anotar, sincronizarReserva, leerLineasPresupuesto, leerUsuarios
 } from '@/lib/datos';
 import { limpiarCliente, faltaEnCliente, parecidos } from '@/lib/clientes';
 import { folioDe, estadoVisible, totalDe, lineasDe } from '@/lib/presupuestos';
 import { grupoDe } from '@/lib/cotizar';
 import { hoy } from '@/lib/fechas';
 import { puede } from '@/lib/auth';
+import { HOJA_USUARIOS } from '@/lib/usuarios';
+import { vendedoresParaAsignar, estaAbierta } from '@/lib/asignar';
 import type { Cliente } from '@/lib/clientes';
 import { alcanceDeContacto, recortarCliente, clientePropio, estaTapado } from '@/lib/privacidad';
 import { ahoraEnChile } from '@/lib/bitacora';
@@ -41,13 +43,19 @@ async function esFichaAjena(quien: Quien, c: Cliente): Promise<boolean> {
 }
 const FICHA_AJENA = 'Esta ficha es de un cliente de otro vendedor: pídele el cambio a la administración.';
 
+const contarPorCliente = (lista: { idCliente?: string }[]) => {
+  const n: Record<string, number> = {};
+  for (const p of lista) if (p.idCliente) n[p.idCliente] = (n[p.idCliente] ?? 0) + 1;
+  return n;
+};
+
 /**
  * Las fichas de clientes, y cuántas cotizaciones tiene cada una.
  *
  * Trae además cuántos presupuestos todavía no tienen ficha, para que la
  * pantalla ofrezca pasarlos — pero solo a quien puede ver presupuestos.
  */
-export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_USUARIOS], async function GET(req: Request) {
   const no = await exigirVer(req, 'clientes');
   if (no) return no;
   try {
@@ -85,9 +93,22 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS], 
     }
     return NextResponse.json({
       clientes: await paraLaCuenta(quien, clientes, presupuestos),
+      // **Los de esta cuenta** (2026-11-22, para el filtro *Míos*): los que
+      // creó o a los que les cotizó, la misma cuenta de `privacidad.ts`.
+      // Solo los ids, y sale de lo ya leído.
+      mios: clientes.filter((c) => clientePropio(c, quien.usuario, presupuestos)).map((c) => c.id),
       cotizaciones,
       historial,
-      sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0
+      sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0,
+      // **A quién se le puede pasar un cliente** (2026-11-22, `asignar.ts`), y
+      // cuántas cotizaciones abiertas y ganadas tiene cada uno, para decirlo
+      // antes de confirmar. Solo para quien puede cambiar el vendedor.
+      // `Usuarios` va en la misma tanda: ninguna lectura más.
+      ...(puede(quien.rol, 'asignarVendedor') ? {
+        vendedores: vendedoresParaAsignar(await leerUsuarios()),
+        abiertas: contarPorCliente(presupuestos.filter(estaAbierta)),
+        ganadas: contarPorCliente(presupuestos.filter((p) => !!p.idReserva))
+      } : {})
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

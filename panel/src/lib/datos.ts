@@ -26,7 +26,7 @@ import { HOJA_CONFIG, leerConfigDe, aFilasConfig, POR_DEFECTO,
 import { camposDeShopify } from './shopify.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
-import { esFecha, hoy, type Fecha } from './fechas.ts';
+import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
 import { normalizar } from './columnas.ts';
 import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, type Usuario } from './usuarios.ts';
 import { HOJA_CIERRES, COL_CIERRES, ENCABEZADO_CIERRES, leerCierresDe,
@@ -164,12 +164,13 @@ export async function leerFechas(fresca = false): Promise<FechaHabil[]> {
   const salida: FechaHabil[] = [];
   for (let n = 1; n < filas.length; n++) {
     const f = filas[n];
-    const fecha = String(en(f, i.fecha)).slice(0, 10);
+    // Tolerante con una fecha o una hora que Sheets guardó como número.
+    const fecha = fechaDePlanilla(en(f, i.fecha));
     if (!esFecha(fecha)) continue;
     salida.push({
       fecha,
       capacidad: num(en(f, i.capacidad)),
-      apertura: String(en(f, i.apertura)) || '13:00',
+      apertura: horaDePlanilla(en(f, i.apertura)) || '13:00',
       // Se pasa tal cual lo que diga la celda, incluso en blanco: quien decide
       // si eso es abierto o cerrado es estaCerrado(), en un solo lugar.
       estado: String(en(f, i.estado)),
@@ -189,7 +190,7 @@ export async function guardarFecha(d: Omit<FechaHabil, 'fila'>): Promise<void> {
   const i = indices(enc, COL_FECHAS);
   // Una fecha no puede estar dos veces: si ya está, se actualiza.
   const n = filas.findIndex((f, k) =>
-    k > 0 && i.fecha !== -1 && String(f[i.fecha] ?? '').slice(0, 10) === d.fecha);
+    k > 0 && i.fecha !== -1 && fechaDePlanilla(f[i.fecha]) === d.fecha);
   if (n > 0) await escribirFila(HOJA_FECHAS, n + 1, filaFecha(enc, d, filas[n]));
   else await agregarFila(HOJA_FECHAS, filaFecha(enc, d));
 }
@@ -209,7 +210,7 @@ export async function abrirDiasDeLaRegla(): Promise<Fecha[]> {
     [COL_FECHAS.fecha, COL_FECHAS.capacidad, COL_FECHAS.apertura, COL_FECHAS.estado, COL_FECHAS.notas]);
   const enc = filas[0];
   const i = indices(enc, COL_FECHAS);
-  const conFila = i.fecha === -1 ? [] : filas.slice(1).map((f) => String(f[i.fecha] ?? ''));
+  const conFila = i.fecha === -1 ? [] : filas.slice(1).map((f) => fechaDePlanilla(f[i.fecha]));
   const nuevas = diasPorAbrir(conFila, hoy(), cfg);
   if (nuevas.length) await agregarFilas(HOJA_FECHAS, nuevas.map((f) => filaFecha(enc, diaDeLaRegla(f, cfg))));
   return nuevas;
@@ -1067,6 +1068,120 @@ export async function crearCliente(c: Omit<Cliente, 'fila' | 'id'>): Promise<str
   const id = nuevoIdCliente(leerClientesDe(filas));
   await agregarFilas(HOJA_CLIENTES, [filaCliente(enc, { ...c, id })]);
   return id;
+}
+
+/**
+ * **Escribe de una vez lo que trae una importación del CRM** (2026-11-21,
+ * `lib/importar.ts`): las fichas, las líneas y las cotizaciones, cada una en
+ * una sola llamada.
+ *
+ * **Las líneas antes que las cotizaciones**, a propósito: si la planilla se
+ * cae entremedio, quedan líneas sin cotización —que nadie ve— y al apretar
+ * de nuevo se importa todo otra vez. Al revés quedaría una cotización que
+ * "ya estaba" y sin sus productos, que es peor porque no se nota.
+ */
+export async function agregarImportados(
+  fichas: Omit<Cliente, 'fila'>[], cotizaciones: Omit<Presupuesto, 'fila'>[], lineas: Omit<LineaPresupuesto, 'fila'>[]
+): Promise<void> {
+  if (fichas.length) {
+    const filas = await asegurarEncabezado(HOJA_CLIENTES, ENCABEZADO_CLIENTES);
+    const enc = await asegurarColumnas(HOJA_CLIENTES, filas[0] ?? ENCABEZADO_CLIENTES, ENCABEZADO_CLIENTES);
+    await agregarFilas(HOJA_CLIENTES, fichas.map((c) => filaCliente(enc, c)));
+  }
+  if (lineas.length) {
+    const filas = await asegurarEncabezado(HOJA_LINEAS, ENCABEZADO_LINEAS);
+    const enc = await asegurarColumnas(HOJA_LINEAS, filas[0] ?? ENCABEZADO_LINEAS, ENCABEZADO_LINEAS);
+    await agregarFilas(HOJA_LINEAS, lineas.map((l) => filaLinea(enc, l)));
+  }
+  if (cotizaciones.length) {
+    const filas = await asegurarEncabezado(HOJA_PRESUPUESTOS, ENCABEZADO_PRESUPUESTOS);
+    const enc = await asegurarColumnas(HOJA_PRESUPUESTOS, filas[0] ?? ENCABEZADO_PRESUPUESTOS, ENCABEZADO_PRESUPUESTOS);
+    await agregarFilas(HOJA_PRESUPUESTOS, cotizaciones.map((p) => filaPresupuesto(enc, p)));
+  }
+}
+
+/**
+ * **Anota de una vez varias reservas a mano** (2026-11-21, la importación):
+ * las del sitio viejo y las de las cotizaciones que entran ganadas. Como
+ * `crearReserva()`, pero con una sola lectura y una sola escritura. Devuelve
+ * sus ids, en el mismo orden.
+ */
+export async function agregarReservas(lista: Omit<Reserva, 'id' | 'fila' | 'creada'>[]): Promise<string[]> {
+  if (!lista.length) return [];
+  const filas = await leerHoja(HOJA_RESERVAS, true);
+  // Las mismas columnas que asegura `crearReserva()`: una que el panel conoce
+  // y la planilla no, se escribiría en ninguna parte.
+  let enc = filas[0] ?? [];
+  for (const c of [COL_RESERVAS.notaPago, COL_RESERVAS.eventoCRM, COL_RESERVAS.anotadaPor,
+    COL_RESERVAS.llegaron, COL_RESERVAS.avisoRecepcion, COL_RESERVAS.abonado]) enc = await asegurarColumna(HOJA_RESERVAS, enc, c);
+  if (lista.some((r) => r.pagoAnotado)) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS.pagoAnotado);
+  // MANUAL- y un número distinto para cada una: el id es la llave de la fila.
+  const base = Date.now();
+  const creada = new Date().toISOString();
+  const ids = lista.map((_, i) => `MANUAL-${base + i}`);
+  await agregarFilas(HOJA_RESERVAS, lista.map((r, i) => filaReserva(enc, { ...r, id: ids[i], creada })));
+  return ids;
+}
+
+/**
+ * **Deja usables varios días de una vez**, como `abrirElDiaSiHaceFalta()`
+ * para cada uno pero leyendo la pestaña una sola vez: el que no existe se
+ * crea privado con el cupo de siempre, y el cerrado se reabre para nosotros.
+ * Devuelve qué se le hizo a cada uno, que es lo que una cotización ganada
+ * guarda para poder deshacerlo. **Si falla, las reservas ya están guardadas**:
+ * los días se abren después desde el calendario.
+ */
+export async function abrirDiasSiHaceFalta(dias: string[]): Promise<Record<string, '' | 'creado' | 'reabierto'>> {
+  const hecho: Record<string, '' | 'creado' | 'reabierto'> = {};
+  try {
+    const unicos = [...new Set(dias)].sort();
+    if (!unicos.length) return hecho;
+    const [fechas, cfg, filas] = await Promise.all([leerFechas(true), leerConfig(), leerHoja(HOJA_FECHAS, true)]);
+    const enc = filas[0] ?? Object.values(COL_FECHAS);
+    const nuevas: unknown[][] = [];
+    for (const fecha of unicos) {
+      const actual = fechas.find((f) => f.fecha === fecha);
+      const nuevo = diaParaReservaManual(actual, fecha, cfg);
+      if (!nuevo) { hecho[fecha] = ''; continue; }
+      if (!actual) nuevas.push(filaFecha(enc, nuevo));
+      else await escribirFila(HOJA_FECHAS, actual.fila, filaFecha(enc, nuevo, filas[actual.fila - 1]));
+      hecho[fecha] = queLeHizo(actual);
+    }
+    if (nuevas.length) await agregarFilas(HOJA_FECHAS, nuevas);
+  } catch (e) {
+    console.error('[importar] abrir los dias', e);
+  }
+  return hecho;
+}
+
+/**
+ * **Gana las cotizaciones recién importadas** (2026-11-21): les escribe el
+ * estado, su reserva y qué se le hizo a su día. Es lo último, en el mismo
+ * orden que *Marcar ganada* y por lo mismo —primero la reserva, después el
+ * vínculo: si se corta entremedio queda una reserva que se ve, no gente que
+ * desaparece—. Las cotizaciones ya están en la planilla como borrador
+ * (`agregarImportados()`); la que no se alcance a ganar la termina *Marcar
+ * ganada*, que encuentra su reserva por la nota y no la duplica.
+ *
+ * No mira el cupo ni el respaldo: eso lo decidió quien importa, con el
+ * aviso a la vista (`planDeImportacion()`). Devuelve cuántas quedaron ganadas.
+ */
+export async function ganarImportadas(
+  lista: { p: Omit<Presupuesto, 'fila'>; idReserva: string; diaAbierto: string }[]
+): Promise<number> {
+  if (!lista.length) return 0;
+  const filas = await asegurarEncabezado(HOJA_PRESUPUESTOS, ENCABEZADO_PRESUPUESTOS);
+  const enc = filas[0] ?? ENCABEZADO_PRESUPUESTOS;
+  const escritas = leerPresupuestosDe(filas);
+  let ganadas = 0;
+  for (const { p, idReserva, diaAbierto } of lista) {
+    const previa = escritas.find((x) => x.id === p.id);
+    if (!previa) continue;
+    await escribirFila(HOJA_PRESUPUESTOS, previa.fila,
+      filaPresupuesto(enc, { ...p, estado: ESTADO_PRESUPUESTO.aceptado, idReserva, diaAbierto }));
+    ganadas++;
+  }
+  return ganadas;
 }
 
 /** Reescribe una ficha que ya existe. Devuelve false si no la encontró. */
