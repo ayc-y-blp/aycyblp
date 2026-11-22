@@ -266,6 +266,10 @@ Y la Lista partía en *Todo*.
   claves (`dia`, `semana`, `mes`, `rango`) no cambiaron: el link de *Pagarle*
   desde Vendedores sigue abriendo un rango. Las descargas van a la derecha
   (`ml-auto`), también cuando en *Personalizado* bajan a la fila siguiente.
+- **Las dos fechas de *Personalizado* son una pieza** (`DesdeHasta`, en
+  `ElegirPeriodo.tsx`), en Estadísticas y en el Informe: estaban copiadas, y
+  en el celular *Hasta* quedaba 5px corrido respecto de *Desde*. Ahora los
+  nombres miden lo mismo y los dos campos parten en la misma vertical.
 - **Se fue *Mostrando: …***, en la Lista y en Estadísticas: lo dicen el marco
   y los botones elegidos.
 - **`TarjetaNumero`, más compacta** (en las tres pantallas que la usan): 8px

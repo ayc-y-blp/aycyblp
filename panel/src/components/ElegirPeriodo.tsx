@@ -77,3 +77,31 @@ export default function ElegirPeriodo({ modos, modo, onModo, titulo, onMover, en
     </div>
   );
 }
+
+/**
+ * **Las dos fechas de *Personalizado***, para `enLugarDeFlechas`: *Desde* y
+ * *Hasta* con su campo, y una nota al final (cuántos días). Los nombres miden
+ * lo mismo (regla *los formularios van alineados*): en el celular, uno bajo
+ * el otro, los dos campos parten en la misma vertical. La usan Estadísticas
+ * y el Informe.
+ */
+export function DesdeHasta({ desde, hasta, onCambio, nota }: {
+  desde: string;
+  hasta: string;
+  onCambio: (cual: 'desde' | 'hasta', fecha: string) => void;
+  nota?: ReactNode;
+}) {
+  return (
+    <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto">
+      {(['desde', 'hasta'] as const).map((k) => (
+        <label key={k} className="flex items-center gap-1.5 text-[13px] font-semibold text-hueso/70">
+          <span className="w-11">{k === 'desde' ? 'Desde' : 'Hasta'}</span>
+          <input type="date" value={k === 'desde' ? desde : hasta} aria-label={k === 'desde' ? 'Desde' : 'Hasta'}
+            onChange={(e) => e.target.value && onCambio(k, e.target.value)}
+            className="min-h-[40px] rounded border-2 border-hueso/20 bg-panel px-2 text-[15px] text-hueso focus:border-oro focus:outline-none" />
+        </label>
+      ))}
+      {nota && <span className="text-[14px] text-hueso/70">{nota}</span>}
+    </div>
+  );
+}

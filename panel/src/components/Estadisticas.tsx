@@ -21,7 +21,7 @@ import BandaSeccion from './BandaSeccion';
 import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
 import TarjetaNumero from './TarjetaNumero';
-import ElegirPeriodo from './ElegirPeriodo';
+import ElegirPeriodo, { DesdeHasta } from './ElegirPeriodo';
 import EstadisticasEquipo from './EstadisticasEquipo';
 import type { DiaEstadistica } from '@/lib/estadisticasEquipo';
 import { enPesos } from '@/lib/ocupacion';
@@ -322,20 +322,11 @@ export default function Estadisticas() {
           titulo={modo === 'personalizado' ? undefined : titulo}
           onMover={(n) => setRango(moverRango(modo, rango, n))}
           enLugarDeFlechas={modo === 'personalizado' ? (
-            <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto">
-              {(['desde', 'hasta'] as const).map((k) => (
-                <label key={k} className="flex items-center gap-1.5 text-[13px] font-semibold text-hueso/70">
-                  {k === 'desde' ? 'Desde' : 'Hasta'}
-                  <input type="date" value={rango[k]} aria-label={k === 'desde' ? 'Desde' : 'Hasta'}
-                    onChange={(e) => {
-                      const nuevo = rangoPersonalizado(k === 'desde' ? e.target.value : rango.desde, k === 'hasta' ? e.target.value : rango.hasta);
-                      if (nuevo) setRango(nuevo);
-                    }}
-                    className="min-h-[40px] rounded border-2 border-hueso/20 bg-panel px-2 text-[15px] text-hueso focus:border-oro focus:outline-none" />
-                </label>
-              ))}
-              <span className="text-[14px] text-hueso/70">{plural(largoDe(rango), 'día', 'días')}</span>
-            </div>
+            <DesdeHasta desde={rango.desde} hasta={rango.hasta} nota={plural(largoDe(rango), 'día', 'días')}
+              onCambio={(k, f) => {
+                const nuevo = rangoPersonalizado(k === 'desde' ? f : rango.desde, k === 'hasta' ? f : rango.hasta);
+                if (nuevo) setRango(nuevo);
+              }} />
           ) : undefined}
           fechas={vista === 'equipo' && datos.equipo ? undefined : [
             { clave: 'visita', icono: '📅', largo: 'Fecha de la visita', corto: 'Visita' },

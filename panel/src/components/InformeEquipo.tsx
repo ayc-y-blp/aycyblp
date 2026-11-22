@@ -59,7 +59,7 @@ import { aTransferirDe, desglosePago, CONCEPTO, pideBoleta, pagosEnPeriodo,
          type EstadoPago } from '@/lib/remuneraciones';
 import Dialogo from './Dialogo';
 import AjusteInforme from './AjusteInforme';
-import ElegirPeriodo from './ElegirPeriodo';
+import ElegirPeriodo, { DesdeHasta } from './ElegirPeriodo';
 import Campo from './Campo';
 import { copiarConAviso, avisar } from './AvisoFlotante';
 
@@ -1833,16 +1833,8 @@ export default function InformeEquipo() {
           onMover={(n) => tipo === 'dia' ? setDiaElegido(sumarDias(diaElegido, n))
             : setPeriodo(tipo === 'mes' ? sumarMeses(periodo, n) : sumarDias(periodo, 7 * n))}
           enLugarDeFlechas={tipo === 'rango' ? (
-            <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto">
-              {([['Desde', desdeLibre, setDesdeLibre], ['Hasta', hastaLibre, setHastaLibre]] as const).map(([rotulo, valor, poner]) => (
-                <label key={rotulo} className="flex items-center gap-1.5 text-[13px] font-semibold text-hueso/70">
-                  {rotulo}
-                  <input type="date" value={valor} aria-label={rotulo}
-                    onChange={(e) => e.target.value && poner(e.target.value)}
-                    className="min-h-[40px] rounded border-2 border-hueso/20 bg-panel px-2 text-[15px] text-hueso focus:border-oro focus:outline-none" />
-                </label>
-              ))}
-            </div>
+            <DesdeHasta desde={desdeLibre} hasta={hastaLibre}
+              onCambio={(k, f) => (k === 'desde' ? setDesdeLibre : setHastaLibre)(f)} />
           ) : undefined} />
         {/* **Tres descargas** (2026-11-12): sueldos y propinas son dos pagos y
             se revisan por separado; la completa trae las dos cosas. Con el
