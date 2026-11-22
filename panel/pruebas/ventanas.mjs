@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarEspacio } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -63,6 +63,32 @@ export const NO_CABEN = {
 /** Hallazgos de alineación que se aceptan, con el porqué. Hoy, ninguno. */
 export const ALINEACION_ACEPTADA = {
 };
+
+/**
+ * **El espacio se usa bien** (2026-11-22). Filas que `revisarEspacio()` marca
+ * y se dejan así, con el porqué. La llave es la escena o la pantalla; el
+ * texto, un trozo del hallazgo.
+ */
+export const ESPACIO_ACEPTADO = {
+};
+
+/**
+ * Las pantallas que se miran enteras con `revisarEspacio()`, además de las
+ * escenas. **Una pantalla nueva, o una vista nueva dentro de una pantalla, se
+ * agrega acá en el mismo PR que la crea.**
+ */
+export const PANTALLAS = [
+  ['calendario', '/'], ['cotizaciones', '/presupuestos'],
+  ['cotizaciones-lista', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); }],
+  ['cotizaciones-lista-mes', '/presupuestos', async (p) => {
+    await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
+    await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes' }).click(); }],
+  ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
+  ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
+  ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
+  ['dia', '/dia/2026-11-14'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
+  ['bitacora', '/bitacora']
+];
 
 const b = await chromium.launch();
 // `VENTANAS_ESCALA=2` para fotos que va a mirar una persona.
@@ -263,6 +289,9 @@ for (const [nombre, abrir] of Object.entries(ESCENAS)) {
   if (m.cabe && anotada !== undefined) bajaron.push(`${nombre}: ya cabe (${m.mide}px). Sácala de NO_CABEN.`);
   if (!m.cabe && anotada !== undefined && m.mide < anotada - 4) bajaron.push(`${nombre}: bajó de ${anotada} a ${m.mide}px. Anótalo en NO_CABEN.`);
   for (const c of corridos) problemas.push(c);
+  // `revisarEspacio()` no se pasa por las ventanas: adentro de un formulario los
+  // campos van en su rejilla a propósito, y a una ventana ya se le exige caber
+  // en la pantalla. Se pasa por las pantallas enteras, más abajo.
   // Con `VENTANAS_PLAYSTATION=1` dice además lo que `revisarPlayStation()`
   // encuentra en esa escena (letra bajo 13px, botones bajo 34px, desborde).
   // No hace fallar: es para mirarlo al cerrar un cambio. El `?` chico no se
@@ -292,6 +321,18 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length) {
   console.log(`  ${desparejas.length ? 'FALLA ' : 'ok     '} calendario: las tarjetas de cada fila${desparejas.length ? '\n           · ' + desparejas.join('\n           · ') : ', parejas por dentro'}`);
   if (desparejas.length) fallas.push('calendario');
 }
+// **El espacio de cada pantalla** (2026-11-22): dos filas seguidas que cabrían
+// en una. Solo en el computador y en una pasada completa.
+if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
+  await p.unroute('**/api/clima'); await p.unroute('**/api/ocupacion*');
+  for (const [nombre, ruta, preparar] of PANTALLAS) {
+    await ir(ruta);
+    if (preparar) { await preparar(p); await p.waitForTimeout(700); }
+    const h = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
+    console.log(`  ${h.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${h.length ? '\n           · ' + h.join('\n           · ') : ''}`);
+    if (h.length) fallas.push(`espacio · ${nombre}`);
+  }
+}
 await b.close();
 
 if (process.env.VENTANAS_MEDIDAS) fs.writeFileSync(process.env.VENTANAS_MEDIDAS, JSON.stringify(medidas, null, 1));
@@ -304,5 +345,5 @@ if (fallas.length) {
   console.log(`\n${fallas.length} con fallas: ${fallas.join(', ')}.`);
   process.exitCode = 1;
 } else if (!sinAbrir.length && !SOLO_MEDIR) {
-  console.log('\nTodo bien: lo que cabía sigue cabiendo y los campos están alineados.');
+  console.log('\nTodo bien: lo que cabía sigue cabiendo, los campos están alineados y no hay filas que cabrían en una.');
 }

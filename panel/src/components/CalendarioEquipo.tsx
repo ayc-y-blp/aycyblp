@@ -155,17 +155,17 @@ export default function CalendarioEquipo({ dia }: { dia?: string } = {}) {
           ahí se cierra. Un día que todavía no llega no aparece: nadie puede
           decir quién vino a un sábado que no ha ocurrido. */}
       {porCerrar.length > 0 && (
-        <div className="mb-5 rounded border border-ambar/50 bg-ambar/5 p-4 lg:mb-4 lg:p-3">
+        <div className="mb-5 rounded border border-ambar/50 bg-ambar/5 p-4 lg:mb-4 lg:flex lg:items-center lg:gap-3 lg:p-2">
           {/* **El porqué, en su `?`** (2026-11-21, lo pidió el cliente: *"vamos
               a capacitar a la gente y después molesta mucho texto
               constante"*). A la vista queda cuántos son y cuáles. */}
-          <p className="flex items-center gap-2 text-sm font-semibold text-ambar-texto">
+          <p className="flex shrink-0 items-center gap-2 text-sm font-semibold text-ambar-texto">
             {porCerrar.length === 1
               ? 'Hay un día por cerrar.'
               : `Hay ${porCerrar.length} días por cerrar.`}
             <AyudaCorta tema="diasPorCerrar" />
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-2 lg:mt-0">
             {porCerrar.map((f) => {
               const x = falta(f);
               return (

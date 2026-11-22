@@ -82,16 +82,22 @@ export default function PasoAProduccion() {
 
   return (
     <div className="mt-6 border-t border-hueso/10 pt-4">
+      {/* En el computador, el botón va a la derecha de su explicación
+          (2026-11-22, la regla del espacio). */}
+      <div className="lg:flex lg:items-center lg:gap-4">
+        <div className="min-w-0">
       <p className="text-[16px] font-bold">🧹 Dejar la base en cero para producción</p>
       <p className="mt-1 max-w-2xl text-[14px] text-hueso/75">
         Borra lo que fueron pruebas —reservas, cotizaciones, clientes, pagos, turnos— y conserva
         el equipo, las cuentas, los productos y la configuración. Se hace una sola vez, antes de
         empezar a usar el panel de verdad.
       </p>
+        </div>
       <button type="button" onClick={() => void abrir()}
-        className="boton mt-3 min-h-[44px] border-rojo-fuerte/70 text-rojo-texto">
+        className="boton mt-3 min-h-[44px] shrink-0 lg:mt-0 border-rojo-fuerte/70 text-rojo-texto">
         🧹 Ver qué se borra…
       </button>
+      </div>
 
       {abierta && (
         <Dialogo titulo="Dejar la base en cero" ancho="max-w-2xl lg:max-w-6xl" onCerrar={() => setAbierta(false)}

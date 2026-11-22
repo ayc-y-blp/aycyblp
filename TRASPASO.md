@@ -113,6 +113,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   repo): el que se sube a la planilla y el de lo que hay que decidir. Se
   arman con un script que tampoco está en el repo; si llega un respaldo o un
   export nuevo, se vuelven a armar.
+- **Regla nueva del 22-11-2026, con su prueba**: *el espacio se usa bien: lo
+  que cabe en una fila no se apila*. `revisarEspacio()` pasa por las 18
+  pantallas dentro de `npm run ventanas` y falla con dos filas que cabrían en
+  una. La primera pasada arregló Cotizaciones → Lista, Equipo, Turnos,
+  Configuración y Cuentas. Detalle en `panel/CLAUDE.md`, "El espacio se usa
+  bien".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1211,6 +1217,9 @@ misma pasada.
   dibuja como botón.
 - **Un nombre se dobla, no se corta con "…"** (21-11-2026): en una lista, el
   nombre ocupa los renglones que necesite.
+- **El espacio se usa bien** (22-11-2026): en el computador, lo que cabe en
+  una fila no se apila. Lo mide `revisarEspacio()` dentro de `npm run
+  ventanas`; una pantalla o vista nueva se agrega a `PANTALLAS`.
 - **Los formularios van alineados** (21-11-2026): los nombres de los campos
   en una columna y los valores en otra, todos partiendo en la misma
   vertical; nunca un campo pegado a su nombre porque la palabra es más

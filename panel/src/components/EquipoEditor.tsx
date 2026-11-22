@@ -538,7 +538,11 @@ export default function EquipoEditor() {
         </div>
       )}
 
-      <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-hueso/60">
+      {/* En el computador, el título y el buscador van en una fila
+          (2026-11-22, la regla del espacio): `lg:contents` no hace falta,
+          la caja existe solo para juntarlos. */}
+      <div className="lg:mb-3 lg:flex lg:items-center lg:gap-4">
+      <h2 className="mb-3 shrink-0 text-[13px] font-semibold uppercase tracking-widest text-hueso/60 lg:mb-0">
         Trabajadores
       </h2>
       {/* El párrafo que explicaba el link personal se fue al `?` que está
@@ -578,8 +582,9 @@ export default function EquipoEditor() {
           placeholder="Buscar por nombre, puesto o teléfono"
           aria-label="Buscar trabajador"
           className="mb-3 min-h-[44px] w-full rounded-xl border-2 border-hueso/20 bg-tinta px-3
-                     text-[15px] focus:border-oro focus:outline-none sm:max-w-md" />
+                     text-[15px] focus:border-oro focus:outline-none sm:max-w-md lg:mb-0" />
       )}
+      </div>
       <MostrarDesactivados cuantos={inactivos} visible={verInactivos}
         onCambio={(v) => { setVerInactivos(v); setAbierta(null); }} />
       {/* Si toda la página se mira, ya lo dice la barra de arriba; acá

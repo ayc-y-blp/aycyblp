@@ -238,7 +238,10 @@ export default function UsuariosEditor() {
         </table>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      {/* En el computador, *Desactivar o quitar una cuenta* y su `?` van en
+          la fila de los botones (2026-11-22, la regla del espacio). */}
+      <div className="mt-5 lg:flex lg:flex-wrap lg:items-center lg:gap-3">
+      <div className="flex flex-wrap items-center gap-3 lg:contents">
         <button
           onClick={() => {
             setLista([...lista, { nombre: '', usuario: '', rol: 'encargado',
@@ -248,12 +251,12 @@ export default function UsuariosEditor() {
           className="boton">
           Agregar cuenta
         </button>
-        <span className="flex-1" />
-        {sucio && <span className="text-xs text-hueso/50">Hay cambios sin guardar.</span>}
-        <BotonGuardar sucio={sucio} guardando={guardando} onClick={guardar} />
+        <span className="flex-1 lg:order-2" />
+        {sucio && <span className="text-xs text-hueso/50 lg:order-2">Hay cambios sin guardar.</span>}
+        <div className="lg:order-2"><BotonGuardar sucio={sucio} guardando={guardando} onClick={guardar} /></div>
       </div>
 
-      <p className="mt-6 flex items-center text-[14px] text-hueso/70">
+      <p className="mt-6 flex items-center text-[14px] text-hueso/70 lg:order-1 lg:mt-0">
         Desactivar o quitar una cuenta
         <AyudaCorta titulo="Desactivar o quitar una cuenta">
           <p><strong>Desmarcar "activo" cierra la puerta, quitar borra la cuenta.</strong>{' '}
@@ -264,6 +267,7 @@ export default function UsuariosEditor() {
             <code>PANEL_CLAVE</code> en Vercel, que cierra todas las sesiones.</p>
         </AyudaCorta>
       </p>
+      </div>
 
       {poniendoClave && (
         <Dialogo titulo={`Contraseña de ${poniendoClave}`}

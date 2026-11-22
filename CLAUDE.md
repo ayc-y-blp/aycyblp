@@ -131,6 +131,20 @@ más abajo; esto es la lista para revisar.
   la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
   tarjetas llenas y vacías juntas. En el calendario lo mide
   `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
+- **El espacio se usa bien: lo que cabe en una fila no se apila** (regla del
+  cliente, 2026-11-22: *"hay mucho espacio libre… que lo anotas también como
+  regla para que no te tengo que acordar todo el rato de aprovechar bien los
+  espacios, y te pedí ya varias veces que lo revisas en todo el sitio"*). En
+  el computador, un botón solo en su fila, una frase suelta bajo unos
+  filtros o un rótulo encima de dos tarjetas chicas van **en la fila de al
+  lado**, no debajo con media pantalla vacía a la derecha. **Lo mide una
+  prueba, no la memoria**: `revisarEspacio()` pasa por todas las pantallas a
+  1280px dentro de `npm run ventanas` y **falla** con *dos filas que cabrían
+  en una*. Lo que se deja así a propósito se anota con su porqué en
+  `ESPACIO_ACEPTADO`, o lleva `data-fila-propia` (un aviso que se cierra).
+  **Una pantalla o una vista nueva se agrega a `PANTALLAS` de
+  `pruebas/ventanas.mjs` en el mismo PR.** El celular no cambia: ahí las
+  filas se apilan a propósito.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;

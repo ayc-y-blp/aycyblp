@@ -497,6 +497,14 @@ export default function CotizacionesVista() {
           <button type="button" onClick={() => setAbierta({ p: null })}
             className="boton boton-relleno min-h-[48px] px-5 text-[15px] lg:order-1 lg:min-h-[44px]">+ Cotizar</button>
         )}
+        {/* En el computador, *Volver* va en esta fila (2026-11-22, la regla
+            del espacio); en el celular sigue justo encima de la lista. */}
+        {vista !== 'calendario' && (
+          <button type="button" onClick={() => setVista('calendario')}
+            className="boton hidden min-h-[44px] !text-[15px] !font-semibold lg:order-2 lg:inline-flex">
+            ← Volver al calendario
+          </button>
+        )}
         <span className="flex-1 lg:order-3" />
         {/* El mismo *Mías* de todo el panel (`BotonMias`, 2026-11-13). **En
             la Lista, el vendedor ve lo suyo** (2026-11-17): ahí no va. */}
@@ -630,7 +638,7 @@ export default function CotizacionesVista() {
           busca al terminar de mirar. */}
       {vista !== 'calendario' && (
         <button type="button" onClick={() => setVista('calendario')}
-          className="boton mb-4 min-h-[44px] !text-[15px] !font-semibold">
+          className="boton mb-4 min-h-[44px] !text-[15px] !font-semibold lg:hidden">
           ← Volver al calendario
         </button>
       )}
