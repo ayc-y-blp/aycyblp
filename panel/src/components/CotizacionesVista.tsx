@@ -666,7 +666,7 @@ export default function CotizacionesVista() {
           seguimiento: { seguimientoDias: datos.seguimiento?.dias ?? 5, avisoEvento: datos.seguimiento?.antesEvento ?? 14 }
         };
         return (
-          <ListaCotizaciones ctx={ctx} rol={datos.rol} visibles={visibles} mias={mias}
+          <ListaCotizaciones ctx={ctx} rol={datos.rol} visibles={visibles} mias={mias} soloMias={soloMias}
             socios={(datos.socios ?? []).map((s) => ({ id: s.id, nombre: s.nombre, activo: s.activo }))}
             fila={(p, detalle) => fila(p, true, detalle)} onDeTodos={() => elegirDe('todos')} />
         );

@@ -50,11 +50,13 @@ const DE_LAS_TARJETAS: Partial<Record<FiltroLista, string>> = {
   mandadas: 'lo mandado', porSeguir: 'las que esperan que alguien las siga', porCobrar: 'las ganadas con plata por cobrar'
 };
 
-export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fila, onDeTodos }: {
+export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos }: {
   ctx: ContextoLista;
   rol: string;
   /** Las que deja ver *Mías / De todos*. */
   visibles: Presupuesto[];
+  /** Si *Mías / De todos* está en *Mías*: lo dice el título de *Ganado mes a mes*. */
+  soloMias: boolean;
   /** Las de esta cuenta, con su grupo de alternativas. */
   mias: Presupuesto[];
   socios: { id: string; nombre: string; activo: boolean }[];
@@ -96,6 +98,10 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
   const mostrando = [vendedor && `👤 ${vendedor}`, socio && `🤝 ${nombreSocio(socio)}`,
     rango && `${titulo}, por ${porFecha === 'evento' ? 'fecha del evento' : 'fecha en que se cotizó'}`]
     .filter(Boolean).join(' · ');
+
+  /** De quién es lo ganado mes a mes: lo que eligió en *De quién*, dicho en el título. */
+  const deQuienGanado = [vendedor, socio && nombreSocio(socio)].filter(Boolean).join(' · ')
+    || (!equipo || soloMias ? 'Tuyas' : 'Todo el equipo');
 
   const queSeMira = mostrando ? <>Mostrando: <b className="text-hueso">{mostrando}</b></>
     : equipo ? 'Todo el equipo, todas las fechas.' : 'Tus cotizaciones, todas las fechas.';
@@ -202,11 +208,18 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
           activa={filtro === 'porCobrar'} onClick={() => alternar('porCobrar')} />
       </div>
 
-      {/* 3. Ganado por mes. */}
-      {meses.length > 0 && (
+      {/* 3. **Ganado mes a mes** (2026-11-22, lo pidió el cliente: *"no se
+          entiende rápido. El título debería ser entonces distinto"*). El
+          título dice **de quién es** —*Todo el equipo*, *Tuyas*, un vendedor o
+          un socio, lo que se eligió en *De quién*—, y **sale solo mirando
+          *Todo***: con *Mes* o *Semana* el periodo de arriba no lo movía, y la
+          tarjeta *Ganado* ya dice lo de ese periodo. */}
+      {meses.length > 0 && !rango && (
         <div className="mt-3 lg:flex lg:items-center lg:gap-3">
-          <p className="flex shrink-0 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">
-            Ganado por mes<AyudaCorta tema="listaPorMes" />
+          <p className="flex shrink-0 flex-wrap items-center gap-x-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">
+            Ganado mes a mes ·
+            <b className="text-[15px] normal-case tracking-normal text-hueso">{deQuienGanado}</b>
+            <AyudaCorta tema="listaPorMes" />
           </p>
           <div className="mt-1.5 flex flex-wrap gap-2 lg:mt-0">
             {meses.map((m) => (

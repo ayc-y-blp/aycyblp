@@ -575,6 +575,24 @@ versión más corta con el día, pero incluyendo el año también"*.
   de la lista no está entre las misiones.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
+**Y *Ganado por mes* pasó a decir de quién es** (el mismo día, en un PR
+aparte). El cliente lo encontró confuso: *"esto significa que lo que sale en
+este ganado es lo que ganó la persona que se eligió como filtrado… no se
+entiende rápido. El título debería ser entonces distinto y probable también
+hasta el lugar"*. Era eso: sigue a *De quién* y no al periodo de arriba, y
+nada en la pantalla lo decía.
+
+- **El título dice de quién es**: *Ganado mes a mes · Todo el equipo*; con
+  *Mías*, o para un vendedor, *· Tuyas*; con un filtro, *· Jorge* o el
+  nombre del socio (los dos, si están los dos).
+- **Sale solo mirando *Todo***. Con *Mes* o *Semana* no se dibuja: el
+  periodo no lo movía, y lo ganado en ese periodo ya lo dice la tarjeta
+  *Ganado*. Así nada en la pantalla contradice al periodo de arriba.
+- **El `?`** dice que cuenta el día en que se marcó ganada (no el del
+  evento) y que **lo importado del CRM cuenta el día en que se importó**:
+  en producción, las ganadas del CRM salen en noviembre de 2026.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
 ## La línea de la fecha: *HOY* no baja el estado (2026-11-22)
 
 Lo marcó el cliente con una foto de Cotizaciones, el domingo 22 —hoy y
@@ -3998,7 +4016,10 @@ coherencia). Decidido con el cliente:
   día en que se ganó**, que es el día en que nació su reserva
   (`ganadasEl()`, en hora de Chile, armado por `/api/presupuestos` con las
   reservas de la misma tanda). No hizo falta una columna nueva. Sigue a *De
-  quién*, no al periodo. **Es solo para mirar** (lo decidió el cliente el
+  quién*, no al periodo. **Desde el 2026-11-22 se llama *Ganado mes a mes ·
+  Todo el equipo*** (o *· Tuyas*, *· Jorge*, el socio) **y sale solo mirando
+  *Todo***: ver "La lista de cotizaciones, por fecha del evento y con el
+  año". **Es solo para mirar** (lo decidió el cliente el
   mismo día): tocar un mes no lo elige como periodo, porque el periodo va
   por fecha del evento o de cotización y estos meses van por el día en que
   se ganó; mezclarlos mostraría otra cosa que lo que el cuadro dice.
