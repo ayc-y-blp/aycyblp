@@ -21,6 +21,7 @@ import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } f
 import BotonGuardar from './BotonGuardar';
 import AyudaCorta from './AyudaCorta';
 import { useEffect, useMemo, useState } from 'react';
+import { avisar } from './AvisoFlotante';
 import Ayuda from './Ayuda';
 import { Aviso } from './CalendarView';
 import {
@@ -85,8 +86,28 @@ function enMoneda(n: number, moneda: string): string {
   return moneda === MONEDA.uf ? `${String(n).replace('.', ',')} UF` : enPesos(n);
 }
 
+/**
+ * Un producto en la pantalla: `nuevo` marca el que se agregó acá y todavía no
+ * se guarda. **El candado del nombre mira el producto, no lo que se escribe**
+ * (2026-11-22, lo encontró el cliente al agregar *A Brasas Abiertas
+ * Empresas*: al escribir *A Brasas Abiertas*, que ya se cotizó, el campo del
+ * producto nuevo se bloqueaba y no dejaba seguir con *Empresas*). Un producto
+ * nuevo nunca está vendido ni cotizado, así que su nombre siempre se escribe;
+ * si queda igual al de otro, se avisa y no se guarda.
+ */
+type Editable = Menu & { nuevo?: boolean };
+
+/** Ya se vendió o se cotizó, así que el nombre no se cambia. Uno nuevo, nunca. */
+const nombreFijo = (m: Editable, usados: Set<string>) => !m.nuevo && usados.has(normalizar(m.nombre));
+
+/** Otro producto ya se llama así (sin mirar mayúsculas, tildes ni espacios). */
+const nombreRepetido = (lista: Editable[], i: number) => {
+  const n = normalizar(lista[i].nombre);
+  return !!n && lista.some((x, k) => k !== i && normalizar(x.nombre) === n);
+};
+
 export default function MenusEditor() {
-  const [menus, setMenus] = useState<Menu[] | null>(null);
+  const [menus, setMenus] = useState<Editable[] | null>(null);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
@@ -126,12 +147,19 @@ export default function MenusEditor() {
     return desconocidos(menusConocidos(reservas, []), menus);
   }, [menus, reservas]);
 
-  async function guardar(lista: Menu[]) {
+  async function guardar(lista: Editable[]) {
+    // El servidor descarta el segundo de dos nombres iguales sin decir nada:
+    // se avisa acá, antes de mandar, para que no desaparezca un producto.
+    const repetido = lista.find((m, i) => m.nuevo && nombreRepetido(lista, i));
+    if (repetido) {
+      avisar(`Ya hay un producto que se llama ${repetido.nombre.trim()}: el nuevo necesita otro nombre.`, 'atencion');
+      return;
+    }
     setGuardando(true);
     try {
       const r = await fetch('/api/menus', {
         method: 'PUT', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ menus: lista })
+        body: JSON.stringify({ menus: lista.map(({ nuevo: _n, ...m }) => m) })
       });
       const d = await r.json();
       if (d.error) { setError(d.error); setSinPermiso(!!d.permiso); }
@@ -145,7 +173,7 @@ export default function MenusEditor() {
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!menus) return <p className="text-hueso/50">Cargando…</p>;
 
-  const cambiar = (i: number, cambio: Partial<Menu>) => {
+  const cambiar = (i: number, cambio: Partial<Editable>) => {
     setMenus(menus.map((m, k) => (k === i ? { ...m, ...cambio } : m)));
     setSucio(true);
   };
@@ -227,7 +255,7 @@ export default function MenusEditor() {
                   Desactivar y activar **se guardan en el acto**, como en
                   `/equipo`: al desactivar, la línea desaparece de la lista
                   y con ella el botón de guardarla. */}
-              {soloMira ? null : !usados.has(normalizar(m.nombre)) ? (
+              {soloMira ? null : !nombreFijo(m, usados) ? (
                 <button onClick={() => {
                   if (m.nombre.trim() && !confirm(`¿Quitar ${m.nombre} del catálogo? `
                     + 'Nunca se vendió ni se cotizó, así que se borra.')) return;
@@ -270,12 +298,17 @@ export default function MenusEditor() {
                 <Campo etiqueta="Nombre" ancho="w-full sm:max-w-md">
                   <input type="text" value={m.nombre} className={ENTRADA}
                     placeholder="Si es un menú: como se llama en Shopify"
-                    readOnly={usados.has(normalizar(m.nombre))}
+                    readOnly={nombreFijo(m, usados)}
                     onChange={(e) => cambiar(i, { nombre: e.target.value })} />
                 </Campo>
+                {m.nuevo && nombreRepetido(menus, i) && (
+                  <p className="text-[13px] font-semibold text-ambar-texto">
+                    Ya hay un producto que se llama así: agrégale lo que lo distingue.
+                  </p>
+                )}
                 {/* Renombrar uno usado sería quitarlo: lo vendido y lo
                     cotizado guardan el nombre que tenía. */}
-                {usados.has(normalizar(m.nombre)) && (
+                {nombreFijo(m, usados) && (
                   <p className="flex items-center text-[13px] text-hueso/70">
                     🔒 Ya se vendió o se cotizó: el nombre no se cambia.
                     <AyudaCorta titulo="El nombre no se cambia">
@@ -392,7 +425,7 @@ export default function MenusEditor() {
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           onClick={() => {
-            setMenus([...menus, nuevoProducto({ nombre: '' })]);
+            setMenus([...menus, { ...nuevoProducto({ nombre: '' }), nuevo: true }]);
             setAbierta(menus.length);
             setSucio(true);
           }}
