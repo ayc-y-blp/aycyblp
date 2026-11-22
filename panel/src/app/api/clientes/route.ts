@@ -93,6 +93,10 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
     }
     return NextResponse.json({
       clientes: await paraLaCuenta(quien, clientes, presupuestos),
+      // **Los de esta cuenta** (2026-11-22, para el filtro *Míos*): los que
+      // creó o a los que les cotizó, la misma cuenta de `privacidad.ts`.
+      // Solo los ids, y sale de lo ya leído.
+      mios: clientes.filter((c) => clientePropio(c, quien.usuario, presupuestos)).map((c) => c.id),
       cotizaciones,
       historial,
       sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0,

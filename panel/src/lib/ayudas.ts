@@ -335,6 +335,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Si eres vendedor, ves el contacto, el RUT y el domicilio de tus '
       + 'clientes —los que creaste o a los que les cotizaste—. De los de otro '
       + 'vendedor ves el nombre y el teléfono tapado, con 🔒, y no se editan.',
+      '*Míos* muestra los clientes que creaste o a los que les cotizaste; '
+      + '*Todos*, la lista entera. El buscador busca dentro de lo que estés mirando.',
       'La gerencia, el encargado de pagos y el administrador pueden cambiar '
       + 'el vendedor de un cliente: al abrir su ficha, *Vendedor: … · Cambiar…*. '
       + 'Lo mismo en una cotización, en el paso Evento.'

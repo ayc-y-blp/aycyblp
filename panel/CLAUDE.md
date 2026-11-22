@@ -436,6 +436,31 @@ el estado, su reserva y qué se le hizo a su día.
 - **No le enseña al panel el modelo viejo de Shopify**: los pedidos del sitio
   viejo entran una vez, por esta pestaña, y los nuevos siguen llegando solos.
 
+## Clientes: Míos / Todos (2026-11-22)
+
+Lo pidió el cliente después de importar: *"cuando uno entra a clientes, se
+debería también poder filtrar por todos, míos… por lo menos poder filtrar
+por los míos al tiro y buscar"*. Con el CRM importado la lista pasa de un
+puñado a más de cien fichas.
+
+- **Dos pastillas al lado del buscador**, *👤 Míos* y *👥 Todos*, con cuántos
+  son: las mismas piezas de Cotizaciones y del sobrecupo (`BotonMias`,
+  `BotonTodos`).
+- **Míos** son los clientes que la cuenta creó o a los que les cotizó: la
+  misma cuenta de `privacidad.ts` (`clientePropio()`). `/api/clientes` manda
+  solo sus ids (`mios`), de lo que ya leía: ninguna lectura más.
+- **Parte en *Míos*** si la cuenta tiene alguno. **No se dibuja** si no tiene
+  ninguno o si son todos: no separaría nada.
+- **El buscador busca dentro de lo que se mira**; sin calce en *Míos* dice
+  *Ninguno de los tuyos calza… Mira en Todos*.
+- En el celular el buscador ocupa su fila y las pastillas van debajo.
+- *Mejores clientes* y otros filtros quedaron para después: el cliente lo
+  dejó como idea.
+- **Ayuda**: el `?` de Clientes lo dice. **Ningún permiso cambió.**
+- Probado en el panel de ejemplo a 1280 y 393: el vendedor ve 4 en *Míos* y
+  6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, no ven
+  el filtro.
+
 ## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
 
 Lo marcó el cliente con una foto del panel de verdad: en un día con *150/150

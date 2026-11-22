@@ -26,6 +26,7 @@ import { Aviso } from './CalendarView';
 import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import CampoRut from './CampoRut';
+import { BotonMias, BotonTodos } from './BotonMias';
 import CambiarVendedor from './CambiarVendedor';
 import { avisar } from './AvisoFlotante';
 import {
@@ -73,6 +74,14 @@ export default function ClientesEditor() {
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  /**
+   * **Míos / Todos** (2026-11-22, lo pidió el cliente: *"por lo menos poder
+   * filtrar por los míos al tiro y buscar"*). Los de la cuenta son los que
+   * creó o a los que les cotizó; los manda el servidor. `null` = todavía no
+   * se eligió: parte en *Míos* si la cuenta tiene alguno y no son todos.
+   */
+  const [mios, setMios] = useState<string[]>([]);
+  const [ver, setVer] = useState<'mios' | 'todos' | null>(null);
   /** Qué ficha está abierta. Una a la vez, como en `/equipo`. */
   const [abierta, setAbierta] = useState<string | null>(null);
   /** Lo escrito en la ficha abierta, todavía sin guardar. */
@@ -94,6 +103,7 @@ export default function ClientesEditor() {
     setCotizaciones(d.cotizaciones ?? {});
     setHistorial(d.historial ?? {});
     setSinFicha(d.sinFicha ?? 0);
+    setMios(d.mios ?? []);
     setVendedores(d.vendedores ?? null);
     setAbiertas(d.abiertas ?? {});
     setGanadas(d.ganadas ?? {});
@@ -101,9 +111,14 @@ export default function ClientesEditor() {
 
   useEffect(() => { void cargar(); }, []);
 
+  const sonMios = useMemo(() => new Set(mios), [mios]);
+  // El filtro tiene sentido solo si separa algo: con ninguno o con todos, no se dibuja.
+  const hayFiltro = !!clientes && mios.length > 0 && mios.length < clientes.length;
+  const soloMios = hayFiltro && (ver ?? 'mios') === 'mios';
   const visibles = useMemo(
-    () => (clientes ? [...buscarClientes(clientes, busqueda)].sort(porNombreCliente) : []),
-    [clientes, busqueda]);
+    () => (clientes ? [...buscarClientes(soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes, busqueda)]
+      .sort(porNombreCliente) : []),
+    [clientes, busqueda, soloMios, sonMios]);
 
   /**
    * **La ficha se guarda sola** (2026-11-12, regla del cliente: autoguardado
@@ -275,7 +290,14 @@ export default function ClientesEditor() {
         <input type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre, empresa, teléfono, correo o RUT"
           aria-label="Buscar cliente"
-          className={`${ENTRADA} min-h-[44px] flex-1 sm:max-w-md`} />
+          className={`${ENTRADA} min-h-[44px] flex-1 basis-full sm:max-w-md sm:basis-0`} />
+        {/* El mismo *Mías* de todo el panel (`BotonMias`). */}
+        {hayFiltro && (
+          <div role="group" aria-label="De quién son" className="flex gap-2">
+            <BotonMias texto="Míos" cuantas={mios.length} elegido={soloMios} onClick={() => setVer('mios')} />
+            <BotonTodos texto="Todos" cuantas={clientes!.length} elegido={!soloMios} onClick={() => setVer('todos')} />
+          </div>
+        )}
         {!nuevo && !soloMira && (
           <button onClick={() => { setNuevo({ ...VACIO, nombre: busqueda }); setParecidas([]);
                                    setAviso(''); }}
@@ -336,7 +358,7 @@ export default function ClientesEditor() {
         <p className="rounded border border-dashed border-hueso/15 p-5 text-[15px] text-hueso/60">
           {clientes.length === 0
             ? 'Todavía no hay clientes. Crea el primero con “+ Nuevo cliente”.'
-            : `Nadie calza con “${busqueda}”.`}
+            : soloMios ? `Ninguno de los tuyos calza con “${busqueda}”. Mira en Todos.` : `Nadie calza con “${busqueda}”.`}
         </p>
       ) : (
         <ul className={LISTA_TARJETAS}>

@@ -93,6 +93,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   texto (`valorSeguro()`). **Importa para producción**: habría pasado igual
   después de la base en cero. Detalle en `panel/CLAUDE.md`, "Las fechas se
   escriben como texto".
+- **El cliente dejó "BBDD Prueba" en cero e importó ahí el 22-11-2026**, con
+  el arreglo de las fechas ya puesto; dijo que parece que funcionó. **No se
+  pudo mirar con el conector de Drive**: esa planilla no le aparece a la
+  cuenta de Google conectada (falta compartírsela).
+- **Clientes tiene filtro *Míos / Todos*** (22-11-2026, en el PR #293).
 - **El cliente autorizó mirar las dos planillas con el conector de Google
   Drive** (22-11-2026): la de pruebas y la de producción. Para diagnosticar,
   sin escribir. Ver `CLAUDE.md`, "Cómo trabajar con este proyecto".
