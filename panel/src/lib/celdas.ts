@@ -37,10 +37,22 @@
  */
 export function valorSeguro(v: unknown): unknown {
   if (typeof v !== 'string') return v;
-  if (!/^[=+\-@]/.test(v)) return v;
-  // Un número con signo es un número: -5000 se queda como -5000.
+  // Un número, con o sin signo, es un número: -5000 se queda como -5000.
   if (v.trim() !== '' && Number.isFinite(Number(v))) return v;
-  return `'${v}`;
+  if (/^[=+\-@]/.test(v)) return `'${v}`;
+  // **Una fecha o una hora van como texto** (2026-11-22). `USER_ENTERED`
+  // convierte `2026-11-21` en el número de serie de ese día (46347) y `13:00`
+  // en 0,5416…, y la celda lo vuelve a mostrar como fecha **solo si tiene
+  // formato de fecha**. Una fila agregada justo bajo el encabezado —lo que
+  // pasa en toda pestaña recién vaciada con *Dejar la base en cero*— hereda
+  // el formato del encabezado, que no es de fecha: queda el número, el panel
+  // lo lee como `46347`, no lo reconoce como día y la fila desaparece. Se vio
+  // en la planilla de pruebas: los 26 días de la regla escritos y el
+  // calendario en cero. Como texto, lo que vuelve es lo que se escribió.
+  // Vale para todo lo que parte con un dígito y no es un número: una fecha,
+  // una hora, un `2026-11`, un `10%`.
+  if (/^\d/.test(v)) return `'${v}`;
+  return v;
 }
 
 /** Una fila entera, celda por celda. */

@@ -87,10 +87,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   se corrigió que el importador escribía el usuario y no el nombre de la
   cuenta como dueño. Detalle en `panel/CLAUDE.md`, "Cambiar el vendedor de un
   cliente o de una cotización".
-- **Sin resolver**: el cliente vio los sábados y domingos *sin cupo* en el
-  calendario (no tenían fila en `Fechas Hábiles`). Abrió `/api/fechas/regla`
-  a mano y falta saber qué respondió. Si dijo `"abiertos":[]` y siguen sin
-  cupo, hay que mirar por qué `diasPorAbrir()` no los abre.
+- **Los días *sin cupo* de la versión de prueba, resuelto el 22-11-2026**:
+  Sheets guardaba las fechas como número en una pestaña recién vaciada y el
+  panel no las reconocía. Ahora las fechas y las horas se escriben como
+  texto (`valorSeguro()`). **Importa para producción**: habría pasado igual
+  después de la base en cero. Detalle en `panel/CLAUDE.md`, "Las fechas se
+  escriben como texto".
 - **Los dos Excel se le mandaron al cliente por el chat** (no están en el
   repo): el que se sube a la planilla y el de lo que hay que decidir. Se
   arman con un script que tampoco está en el repo; si llega un respaldo o un

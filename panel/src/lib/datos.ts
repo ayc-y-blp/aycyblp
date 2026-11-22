@@ -26,7 +26,7 @@ import { HOJA_CONFIG, leerConfigDe, aFilasConfig, POR_DEFECTO,
 import { camposDeShopify } from './shopify.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
-import { esFecha, hoy, type Fecha } from './fechas.ts';
+import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
 import { normalizar } from './columnas.ts';
 import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, type Usuario } from './usuarios.ts';
 import { HOJA_CIERRES, COL_CIERRES, ENCABEZADO_CIERRES, leerCierresDe,
@@ -164,12 +164,13 @@ export async function leerFechas(fresca = false): Promise<FechaHabil[]> {
   const salida: FechaHabil[] = [];
   for (let n = 1; n < filas.length; n++) {
     const f = filas[n];
-    const fecha = String(en(f, i.fecha)).slice(0, 10);
+    // Tolerante con una fecha o una hora que Sheets guardó como número.
+    const fecha = fechaDePlanilla(en(f, i.fecha));
     if (!esFecha(fecha)) continue;
     salida.push({
       fecha,
       capacidad: num(en(f, i.capacidad)),
-      apertura: String(en(f, i.apertura)) || '13:00',
+      apertura: horaDePlanilla(en(f, i.apertura)) || '13:00',
       // Se pasa tal cual lo que diga la celda, incluso en blanco: quien decide
       // si eso es abierto o cerrado es estaCerrado(), en un solo lugar.
       estado: String(en(f, i.estado)),
@@ -189,7 +190,7 @@ export async function guardarFecha(d: Omit<FechaHabil, 'fila'>): Promise<void> {
   const i = indices(enc, COL_FECHAS);
   // Una fecha no puede estar dos veces: si ya está, se actualiza.
   const n = filas.findIndex((f, k) =>
-    k > 0 && i.fecha !== -1 && String(f[i.fecha] ?? '').slice(0, 10) === d.fecha);
+    k > 0 && i.fecha !== -1 && fechaDePlanilla(f[i.fecha]) === d.fecha);
   if (n > 0) await escribirFila(HOJA_FECHAS, n + 1, filaFecha(enc, d, filas[n]));
   else await agregarFila(HOJA_FECHAS, filaFecha(enc, d));
 }
@@ -209,7 +210,7 @@ export async function abrirDiasDeLaRegla(): Promise<Fecha[]> {
     [COL_FECHAS.fecha, COL_FECHAS.capacidad, COL_FECHAS.apertura, COL_FECHAS.estado, COL_FECHAS.notas]);
   const enc = filas[0];
   const i = indices(enc, COL_FECHAS);
-  const conFila = i.fecha === -1 ? [] : filas.slice(1).map((f) => String(f[i.fecha] ?? ''));
+  const conFila = i.fecha === -1 ? [] : filas.slice(1).map((f) => fechaDePlanilla(f[i.fecha]));
   const nuevas = diasPorAbrir(conFila, hoy(), cfg);
   if (nuevas.length) await agregarFilas(HOJA_FECHAS, nuevas.map((f) => filaFecha(enc, diaDeLaRegla(f, cfg))));
   return nuevas;

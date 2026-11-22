@@ -736,7 +736,20 @@ ok(valorSeguro('+56') === '+56', 'y cualquier numero con signo');
 
 // Lo demas pasa intacto, incluido lo que no es texto.
 ok(valorSeguro('Tradiciones') === 'Tradiciones', 'el texto corriente no se toca');
-ok(valorSeguro('2026-11-14') === '2026-11-14', 'ni una fecha');
+ok(valorSeguro('2026-11-14') === "'2026-11-14" && valorSeguro('13:00') === "'13:00"
+   && valorSeguro('2026-11-14 09:20') === "'2026-11-14 09:20" && valorSeguro('2026-11') === "'2026-11",
+   'una fecha y una hora van como texto: Sheets las volvía número en una celda sin formato de fecha');
+ok(valorSeguro('150') === '150' && valorSeguro('44000.5') === '44000.5' && valorSeguro('5 × Tradiciones') === "'5 × Tradiciones",
+   'un número escrito como texto sigue siendo número; lo que parte con dígito y no lo es, texto');
+{
+  const F = await import('./fechas.ts');
+  ok(F.fechaDePlanilla('46347') === '2026-11-21' && F.fechaDePlanilla(46348) === '2026-11-22'
+     && F.fechaDePlanilla('2026-11-21') === '2026-11-21' && F.fechaDePlanilla('') === '' && F.fechaDePlanilla('150') === '150',
+     'una fecha que quedó como número de serie se lee como su día; lo demás, tal cual');
+  ok(F.horaDePlanilla('0.5416666667') === '13:00' && F.horaDePlanilla(0.5) === '12:00' && F.horaDePlanilla('13:00') === '13:00'
+     && F.horaDePlanilla('') === '',
+     'y una hora que quedó como fracción del día, como su hora');
+}
 ok(valorSeguro(7) === 7 && valorSeguro(null) === null, 'ni lo que no es texto');
 ok(valorSeguro('') === '', 'ni una celda vacia');
 

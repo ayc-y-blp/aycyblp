@@ -14,6 +14,32 @@ export function esFecha(s: unknown): s is Fecha {
   return typeof s === 'string' && RE.test(s);
 }
 
+/**
+ * **La fecha de una celda que Sheets guardó como número** (2026-11-22). Una
+ * fecha escrita en una celda sin formato de fecha vuelve como su número de
+ * serie (`46347` es el 21-11-2026); ver `valorSeguro()`. Lo demás se devuelve
+ * como texto, recortado a los diez caracteres de una fecha. Sin `Date` con
+ * huso: son cuentas de días desde el 30-12-1899.
+ */
+export function fechaDePlanilla(celda: unknown): string {
+  const t = String(celda ?? '').trim();
+  if (/^\d{5}(\.\d+)?$/.test(t)) {
+    return new Date((Math.floor(Number(t)) - 25569) * 86400000).toISOString().slice(0, 10);
+  }
+  return t.slice(0, 10);
+}
+
+/** Lo mismo con una hora: `0,5416…` es `13:00`. Lo demás, tal cual. */
+export function horaDePlanilla(celda: unknown): string {
+  const t = String(celda ?? '').trim();
+  const n = Number(t);
+  if (t && Number.isFinite(n) && n >= 0 && n < 1 && /^0?[.,]?\d*$/.test(t.replace(',', '.'))) {
+    const min = Math.round(n * 1440);
+    return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+  }
+  return t;
+}
+
 /** 0 es domingo y 6 sábado, igual que getDay(). */
 export function diaSemana(f: Fecha): number {
   const [a, m, d] = f.split('-').map(Number);

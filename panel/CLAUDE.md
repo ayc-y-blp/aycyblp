@@ -424,6 +424,37 @@ el estado, su reserva y qué se le hizo a su día.
 - **No le enseña al panel el modelo viejo de Shopify**: los pedidos del sitio
   viejo entran una vez, por esta pestaña, y los nuevos siguen llegando solos.
 
+## Las fechas se escriben como texto (2026-11-22)
+
+Lo encontró el cliente en la versión de prueba, después de dejar la base en
+cero: los sábados y domingos salían *sin cupo* aunque `/api/fechas/regla`
+decía haberlos abierto. En la planilla, la columna `Fecha` tenía `46347` y
+`Hora Apertura`, `0,5416666667`.
+
+- **La causa**: el panel escribe con `USER_ENTERED`, que convierte
+  `2026-11-21` en el número de serie de ese día. La celda lo muestra como
+  fecha **solo si tiene formato de fecha**, y una fila agregada justo bajo el
+  encabezado hereda el formato del encabezado. Con filas de antes no pasaba
+  —la nueva heredaba el formato de la anterior—; **en una pestaña recién
+  vaciada, sí**. El panel leía `46347`, no lo reconocía como día y saltaba la
+  fila: el calendario la mostraba en cero, y cada llamada a la regla volvía a
+  agregar los mismos días.
+- **El arreglo, en un solo lugar** (`valorSeguro()` en `lib/celdas.ts`): todo
+  texto que parte con un dígito y no es un número —una fecha, una hora, un
+  `2026-11-21 09:20`, un `2026-11`, un `10%`— se escribe como texto, con el
+  `'` adelante. Lo que vuelve es lo que se escribió. Un número sigue siendo
+  número. Vale para todas las pestañas: es justo lo que habría pasado con
+  `Reservas`, `Turnos` y las demás después de la base en cero en producción.
+- **Lo que ya quedó como número se lee igual** en `Fechas Hábiles`
+  (`fechaDePlanilla()` y `horaDePlanilla()` en `lib/fechas.ts`): el
+  calendario, la regla y *Editar* un día.
+- **En la planilla, esas celdas son texto**: se ven igual, alineadas a la
+  izquierda. Una fórmula de fecha que alguien tenga sobre esas columnas no
+  las toma como fecha.
+- **Las filas repetidas de la planilla de pruebas** se van volviendo a dejar
+  la base en cero ahí, que además reescribe todo como texto.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
 ## Cambiar el vendedor de un cliente o de una cotización (2026-11-22)
 
 Lo pidió el cliente al ensayar el importador: *"hay que agregar la función a
