@@ -78,7 +78,12 @@ export default function ClientesEditor() {
    * **Míos / Todos** (2026-11-22, lo pidió el cliente: *"por lo menos poder
    * filtrar por los míos al tiro y buscar"*). Los de la cuenta son los que
    * creó o a los que les cotizó; los manda el servidor. `null` = todavía no
-   * se eligió: parte en *Míos* si la cuenta tiene alguno y no son todos.
+   * se eligió: parte en *Míos* si la cuenta tiene alguno, y si no, en *Todos*.
+   * **Se ve siempre, también con *Míos (0)*** (2026-11-22, lo marcó el
+   * cliente: *"falta aún el filtro míos en clientes"*): al principio se
+   * escondía con ninguno o con todos, y después del importe —las fichas a
+   * nombre de los vendedores del CRM— no le aparecía a quien no tiene
+   * ninguno. Igual que *Mías / De todos* de Cotizaciones, que no se esconde.
    */
   const [mios, setMios] = useState<string[]>([]);
   const [ver, setVer] = useState<'mios' | 'todos' | null>(null);
@@ -112,9 +117,8 @@ export default function ClientesEditor() {
   useEffect(() => { void cargar(); }, []);
 
   const sonMios = useMemo(() => new Set(mios), [mios]);
-  // El filtro tiene sentido solo si separa algo: con ninguno o con todos, no se dibuja.
-  const hayFiltro = !!clientes && mios.length > 0 && mios.length < clientes.length;
-  const soloMios = hayFiltro && (ver ?? 'mios') === 'mios';
+  const hayFiltro = !!clientes && clientes.length > 0;
+  const soloMios = hayFiltro && (ver ?? (mios.length > 0 ? 'mios' : 'todos')) === 'mios';
   const visibles = useMemo(
     () => (clientes ? [...buscarClientes(soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes, busqueda)]
       .sort(porNombreCliente) : []),
@@ -358,7 +362,9 @@ export default function ClientesEditor() {
         <p className="rounded border border-dashed border-hueso/15 p-5 text-[15px] text-hueso/60">
           {clientes.length === 0
             ? 'Todavía no hay clientes. Crea el primero con “+ Nuevo cliente”.'
-            : soloMios ? `Ninguno de los tuyos calza con “${busqueda}”. Mira en Todos.` : `Nadie calza con “${busqueda}”.`}
+            : soloMios && mios.length === 0
+              ? 'Todavía no tienes clientes tuyos: aquí aparecen los que crees o a los que les cotices. Mira en Todos.'
+              : soloMios ? `Ninguno de los tuyos calza con “${busqueda}”. Mira en Todos.` : `Nadie calza con “${busqueda}”.`}
         </p>
       ) : (
         <ul className={LISTA_TARJETAS}>

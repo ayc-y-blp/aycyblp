@@ -112,7 +112,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   prueba: las fechas quedaron como texto, 29 días, 128 fichas y 101
   cotizaciones, con el nombre de la cuenta como dueño. El conector muestra el
   encabezado y las primeras filas de cada pestaña, no todas.
-- **Clientes tiene filtro *Míos / Todos*** (22-11-2026, en el PR #293).
+- **Clientes tiene filtro *Míos / Todos*** (22-11-2026, en el PR #293). **Desde
+  el PR siguiente al #309 se ve siempre**, también con *Míos (0)*: escondido,
+  al cliente le parecía que faltaba.
 - **El cliente autorizó mirar las dos planillas con el conector de Google
   Drive** (22-11-2026): la de pruebas y la de producción. Para diagnosticar,
   sin escribir. Ver `CLAUDE.md`, "Cómo trabajar con este proyecto".
@@ -151,7 +153,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **PR #308, mergeado el 22-11-2026** con el *"mergea"* del cliente: **✕ Se
   cayó…**, dar por perdida una cotización con su motivo, desde cualquier paso,
   la lista o *Esperando respuesta*. Ver `panel/CLAUDE.md`.
-- **El periodo en un marco** (22-11-2026, en preview, PR #309): en
+- **El periodo en un marco** (22-11-2026, PR #309, mergeado con el *"mergea"*
+  del cliente): en
   Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
