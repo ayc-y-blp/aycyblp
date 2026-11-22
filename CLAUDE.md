@@ -921,9 +921,12 @@ como guía paso a paso en el documento *Traspaso a producción*, sección
   (`assets/compartir/portada.jpg`, 795×416): la original es vertical y
   WhatsApp y Facebook la cortarían por la mitad. La eligió el cliente *"por
   ahora"*; cambiarla es reemplazar ese archivo y `IMAGEN_COMPARTIR`.
-- **Los datos del negocio no llevan horario**: Google lo pide con hora de
-  cierre, y el cliente prefirió *hasta el cierre*. El horario va en la ficha
-  de Google Maps. **Ni precio, ni coordenadas, ni redes**: no están
+- **El horario en los datos del negocio: sábados y domingos de 13:00 a
+  19:00.** Primero no iba, porque Google lo pide con hora de cierre y el
+  sitio dice *hasta el cierre*; el mismo día, al hacer la ficha de Google
+  Maps, el cliente fijó el cierre a las 19:00 y pidió que los datos del sitio
+  dijeran lo mismo que la ficha. **El pie de las páginas sigue diciendo
+  *hasta el cierre***. **Ni precio, ni coordenadas, ni redes**: no están
   confirmados. Es un bloque de datos (`application/ld+json`), no un script
   que corra: no toca la regla de cero JavaScript.
 - **Los tres landings ganaron su descripción** (socios, promociones y

@@ -307,10 +307,12 @@ def datos_del_negocio(idioma):
     """Los datos del negocio para Google (schema.org), solo en la portada.
 
     **Solo lo confirmado**: nombre, dirección, el WhatsApp de reservas, el
-    correo y el mapa. **Sin horario**: Google lo pide con hora de cierre, y
-    el sitio dice *hasta el cierre* (lo decidió el cliente el 2026-11-22).
-    El horario va en la ficha de Google Maps. Es un bloque de datos, no un
-    script que corra: no toca la regla de cero JavaScript."""
+    correo, el mapa y el horario. **El horario, sábados y domingos de 13:00
+    a 19:00** (2026-11-22, lo decidió el cliente al hacer la ficha de Google
+    Maps, que pide una hora de cierre): el mismo de la ficha, para que Google
+    no lea dos. El pie de las páginas sigue diciendo *hasta el cierre*. Es un
+    bloque de datos, no un script que corra: no toca la regla de cero
+    JavaScript."""
     datos = {
         '@context': 'https://schema.org',
         '@type': 'Restaurant',
@@ -330,6 +332,12 @@ def datos_del_negocio(idioma):
         'hasMap': 'https://maps.app.goo.gl/NPkmd1foma1Uc8nB8',
         'servesCuisine': COCINA[idioma],
         'acceptsReservations': url_publica('reservas.html', idioma),
+        'openingHoursSpecification': [{
+            '@type': 'OpeningHoursSpecification',
+            'dayOfWeek': ['Saturday', 'Sunday'],
+            'opens': '13:00',
+            'closes': '19:00',
+        }],
     }
     return ('<script type="application/ld+json">%s</script>'
             % json.dumps(datos, ensure_ascii=False, separators=(',', ':')))
