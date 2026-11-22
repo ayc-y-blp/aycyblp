@@ -367,10 +367,17 @@ export default function CotizacionesVista() {
     // aparecía por un candidato ajeno, que nadie más ve, y la tarjeta decía
     // *nada cotizado*. Un día abierto del local se sigue mostrando vacío,
     // porque ahí se puede cotizar.
+    //
+    // **Con *Mías*, solo los días con algo tuyo** (2026-11-22, lo pidió el
+    // cliente: *"cuando veo el calendario y aprieto mías, igual debería solo
+    // mostrar los días mías, no solo en la lista"*). Las tarjetas ya mostraban
+    // solo lo suyo, pero seguían saliendo todos los días abiertos, casi todos
+    // con *nada cotizado*. Con *De todos* siguen los días abiertos, para
+    // cotizar en uno vacío.
     const dias = Array.from({ length: 7 }, (_, d) => sumarDias(lunes, d))
       .filter((f) => f >= hoy && (
         (porDia.get(f) ?? []).some(seVeEnLaTarjeta)
-        || (estadoDelDia.has(f) && !estaCerrado(estadoDelDia.get(f) ?? ''))));
+        || (!soloMias && estadoDelDia.has(f) && !estaCerrado(estadoDelDia.get(f) ?? ''))));
     return { lunes, dias };
   }).filter((c) => c.dias.length > 0);
 
@@ -614,7 +621,9 @@ export default function CotizacionesVista() {
         <div className="space-y-4 lg:space-y-3">
           {cajas.length === 0 && (
             <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">
-              No hay días abiertos ni cotizaciones en estas semanas. Usa “+ Cotizar” para elegir cualquier fecha.
+              {soloMias
+                ? 'No tienes cotizaciones en estas semanas. Mira “De todos” para ver los días abiertos, o usa “+ Cotizar” para elegir cualquier fecha.'
+                : 'No hay días abiertos ni cotizaciones en estas semanas. Usa “+ Cotizar” para elegir cualquier fecha.'}
             </p>
           )}
           {cajas.map((c) => (
