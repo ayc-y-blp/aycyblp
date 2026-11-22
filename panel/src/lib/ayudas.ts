@@ -273,8 +273,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'mano.'
     ],
     pasos: [
-      'Abre en la semana pasada, que es la que se paga. Puedes elegir otra '
-      + 'semana, el mes, o dos fechas sueltas.',
+      'Abre en la semana pasada, que es la que se paga. En el marco dorado de '
+      + 'arriba eliges mes, semana, día o dos fechas (Personalizado), y te '
+      + 'mueves con ◀ ▶.',
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
       + 'solo a ellas: esos días no suman, así que mientras haya, los totales '
       + 'están incompletos.',

@@ -152,7 +152,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   cayó…**, dar por perdida una cotización con su motivo, desde cualquier paso,
   la lista o *Esperando respuesta*. Ver `panel/CLAUDE.md`.
 - **El periodo en un marco** (22-11-2026, en preview, PR #309): en
-  Cotizaciones → *Lista*, en Estadísticas y en Vendedores, el periodo, ◀ ▶ y por qué fecha van juntos en
+  Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
   `panel/CLAUDE.md`, "El periodo en un marco".

@@ -163,7 +163,7 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
-  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas y Vendedores) |
+  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -213,7 +213,7 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
-## El periodo en un marco: Cotizaciones → Lista, Estadísticas y Vendedores (2026-11-22)
+## El periodo en un marco: Cotizaciones → Lista, Estadísticas, Vendedores e Informe (2026-11-22)
 
 Lo pidió el cliente con dos fotos de Cotizaciones → *📋 Lista*: *"por
 defecto debería estar puesto mes… todos, otra opción, y semanal, otra opción,
@@ -255,8 +255,17 @@ Y la Lista partía en *Todo*.
   cambio —de ahí se había copiado—, *Mes · Semana* sueltos y el mes con ◀ ▶
   en otra caja. Ahora es la misma pieza, sin *por qué fecha*. Sus botones
   bajan de 15 a 13px de letra y de 44 a 40px de alto, como en las otras dos.
-  **El Informe no se tocó**: elige el periodo con un desplegable y otro uso;
-  se le preguntó al cliente.
+- **El Informe también**, en el mismo PR: se le preguntó al cliente, que
+  elegía el periodo con un desplegable, y dijo *"sí, llévalo también al
+  Informe"*. Ahora es *Mes · Semana · Día · Personalizado* —el orden y las
+  palabras de Estadísticas; antes *Por día · Por semana · Por mes · Otro
+  rango*— con ◀ ▶ en vez del desplegable. El desplegable traía solo los
+  periodos con turnos; las flechas van a cualquiera. En *Día* se fue el campo
+  de fecha: se mueve con ◀ ▶, y un día lejano se elige con *Personalizado*
+  (las dos fechas iguales). **Sigue abriendo en la semana pasada**, y las
+  claves (`dia`, `semana`, `mes`, `rango`) no cambiaron: el link de *Pagarle*
+  desde Vendedores sigue abriendo un rango. Las descargas van a la derecha
+  (`ml-auto`), también cuando en *Personalizado* bajan a la fila siguiente.
 - **Se fue *Mostrando: …***, en la Lista y en Estadísticas: lo dicen el marco
   y los botones elegidos.
 - **`TarjetaNumero`, más compacta** (en las tres pantallas que la usan): 8px
@@ -273,8 +282,10 @@ Y la Lista partía en *Todo*.
   de *Mes* es la que abre), y se suma *Estadísticas → Personalizado*. Son 19
   pantallas.
 - **Ayuda**: el `?` de Cotizaciones, el de Estadísticas y el de Vendedores
-  describen el marco. Se rehicieron las fotos de Vendedores (`ven-resumen`,
-  `pag-vendedores`, `ger-vendedores`); ninguna otra muestra estas cabeceras.
+  describen el marco; también el del Informe y sus dos misiones. Se
+  rehicieron las fotos de Vendedores (`ven-resumen`, `pag-vendedores`,
+  `ger-vendedores`) y del Informe (`pag-informe`, `ger-informe`,
+  `ope-informe`, `pag-pagar`, `ger-pagar`).
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
 ## *✕ Se cayó…*: dar por perdida una cotización en un toque (2026-11-22)
@@ -2008,7 +2019,9 @@ ejemplo, con capturas de antes y después, y el cliente dijo que sí. Todo en
   de 44 a 40px, los grandes de 56 a 48px, nombre y monto un punto menos,
   márgenes de 12px. El periodo en una fila (*Día · Semana · Mes · Rango*) y
   las descargas también (*Sueldos · Propinas · Completa*); en el computador
-  dicen lo de siempre. **Esto cambió la regla PlayStation**: 44px lo que se
+  dicen lo de siempre (desde el 2026-11-22 el periodo va en el marco de
+  `ElegirPeriodo`: ver "El periodo en un marco"). **Esto cambió la regla
+  PlayStation**: 44px lo que se
   usa seguido en el computador, **40px en el celular** (lo pidió el
   cliente). La página, con una persona abierta, bajó de 6.026 a unos 5.500px.
 - **La transferencia masiva va plegada**: una fila *🏦 Transferencia masiva

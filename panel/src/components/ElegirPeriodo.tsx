@@ -18,8 +18,8 @@
  * una fila entera, con los botones parejos: sin huecos a la derecha.
  *
  * La usan la Lista de cotizaciones (`ListaCotizaciones`), Estadísticas
- * (`Estadisticas`) y Vendedores (`ResumenVendedor`): un cambio llega a las
- * tres.
+ * (`Estadisticas`), Vendedores (`ResumenVendedor`) y el Informe
+ * (`InformeEquipo`): un cambio llega a las cuatro.
  */
 import type { ReactNode } from 'react';
 

@@ -123,7 +123,8 @@ const cotizacion = async (paso) => {
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
 const personaDelInforme = async () => {
-  await ir('/informe'); await clic(boton(/Por mes/)); await p.waitForTimeout(1300);
+  // *Mes* va en el marco del periodo desde el 2026-11-22 (antes, *Por mes*).
+  await ir('/informe'); await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes', exact: true })); await p.waitForTimeout(1300);
   await clic(p.locator('main button[aria-expanded="false"]'), 1);
 };
 const vendedor = async () => { await ir('/vendedores'); await clic(boton(/^Daniela/)); };
