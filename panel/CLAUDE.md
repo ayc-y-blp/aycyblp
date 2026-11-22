@@ -1390,8 +1390,12 @@ entregan un Client ID y un Client secret, y con ellos se pide un token que
 ## El ícono de la pestaña (2026-11-22)
 
 El mismo huaso a caballo del sitio (ver "El ícono de la pestaña" en el
-`CLAUDE.md` de la raíz): `src/app/icon.svg`, `src/app/favicon.ico` y
-`src/app/apple-icon.png`, que Next.js enlaza solo en todas las páginas.
+`CLAUDE.md` de la raíz), **con los colores invertidos: blanco sobre negro**.
+Lo pidió el cliente: *"para que se nota cuando estoy en el sitio o cuando
+estoy en el panel"*; el del sitio es negro sobre blanco. Está en
+`src/app/icon.svg`, `src/app/favicon.ico` y `src/app/apple-icon.png`, que
+Next.js enlaza solo en todas las páginas. Si se cambia el dibujo, se cambia
+también en el sitio (`assets/icono/`).
 
 - **`/icon.svg` y `/apple-icon.png` están en `PUBLICAS`** de
   `middleware.ts`: sin eso, la entrada y los links de cotización, contrato y

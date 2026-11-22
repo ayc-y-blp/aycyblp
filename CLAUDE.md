@@ -868,8 +868,12 @@ madera asomando bajo la panza.
   pide); el contenido es el mismo.
 - **No llevan `?v=`**: `traducir.py` versiona solo el CSS y el JS. Si el
   ícono cambia, algunos navegadores muestran el viejo un tiempo.
-- **El panel usa el mismo** (`panel/src/app/icon.svg`, `favicon.ico` y
-  `apple-icon.png`, que Next.js pone solo): ver `panel/CLAUDE.md`.
+- **El panel usa el mismo dibujo con los colores invertidos**, blanco sobre
+  negro (lo pidió el cliente el mismo día: *"para que se nota cuando estoy en
+  el sitio o cuando estoy en el panel"*). Está en `panel/src/app/icon.svg`,
+  `favicon.ico` y `apple-icon.png`, que Next.js pone solo: ver
+  `panel/CLAUDE.md`. **Si se cambia el dibujo, se cambia en los dos**, con el
+  negro y el blanco dados vuelta.
 
 ### Trampas de layout ya resueltas (no las reintroduzcas)
 
