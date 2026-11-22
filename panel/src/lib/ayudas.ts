@@ -234,9 +234,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
       + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
-      + 'que esperan que alguien las siga y lo que falta cobrar. Se filtra por '
-      + 'periodo —por fecha del evento o por fecha en que se cotizó—, por estado '
-      + 'y con el buscador; la gerencia, además, por vendedor o por socio. '
+      + 'que esperan que alguien las siga y lo que falta cobrar. Parte en el mes '
+      + 'en curso: en el marco dorado eliges Mes, Semana o Todo, te mueves con '
+      + '◀ ▶ y eliges si cuenta la fecha del evento o la de cotización. Se filtra '
+      + 'además por estado y con el buscador; la gerencia, también por vendedor '
+      + 'o por socio. '
       + 'La lista va por fecha del evento, de la más próxima a la más lejana; '
       + 'las que no tienen día exacto, al final.'
     ],
@@ -401,9 +403,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'puesto, las propinas y su relación con las ventas, con el mismo '
       + 'periodo. Hasta dos semanas va por día; más largo, por semana. Se llega '
       + 'también desde el informe, con 📊 Estadísticas del equipo.',
-      'Arriba eliges el periodo —un día, una semana, un mes o dos fechas— y '
-      + 'por qué fecha se cuenta: la de la visita o la del día en que se '
-      + 'reservó. Todo · Visitas · Eventos separa las reservas de Shopify y '
+      'En el marco dorado de arriba eliges el periodo —un mes, una semana, un '
+      + 'día o dos fechas—, te mueves con ◀ ▶ y eliges por qué fecha se cuenta: '
+      + 'la de la visita o la de reserva. Todo · Visitas · Eventos separa las reservas de Shopify y '
       + 'las anotadas a mano de los eventos que vienen de una cotización, que '
       + 'son grandes y mueven los promedios.',
       'Cada número se compara con el periodo anterior: un mes con el mes '

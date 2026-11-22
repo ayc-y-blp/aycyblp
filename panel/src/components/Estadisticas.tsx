@@ -5,10 +5,11 @@
  * operaciones, pagos, la gerencia general y el administrador. Se llega por
  * *📊 Estadísticas* en el calendario de Reservas.
  *
- * Arriba, en una sola franja, **cuándo** (*Día · Semana · Mes ·
- * Personalizado*, con ◀ ▶ como la Lista de cotizaciones), **por qué fecha**
- * (la de la visita o la del día en que se reservó) y **qué** (*Todo ·
- * Visitas · Eventos*). Abajo, cuatro bloques: cuánto se movió, si vinieron,
+ * Arriba, **cuándo y por qué fecha en una sola pieza** (`ElegirPeriodo`,
+ * la misma de la Lista de cotizaciones, 2026-11-22): *Mes · Semana · Día ·
+ * Personalizado*, el periodo con ◀ ▶ y si se cuenta por la fecha de la
+ * visita o la de la reserva. **Qué** (*Todo · Visitas · Eventos*) va en la
+ * fila de la cabecera. Abajo, cuatro bloques: cuánto se movió, si vinieron,
  * la plata, y de dónde y cómo. Cada número se compara con el periodo
  * anterior y tiene su `?`.
  *
@@ -20,6 +21,7 @@ import BandaSeccion from './BandaSeccion';
 import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
 import TarjetaNumero from './TarjetaNumero';
+import ElegirPeriodo from './ElegirPeriodo';
 import EstadisticasEquipo from './EstadisticasEquipo';
 import type { DiaEstadistica } from '@/lib/estadisticasEquipo';
 import { enPesos } from '@/lib/ocupacion';
@@ -247,22 +249,21 @@ export default function Estadisticas() {
   };
 
   /**
-   * *Día · Semana · Mes · Personalizado*. **En el computador va en la fila de
-   * arriba**, a la derecha de *Volver* y de las dos vistas (2026-11-21, el
-   * computador más compacto: eran tres filas de controles antes del primer
-   * número). En el celular sigue en su propia fila. Se dibuja en los dos
-   * lugares y se ve en uno.
+   * **Qué reservas** (*Todo · Visitas · Eventos*): en la fila de la cabecera,
+   * a la derecha. El periodo va en su propia pieza (`ElegirPeriodo`), que en
+   * el computador entra en esta misma fila cuando cabe —en la vista del
+   * equipo— y si no baja a la siguiente.
    */
-  const modos = (clase: string) => (
-    <div className={clase} role="group" aria-label="Periodo">
-      {([['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes'], ['personalizado', 'Personalizado']] as const).map(([m, t]) => (
-        <button key={m} type="button" aria-pressed={modo === m} onClick={() => elegirModo(m)}
-          className={`boton min-h-[44px] ${modo === m ? ELEGIDO : ''}`}>{t}</button>
+  const queReservas = vista === 'equipo' && datos?.equipo ? null : (
+    <div className="flex w-full gap-1 lg:w-auto" role="group" aria-label="Qué reservas">
+      {([['todo', 'Todo'], ['visitas', 'Visitas'], ['eventos', 'Eventos']] as const).map(([k, t]) => (
+        <button key={k} type="button" aria-pressed={tipo === k} onClick={() => setTipo(k)}
+          className={`boton min-h-[40px] flex-1 lg:flex-none ${tipo === k ? ELEGIDO : ''}`}>{t}</button>
       ))}
     </div>
   );
 
-  const cabecera = (
+  const cabecera = (periodo?: React.ReactNode) => (
     <>
       <BandaSeccion tono="oro" icono="📊" seccion={vista === 'equipo' && datos?.equipo ? 'Equipo' : 'Reservas'} titulo="Estadísticas"
         ayuda={<Ayuda tema="estadisticas" />}>
@@ -284,78 +285,57 @@ export default function Estadisticas() {
             ))}
           </div>
         )}
-        {modos('hidden lg:ml-auto lg:flex lg:flex-wrap lg:items-center lg:gap-2')}
+        <span className="hidden flex-1 lg:block" />
+        {queReservas}
+        {periodo}
       </div>
     </>
   );
-  if (error) return <>{cabecera}<p className="rounded border border-rojo-fuerte/50 bg-rojo/10 p-3 text-[15px] text-rojo-texto">{error}</p></>;
-  if (!datos || !rango || !r || !a || !anterior) return <>{cabecera}<p className="text-hueso/60">Cargando…</p></>;
+  if (error) return <>{cabecera()}<p className="rounded border border-rojo-fuerte/50 bg-rojo/10 p-3 text-[15px] text-rojo-texto">{error}</p></>;
+  if (!datos || !rango || !r || !a || !anterior) return <>{cabecera()}<p className="text-hueso/60">Cargando…</p></>;
 
   const contra = tituloDe(modo, anterior);
   const titulo = tituloDe(modo, rango);
-  const por = base === 'visita' ? 'por fecha de la visita' : 'por fecha en que se reservó';
-  const que = tipo === 'todo' ? 'todas las reservas' : tipo === 'visitas' ? 'visitas (Shopify y a mano)' : 'eventos (cotizaciones)';
   const total = r.reservas;
   const share = (n: number, de: number) => (de ? ` · ${Math.round((n / de) * 100)}%` : '');
 
   return (
     <div className="mx-auto max-w-6xl">
-      {cabecera}
+      {cabecera(
+        <ElegirPeriodo
+          modos={[{ clave: 'mes', rotulo: 'Mes' }, { clave: 'semana', rotulo: 'Semana' },
+            { clave: 'dia', rotulo: 'Día' }, { clave: 'personalizado', rotulo: 'Personalizado' }]}
+          modo={modo} onModo={(m) => elegirModo(m as Modo)}
+          titulo={modo === 'personalizado' ? undefined : titulo}
+          onMover={(n) => setRango(moverRango(modo, rango, n))}
+          enLugarDeFlechas={modo === 'personalizado' ? (
+            <div className="flex w-full flex-wrap items-center gap-1.5 lg:w-auto">
+              {(['desde', 'hasta'] as const).map((k) => (
+                <label key={k} className="flex items-center gap-1.5 text-[13px] font-semibold text-hueso/70">
+                  {k === 'desde' ? 'Desde' : 'Hasta'}
+                  <input type="date" value={rango[k]} aria-label={k === 'desde' ? 'Desde' : 'Hasta'}
+                    onChange={(e) => {
+                      const nuevo = rangoPersonalizado(k === 'desde' ? e.target.value : rango.desde, k === 'hasta' ? e.target.value : rango.hasta);
+                      if (nuevo) setRango(nuevo);
+                    }}
+                    className="min-h-[40px] rounded border-2 border-hueso/20 bg-panel px-2 text-[15px] text-hueso focus:border-oro focus:outline-none" />
+                </label>
+              ))}
+              <span className="text-[14px] text-hueso/70">{plural(largoDe(rango), 'día', 'días')}</span>
+            </div>
+          ) : undefined}
+          fechas={vista === 'equipo' && datos.equipo ? undefined : [
+            { clave: 'visita', icono: '📅', largo: 'Fecha de la visita', corto: 'Visita' },
+            { clave: 'reservada', icono: '✍', largo: 'Fecha de reserva', corto: 'Reserva' }]}
+          fecha={base} onFecha={(k) => setBase(k as Base)} />
+      )}
 
-      {/* Cuándo, por qué fecha y qué: una sola franja arriba de todo. */}
-      {modos('flex flex-wrap items-center gap-2 lg:hidden')}
-      <div className="mt-2 flex flex-wrap items-center gap-2 lg:mt-0">
-        {modo === 'personalizado' ? (
-          <div className="flex flex-wrap items-end gap-2">
-            {(['desde', 'hasta'] as const).map((k) => (
-              <label key={k} className="block">
-                <span className="block text-[13px] font-semibold uppercase tracking-wide text-hueso/60">{k === 'desde' ? 'Desde' : 'Hasta'}</span>
-                <input type="date" value={rango[k]} aria-label={k === 'desde' ? 'Desde' : 'Hasta'}
-                  onChange={(e) => {
-                    const nuevo = rangoPersonalizado(k === 'desde' ? e.target.value : rango.desde, k === 'hasta' ? e.target.value : rango.hasta);
-                    if (nuevo) setRango(nuevo);
-                  }}
-                  className="mt-1 min-h-[44px] rounded border border-hueso/20 bg-tinta px-3 text-[15px] focus:border-oro focus:outline-none" />
-              </label>
-            ))}
-            <span className="pb-3 text-[14px] text-hueso/70">{plural(largoDe(rango), 'día', 'días')}</span>
-          </div>
-        ) : (
-          <div className="flex min-w-[15rem] flex-1 items-center gap-2 rounded-xl border-2 border-oro/50 bg-oro/[0.06] p-1 sm:w-80 sm:flex-none">
-            <button type="button" aria-label="Periodo anterior" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-              onClick={() => setRango(moverRango(modo, rango, -1))}>◀</button>
-            <span className="min-w-0 flex-1 truncate text-center text-[17px] font-bold first-letter:uppercase">{titulo}</span>
-            <button type="button" aria-label="Periodo siguiente" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-              onClick={() => setRango(moverRango(modo, rango, 1))}>▶</button>
-          </div>
-        )}
-        {!(vista === 'equipo' && datos.equipo) && (<>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Por qué fecha">
-          {([['visita', '📅 Fecha de la visita'], ['reservada', '✍ Fecha en que se reservó']] as const).map(([k, t]) => (
-            <button key={k} type="button" aria-pressed={base === k} onClick={() => setBase(k)}
-              className={`boton min-h-[44px] ${base === k ? ELEGIDO : ''}`}>{t}</button>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Qué reservas">
-          {([['todo', 'Todo'], ['visitas', 'Visitas'], ['eventos', 'Eventos']] as const).map(([k, t]) => (
-            <button key={k} type="button" aria-pressed={tipo === k} onClick={() => setTipo(k)}
-              className={`boton min-h-[44px] ${tipo === k ? ELEGIDO : ''}`}>{t}</button>
-          ))}
-        </div>
-        </>)}
-      </div>
       {vista === 'equipo' && datos.equipo ? (
         <>
-          <p className="mt-2 text-[14px] text-hueso/70">
-            Mostrando: <b className="text-hueso first-letter:uppercase">{titulo}</b>, el equipo. Se compara con {contra}.
-          </p>
           <EstadisticasEquipo equipo={datos.equipo} rango={rango} anterior={anterior} contra={contra} />
           <p className="mt-6 text-[13px] text-hueso/60">Datos al {enPalabras(datos.hoy)}. Los mismos montos del informe del equipo.</p>
         </>
       ) : (<>
-      <p className="mt-2 text-[14px] text-hueso/70">
-        Mostrando: <b className="text-hueso first-letter:uppercase">{titulo}</b>, {por}, {que}. Se compara con {contra}.
-      </p>
 
       <Bloque titulo="Cuánto se movió">
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">

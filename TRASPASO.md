@@ -148,9 +148,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   se bloquea al escribir el de uno vendido. Para *A Brasas Abiertas* de
   empresas se recomendó **no crear un segundo producto**: activar *Se puede
   cotizar* con $70.000 + IVA en el mismo (lo hace el cliente en *Productos*).
-- **✕ Se cayó…** (22-11-2026, en preview): dar por perdida una cotización con
-  su motivo, desde cualquier paso, la lista o *Esperando respuesta*. Ver
-  `panel/CLAUDE.md`.
+- **PR #308, mergeado el 22-11-2026** con el *"mergea"* del cliente: **✕ Se
+  cayó…**, dar por perdida una cotización con su motivo, desde cualquier paso,
+  la lista o *Esperando respuesta*. Ver `panel/CLAUDE.md`.
+- **El periodo en un marco** (22-11-2026, en preview): en Cotizaciones →
+  *Lista* y en Estadísticas, el periodo, ◀ ▶ y por qué fecha van juntos en
+  un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
+  la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
+  `panel/CLAUDE.md`, "El periodo en un marco".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
