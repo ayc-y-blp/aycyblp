@@ -6338,8 +6338,11 @@ console.log('\nCambiar el vendedor');
     { usuario: 'pagos', nombre: 'Paula', rol: 'pagos', activo: true }
   ];
   const vendedores = A.vendedoresParaAsignar(usuarios as never);
-  ok(vendedores.map((v) => v.usuario).join() === 'bruno,carla',
-     'se le asigna solo a una cuenta activa con el rol Vendedor');
+  ok(vendedores.map((v) => v.usuario).join() === 'bruno,carla,pagos',
+     'se le asigna a toda cuenta activa que puede cotizar: los vendedores primero; una apagada no');
+  ok(A.vendedoresParaAsignar([{ usuario: 'ana', nombre: 'Ana', rol: 'anfitrion', activo: true },
+    { usuario: 'tur', nombre: 'Tur', rol: 'encargado', activo: true }] as never).length === 0,
+     'quien no puede cotizar no recibe clientes');
   const p = (id: string, mas: Record<string, unknown> = {}) =>
     ({ id, idCliente: 'C-0001', creadoPor: 'carla', estado: 'Borrador', idReserva: '', comisionVendedor: '', ...mas }) as never;
   const lista = [p('1'), p('2', { estado: 'Enviada' }), p('3', { estado: 'Ganada', idReserva: 'MANUAL-1' }),
@@ -6359,8 +6362,9 @@ console.log('\nCambiar el vendedor');
      'con la comisión cerrada no cambia de manos, y dice con quién se queda');
   ok(!!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'carla', vendedores }).error
      && !!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'elsa', vendedores }).error
-     && !!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'pagos', vendedores }).error,
-     'no se asigna al mismo, ni a una cuenta apagada, ni a quien no es vendedor');
+     && !!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'nadie', vendedores }).error
+     && !A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'pagos', vendedores }).error,
+     'no se asigna al mismo, ni a una cuenta apagada, ni a una que no existe; sí a otra cuenta que cotiza');
 
   plan = A.planDeAsignacion({ cliente, presupuestos: lista, a: 'bruno', vendedores, conAbiertas: true });
   ok(!plan.error && plan.cliente && plan.mover.map((x) => x.id).join() === '1,2,6' && plan.quedan.map((x) => x.id).join() === '3',

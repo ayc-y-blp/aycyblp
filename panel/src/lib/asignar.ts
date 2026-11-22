@@ -25,22 +25,29 @@
  *
  * Pura y con pruebas: la usan la ruta y la ventana, que así dicen lo mismo.
  */
-import { ROL } from './auth.ts';
+import { ROL, puede, type Rol } from './auth.ts';
 import { ESTADO_PRESUPUESTO, estadoNormal, type Presupuesto } from './presupuestos.ts';
 import { normalizar } from './columnas.ts';
 import type { Cliente } from './clientes.ts';
 import type { Usuario } from './usuarios.ts';
 
-export interface VendedorParaAsignar { usuario: string; nombre: string }
+export interface VendedorParaAsignar { usuario: string; nombre: string; rol?: string }
 
-/** A quién se le puede asignar: las cuentas activas con el rol Vendedor. */
+/**
+ * A quién se le puede asignar: **toda cuenta activa que puede cotizar**
+ * (`presupuestos`), no solo las del rol Vendedor (2026-11-22, lo amplió el
+ * cliente: *"amplíalo"*). En la planilla de verdad, uno de los vendedores del
+ * CRM tiene cuenta con otro rol, y no se le podía pasar un cliente. Los
+ * vendedores van primero; después los demás, por nombre.
+ */
 export function vendedoresParaAsignar(
   usuarios: Pick<Usuario, 'usuario' | 'nombre' | 'rol' | 'activo'>[]
 ): VendedorParaAsignar[] {
+  const orden = (r?: string) => (r === ROL.vendedor ? 0 : 1);
   return usuarios
-    .filter((u) => u.rol === ROL.vendedor && u.activo !== false && !!u.usuario)
-    .map((u) => ({ usuario: u.usuario, nombre: u.nombre || u.usuario }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+    .filter((u) => u.activo !== false && !!u.usuario && puede(u.rol as Rol, 'presupuestos'))
+    .map((u) => ({ usuario: u.usuario, nombre: u.nombre || u.usuario, rol: u.rol }))
+    .sort((a, b) => orden(a.rol) - orden(b.rol) || a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
 }
 
 /**
@@ -104,7 +111,7 @@ export function planDeAsignacion(e: {
 }): PlanDeAsignacion {
   const nada = { cliente: false, mover: [] as Presupuesto[], quedan: [] as Presupuesto[], de: '', dueno: '' };
   const nuevo = e.vendedores.find((v) => normalizar(v.usuario) === normalizar(e.a));
-  if (!nuevo) return { ...nada, error: 'Elige a un vendedor con cuenta activa.' };
+  if (!nuevo) return { ...nada, error: 'Elige una cuenta activa que pueda cotizar.' };
 
   if (e.presupuesto) {
     const p = e.presupuesto;

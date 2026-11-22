@@ -732,6 +732,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'El vendedor nuevo pasa a ver el contacto y a poder editar; el anterior deja de poder.',
       'En una cotización, su comisión pasa también, salvo que la venta ya esté cerrada: el cliente pagó todo y pagos lo revisó.',
       'En un cliente, se puede pasar junto con sus cotizaciones abiertas. Las ganadas se quedan con quien las tiene.',
+      'Se le puede pasar a cualquier cuenta activa que cotiza: los vendedores primero, y los demás con su rol al lado.',
       'Queda en la bitácora.'
     ]
   },

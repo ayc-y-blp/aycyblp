@@ -545,7 +545,11 @@ importar—. Lógica en `lib/asignar.ts` (pura, con pruebas), la ruta en
   su cotización abierta. Su cotización ganada se queda con quien la tiene*—
   antes del botón *Cambiar vendedor*. Se confirma a mano: toca de quién es
   algo y su comisión.
-- **A quién**: las cuentas activas con el rol Vendedor.
+- **A quién**: toda cuenta activa que puede cotizar (`presupuestos`). Nació
+  solo para el rol Vendedor y el cliente lo amplió el mismo día
+  (*"amplíalo"*): en la planilla de verdad, uno de los vendedores del CRM
+  tiene cuenta con otro rol y no se le podía pasar un cliente. En la lista
+  van primero los vendedores, y los demás con su rol al lado.
 - **La bitácora**: *Cambió el vendedor de un cliente · Cliente C-0001: de
   Jorge a Daniela · con 1 cotización abierta*. Sin datos del cliente.
 - **`Creado por` lleva el nombre de la cuenta, no su usuario.** Es lo que

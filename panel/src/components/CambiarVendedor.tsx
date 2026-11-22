@@ -20,6 +20,8 @@ import BuscarEnLista from './BuscarEnLista';
 import AyudaCorta from './AyudaCorta';
 import { avisar } from './AvisoFlotante';
 import { nombreDelVendedor, esDelVendedor, type VendedorParaAsignar } from '@/lib/asignar';
+import { ROL } from '@/lib/auth';
+import { NOMBRE_ROL } from '@/lib/roles';
 
 export default function CambiarVendedor({
   de, vendedores, cliente, presupuesto, nombre, abiertas = 0, ganadas = 0, cerrada = false, onCambiado
@@ -94,9 +96,11 @@ export default function CambiarVendedor({
                   <button type="button" className="boton min-h-[44px]" onClick={() => setA('')}>Elegir otro</button>
                 </div>
               ) : (
-                <BuscarEnLista etiqueta="Buscar vendedor" vacia="No hay vendedores con cuenta activa."
+                <BuscarEnLista etiqueta="Buscar vendedor" vacia="No hay cuentas activas que puedan cotizar."
                   opciones={vendedores.map((v) => ({ id: v.usuario, nombre: v.nombre,
-                    detalle: esDelVendedor(v, de) ? 'lo tiene hoy' : '' }))}
+                    // Quien no es vendedor lleva su rol al lado: se sabe a quién se le pasa.
+                    detalle: [esDelVendedor(v, de) ? 'lo tiene hoy' : '',
+                      v.rol && v.rol !== ROL.vendedor ? NOMBRE_ROL[v.rol] ?? v.rol : ''].filter(Boolean).join(' · ') }))}
                   onElegir={setA} onCerrar={() => undefined} />
               )}
               {!!cliente && abiertas > 0 && (
