@@ -546,6 +546,25 @@ dentro* (arriba).
   estar a la misma altura. Antes del cambio daba dos alturas.
 - Medido a 1024, 1280 y 1440px: todas las filas parejas.
 
+## El calendario de Cotizaciones con *Mías*: solo tus días (2026-11-22)
+
+Lo pidió el cliente: *"cuando veo el calendario y aprieto mías, igual debería
+solo mostrar los días mías, no solo en la lista. Ese filtro."* Con *👤 Mías*,
+las tarjetas ya mostraban solo lo suyo, pero el calendario seguía dibujando
+todos los días abiertos del local, casi todos con *nada cotizado*.
+
+- **Con *Mías*, salen solo los días con algo de la cuenta**: lo que ella ve
+  en su tarjeta (`seVeEnLaTarjeta`: lo mandado, una ganada o lo suyo sin
+  mandar). **Con *De todos***, como antes: también los días abiertos vacíos,
+  para cotizar en uno.
+- **El vendedor parte en *Mías***, así que ve su calendario corto; para
+  cotizar en un día sin nada suyo, *De todos* o *+ Cotizar*. Sin nada suyo
+  en las semanas que se ven, el aviso lo dice.
+- En el ejemplo, el vendedor ve 4 días con *Mías* y 13 con *De todos*.
+- **Ayuda**: el `?` de Cotizaciones lo dice. Ninguna foto de las misiones
+  cambia (la de cotizar abre la ventana, no mira el calendario).
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
 ## La ventana de cotizar, con marcos de grupo (2026-11-22)
 
 Lo pidió el cliente con una foto del paso 3: *"en cotizaciones no estamos

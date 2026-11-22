@@ -227,6 +227,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cotización.',
       'Un candidato es alguien que preguntó: se anota con cliente, fecha e '
       + 'invitados, y se cotiza después.',
+      'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
+      + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
       + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
       + 'que esperan que alguien las siga y lo que falta cobrar. Se filtra por '
