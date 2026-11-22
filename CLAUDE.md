@@ -576,9 +576,13 @@ unos pocos KB; las imágenes se cachean entre páginas.
   las seis (las cinco más `404.html`) **y después corre
   `python3 tools/traducir.py`**, que es lo que propaga el cambio a `en/` y
   `pt/`. Esas carpetas son generadas: no se editan.
-- El menú son 4 ítems: **Reserva** (botón dorado relleno, la acción
+- El menú son 4 ítems: **Reservar** (botón dorado relleno, la acción
   principal) · Experiencias · Actividades · Eventos. No hay ítem "Inicio":
-  eso lo hace el logo.
+  eso lo hace el logo. **Dice *Reservar*, igual que el botón de la portada**
+  (2026-11-22, lo pidió el cliente: *"debe ser lo mismo en ambos y prefiero
+  reservar"*); el pie también. En inglés queda *Book now* en los tres, y en
+  portugués *Reservar*. El título de la página sigue siendo *Reserva*: es el
+  nombre de la página, no un botón.
 - **Socios comerciales, Promociones y el Dossier viven en el pie, no en el
   menú** (2026-10-15; el dossier, el 2026-11-18), apilados como botones
   delineados. Son
@@ -841,6 +845,31 @@ idioma y Diurno/Nocturno.
 **Lo que no se tocó, a propósito**: los títulos, los precios grandes y el
 cuerpo de texto, que ya estaban a tamaño de leer; y el aspecto general, que
 sigue siendo el mismo.
+
+### El ícono de la pestaña: el huaso a caballo (2026-11-22)
+
+Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no
+profesionales, sino un logo blanco y negro… con esa silueta del caballo con
+el huaso encima"*, la veleta del techo. **Está dibujado a mano** en SVG sobre
+las proporciones de una foto de la veleta: la foto era de 124 px y borrosa, y
+calcarla daba una mancha. El cliente pidió después una silueta más fina, sin
+el suelo entre las patas y más reconocible: lleva cuatro patas separadas, la
+cola, el huaso con chupalla de ala ancha y la pierna con el estribo de
+madera asomando bajo la panza.
+
+- **`assets/icono/`**: `favicon.svg` (lo usan los navegadores nuevos),
+  `favicon.ico` (16, 32 y 48 px, para los demás) y `apple-touch-icon.png`
+  (180 px, el ícono al guardar el sitio en el teléfono).
+- **Negro sobre un azulejo blanco redondeado**, para que se vea igual en una
+  pestaña clara y en una oscura.
+- **Los tres `<link>` van después del `<title>`** en las diez páginas del
+  español; `traducir.py` les pone el `../` en `en/` y `pt/`. Como el dossier
+  y socios cambiaron en el `<head>`, se rehicieron sus PDF (la guarda lo
+  pide); el contenido es el mismo.
+- **No llevan `?v=`**: `traducir.py` versiona solo el CSS y el JS. Si el
+  ícono cambia, algunos navegadores muestran el viejo un tiempo.
+- **El panel usa el mismo** (`panel/src/app/icon.svg`, `favicon.ico` y
+  `apple-icon.png`, que Next.js pone solo): ver `panel/CLAUDE.md`.
 
 ### Trampas de layout ya resueltas (no las reintroduzcas)
 
