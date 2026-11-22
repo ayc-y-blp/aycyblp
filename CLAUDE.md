@@ -2244,6 +2244,20 @@ cambios antes de que se hagan. En la práctica:
 Al proponer, di qué archivos toca y qué efecto tiene, para que se pueda
 decidir con la información a mano.
 
+**Las planillas se pueden mirar con el conector de Google Drive** (lo
+autorizó el cliente el 2026-11-22, para la de pruebas —*BBDD Prueba*— y para
+la de producción: *"deberías poder mirar las planillas Google"*). Sirve para
+diagnosticar sin pedirle fotos: ese día, los días *sin cupo* se resolvieron
+recién al ver que la columna `Fecha` tenía números.
+
+- **Para mirar, no para escribir.** Lo que haya que cambiar en una planilla
+  lo hace el panel, o el cliente; escribir en la de producción desde acá,
+  solo si él lo pide para algo concreto.
+- **Se lee lo justo**: la pestaña y las filas que hacen falta. La de
+  producción tiene datos de clientes: no se copian al repo, que es público,
+  ni se repiten en el chat más allá de lo necesario.
+- Primero la de pruebas; la de producción, cuando el problema está allá.
+
 **No inventes datos del negocio.** Precios, horarios, direcciones,
 distancias y capacidades salen del cliente o de material que él entregó. Si
 falta un dato, pídelo: es preferible dejar un placeholder visible antes que
