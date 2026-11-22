@@ -1,4 +1,4 @@
-# Traspaso: Brasas de Lo Pirque (estado al 21-11-2026)
+# Traspaso: Brasas de Lo Pirque (estado al 22-11-2026)
 
 Para quien retoma el proyecto en una sesión nueva, sin haber visto las
 anteriores. **Este archivo es el mapa**; el detalle de cada decisión vive en
@@ -69,17 +69,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   devuelto que no está anotado ya no se anota.
   Detalle en `panel/CLAUDE.md`, "La revisión antes de apretarlo".
   https://github.com/ayc-y-blp/aycyblp/pull/291
-- **Hay un PR abierto, *con prueba*: el importador** (PR #293,
-  https://github.com/ayc-y-blp/aycyblp/pull/293). El
-  cliente subió al chat el respaldo del CRM y el export de pedidos de Shopify.
-  *Importar del CRM*, en Configuración → Mantención, trae desde tres pestañas
-  de la planilla: las fichas de los clientes de Lo Pirque; lo que viene a
-  futuro —candidato, borrador o **ganada, con su reserva y tomando cupo**—; y
-  los pedidos del sitio viejo, como reservas pagadas o por pagar. Muestra
-  todo antes de escribir y se puede apretar dos veces. **No se mergea hasta
-  que el cliente diga *"mergea"***: primero lo ensaya en la versión de
-  prueba. Detalle en la sección 4 y en `panel/CLAUDE.md`, "Importar del CRM y
-  del sitio viejo".
+- **El PR #293 se mergeó el 22-11-2026**, cuando el cliente dijo *"mergea"*,
+  después de ensayarlo en la versión de prueba (base en cero e importe sobre
+  "BBDD Prueba", revisados con el conector de Drive). El panel en producción
+  quedó comprobado después (`verificar.sh`, 15 de 15). Trajo **el
+  importador** —*Importar del CRM*, en Configuración → Mantención: las fichas
+  de los clientes de Lo Pirque, lo que viene a futuro como candidato,
+  borrador o ganada con su reserva, y los pedidos del sitio viejo—, y lo de
+  abajo. Detalle en la sección 4 y en `panel/CLAUDE.md`, "Importar del CRM y
+  del sitio viejo". https://github.com/ayc-y-blp/aycyblp/pull/293
 - **En el mismo PR #293, el 22-11-2026**: el Excel se sube desde el
   formulario (sin Google Drive); un vendedor del CRM calza con la cuenta que
   lleva su apodo; y **cambiar el vendedor de un cliente o de una cotización**
@@ -94,9 +92,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   después de la base en cero. Detalle en `panel/CLAUDE.md`, "Las fechas se
   escriben como texto".
 - **El cliente dejó "BBDD Prueba" en cero e importó ahí el 22-11-2026**, con
-  el arreglo de las fechas ya puesto; dijo que parece que funcionó. **No se
-  pudo mirar con el conector de Drive**: esa planilla no le aparece a la
-  cuenta de Google conectada (falta compartírsela).
+  el arreglo de las fechas ya puesto, y compartió las dos planillas (*BBDD
+  Prueba* y *BBDD Produccion*) con la cuenta del conector. Mirada la de
+  prueba: las fechas quedaron como texto, 29 días, 128 fichas y 101
+  cotizaciones, con el nombre de la cuenta como dueño. El conector muestra el
+  encabezado y las primeras filas de cada pestaña, no todas.
 - **Clientes tiene filtro *Míos / Todos*** (22-11-2026, en el PR #293).
 - **El cliente autorizó mirar las dos planillas con el conector de Google
   Drive** (22-11-2026): la de pruebas y la de producción. Para diagnosticar,
@@ -640,7 +640,7 @@ piezas, no tamaño de botones ni de letra.**
     escena abría *Editar actividades*). Medido, el más largo daba 760px; en
     el computador ahora mide 589.
 
-### PR #293, abierto (*con prueba*): el importador del CRM y del sitio viejo
+### PR #293, mergeado el 22-11-2026 (*con prueba*): el importador del CRM y del sitio viejo
 
 Lo pidió el cliente el 21-11-2026 (*"una importación lo más completa posible
 para que los chicos no tienen que hacer muchas cosas de forma manual.
@@ -1033,7 +1033,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 7 | **Pedidos del sitio viejo** | **Exportar de Shopify *todos* los pedidos** (el export del 21-11 traía solo la última página, 50) y subirlo al chat: se rearma la pestaña `Importar reservas` y entran con el importador (pendiente 10). El producto viejo vendía hasta el 27-12 | Cliente sube; Claude arma |
 | 8 | **Lanzamiento** (domingo 22-11, en la noche) | En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
 | 9 | **Después del lanzamiento** | Links en Maps, Instagram y WhatsApp; enviar el sitemap en Google Search Console; productos en Fudo; mirar en Vercel → Logs que las tres tareas diarias corran en 200 | Cliente |
-| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en un PR *con prueba* (PR #293). (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) lo ensaya en la versión de prueba (escribe en la planilla "Pruebas"); (c) dice *"mergea"*; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
+| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **No importar en producción antes de la base en cero.** (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el nombre del negocio en Maps; el desayuno y la once a $8.000 + IVA | Cliente |
