@@ -772,8 +772,15 @@ puñado a más de cien fichas.
 - **Míos** son los clientes que la cuenta creó o a los que les cotizó: la
   misma cuenta de `privacidad.ts` (`clientePropio()`). `/api/clientes` manda
   solo sus ids (`mios`), de lo que ya leía: ninguna lectura más.
-- **Parte en *Míos*** si la cuenta tiene alguno. **No se dibuja** si no tiene
-  ninguno o si son todos: no separaría nada.
+- **Parte en *Míos*** si la cuenta tiene alguno, y si no, en *Todos*.
+- **Se ve siempre, también con *Míos (0)*** (cambió el mismo día, lo marcó el
+  cliente: *"falta aún el filtro míos en clientes"*). Al principio no se
+  dibujaba si la cuenta no tenía ninguno o si eran todos, porque no separaba
+  nada; pero después del importe las fichas quedaron a nombre de los
+  vendedores del CRM, y a quien no tiene ninguna el filtro le parecía que
+  faltaba. Ahora es igual que *Mías / De todos* de Cotizaciones, que no se
+  esconde: el *0* también dice algo. En *Míos* sin ninguno, la lista dice
+  *Todavía no tienes clientes tuyos… Mira en Todos*.
 - **El buscador busca dentro de lo que se mira**; sin calce en *Míos* dice
   *Ninguno de los tuyos calza… Mira en Todos*.
 - En el celular el buscador ocupa su fila y las pastillas van debajo.
@@ -781,8 +788,8 @@ puñado a más de cien fichas.
   dejó como idea.
 - **Ayuda**: el `?` de Clientes lo dice. **Ningún permiso cambió.**
 - Probado en el panel de ejemplo a 1280 y 393: el vendedor ve 4 en *Míos* y
-  6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, no ven
-  el filtro.
+  6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, ven
+  *Míos (0)* y parten en *Todos*.
 
 ## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
 
