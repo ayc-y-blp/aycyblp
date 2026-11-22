@@ -156,6 +156,7 @@ revisan antes de cada cambio en esta carpeta.
   | Un número grande con su nombre y su nota: qué preparar, cómo viene el pago, las mesas | `Azulejo` (la página del día y la cara de reservas de la ventana del equipo, con `compacto`) |
   | Una tarjeta de una lista que se abre: el marco, el + / − y el pie *▴ Cerrar* | `marcoTarjeta`, `SignoAbrir`, `PieCerrar` y `LISTA_TARJETAS` de `TarjetaLista` (Informe, Equipo, Extras, Vendedores, Clientes, Productos, Recepción, las reservas del día y las ventanas del equipo y de extras del día) |
   | Un grupo de tarjetas (un puesto en la ventana del equipo, *Actividades del día* en la de extras): **el marco más marcado**, su título y las tarjetas de adentro | `marcoGrupo`, `TITULO_GRUPO` y `marcoTarjeta(…, dentro)` de `TarjetaLista` |
+  | Una sección de una ventana con su color —el pago en verde, el contrato en cielo, el seguimiento en rosado— y el próximo paso | `marcoGrupo(tono)` + `TITULO_GRUPO`: `Seccion` e `Hito` de la ventana de cotizar (pasos 2, 4 y 5); en el paso 3, *Menús*, *Extras y arriendo* y *En la cotización* |
   | Elegir el puesto habitual de una persona | `ElegirPuesto`: un desplegable con los puestos que existen (la ficha de `/equipo` y la ficha que se abre desde el día) |
   | Lo de adentro de la línea de una persona en un día: campos, ajustes, total, *Ficha / Sacar del día*, *+ Nuevo …* | `CampoAlLado`, `AjustesDelDia`, `TotalDelDia`, `BotonesDeLaLinea` y `BotonNuevaPersona` de `LineaDelDia` (ventana del equipo y de las actividades extras) |
   | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
@@ -544,6 +545,65 @@ dentro* (arriba).
   lleno en uno de cada dos, la barra de cada tarjeta de una fila tiene que
   estar a la misma altura. Antes del cambio daba dos alturas.
 - Medido a 1024, 1280 y 1440px: todas las filas parejas.
+
+## La ventana de cotizar, con marcos de grupo (2026-11-22)
+
+Lo pidió el cliente con una foto del paso 3: *"en cotizaciones no estamos
+cumpliendo aún con todas las reglas y de diseño, de distribución de datos, de
+poner cómo ponemos los marcos, tarjeta principal, las informaciones adentro
+tienen otro marco. Por ejemplo, para distinguir mejor entre sección menú,
+sección extras, aplicar todas las reglas… en todos los formularios de la
+cotización"*. Es la regla *el marco de la tarjeta manda sobre lo de adentro*,
+que ya regía en la ventana del equipo, llevada a los cinco pasos.
+
+- **`marcoGrupo` ganó el color** (`TarjetaLista`): `marcoGrupo('verde' |
+  'cielo' | 'rosa' | 'ambar' | 'morado' | 'oro')`, además de `true` (el ámbar
+  de *falta gente*) y `false` (neutro), que siguen igual en el equipo y los
+  extras. Es el mismo marco —3px, el tono fuerte, el fondo apenas teñido— con
+  el color que ya decía de qué se trata cada sección.
+- **`Seccion` e `Hito` son marcos de grupo**: *Documento*, *El pago*,
+  *Seguimiento y envío*, *El contrato* y el *Próximo paso* pasaron de 2px
+  claros a 3px en su tono, y su título de 15px en mayúsculas a `TITULO_GRUPO`
+  (16px en negrita), como el nombre de un puesto. Lo de adentro —botones,
+  campos, la caja de la factura, *Cambios de fecha y cancelación*— conserva
+  su borde fino.
+- **Paso 1**: la lista de clientes va en un grupo *Clientes*, con el
+  buscador y *+ Cliente nuevo* en su primera fila, y cada cliente es una
+  tarjeta de adentro (`marcoTarjeta(…, dentro)`, verde la elegida). *Cliente
+  nuevo* es un grupo dorado.
+- **Paso 2**: las dos columnas son dos `Seccion` —*📅 Cuándo y cuántos* y
+  *🎉 El evento*— del mismo alto.
+- **Paso 3**: *Menús* y *Extras y arriendo* son **dos grupos**, cada uno con
+  su nombre en negrita a la izquierda de sus botones; *En la cotización* es
+  el tercero, con el título en la cabecera de la tabla (donde decía
+  *Producto*), cada línea como tarjeta de adentro, y el descuento y el total
+  al pie, bajo una raya. *¿El día es exclusivo?* es un grupo morado.
+- **Para que el paso 3 siguiera cabiendo**, los botones de productos tienen
+  8px de aire a los lados en el computador (eran 12): con el marco, la fila
+  de *Menús* se partía en dos y la ventana medía 654px.
+
+**Las medidas** (`npm run ventanas`, 1280×650 y en el celular a 393):
+
+| Paso | Computador antes → ahora | Celular antes → ahora |
+|---|---|---|
+| 1 · Cliente | 429 → 453 | 752 → 822 |
+| 1 · Cliente nuevo | 428 → 431 | 643 → 646 |
+| 2 · Evento | 471 → 530 | 1.079 → 1.284 |
+| 3 · Productos | 533 → 604 | 2.173 → 2.270 |
+| 4 · Envío | 627 → 625 | 2.845 → 2.840 |
+| 5 · Contrato | 622 → 620 | 2.088 → 2.088 |
+
+Todo sigue cabiendo en 1280×650. **El celular crece en los pasos 1 a 3**, a
+propósito: el marco y su título son el formato, no una cosa del computador.
+
+- **Ayuda**: las fotos de las misiones que muestran la ventana se rehicieron
+  (`ven-cotizar`, `ven-envio`, `pag-cobros`, `ger-cobros`); `ven-cotizar`
+  pide 920px de alto, porque la lista de clientes creció. Ningún texto de
+  ayuda describe los marcos.
+- **Lo que no se tocó, a propósito**: las ventanitas que se abren desde la
+  cotización (*¿La mandaste?*, *Corregir la ganada*, *Cancelar evento*, los
+  datos de la factura) son de una sola pregunta, sin secciones.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
 ## La lista de cotizaciones, por fecha del evento y con el año (2026-11-22)
 
