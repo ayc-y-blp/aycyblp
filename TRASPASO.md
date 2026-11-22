@@ -137,6 +137,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Después, **en el PR siguiente**: *Ganado por mes* pasó a *Ganado mes a mes · Todo el
   equipo* (o el vendedor o socio elegido) y sale solo mirando *Todo*; lo
   aprobó el cliente (*"dale con tu recomendación"*).
+- **PR #305, mergeado el 22-11-2026** con el *"mergea"* del cliente: la regla
+  *nada se mergea a producción sin preguntar* y **la bandeja de lo que revisa
+  pagos en dos renglones** (la pastilla del pago con su nota al lado; 247 →
+  176px en el computador). `verificar.sh` dio 15 de 15 después. Detalle en
+  `panel/CLAUDE.md`, "La bandeja de lo que revisa pagos, en dos renglones".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1068,7 +1073,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **Importado en producción el 22-11-2026**, después de la base en cero. Queda: (a) el cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
-| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA | Cliente |
+| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA; **aclarar el tema del taller de queso** (lo pidió el cliente el 22-11-2026; hoy figura como actividad adicional en *Actividades* y en los tres landings de empresa); pintacaritas y castillo inflable en *Productos* (¿+ IVA o IVA incluido?). Los dos últimos, también en la guía *Traspaso a producción* | Cliente |
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
 
 ---
