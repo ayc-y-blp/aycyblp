@@ -41,6 +41,7 @@ import AyudaCorta from './AyudaCorta';
 import { Pastilla } from './Pastilla';
 import MostrarDesactivados from './MostrarDesactivados';
 import AgregarVendedor from './AgregarVendedor';
+import ElegirPeriodo from './ElegirPeriodo';
 import CamposDocumento, { type CambioDocumento } from './CamposDocumento';
 import Dialogo from './Dialogo';
 import { avisar, copiarConAviso } from './AvisoFlotante';
@@ -755,19 +756,15 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
 
       {/* 2. Cuándo, una vez para toda la lista. */}
       <div className="flex w-full flex-wrap items-center gap-2">
-        <div className="flex gap-2" role="group" aria-label="Periodo">
-          {([['Mes', true, datos.hoy.slice(0, 7)], ['Semana', false, semanaDe(datos.hoy)]] as const).map(([rotulo, mes, p]) => (
-            <button key={rotulo} type="button" aria-pressed={esMes === mes} onClick={() => irA(p)}
-              className={`boton !min-h-[44px] !text-[15px] ${esMes === mes ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>{rotulo}</button>
-          ))}
-        </div>
-        <div className="flex min-w-[15rem] flex-1 items-center gap-2 rounded-xl border-2 border-oro/50 bg-oro/[0.06] p-1 sm:w-72 sm:flex-none">
-          <button type="button" aria-label="Periodo anterior" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-            onClick={() => irA(esMes ? moverMes(periodo, -1) : sumarDias(semanaDe(periodo), -7))}>◀</button>
-          <span className="min-w-0 flex-1 truncate text-center text-[17px] font-bold first-letter:uppercase">{tituloPeriodo}</span>
-          <button type="button" aria-label="Periodo siguiente" className="boton h-11 w-11 shrink-0 !p-0 text-[18px]"
-            onClick={() => irA(esMes ? moverMes(periodo, 1) : sumarDias(semanaDe(periodo), 7))}>▶</button>
-        </div>
+        {/* **El periodo en un marco** (2026-11-22): *Mes · Semana* y ◀ el mes ▶
+            juntos, la misma pieza de Cotizaciones → *Lista* y Estadísticas.
+            Antes los botones iban sueltos y el mes en otra caja. */}
+        <ElegirPeriodo
+          modos={[{ clave: 'mes', rotulo: 'Mes' }, { clave: 'semana', rotulo: 'Semana' }]}
+          modo={esMes ? 'mes' : 'semana'}
+          onModo={(m) => irA(m === 'mes' ? datos.hoy.slice(0, 7) : semanaDe(datos.hoy))}
+          titulo={tituloPeriodo}
+          onMover={(n) => irA(esMes ? moverMes(periodo, n) : sumarDias(semanaDe(periodo), 7 * n))} />
         {/* **En el computador el buscador va en esta fila**, al lado del
             periodo (2026-11-21, el computador más compacto: eran tres filas de
             controles). En el celular sigue en la suya, sobre la lista. Es el

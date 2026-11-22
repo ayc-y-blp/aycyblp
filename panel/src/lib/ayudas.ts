@@ -488,7 +488,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Arriba elige qué mirar: Vendedores o Socios comerciales. Ahí mismo '
       + 'está + Agregar vendedor (crea su cuenta) o + Agregar socio comercial, '
       + 'con su documento y su transferencia de una vez.',
-      'Elige mes o semana y muévete con las flechas: vale para toda la lista.',
+      'En el marco dorado elige mes o semana y muévete con las flechas: vale '
+      + 'para toda la lista.',
       'Cada persona es una tarjeta: cerrada dice cuánto le toca en el periodo '
       + 'y si está pagado. Busca por nombre si son muchas.',
       'Ábrela con el +: los azulejos dicen cuánto toca, cuánto se pagó y '

@@ -17,8 +17,9 @@
  * repetía lo que ya decían los botones. **En el celular** cada parte ocupa
  * una fila entera, con los botones parejos: sin huecos a la derecha.
  *
- * La usan la Lista de cotizaciones (`ListaCotizaciones`) y Estadísticas
- * (`Estadisticas`): un cambio llega a las dos.
+ * La usan la Lista de cotizaciones (`ListaCotizaciones`), Estadísticas
+ * (`Estadisticas`) y Vendedores (`ResumenVendedor`): un cambio llega a las
+ * tres.
  */
 import type { ReactNode } from 'react';
 

@@ -151,8 +151,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **PR #308, mergeado el 22-11-2026** con el *"mergea"* del cliente: **✕ Se
   cayó…**, dar por perdida una cotización con su motivo, desde cualquier paso,
   la lista o *Esperando respuesta*. Ver `panel/CLAUDE.md`.
-- **El periodo en un marco** (22-11-2026, en preview): en Cotizaciones →
-  *Lista* y en Estadísticas, el periodo, ◀ ▶ y por qué fecha van juntos en
+- **El periodo en un marco** (22-11-2026, en preview, PR #309): en
+  Cotizaciones → *Lista*, en Estadísticas y en Vendedores, el periodo, ◀ ▶ y por qué fecha van juntos en
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
   `panel/CLAUDE.md`, "El periodo en un marco".

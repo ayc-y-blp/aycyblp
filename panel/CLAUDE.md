@@ -163,7 +163,7 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
-  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista* y Estadísticas) |
+  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas y Vendedores) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -213,7 +213,7 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
-## El periodo en un marco: Cotizaciones → Lista y Estadísticas (2026-11-22)
+## El periodo en un marco: Cotizaciones → Lista, Estadísticas y Vendedores (2026-11-22)
 
 Lo pidió el cliente con dos fotos de Cotizaciones → *📋 Lista*: *"por
 defecto debería estar puesto mes… todos, otra opción, y semanal, otra opción,
@@ -242,8 +242,15 @@ Y la Lista partía en *Todo*.
   las flechas, con cuántos días son. En la vista *👥 Equipo* no hay *por qué
   fecha*: el marco lleva solo el periodo. *Todo · Visitas · Eventos* sube a la
   fila de *Volver* y *Reservas / Equipo*, a la derecha.
-- **Se fue *Mostrando: …***, en las dos pantallas: lo dicen el marco y los
-  botones elegidos.
+- **Vendedores también**, en el mismo PR (regla *un cambio de diseño se
+  lleva a sus parecidos*): tenía el mismo dibujo que la Lista antes del
+  cambio —de ahí se había copiado—, *Mes · Semana* sueltos y el mes con ◀ ▶
+  en otra caja. Ahora es la misma pieza, sin *por qué fecha*. Sus botones
+  bajan de 15 a 13px de letra y de 44 a 40px de alto, como en las otras dos.
+  **El Informe no se tocó**: elige el periodo con un desplegable y otro uso;
+  se le preguntó al cliente.
+- **Se fue *Mostrando: …***, en la Lista y en Estadísticas: lo dicen el marco
+  y los botones elegidos.
 - **`TarjetaNumero`, más compacta** (en las tres pantallas que la usan): 8px
   de relleno arriba y abajo (eran 12), el número a 22px (era 24) y el botón de
   40px (era 44). Ninguna letra baja de 13px.
@@ -257,8 +264,9 @@ Y la Lista partía en *Todo*.
 - **`npm run ventanas`**: la vista medida de la Lista pasó a ser *Todo* (la
   de *Mes* es la que abre), y se suma *Estadísticas → Personalizado*. Son 19
   pantallas.
-- **Ayuda**: el `?` de Cotizaciones y el de Estadísticas describen el marco.
-  Ninguna foto de las misiones muestra estas cabeceras.
+- **Ayuda**: el `?` de Cotizaciones, el de Estadísticas y el de Vendedores
+  describen el marco. Se rehicieron las fotos de Vendedores (`ven-resumen`,
+  `pag-vendedores`, `ger-vendedores`); ninguna otra muestra estas cabeceras.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
 ## *✕ Se cayó…*: dar por perdida una cotización en un toque (2026-11-22)
