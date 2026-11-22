@@ -37,6 +37,7 @@ export default function AvisoFijo({ clave, className = '', children, delServidor
   if (leido) return null;
   return (
     <div role="note"
+      data-fila-propia
       className={`flex items-start gap-2 rounded-xl border border-hueso/15 bg-hueso/[0.03] py-1.5 pl-3 pr-1.5 lg:max-w-[60rem] lg:py-1 ${className}`}>
       <div className="min-w-0 flex-1 py-2 text-[14px] leading-snug text-hueso/75 lg:py-1.5">{children}</div>
       <button type="button" onClick={() => void cerrar()}

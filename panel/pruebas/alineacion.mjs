@@ -138,3 +138,104 @@ export async function revisarTarjetasParejas(page) {
     return salida;
   });
 }
+
+/**
+ * **El espacio se usa bien** (2026-11-22, regla del cliente: *"hay mucho
+ * espacio libre… que lo anotas también como regla para que no te tengo que
+ * acordar todo el rato de aprovechar bien los espacios"*). Mira lo que se ve
+ * —la ventana abierta, o la página— y avisa de **dos filas seguidas que
+ * cabrían en una**: dos renglones bajos, uno debajo del otro, cuyo contenido
+ * sumado no llena el ancho de su caja. Es lo que deja media pantalla vacía a
+ * la derecha: un botón solo en su fila, una frase suelta bajo unos filtros,
+ * un rótulo encima de tres tarjetas chicas.
+ *
+ * Se usa en el computador (desde 1024px): en el celular las filas se apilan
+ * a propósito. No reemplaza al ojo —no sabe si dos cosas *deben* ir
+ * juntas—: lo que se decide dejar así se anota, con su porqué, en
+ * `ESPACIO_ACEPTADO` de `ventanas.mjs`.
+ */
+export async function revisarEspacio(page) {
+  return page.evaluate(() => {
+    const ALTO_FILA = 64;      // más alto que esto no es un renglón: es un bloque
+    const AIRE = 32;           // lo que hay que dejar entre las dos al juntarlas
+    const raiz = [...document.querySelectorAll('[role="dialog"]')].at(-1) ?? document.querySelector('main') ?? document.body;
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width > 1 && r.height > 1 && s.visibility !== 'hidden' && s.display !== 'none'
+        && s.position !== 'absolute' && s.position !== 'fixed' && !el.classList.contains('sr-only');
+    };
+    // Hasta dónde llega de verdad lo que hay en una fila: sus textos y sus
+    // controles, no la caja, que casi siempre mide todo el ancho.
+    const extension = (el) => {
+      const tramos = [];
+      const suma = (r) => { if (r.width > 0 && r.height > 0) tramos.push([r.left, r.right]); };
+      const camina = (n) => {
+        if (n.nodeType === 3) {
+          if (!n.textContent.trim()) return;
+          const rango = document.createRange(); rango.selectNodeContents(n);
+          for (const r of rango.getClientRects()) suma(r);
+          return;
+        }
+        if (n.nodeType !== 1) return;
+        const s = getComputedStyle(n);
+        if (s.display === 'none' || s.visibility === 'hidden') return;
+        if (/^(BUTTON|INPUT|SELECT|TEXTAREA|IMG|SVG|A)$/i.test(n.tagName) || n.getAttribute('role') === 'img') return suma(n.getBoundingClientRect());
+        // Una caja con borde o con fondo ocupa su ancho entero, esté llena o no.
+        if (parseFloat(s.borderTopWidth) > 0 || parseFloat(s.borderBottomWidth) > 0) return suma(n.getBoundingClientRect());
+        for (const h of n.childNodes) camina(h);
+      };
+      camina(el);
+      if (!tramos.length) return null;
+      // Se suman los tramos ocupados: unos filtros a la izquierda y otros a la
+      // derecha, con el centro vacío, ocupan lo que miden y no toda la fila.
+      tramos.sort((x, y) => x[0] - y[0]);
+      let ancho = 0, hasta = -Infinity;
+      for (const [i, d] of tramos) { if (d > hasta) { ancho += d - Math.max(i, hasta); hasta = d; } }
+      return { ancho };
+    };
+    const texto = (el) => (el.innerText || el.getAttribute('aria-label') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 38);
+
+    const propia = (el) => el.matches('[data-fila-propia]') || !!el.querySelector('[data-fila-propia]');
+    const titulo = (el) => /^H[1-4]$/.test(el.tagName) || !!el.querySelector('h1, h2, h3, h4');
+    // El `?` chico no cuenta: acompaña a un nombre, no es la acción de la fila.
+    const control = (el) => [el, ...el.querySelectorAll('button, input, select, textarea, a')]
+      .some((x) => /^(BUTTON|INPUT|SELECT|TEXTAREA|A)$/.test(x.tagName) && x.innerText?.trim() !== '?' && x.type !== 'hidden' && x.offsetParent);
+    const hallazgos = [];
+    const padres = [raiz, ...raiz.querySelectorAll('*')];
+    for (const padre of padres) {
+      if (/^(UL|OL|TABLE|TBODY|THEAD|TR|SELECT|BUTTON|A|P|LABEL|SVG)$/i.test(padre.tagName)) continue;
+      if (padre.children.length < 2 || !visible(padre) && padre !== raiz) continue;
+      const sp = getComputedStyle(padre);
+      const ancho = padre.clientWidth - parseFloat(sp.paddingLeft) - parseFloat(sp.paddingRight);
+      if (ancho < 560) continue;                                      // una columna angosta se apila a propósito
+      // Lo que va dentro de un renglón de texto (una negrita, un enlace) no es una fila.
+      const hijos = [...padre.children].filter((h) => visible(h) && getComputedStyle(h).display !== 'inline');
+      for (let i = 0; i + 1 < hijos.length; i++) {
+        const a = hijos[i]; let b = hijos[i + 1];
+        if (hijos[i + 1].getBoundingClientRect().top < a.getBoundingClientRect().bottom - 1) continue;   // ya van lado a lado
+        // Una fila baja seguida de un bloque: se compara con la primera fila del bloque.
+        while (b.getBoundingClientRect().height > ALTO_FILA) {
+          const primero = [...b.children].find((h) => visible(h) && getComputedStyle(h).display !== 'inline');
+          if (!primero || /^(UL|OL|TABLE)$/.test(b.tagName) || getComputedStyle(b).display.includes('grid')) break;
+          if ([...b.children].filter(visible).some((h) => h !== primero && h.getBoundingClientRect().top < primero.getBoundingClientRect().bottom - 1)) break;
+          b = primero;
+        }
+        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+        if (ra.height > ALTO_FILA || rb.height > ALTO_FILA) continue;
+        if (a.tagName === b.tagName && a.className === b.className) continue;   // filas de una lista
+        // Lo que va en su fila a propósito: un título de sección abre algo
+        // nuevo, y un aviso que se cierra (`data-fila-propia`) no es parte de la fila.
+        if (propia(a) || propia(b) || titulo(b)) continue;
+        // Un nombre con su detalle debajo es una ficha, no dos filas: solo
+        // cuenta si alguna de las dos trae algo que se aprieta o se escribe.
+        if (!control(a) && !control(b)) continue;
+        const ea = extension(a), eb = extension(b);
+        if (!ea || !eb) continue;
+        if (ea.ancho + eb.ancho + AIRE > ancho) continue;
+        hallazgos.push(`dos filas que cabrían en una (${Math.round(ea.ancho)} + ${Math.round(eb.ancho)} de ${Math.round(ancho)}px): "${texto(a)}" y debajo "${texto(b)}"`);
+      }
+    }
+    return hallazgos;
+  });
+}

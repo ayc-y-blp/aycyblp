@@ -157,14 +157,20 @@ export default function ImportarCRM() {
 
   return (
     <div className="mt-6 border-t border-hueso/10 pt-4">
+      {/* En el computador, el botón va a la derecha de su explicación
+          (2026-11-22, la regla del espacio). */}
+      <div className="lg:flex lg:items-center lg:gap-4">
+        <div className="min-w-0">
       <p className="text-[16px] font-bold">📥 Importar del CRM</p>
       <p className="mt-1 max-w-2xl text-[14px] text-hueso/75">
         Trae las fichas de los clientes y lo que viene a futuro —candidatos, cotizados y ganados—, y
         las reservas del sitio viejo, desde el Excel para importar. Antes de escribir nada muestra qué entra.
       </p>
-      <button type="button" onClick={() => { setAbierta(true); void mirar(); }} className="boton mt-3 min-h-[44px]">
+        </div>
+      <button type="button" onClick={() => { setAbierta(true); void mirar(); }} className="boton mt-3 min-h-[44px] shrink-0 lg:mt-0">
         📥 Ver qué entra…
       </button>
+      </div>
 
       {abierta && (
         <Dialogo titulo="Importar del CRM" ancho="max-w-2xl lg:max-w-6xl" onCerrar={() => setAbierta(false)}

@@ -12,6 +12,8 @@ const comoSheets = (v) => { const t = String(v); return t.startsWith("'") ? t.sl
 
 export const lecturas = globalThis.__glecturas ??= [];
 export const escrituras = globalThis.__gescrituras ??= [];
+/** Lo último que se mandó a escribir, tal cual: con el `'` de "esto es texto" si lo llevaba. */
+export const mandado = globalThis.__gmandado ??= [];
 const TODAS = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas',
   'Clientes', 'Cobros', 'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades',
   'Colaboradores', 'Pagos', 'Boletas', 'Usuarios', 'Bitácora', 'Vendedores', 'Ajustes sueltos'];
@@ -49,6 +51,7 @@ const sheetsApi = {
       },
       append: async ({ range, requestBody }) => {
         escrituras.push('append:' + nombre(range));
+        mandado.length = 0; mandado.push(...requestBody.values);
         hoja(range).push(...requestBody.values.map((f) => f.map(comoSheets)));
         return { data: {} };
       },

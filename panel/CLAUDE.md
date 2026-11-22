@@ -49,6 +49,20 @@ revisan antes de cada cambio en esta carpeta.
   la fila. Antes de cerrar un cambio en una tarjeta se mira una fila con
   tarjetas llenas y vacías juntas. En el calendario lo mide
   `revisarTarjetasParejas()`, dentro de `npm run ventanas`.
+- **El espacio se usa bien: lo que cabe en una fila no se apila** (regla del
+  cliente, 2026-11-22: *"hay mucho espacio libre… que lo anotas también como
+  regla para que no te tengo que acordar todo el rato de aprovechar bien los
+  espacios, y te pedí ya varias veces que lo revisas en todo el sitio"*). En
+  el computador, un botón solo en su fila, una frase suelta bajo unos
+  filtros o un rótulo encima de dos tarjetas chicas van **en la fila de al
+  lado**, no debajo con media pantalla vacía a la derecha. **Lo mide una
+  prueba, no la memoria**: `revisarEspacio()` pasa por todas las pantallas a
+  1280px dentro de `npm run ventanas` y **falla** con *dos filas que cabrían
+  en una*. Lo que se deja así a propósito se anota con su porqué en
+  `ESPACIO_ACEPTADO`, o lleva `data-fila-propia` (un aviso que se cierra).
+  **Una pantalla o una vista nueva se agrega a `PANTALLAS` de
+  `pruebas/ventanas.mjs` en el mismo PR.** El celular no cambia: ahí las
+  filas se apilan a propósito.
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
@@ -192,6 +206,52 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El espacio se usa bien: una prueba que mira todas las pantallas (2026-11-22)
+
+Lo pidió el cliente con una foto de Cotizaciones → *Lista*: *"aquí podemos
+ganar mucho espacio… hay mucho espacio libre y, como ya lo he pedido, que lo
+anotas también como regla para que no te tengo que acordar todo el rato… te
+pedí ya varias veces que lo revisas en todo el sitio y me reencuentro siempre
+con otros lugares donde no se aplicó"*. La regla existía como frase; ahora es
+una prueba (regla fija, arriba).
+
+**`revisarEspacio(page)`** (`pruebas/alineacion.mjs`) busca **dos filas
+seguidas que cabrían en una**: dos renglones bajos (64px o menos), uno debajo
+del otro, cuyo contenido sumado —los textos y los controles, no la caja—
+entra en el ancho de su contenedor con 32px de aire.
+
+- **Qué no marca, a propósito**: un nombre con su detalle debajo (ninguna de
+  las dos trae algo que se aprieta), las filas de una lista, un título de
+  sección (abre algo nuevo), una columna de menos de 560px y lo que lleva
+  `data-fila-propia` —hoy, `AvisoFijo`, que se cierra con su ✕—.
+- **Una fila seguida de un bloque** se compara con la primera fila del
+  bloque: así encontró *← Volver al calendario* solo sobre los filtros.
+- **Corre al final de `npm run ventanas`**, sobre las 18 pantallas y vistas
+  de `PANTALLAS`, a 1280×650. **No se pasa por las ventanas**: adentro de un
+  formulario los campos van en su rejilla a propósito, y a una ventana ya se
+  le exige caber en la pantalla.
+- **No reemplaza al ojo**: no sabe si dos cosas deben ir juntas, ni ve un
+  hueco dentro de una tarjeta. Eso lo sigue mirando quien cierra el cambio.
+
+**Lo que encontró la primera pasada, y cómo quedó** (todo con `lg:`):
+
+| Pantalla | Qué había | Ahora | Largo a 1280×650 |
+|---|---|---|---|
+| Cotizaciones → Lista | *← Volver al calendario* en su fila; *Todo el equipo, todas las fechas* en la suya; *Ganado por mes* encima de sus tarjetas; el buscador bajo los estados | *Volver* al lado de *+ Cotizar*; la frase en la fila de *Por vendedor / Por socio*; el rótulo a la izquierda de sus tarjetas; el buscador a la derecha de los estados | 1.090 → 924 |
+| Cotizaciones → Lista, por mes | lo mismo | lo mismo | 978 → 812 |
+| Equipo | *Trabajadores* encima del buscador | en una fila | 1.328 → 1.296 |
+| Turnos | *Hay N días por cerrar* encima de sus días | en una fila | 1.505 → 1.469 |
+| Configuración → Mantención | *Importar del CRM* y *Dejar la base en cero*: título, explicación y botón apilados | el botón a la derecha de su explicación | 2.333 → 2.221 |
+| Cuentas | *Desactivar o quitar una cuenta* bajo los botones | en la fila de *Agregar cuenta* | 1.362 → 1.317 |
+
+- *Volver al calendario* se dibuja dos veces en el HTML (arriba en el
+  computador, sobre la lista en el celular): en una prueba se pide el que se
+  ve.
+- **El celular mide lo mismo** en las 18 pantallas, comparado antes y
+  después a 393px.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe dónde van estas filas, y las fotos se sacan a 400px.
 
 ## Importar del CRM y del sitio viejo (2026-11-21)
 

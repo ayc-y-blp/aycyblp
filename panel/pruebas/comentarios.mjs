@@ -9,6 +9,7 @@
 const API = new URL('../src/app/api/', import.meta.url);
 const lecturas = (globalThis.__glecturas ??= []);
 const escrituras = (globalThis.__gescrituras ??= []);
+const mandado = (globalThis.__gmandado ??= []);
 const store = (globalThis.__gstore ??= new Map());
 let fallos = 0;
 const ok = (c, txt) => { console.log(`  ${c ? 'ok   ' : 'FALLA'}  ${txt}`); if (!c) fallos++; };
@@ -34,7 +35,8 @@ ok(escrituras.filter((e) => e === 'append:Comentarios').length === 1, 'escribe u
 ok(fila.length === 11 && fila[1] === 'Administrador' && fila[2] === 'desarrollo' && fila[3] === '🧩 Me falta'
    && fila[4] === 'Recepción' && fila[7] === 'Nuevo',
    'nombre y rol salen de la sesión, no del navegador; nace en Nuevo');
-ok(!String(fila[5]).startsWith('='), 'un texto que parece fórmula no entra como fórmula');
+// El Google falso guarda como Sheets: sin el `'`. Lo que importa es que se mandó con él.
+ok(String(mandado[0]?.[5]).startsWith("'="), 'un texto que parece fórmula no entra como fórmula');
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: los comentarios llegan a su planilla.');
 process.exit(fallos ? 1 : 0);

@@ -97,6 +97,9 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
     rango && `${titulo}, por ${porFecha === 'evento' ? 'fecha del evento' : 'fecha en que se cotizó'}`]
     .filter(Boolean).join(' · ');
 
+  const queSeMira = mostrando ? <>Mostrando: <b className="text-hueso">{mostrando}</b></>
+    : equipo ? 'Todo el equipo, todas las fechas.' : 'Tus cotizaciones, todas las fechas.';
+
   return (
     <div>
       {/* 1. De quién y cuándo. */}
@@ -119,6 +122,9 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
             )}
           </div>
         )}
+        {/* En el computador, lo que se está mirando va en esta misma fila
+            (2026-11-22, la regla del espacio): tenía su renglón aparte. */}
+        <p className="hidden min-w-0 text-[14px] text-hueso/70 lg:block">{queSeMira}</p>
         <span className="flex-1" />
         <div className="flex flex-wrap gap-2" role="group" aria-label="Periodo">
           {([['Todo', ''], ['Mes', ctx.hoy.slice(0, 7)], ['Semana', semanaDe(ctx.hoy)]] as const).map(([rotulo, p]) => {
@@ -169,10 +175,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
         </div>
       )}
 
-      <p className="mt-2 text-[14px] text-hueso/70">
-        {mostrando ? <>Mostrando: <b className="text-hueso">{mostrando}</b></>
-          : equipo ? 'Todo el equipo, todas las fechas.' : 'Tus cotizaciones, todas las fechas.'}
-      </p>
+      <p className="mt-2 text-[14px] text-hueso/70 lg:hidden">{queSeMira}</p>
 
       {/* 2. Las tarjetas. */}
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
@@ -201,11 +204,11 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
 
       {/* 3. Ganado por mes. */}
       {meses.length > 0 && (
-        <div className="mt-3">
-          <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">
+        <div className="mt-3 lg:flex lg:items-center lg:gap-3">
+          <p className="flex shrink-0 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">
             Ganado por mes<AyudaCorta tema="listaPorMes" />
           </p>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+          <div className="mt-1.5 flex flex-wrap gap-2 lg:mt-0">
             {meses.map((m) => (
               <div key={m.mes} className="rounded-lg border border-verde/40 bg-panel px-3 py-1.5">
                 <p className="text-[13px] font-semibold text-hueso/70 first-letter:uppercase">{mesEnPalabras(m.mes)}</p>
@@ -218,7 +221,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
       )}
 
       {/* 4. Estado, el buscador y la lista. */}
-      <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Estado">
+      <div className="mt-4 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Estado">
         {ESTADOS.map(([k, t]) => (
           <button key={k} type="button" onClick={() => setFiltro(k)} aria-pressed={filtro === k}
             className={`boton min-h-[44px] ${filtro === k ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
@@ -227,7 +231,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
         ))}
       </div>
       {DE_LAS_TARJETAS[filtro] && (
-        <p className="mt-2 flex flex-wrap items-center gap-2 text-[14px]">
+        <p className="mt-2 flex flex-wrap items-center gap-2 text-[14px] lg:order-3 lg:mt-0 lg:basis-full">
           Mostrando {DE_LAS_TARJETAS[filtro]} ({cuantas[filtro]}).
           <button type="button" className="boton min-h-[40px]" onClick={() => setFiltro('enCarrera')}>Ver todo lo en carrera</button>
         </p>
@@ -235,7 +239,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, socios, fi
       <input type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
         placeholder="Buscar por cliente, N°, tipo de evento o vendedor" aria-label="Buscar cotización"
         className="mt-2 min-h-[44px] w-full rounded border border-hueso/20 bg-tinta px-3 text-[15px]
-                   focus:border-oro focus:outline-none sm:max-w-md" />
+                   focus:border-oro focus:outline-none sm:max-w-md lg:order-2 lg:ml-auto lg:mt-0 lg:w-80 lg:flex-none" />
+      </div>
 
       <div className="mt-3">
         {lista.length === 0 ? (
