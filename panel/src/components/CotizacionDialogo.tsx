@@ -1275,6 +1275,26 @@ export default function CotizacionDialogo({
     </>
   );
 
+  /**
+   * **✕ Se cayó…, en el pie de cada paso** (2026-11-22, lo pidió el cliente:
+   * *"el vendedor responsable de su venta debería tener en cada página del
+   * pop-up de cotizaciones el botón se cayó… da igual en qué fase está"*, y
+   * después, al verlo arriba a la derecha: *"prefiero que se cayó esté al
+   * lado abajo de donde sale ir al próximo paso. Como botón clave"*). Va al
+   * lado del dorado, del mismo alto, con borde rojo. Abre la ventanita que
+   * pide el motivo y confirma (`SeCayo`). Solo en una cotización en carrera:
+   * una ganada se cancela, con su propio botón (*Cancelar evento*). Lo ve
+   * quien puede tocarla: el vendedor la suya; pagos, la gerencia y el
+   * administrador, todas.
+   */
+  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva }) ? (
+    <button type="button" disabled={guardando} onClick={() => setCayendo(true)}
+      className="boton min-h-[52px] !border-2 !border-rojo-fuerte/60 !px-4 !text-[15px] !font-bold text-rojo-texto
+                 hover:!border-rojo-fuerte hover:!text-rojo-texto lg:min-h-[44px]">
+      ✕ Se cayó…
+    </button>
+  ) : null;
+
   /** Lo mismo, del paso 5: corregir la ganada y cancelar el evento. */
   const secundariosContrato = (
     <>
@@ -1483,25 +1503,6 @@ export default function CotizacionDialogo({
                 onClick={() => void elegirAlternativa(p.id, true)}>Volver a ofrecer todas</button>
             </p>
           )}
-        </div>
-      )}
-
-      {/* **Se cayó…, en todos los pasos** (2026-11-22, lo pidió el cliente:
-          *"el vendedor responsable de su venta debería tener en cada página
-          del pop-up de cotizaciones el botón se cayó… da igual en qué fase
-          está"*). Va en la fila de los pasos, que está en los cinco. Abre la
-          ventanita que pide el motivo y confirma (`SeCayo`). **Una ganada se
-          cancela**: ahí el mismo botón abre *Cancelar el evento*, que libera
-          el cupo y calcula la devolución. Lo ve quien puede tocarla: el
-          vendedor la suya; pagos, la gerencia y el administrador, todas. */}
-      {p && puedeEditar && !cancelada && (ganada || enCarrera({ estado, idReserva: p.idReserva })) && (
-        <div className="mb-4 flex justify-end lg:mb-0 lg:shrink-0">
-          <button type="button" disabled={guardando}
-            onClick={() => (ganada ? setCancelando(true) : setCayendo(true))}
-            className="boton min-h-[44px] !border-2 !border-rojo-fuerte/50 !text-[14px] !font-semibold text-rojo-texto
-                       hover:!border-rojo-fuerte hover:!text-rojo-texto">
-            ✕ Se cayó…
-          </button>
         </div>
       )}
 
@@ -2914,6 +2915,7 @@ export default function CotizacionDialogo({
                 {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
               </> : null}
+          antesDeSeguir={botonSeCayo}
           onVolver={() => void irA(paso - 1)} onSeguir={() => void irA(paso + 1)} />
       )}
       {paso === 5 && (
@@ -2925,6 +2927,7 @@ export default function CotizacionDialogo({
             {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
             {secundariosContrato}
           </div>
+          {botonSeCayo && <><span className="flex-1" />{botonSeCayo}</>}
         </div>
       )}
 
@@ -3133,10 +3136,16 @@ export default function CotizacionDialogo({
  *   pasar de Evento a Productos guarda (`irA()`), y eso se dice antes.
  * - **A la izquierda, volver**, delineado.
  */
-function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, onVolver, onSeguir }: {
+function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, antesDeSeguir, onVolver, onSeguir }: {
   paso: number; guardando: boolean; puede: boolean; porQueNo: string; aviso: string;
   /** Lo que va en el pie **solo en el computador**, entre *volver* y *seguir*. */
   medio?: React.ReactNode;
+  /**
+   * Un botón clave al lado del dorado, en el computador y en el celular:
+   * *✕ Se cayó…* (2026-11-22). En el celular comparte la fila con *volver*
+   * y el dorado baja a todo el ancho, para no dejar un hueco.
+   */
+  antesDeSeguir?: React.ReactNode;
   onVolver: () => void; onSeguir: () => void;
 }) {
   return (
@@ -3155,8 +3164,10 @@ function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, onVolver, o
             {puede ? aviso : porQueNo}
           </span>
         )}
+        {antesDeSeguir}
         <button type="button" disabled={guardando || !puede} onClick={onSeguir}
-          className="boton boton-relleno min-h-[52px] px-5 text-[16px] disabled:opacity-50 lg:min-h-[44px]">
+          className={`boton boton-relleno min-h-[52px] px-5 text-[16px] disabled:opacity-50 lg:min-h-[44px] ${
+            antesDeSeguir ? 'max-lg:basis-full' : ''}`}>
           {guardando ? 'Guardando…' : <>Ir al paso {paso + 1}: {PASOS[paso]} →</>}
         </button>
       </div>

@@ -114,7 +114,7 @@ const diaDe = async (ruta, dia) => {
 };
 const lineaDelDia = () => clic(ventana().locator('button[aria-expanded="false"]'));
 const cotizacion = async (paso) => {
-  await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByText('Andrés Pino'));
+  await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByRole('button', { name: 'Abrir la cotización de Andrés Pino' }));
   await p.waitForTimeout(1400);
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
@@ -196,7 +196,7 @@ export const ESCENAS = {
   // no estaban medidas. Solo se abren; ninguna guarda nada. *¿La mandaste?*
   // sale la primera vez que se copia el link de una que no se ha mandado.
   'v-cotizar-la-mandaste': async () => {
-    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByText('Marisol Cáceres'));
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
   },
@@ -204,17 +204,18 @@ export const ESCENAS = {
   // la fila de la lista, que es la misma que se abre en la cotización.
   'v-se-cayo': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/));
-    await clic(p.getByRole('button', { name: /Se cayó la cotización de Marisol Cáceres/ }));
+    // Se dibuja dos veces (computador y celular): se pide el que se ve.
+    await clic(p.locator('button:visible[aria-label="Se cayó la cotización de Marisol Cáceres"]'));
   },
   'v-cotizar-corregir-ganada': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
-    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
     await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Corregir la ganada' }));
   },
   'v-cotizar-cancelar-evento': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
-    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
     // *Cancelar evento* va en el pie del paso 5, Contrato.
     await clic(ventana().getByRole('button', { name: /Contrato/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Cancelar evento' }));
@@ -224,7 +225,7 @@ export const ESCENAS = {
   // lista de lo que cambia, con su casilla. No guarda nada: solo la abre.
   'v-cotizar-ganada-dia-cerrado': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
-    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
     await clic(ventana().getByRole('button', { name: /Evento/ }));
     await ventana().locator('input[type=date]').fill('2026-11-07'); await p.waitForTimeout(400);
     await clic(ventana().getByRole('button', { name: /Productos/ }));

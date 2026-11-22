@@ -221,12 +221,28 @@ fácil… para que desaparezca de la lista"*. Y después: *"esta función tiene 
 estar para el encargado de pagos y la gerencia también. Siempre comprobando
 que es correcto"*.
 
-- **Dónde está**:
-  - en la ventana de cotizar, en la fila de los pasos, así que se ve en los
-    cinco;
-  - al lado de cada fila de la lista, fuera de la fila, que ya es un botón;
+- **Dónde está** (la primera versión lo ponía arriba a la derecha en la
+  ventana y afuera de la fila en la lista; el cliente lo corrigió con las
+  capturas: *"prefiero que se cayó esté al lado abajo de donde sale ir al
+  próximo paso. Como botón clave… dentro del panel como un botón
+  presente"*):
+  - **en la ventana de cotizar, en el pie de cada paso, al lado del dorado**
+    (*Ir al paso…*), del mismo alto y con borde rojo (`botonSeCayo` y
+    `antesDeSeguir` de `PieDePaso`). En el paso 5, que no tiene dorado, al
+    final del pie. En el celular comparte la fila con *← volver* y el dorado
+    baja a todo el ancho, para no dejar un hueco;
+  - **dentro de cada tarjeta de la lista**, antes de los valores, que siguen
+    en el borde derecho. En el celular, al final de la línea del vendedor, a
+    la derecha. Se dibuja dos veces en el HTML (una para cada pantalla): en
+    una prueba se pide el que se ve;
   - en *Esperando respuesta*, donde reemplaza a *Se perdió*, que tenía sus
     propios botones de motivo: era el mismo dato con otra forma.
+- **La fila de la lista ya no es un botón entero**: un botón no puede ir
+  dentro de otro. Es una caja con un botón invisible que la cubre (`abrir`,
+  *Abrir la cotización de …*) y *Se cayó…* encima (`z-10`). Apretar el nombre
+  sigue abriendo la cotización. **En una prueba se aprieta ese botón por su
+  nombre**, no el texto del cliente: el texto queda debajo y Playwright dice
+  que otro elemento recibe el clic.
 - **La ventanita `SeCayo`**: los motivos de siempre (`MOTIVOS_PERDIDA`) o uno
   escrito, y **no deja seguir sin motivo**. Antes del botón dice qué pasa:
   *Pasa a Perdidas: sale de la lista y del calendario. Se puede volver a
@@ -253,7 +269,7 @@ que es correcto"*.
   autoguardado, y al terminar la ventana se cierra y la lista se recarga.
 - **Medidas**: la ventanita, 364px a 1280×650 (escena `v-se-cayo`; son 50).
   Los pasos de cotizar no crecen: el paso 4 bajó de 625 a 612px al salir su
-  botón. En el celular el botón va en su línea, bajo los pasos.
+  botón. Una tarjeta de la lista con el botón mide 86px en el computador.
 - **Ayuda**: el `?` de Cotizaciones, *En qué va* y *Esperando respuesta*
   dicen *✕ Se cayó…*. Fotos rehechas: `ven-cotizar`, `ven-envio`,
   `pag-cobros` y `ger-cobros`.
