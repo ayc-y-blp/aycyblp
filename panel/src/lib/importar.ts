@@ -225,7 +225,8 @@ function filasPorNombre<T extends Record<string, string>>(filas: string[][], col
  * **A qué cuenta del panel corresponde un vendedor del CRM.** Primero el
  * nombre o el usuario tal cual; si no, que uno empiece con el otro por
  * palabras enteras —*Carla* con *Carla Rojas*—, y solo si calza
- * **una** cuenta: con dos Carla no se adivina. Vacío es *sin cuenta*, y
+ * **una** cuenta: con dos Carla no se adivina. Y al final, el apodo: *Caro*
+ * con *Carolina Rojas*. Vacío es *sin cuenta*, y
  * así se dice en la vista previa: esa ficha la ven gerencia y administración.
  */
 export function cuentaDelVendedor(nombre: string, usuarios: Pick<Usuario, 'nombre' | 'usuario' | 'activo'>[]): string {
@@ -240,7 +241,25 @@ export function cuentaDelVendedor(nombre: string, usuarios: Pick<Usuario, 'nombr
     const un = normalizar(u.nombre);
     return !!un && (empieza(un, n) || empieza(n, un));
   });
-  return cerca.length === 1 ? cerca[0].usuario : '';
+  if (cerca.length) return cerca.length === 1 ? cerca[0].usuario : '';
+  // El apodo (2026-11-22, lo pidió el cliente: en el panel una cuenta se
+  // llama por su apodo y en el CRM va el nombre completo). Cada palabra de
+  // la cuenta es el comienzo de una palabra del nombre del CRM, en su orden:
+  // *Caro* con *Carolina Rojas*, *Caro Rojas* con *Carolina Rojas*. Tres
+  // letras a lo menos, y solo si calza una cuenta.
+  const palabras = n.split(' ');
+  const apodo = vivos.filter((u) => {
+    const suyas = normalizar(u.nombre).split(' ').filter(Boolean);
+    if (!suyas.length || suyas.some((x) => x.length < 3)) return false;
+    let desde = 0;
+    for (const x of suyas) {
+      const k = palabras.findIndex((w, i) => i >= desde && w.startsWith(x));
+      if (k < 0) return false;
+      desde = k + 1;
+    }
+    return true;
+  });
+  return apodo.length === 1 ? apodo[0].usuario : '';
 }
 
 /**

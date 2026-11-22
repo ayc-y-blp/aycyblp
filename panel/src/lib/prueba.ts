@@ -5580,6 +5580,18 @@ console.log('\nImportar del CRM');
      'el vendedor calza por su nombre completo, o por su primer nombre si es de una sola cuenta');
   ok(I.cuentaDelVendedor('Bruno', usuarios) === '' && I.cuentaDelVendedor('Elsa Mora', usuarios) === '' && I.cuentaDelVendedor('', usuarios) === '',
      'con dos Bruno no se adivina; una cuenta apagada no calza; sin nombre, sin cuenta');
+  {
+    const conApodos = [...usuarios,
+      { nombre: 'Nacho', usuario: 'nacho', activo: true },
+      { nombre: 'Pame Lagos', usuario: 'pame', activo: true },
+      { nombre: 'Pa', usuario: 'pa', activo: true }];
+    ok(I.cuentaDelVendedor('Ignacio Lagos', conApodos) === '' && I.cuentaDelVendedor('Nachomar Vera', conApodos) === 'nacho',
+       'un apodo calza solo si es el comienzo de una palabra del nombre');
+    ok(I.cuentaDelVendedor('Pamela Lagos', conApodos) === 'pame' && I.cuentaDelVendedor('Pamela Vera', conApodos) === '',
+       'el apodo con apellido calza con el nombre completo, y no con otro apellido; dos letras no bastan');
+    ok(I.cuentaDelVendedor('Brunilda Díaz', conApodos) === '',
+       'un nombre parecido a dos cuentas no calza por apodo con ninguna que no empiece igual');
+  }
   ok(JSON.stringify(I.productosDeLaCelda('Lo Pirque | 80 | 50.000 | + IVA\n\nArriendo del recinto | 1 | $1.500.000\n| 3 | 2'))
        === JSON.stringify([{ concepto: 'Lo Pirque', cantidad: 80, precio: 50000, ivaIncluido: false },
                            { concepto: 'Arriendo del recinto', cantidad: 1, precio: 1500000, ivaIncluido: true }]),

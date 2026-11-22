@@ -351,8 +351,11 @@ Muestra, sin datos de clientes —solo cuentas, días y números de fila—:
 - **📥 Entra**: fichas, candidatos, borradores, ganadas y reservas; cuántas
   reservas entran pagadas, y lo que ya estaba y no se duplica.
 - **A nombre de quién queda**: qué cuenta del panel calzó con cada vendedor
-  del CRM (`cuentaDelVendedor()`: el nombre o el usuario exacto, o el primer
-  nombre si es de una sola cuenta). *Sin cuenta* queda sin dueño: lo ven la
+  del CRM (`cuentaDelVendedor()`: el nombre o el usuario exacto, el primer
+  nombre si es de una sola cuenta, o **el apodo** —2026-11-22, lo pidió el
+  cliente: la cuenta se llama *Caro* y el CRM dice *Carolina Rojas*—: cada
+  palabra de la cuenta es el comienzo de una del nombre, con tres letras a
+  lo menos y solo si calza una cuenta). *Sin cuenta* queda sin dueño: lo ven la
   gerencia y la administración.
 - **Días que toman cupo**: uno por renglón, con su gente, si se abre privado
   y si queda sobre el cupo. Las reservas y las ganadas del mismo día, juntas.
