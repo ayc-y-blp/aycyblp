@@ -29,6 +29,7 @@ import { DE_PAGOS, type Pendiente } from '@/lib/aprobaciones';
 import { EstadoDelPago } from './PastillaPago';
 import { enPalabras, hoy } from '@/lib/fechas';
 import { avisar } from './AvisoFlotante';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 
 const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
@@ -135,7 +136,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
   };
 
   return (
-    <section aria-label="Por aprobar" className="mb-4 rounded-xl border-2 border-ambar-fuerte/60 bg-ambar/[0.08] p-2 sm:p-3 lg:px-3 lg:py-2">
+    <section aria-label="Por aprobar" className={`mb-4 ${marcoGrupo('ambar')} p-2 sm:p-3 lg:px-3 lg:py-2`}>
       {/* **En filas, no en tarjetas** (2026-11-13, lo pidió el cliente: dos
           tarjetas grandes medían 420px y empujaban el calendario). Cada pedido
           es una línea con su botón principal a la vista; lo que necesita más
@@ -144,8 +145,12 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
           cliente con una foto: *"aprovechar el espacio de la mejor forma…
           para achicar esta sección completa sin perder información"*, y
           eligió cómo: *"el subtítulo sube a la línea de pagado"*): la nota
-          del pago va al lado de su pastilla, bajo la frase, con menos aire. Antes eran tres renglones por aviso. */}
-      <h2 className="flex flex-wrap items-baseline gap-x-2 px-1 text-[15px] font-bold text-ambar-texto">
+          del pago va al lado de su pastilla, bajo la frase, con menos aire.
+          Antes eran tres renglones por aviso.
+          **Y es un grupo** (2026-11-22, regla *el marco de la tarjeta manda
+          sobre lo de adentro*): el marco de 3px en ámbar con su título en
+          negrita, y cada aviso una tarjeta de adentro con 2px. */}
+      <h2 className={`flex flex-wrap items-baseline gap-x-2 px-1 ${TITULO_GRUPO} text-ambar-texto`}>
         <span aria-hidden>🔔</span>
         {(() => {
           // Lo de pagos se revisa, no se aprueba: el título dice lo que hay.
@@ -215,7 +220,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
             </div>
           );
           return (
-            <li key={p.clave} className={`rounded-lg border bg-panel px-3 py-1.5 lg:py-1 ${abierto ? 'border-oro/60' : 'border-hueso/15'}`}>
+            <li key={p.clave} className={`rounded-xl border-2 bg-panel px-3 py-1.5 shadow-sm lg:py-1 ${abierto ? 'border-oro' : 'border-hueso/35'}`}>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <div className="min-w-[14rem] flex-1">
                   <p className="text-[15px] leading-snug">{frase(p)}</p>
@@ -246,7 +251,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                     </button>
                   ) : p.tipo !== 'sobrecupo' && (
                     <button type="button" aria-expanded={abierto} aria-label={abierto ? 'Cerrar el detalle' : 'Ver el detalle o rechazar'}
-                      className="boton !min-h-[44px] !text-[15px]"
+                      className="boton !min-h-[44px] !border-2 !text-[15px]"
                       onClick={() => { setDetalle(abierto ? '' : p.clave); setRechazando(''); setMotivo(''); }}>
                       {abierto ? '▴' : 'Más ▾'}
                     </button>

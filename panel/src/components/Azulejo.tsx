@@ -28,6 +28,11 @@
  * `compacto` es el relleno chico también en el celular: lo usa la ventana del
  * equipo, que ya lo tenía así.
  *
+ * **Es una tarjeta de adentro** (2026-11-22, regla *el marco de la tarjeta
+ * manda sobre lo de adentro*): 2px y esquinas redondeadas, dentro del marco
+ * de 3px de su bloque. Antes iba con 1px claro, igual que el bloque que la
+ * contiene.
+ *
  * `estira` hace que, en el computador, el azulejo **se reparta el ancho que
  * sobra en su fila** (lo pidió el cliente al ver el encabezado ya en una
  * línea: *"lo puedes distribuir de mejor forma horizontal, más equitativo"*).
@@ -52,7 +57,7 @@ export default function Azulejo({ n, titulo, nota, color, borde, compacto = fals
   const [cuenta, ...resto] = (nota ?? '').split(' · ');
   const explica = resto.join(' · ');
   return (
-    <div className={`rounded border ${borde ?? 'border-hueso/15'} bg-panel ${
+    <div className={`rounded-xl border-2 ${borde ?? 'border-hueso/30'} bg-panel ${
       compacto ? 'px-3 py-2' : 'px-4 py-2.5 lg:px-2.5 lg:py-2'} ${explica ? 'lg:shrink-[8]' : ''} ${estira ? 'lg:grow' : ''}`}>
       <div className={`text-3xl font-bold leading-none tabular-nums lg:text-[26px] ${color ?? 'text-oro'}`}>
         {n}

@@ -7,7 +7,7 @@
  */
 import { usarAlDia, BarraAlDia } from './AlDia';
 import AyudaCorta from './AyudaCorta';
-import { LISTA_TARJETAS, SignoAbrir, marcoTarjeta } from './TarjetaLista';
+import { LISTA_TARJETAS, SignoAbrir, marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CRM_APAGADO } from '@/lib/crm';
 import { grupoDe, principalDe } from '@/lib/cotizar';
@@ -60,25 +60,33 @@ import { extrasDelDia, costoExtrasDelDia, costoDeExtra,
 /**
  * El rótulo de cada fila del resumen.
  *
- * **13px semibold al 60%, no 12 al 45** (2026-11-01). La regla del panel
- * pone el piso en 13 y reserva las opacidades bajas para lo de verdad
- * secundario: un rótulo que nombra la fila que se vino a mirar no lo es.
+ * **Es el título de un grupo** (2026-11-22, lo pidió el cliente con una foto
+ * de esta página: *"no se ve aún como siguiendo a todas las reglas que
+ * pusimos"*): 16px en negrita, como el nombre de un puesto o una sección de
+ * cotizar (`TITULO_GRUPO`). Antes era 13px en mayúsculas grises, que se leía
+ * como una nota al margen y no como el nombre de lo que hay debajo.
  */
 function Rotulo({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <p className={`mt-5 text-[13px] font-semibold uppercase tracking-widest
-                  text-hueso/60 ${className}`}>{children}</p>
-  );
+  return <p className={`mt-5 ${TITULO_GRUPO} ${className}`}>{children}</p>;
 }
 
-/** El rótulo de un bloque —Equipo, Actividades extras—, con el mismo peso. */
+/** El título de un bloque —Equipo, Actividades extras—, con el mismo peso. */
 function RotuloBloque({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[13px] font-semibold uppercase tracking-widest text-hueso/60">
-      {children}
-    </span>
-  );
+  return <span className={`${TITULO_GRUPO} lg:whitespace-nowrap`}>{children}</span>;
 }
+
+/**
+ * **Cada bloque de la página del día es un grupo** (2026-11-22, regla *el
+ * marco de la tarjeta manda sobre lo de adentro*): el encabezado, el equipo,
+ * las actividades extras y las mesas llevan el marco más marcado —3px, el de
+ * un puesto— y lo de adentro, menos: los azulejos con 2px y los botones con
+ * su borde claro. Antes los cuatro tenían 1px claro, igual que los azulejos
+ * de adentro, y no se distinguía qué contenía a qué.
+ */
+const BLOQUE = `mt-3 ${marcoGrupo()} px-3 py-2`;
+
+/** La acción de un bloque —planificar el equipo, agendar, la propina—: un botón de adentro, con su borde. */
+const ACCION_BLOQUE = 'boton !border-2';
 
 /** Un azulejo de la reserva abierta: el dato grande arriba y qué es debajo. */
 const AZULEJO = 'flex min-w-0 flex-col justify-between gap-1 rounded-xl border-2 border-hueso/15 bg-tinta/40 p-3';
@@ -559,13 +567,19 @@ export default function DayView(
           fila entera abajo. Solo si ni así cabe —muchísimos menús— el bloque
           de azulejos pasa completo debajo del día, que es lo que hace el
           `flex-wrap` de esta caja con el ancho mínimo de ese bloque. */}
-      <div className="lg:flex lg:flex-wrap lg:items-start lg:gap-x-4 lg:gap-y-3 lg:rounded-xl
-                      lg:border lg:border-hueso/15 lg:bg-panel lg:p-3">
+      <div className={`${marcoGrupo()} p-3 lg:flex lg:flex-wrap lg:items-start lg:gap-x-4 lg:gap-y-3`}>
         {/* El día. En el computador es una grilla: la fecha arriba; debajo,
             el tiempo y las reservas en una línea; al pie, *Al día*. */}
         <div className="lg:grid lg:shrink-0 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-x-3 lg:gap-y-1.5">
           <div className="lg:col-span-2 lg:flex lg:items-center lg:gap-2">
-            <a href="/" className="tecla boton">← Calendario</a>
+            {/* **Volver con presencia** (2026-11-22, lo pidió el cliente: *"el
+                botón calendario le falta un poco de presencia"*): es lo que más
+                se aprieta en esta página, así que va en 44px, con borde de 2px
+                y letra de 15px en negrita. Sigue sin relleno: el único dorado
+                de la pantalla es *Agregar reserva*. */}
+            <a href="/" className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
+              ← Calendario
+            </a>
             <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0 lg:text-lg">
               {enPalabras(fecha)}<Ayuda tema="dia" />
             </h1>
@@ -670,11 +684,12 @@ export default function DayView(
           .sort((a, b) => Number(a.valorFinal != null) - Number(b.valorFinal != null) || a.nombre.localeCompare(b.nombre, 'es'));
         return (
           <>
-            <Rotulo>Las mesas</Rotulo>
+            <section className={BLOQUE}>
+            <Rotulo className="!mt-0">Las mesas</Rotulo>
             <div className="mt-1.5 flex flex-wrap gap-2">
               <Azulejo n={pesosCL(m.total)} titulo="Valor final de las mesas"
                 nota={`${m.conValor} ${m.conValor === 1 ? 'mesa anotada' : 'mesas anotadas'}${m.sinValor ? ` · faltan ${m.sinValor}` : ''}`}
-                color="text-hueso" borde={m.sinValor ? 'border-ambar/40' : 'border-hueso/15'} />
+                color="text-hueso" borde={m.sinValor ? 'border-ambar/40' : undefined} />
               {m.agregadas > 0 && (
                 <Azulejo n={m.agregadas} titulo="Se sumaron a las mesas"
                   nota={m.aLaCarta ? `${m.aLaCarta} a la carta` : 'todos con menú'}
@@ -702,6 +717,7 @@ export default function DayView(
                 })}
               </ul>
             </details>
+            </section>
           </>
         );
       })()}
@@ -757,7 +773,7 @@ export default function DayView(
       /* En el computador el equipo y la propina comparten la fila; lo que
          costó el día va debajo, a todo el ancho (2026-11-21, el computador
          más compacto: eran tres filas). */
-      <div className="mt-3 rounded border border-hueso/15 bg-panel px-3 py-2 lg:flex lg:flex-wrap lg:items-center lg:gap-x-4">
+      <div className={`${BLOQUE} lg:flex lg:flex-wrap lg:items-center lg:gap-x-4`}>
         {/* En el computador esta fila no se parte: los nombres ocupan lo que
             sobra y se doblan adentro, y el botón queda a su derecha. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:min-w-0 lg:flex-1 lg:flex-nowrap">
@@ -800,7 +816,7 @@ export default function DayView(
               derecho. Relleno no va, porque el único de esta pantalla es
               *Agregar reserva*, que es a lo que se entra. */}
           <button onClick={() => setPlanificando('equipo')} disabled={!equipo}
-            className="boton">
+            className={ACCION_BLOQUE}>
             {turnosDelDia.length > 0 ? 'Equipo y cuentas del día' : 'Planificar equipo'}
           </button>
         </div>
@@ -848,7 +864,7 @@ export default function DayView(
               <Pendiente>sin anotar</Pendiente>
             )}
             <span className="flex-1" />
-            <button onClick={() => setPlanificando('propina')} className="boton">
+            <button onClick={() => setPlanificando('propina')} className={ACCION_BLOQUE}>
               {propina > 0 ? 'Editar propina' : 'Agregar propina'}
             </button>
           </div>
@@ -868,7 +884,7 @@ export default function DayView(
 
           Y, como el equipo, **no existe para quien no tiene su permiso**. */}
       {conExtras && (
-      <div className="mt-3 rounded border border-hueso/15 bg-panel px-3 py-2">
+      <div className={BLOQUE}>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <RotuloBloque>Actividades extras</RotuloBloque>
           {extrasHoy.length === 0 ? (
@@ -897,7 +913,7 @@ export default function DayView(
             <Pendiente>{extrasSinConfirmar} sin confirmar</Pendiente>
           )}
           <button onClick={() => setAgendando(true)} disabled={!extras}
-            className="boton">
+            className={ACCION_BLOQUE}>
             {extrasHoy.length === 0 ? 'Agendar actividad' : 'Editar actividades'}
           </button>
         </div>

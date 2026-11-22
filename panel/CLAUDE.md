@@ -155,7 +155,7 @@ revisan antes de cada cambio en esta carpeta.
   | Cuánto boletear: bruto, retención y neto | `CajaBoleta` (link personal e informe) |
   | Un número grande con su nombre y su nota: qué preparar, cómo viene el pago, las mesas | `Azulejo` (la página del día y la cara de reservas de la ventana del equipo, con `compacto`) |
   | Una tarjeta de una lista que se abre: el marco, el + / − y el pie *▴ Cerrar* | `marcoTarjeta`, `SignoAbrir`, `PieCerrar` y `LISTA_TARJETAS` de `TarjetaLista` (Informe, Equipo, Extras, Vendedores, Clientes, Productos, Recepción, las reservas del día y las ventanas del equipo y de extras del día) |
-  | Un grupo de tarjetas (un puesto en la ventana del equipo, *Actividades del día* en la de extras): **el marco más marcado**, su título y las tarjetas de adentro | `marcoGrupo`, `TITULO_GRUPO` y `marcoTarjeta(…, dentro)` de `TarjetaLista` |
+  | Un grupo de tarjetas (un puesto en la ventana del equipo, *Actividades del día* en la de extras, los bloques de la página del día, la bandeja de lo que hay que aprobar o revisar): **el marco más marcado**, su título y las tarjetas de adentro | `marcoGrupo`, `TITULO_GRUPO` y `marcoTarjeta(…, dentro)` de `TarjetaLista`; en la página del día, `BLOQUE` y `ACCION_BLOQUE` |
   | Una sección de una ventana con su color —el pago en verde, el contrato en cielo, el seguimiento en rosado— y el próximo paso | `marcoGrupo(tono)` + `TITULO_GRUPO`: `Seccion` e `Hito` de la ventana de cotizar (pasos 2, 4 y 5); en el paso 3, *Menús*, *Extras y arriendo* y *En la cotización* |
   | Elegir el puesto habitual de una persona | `ElegirPuesto`: un desplegable con los puestos que existen (la ficha de `/equipo` y la ficha que se abre desde el día) |
   | Lo de adentro de la línea de una persona en un día: campos, ajustes, total, *Ficha / Sacar del día*, *+ Nuevo …* | `CampoAlLado`, `AjustesDelDia`, `TotalDelDia`, `BotonesDeLaLinea` y `BotonNuevaPersona` de `LineaDelDia` (ventana del equipo y de las actividades extras) |
@@ -209,6 +209,75 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Productos: el candado del nombre mira el producto, no lo que se escribe (2026-11-22)
+
+Lo encontró el cliente al querer agregar *A Brasas Abiertas Empresas*: *"él
+detectó, mientras que yo rellené el formulario, detectó el nombre y me lo
+bloqueó directamente. No lo puedo seguir editando y crear el otro
+producto"*. El campo del nombre quedaba de solo lectura cuando **lo
+escrito** calzaba con un producto ya vendido o cotizado: al llegar a *A
+Brasas Abiertas*, el producto nuevo se bloqueaba antes de poder escribir
+*Empresas*.
+
+- **El candado es del producto guardado** (`nombreFijo()` en
+  `MenusEditor`): uno agregado en esta pantalla (`nuevo`) nunca se vendió ni
+  se cotizó, así que su nombre siempre se escribe. El que ya se usó sigue con
+  candado, como antes.
+- **Si el nuevo queda igual a otro**, se dice bajo el campo —*Ya hay un
+  producto que se llama así: agrégale lo que lo distingue*— y *Guardar* no lo
+  manda (`nombreRepetido()`): el servidor descarta el segundo de dos nombres
+  iguales sin avisar, y el producto habría desaparecido.
+- **Lo que se le recomendó al cliente para su caso**, que no es código: no
+  hace falta un segundo producto. *A Brasas Abiertas* ya puede tener las dos
+  caras: los precios del sitio y las reservas (en línea y en el local, IVA
+  incluido) y, con *Se puede cotizar*, su precio de cotización con *El
+  precio: + IVA*. Un segundo producto partiría en dos el mismo menú en *Qué
+  preparar*, en las estadísticas y en lo que se le pide a la cocina.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describía el bloqueo al escribir.
+
+## La página del día, con los marcos de la regla (2026-11-22)
+
+Lo marcó el cliente con una foto del encabezado del día, el equipo y las
+actividades extras: *"esta parte no se ve aún como siguiendo a todas las
+reglas que pusimos. El botón calendario le falta un poco presencia y todo no
+está en el diseño de nuestra regla"*. Los cuatro bloques tenían 1px claro,
+igual que los azulejos de adentro, y sus títulos eran 13px en mayúsculas
+grises: no se veía qué contenía a qué. Es la regla *el marco de la tarjeta
+manda sobre lo de adentro*.
+
+- **Cada bloque es un grupo** (`BLOQUE` en `DayView`, con `marcoGrupo()`): el
+  encabezado del día, *Equipo*, *Actividades extras* y *Las mesas* llevan el
+  marco de 3px oscuro de un puesto, **también en el celular** —el marco es el
+  formato, no una cosa del computador—.
+- **Sus títulos son `TITULO_GRUPO`** (16px en negrita): *Qué preparar*,
+  *Cómo viene el pago*, *Equipo*, *Actividades extras* y *Las mesas*.
+- **Lo de adentro va con menos**: los azulejos pasan a 2px con esquinas
+  redondeadas (`Azulejo`, la misma pieza en la cara de reservas de la
+  ventana del equipo), y la acción de cada bloque —*Planificar equipo*,
+  *Agregar propina*, *Agendar actividad*— a 2px claro (`ACCION_BLOQUE`).
+- ***← Calendario* con presencia**: 44px, borde de 2px, letra de 15px en
+  negrita. Es lo que más se aprieta en la página. Sigue sin relleno: el único
+  dorado es *Agregar reserva*.
+- **La bandeja *N cosas que aprobar o revisar* también es un grupo**: el marco
+  de 3px en ámbar con su título en negrita, y cada aviso una tarjeta de
+  adentro con 2px (`BandejaAprobaciones`, en la portada y en la página del
+  día). Su *Más ▾* pasa a 2px.
+
+| A 1280×650 | Antes | Ahora |
+|---|---|---|
+| Del encabezado al fin de *Actividades extras*, sábado 14 | 304px | 314px |
+| Lo mismo, sábado 7 (con el costo del equipo y de los extras) | 387px | 397px |
+| La bandeja con dos pagos | 176px | 180px |
+
+**En el celular crece**, a propósito, como pasó con la ventana de cotizar: del
+encabezado al fin de *Actividades extras*, de 846 a 934px el sábado 14, por el
+marco del encabezado —que antes no tenía— y los títulos más grandes.
+
+- **Ayuda**: ningún texto describe los marcos; se rehicieron las fotos de la
+  página del día (`enc-dia`, `ope-dia`) y sus puntos.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
 
 ## La bandeja de lo que revisa pagos, en dos renglones (2026-11-22)
 
