@@ -369,8 +369,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'y la configuración. Arriba dice cuál planilla se va a vaciar y si es '
       + 'producción o una versión de prueba. Pide antes una copia de la planilla y escribir BORRAR. '
       + 'Al terminar, vuelve a abrir solos los días que se abre.',
-      'También en Mantención, «Importar del CRM» trae de una vez lo del sistema anterior, desde '
-      + 'pestañas que se suben a la planilla: las fichas de los clientes; lo que viene a futuro —quien '
+      'También en Mantención, «Importar del CRM» trae de una vez lo del sistema anterior, desde un '
+      + 'Excel que se sube ahí mismo: las fichas de los clientes; lo que viene a futuro —quien '
       + 'preguntó entra como candidato, lo cotizado como borrador y lo ganado como ganada, con su reserva—; '
       + 'y los pedidos del sitio viejo, como reservas pagadas o por pagar. Antes de escribir nada muestra '
       + 'cuánto entra, a nombre de qué cuenta queda, qué filas no entran y cómo queda el cupo de cada día. '

@@ -11,8 +11,12 @@
  *
  * ## De dónde lee
  *
- * De **dos pestañas de la misma planilla**, que se suben desde un Excel de
- * revisión (Archivo → Importar → Insertar hojas nuevas):
+ * De **pestañas de la misma planilla**, que se llenan desde un Excel de
+ * revisión. **El Excel se sube desde el mismo formulario** (`lib/xlsx.ts` lo
+ * lee en el navegador y `hojasParaSubir()` valida lo que llega): pedirle a
+ * quien importa que lo subiera en Google Sheets lo dejó frente a una pantalla
+ * de *pide acceso*. Quien tiene la planilla a mano también puede importarlo
+ * ahí (Archivo → Importar → Insertar hojas nuevas); es lo mismo.
  *
  * - `Importar clientes`: una fila por persona.
  * - `Importar cotizaciones`: una fila por conversación con fecha a futuro,
@@ -307,6 +311,68 @@ export function productoParecido(concepto: string, menus: Menu[]): Menu | undefi
   return undefined;
 }
 
+/**
+ * **La fecha de una celda, como `AAAA-MM-DD`**, venga como venga escrita.
+ * La hoja la trae como texto `2026-12-05`, pero la corrige una persona:
+ *
+ * - `05-12-2026` o `5/12/2026`, **el día primero**, que es como se escribe
+ *   en Chile y como el propio Excel de revisión muestra las fechas;
+ * - el número con que Excel guarda una fecha (`46361`), si la celda quedó
+ *   con formato de fecha.
+ *
+ * Lo que no se entiende se devuelve tal cual, y quien llama lo rechaza
+ * nombrando la fila. Sin `Date` con huso: son cuentas de días.
+ */
+export function fechaDeCelda(celda: string): string {
+  const t = celda.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+  const dma = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(t);
+  if (dma) return `${dma[3]}-${dma[2].padStart(2, '0')}-${dma[1].padStart(2, '0')}`;
+  // El día 1 de Excel es el 1 de enero de 1900; el 25569 es el 1 de enero de 1970.
+  if (/^\d{5}(\.0+)?$/.test(t)) return new Date((Math.round(Number(t)) - 25569) * 86400000).toISOString().slice(0, 10);
+  return t;
+}
+
+/** Cuánto se acepta en una subida: sobra para un CRM chico y frena un archivo equivocado. */
+const TOPE_FILAS = 5000;
+const TOPE_COLUMNAS = 60;
+const TOPE_CELDA = 5000;
+
+/**
+ * **Lo que llega de un Excel subido, listo para copiarse a las pestañas de
+ * paso.** Acepta solo las tres pestañas del importador, por su nombre (sin
+ * mirar tildes ni mayúsculas); las demás hojas del archivo se ignoran. Cada
+ * celda queda como texto. Devuelve un error con palabras si el archivo no
+ * trae ninguna, si una viene sin su columna `Ref` —es otra cosa con el mismo
+ * nombre— o si es demasiado grande.
+ */
+export function hojasParaSubir(entrada: unknown):
+  { hojas: Record<string, string[][]>; filas: Record<string, number> } | { error: string } {
+  if (!entrada || typeof entrada !== 'object') return { error: 'No llegó ninguna hoja.' };
+  const hojas: Record<string, string[][]> = {};
+  const filas: Record<string, number> = {};
+  for (const [nombre, valor] of Object.entries(entrada as Record<string, unknown>)) {
+    const hoja = [HOJA_IMPORTAR_CLIENTES, HOJA_IMPORTAR_COTIZACIONES, HOJA_IMPORTAR_RESERVAS].find((h) => normalizar(h) === normalizar(nombre));
+    if (!hoja || !Array.isArray(valor)) continue;
+    if (valor.length > TOPE_FILAS) return { error: `«${hoja}» trae más de ${TOPE_FILAS.toLocaleString('es-CL')} filas: no parece el Excel para importar.` };
+    const tabla = valor.map((f) => (Array.isArray(f) ? f : []).map((c) => (c == null ? '' : String(c).trim())));
+    if (tabla.some((f) => f.length > TOPE_COLUMNAS || f.some((c) => c.length > TOPE_CELDA))) {
+      return { error: `«${hoja}» trae filas demasiado anchas o celdas demasiado largas: no parece el Excel para importar.` };
+    }
+    // Sin las filas vacías del final; las de entremedio se quedan, para que
+    // "fila 7" en un aviso sea la fila 7 del Excel.
+    while (tabla.length && !tabla[tabla.length - 1].some(Boolean)) tabla.pop();
+    if (!tabla.length) continue;
+    if (!tabla[0].some((c) => normalizar(c) === 'ref')) return { error: `«${hoja}» no trae su columna Ref en la primera fila: no es la pestaña del Excel para importar.` };
+    hojas[hoja] = tabla;
+    filas[hoja] = tabla.slice(1).filter((f) => f.some(Boolean)).length;
+  }
+  if (!Object.keys(hojas).length) {
+    return { error: `Ese Excel no trae ninguna de las pestañas para importar (${HOJA_IMPORTAR_CLIENTES}, ${HOJA_IMPORTAR_COTIZACIONES}, ${HOJA_IMPORTAR_RESERVAS}). El que se sube es «Importar-al-panel.xlsx».` };
+  }
+  return { hojas, filas };
+}
+
 /** La referencia de una fila, como queda en la nota de su cotización: es lo que evita importarla dos veces. */
 export const marcaDeImportacion = (ref: string) => `(${ref})`;
 
@@ -388,7 +454,7 @@ export function planDeImportacion(e: {
     if (e.reservas.some((x) => String(x.notaPago ?? '').includes(marca)) || reservas.some((x) => x.notaPago.includes(marca))) {
       reservasQueYaEstaban++; continue;
     }
-    const fecha = f.fecha.slice(0, 10);
+    const fecha = fechaDeCelda(f.fecha);
     if (!esFecha(fecha)) { problemas.push(`${donde}: la fecha "${f.fecha}" no se entiende (va como 2026-12-05). No entra.`); continue; }
     if (fecha < e.hoy) { problemas.push(`${donde}: la fecha ya pasó. No entra.`); continue; }
     if (!f.nombre) { problemas.push(`${donde}: le falta el nombre. No entra.`); continue; }
@@ -446,7 +512,7 @@ export function planDeImportacion(e: {
       problemas.push(`${donde}: el estado "${f.estado}" no se importa. Solo Candidato, Borrador o Ganada.`); continue;
     }
     const gana = estado === ESTADO_PRESUPUESTO.aceptado;
-    const fecha = f.fecha.slice(0, 10);
+    const fecha = fechaDeCelda(f.fecha);
     if (f.fecha && !esFecha(fecha)) { problemas.push(`${donde}: la fecha "${f.fecha}" no se entiende (va como 2027-03-14). No entra.`); continue; }
     if (fecha && fecha < e.hoy) { problemas.push(`${donde}: la fecha ya pasó. No entra.`); continue; }
     if (!fecha && !f.periodo) { problemas.push(`${donde}: no tiene fecha ni periodo. No entra.`); continue; }

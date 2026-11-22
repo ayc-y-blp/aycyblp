@@ -631,7 +631,12 @@ preguntando si servía para preparar la producción.
   de la planilla —`Importar clientes`, `Importar cotizaciones` e `Importar
   reservas`— contra lo que ya hay en el panel.
 - **`/api/mantencion/importar`**: `GET` es la vista previa (sin datos de
-  clientes) y `POST` importa, solo con `mantencion` y con la casilla marcada.
+  clientes), `PUT` sube el Excel y `POST` importa, solo con `mantencion` y
+  con la casilla marcada.
+- **El Excel se sube desde el mismo formulario** (lo pidió el cliente al
+  ensayarlo: mandarlo a Google Sheets lo dejó frente a un *pide acceso*):
+  `lib/xlsx.ts` lee el `.xlsx` en el navegador, sin librería, y el panel
+  copia sus hojas a las tres pestañas.
 - **`ImportarCRM.tsx`**, en Configuración → Mantención, y **`CualBase`**, la
   pastilla de cuál planilla es, que pasó a ser una pieza.
 - **En `datos.ts`**: `agregarImportados()`, `agregarReservas()`,
@@ -745,10 +750,13 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   (21-11-2026); no se le enseña al panel a leer el modelo viejo (una
   variante por fecha). Ese mismo día quedó cómo anotarlos de una vez, desde
   el export de pedidos, con *Importar del CRM*.
-- **El importador lee pestañas de la planilla, no un Excel** (21-11-2026):
-  sin librería nueva, y lo que va a entrar se ve y se corrige ahí mismo. La
-  etapa de cada fila queda escrita en una columna que el cliente puede
-  cambiar antes de importar.
+- **El importador arma su plan desde pestañas de la planilla** (21-11-2026):
+  lo que va a entrar queda a la vista, y la etapa de cada fila está escrita
+  en una columna que el cliente puede cambiar antes de importar.
+- **El Excel se sube desde el formulario, no en Google Sheets**
+  (21-11-2026): quien importa no siempre está con la cuenta de Google de la
+  planilla. El panel lo lee sin librería —un `.xlsx` es un zip con XML y el
+  navegador ya descomprime— y lo copia a esas pestañas, todo como texto.
 - **Una ganada del CRM entra ganada, con su reserva** (21-11-2026, lo decidió
   el cliente), aunque deje el día sobre su cupo: se avisa antes y el panel lo
   muestra como sobrecupo. Entra **por pagar**, porque el CRM no enlaza los
@@ -1004,7 +1012,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 7 | **Pedidos del sitio viejo** | **Exportar de Shopify *todos* los pedidos** (el export del 21-11 traía solo la última página, 50) y subirlo al chat: se rearma la pestaña `Importar reservas` y entran con el importador (pendiente 10). El producto viejo vendía hasta el 27-12 | Cliente sube; Claude arma |
 | 8 | **Lanzamiento** (domingo 22-11, en la noche) | En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
 | 9 | **Después del lanzamiento** | Links en Maps, Instagram y WhatsApp; enviar el sitemap en Google Search Console; productos en Fudo; mirar en Vercel → Logs que las tres tareas diarias corran en 200 | Cliente |
-| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en un PR *con prueba* (PR #293). (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) lo ensaya en la versión de prueba, subiendo el Excel a la planilla "Pruebas"; (c) dice *"mergea"*; (d) en producción, **después de la base en cero**: sube el Excel a la planilla real, *Ver qué entra*, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla | Cliente, con Claude |
+| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en un PR *con prueba* (PR #293). (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) lo ensaya en la versión de prueba (escribe en la planilla "Pruebas"); (c) dice *"mergea"*; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el nombre del negocio en Maps; el desayuno y la once a $8.000 + IVA | Cliente |

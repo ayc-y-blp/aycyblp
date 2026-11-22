@@ -5772,6 +5772,93 @@ console.log('\nImportar del CRM');
      'las reservas y las ganadas de un mismo día se suman en la vista previa');
 }
 
+console.log('\nSubir el Excel para importar');
+{
+  const X = await import('./xlsx.ts');
+  const I = await import('./importar.ts');
+  const zlib = await import('node:zlib');
+  /** Un zip mínimo, como el de un .xlsx: cada archivo guardado tal cual o comprimido. */
+  const zip = (archivos: [string, string, boolean][]) => {
+    const partes: Buffer[] = []; const indice: Buffer[] = []; let pos = 0;
+    for (const [nombre, texto, comprimir] of archivos) {
+      const crudo = Buffer.from(texto, 'utf8');
+      const datos = comprimir ? zlib.deflateRawSync(crudo) : crudo;
+      const n = Buffer.from(nombre, 'utf8');
+      const local = Buffer.alloc(30);
+      local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(comprimir ? 8 : 0, 8);
+      local.writeUInt32LE(datos.length, 18); local.writeUInt32LE(crudo.length, 22); local.writeUInt16LE(n.length, 26);
+      const central = Buffer.alloc(46);
+      central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6);
+      central.writeUInt16LE(comprimir ? 8 : 0, 10); central.writeUInt32LE(datos.length, 20); central.writeUInt32LE(crudo.length, 24);
+      central.writeUInt16LE(n.length, 28); central.writeUInt32LE(pos, 42);
+      partes.push(local, n, datos); indice.push(central, n);
+      pos += 30 + n.length + datos.length;
+    }
+    const cd = Buffer.concat(indice);
+    const fin = Buffer.alloc(22);
+    fin.writeUInt32LE(0x06054b50, 0); fin.writeUInt16LE(archivos.length, 8); fin.writeUInt16LE(archivos.length, 10);
+    fin.writeUInt32LE(cd.length, 12); fin.writeUInt32LE(pos, 16);
+    return new Uint8Array(Buffer.concat([...partes, cd, fin]));
+  };
+  const libro = zip([
+    ['[Content_Types].xml', '<Types/>', false],
+    ['xl/workbook.xml', '<workbook xmlns:r="x"><sheets><sheet name="Importar clientes" sheetId="1" r:id="rId1"/><sheet name="Otra &amp; más" sheetId="2" r:id="rId2"/></sheets></workbook>', true],
+    ['xl/_rels/workbook.xml.rels', '<Relationships><Relationship Id="rId1" Type="t" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="t" Target="/xl/worksheets/sheet2.xml"/></Relationships>', false],
+    ['xl/sharedStrings.xml', '<sst><si><t>Ref</t></si><si><t xml:space="preserve">Ana &amp; Cía </t></si><si><r><rPr><b/></rPr><t>Lo </t></r><r><t>Pirque</t></r><rPh><t>guía</t></rPh></si><si/></sst>', true],
+    ['xl/worksheets/sheet1.xml', '<worksheet><cols><col min="1" max="1" width="9"/></cols><sheetData>'
+      + '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="C1" t="inlineStr"><is><t>Notas</t></is></c></row>'
+      + '<row r="2" spans="1:4"><c r="A2" t="s"><v>1</v></c><c r="B2"><v>44000.0</v></c><c r="C2" s="3"/><c r="D2" t="str"><v>Lo Pirque | 80&#10;Niños | 4</v></c></row>'
+      + '<row r="3"/>'
+      + '<row r="5"><c r="B5" t="s"><v>2</v></c><c r="C5" t="b"><v>1</v></c><c r="D5" t="s"><v>3</v></c><c r="E5"><v>46361</v></c></row>'
+      + '</sheetData></worksheet>', true],
+    ['xl/worksheets/sheet2.xml', '<worksheet><sheetData><row><c><v>1</v></c><c><v>2</v></c></row></sheetData></worksheet>', false]
+  ]);
+  const hojas = await X.leerXlsx(libro);
+  const h = hojas['Importar clientes'];
+  ok(Object.keys(hojas).join() === 'Importar clientes,Otra & más' && h.length === 5,
+     'lee las hojas de un .xlsx por su nombre, comprimidas o no');
+  ok(h[0].join('|') === 'Ref||Notas' && h[1].join('|') === 'Ana & Cía |44000||Lo Pirque | 80\nNiños | 4' && h[2].length === 0 && h[3].length === 0
+     && h[4].join('|') === '|Lo Pirque|TRUE||46361',
+     'cada celda como texto: compartido, en línea, número, texto con formato, y los huecos en blanco');
+  ok(hojas['Otra & más'][0].join() === '1,2', 'una hoja sin referencias en sus celdas se lee en orden');
+  ok(Object.keys(await X.leerXlsx(libro, (n) => n === 'Importar clientes')).join() === 'Importar clientes',
+     'con un filtro lee solo las hojas que hacen falta');
+  let noEs = '';
+  try { await X.leerXlsx(new TextEncoder().encode('esto no es un excel, es un texto cualquiera de prueba')); } catch (e) { noEs = (e as Error).message; }
+  ok(noEs === X.NO_ES_XLSX, 'un archivo que no es un Excel se dice con palabras');
+
+  ok(I.fechaDeCelda('2026-12-05') === '2026-12-05' && I.fechaDeCelda('05-12-2026') === '2026-12-05' && I.fechaDeCelda('5/12/2026') === '2026-12-05'
+     && I.fechaDeCelda(' 2026-12-05 00:00:00') === '2026-12-05' && I.fechaDeCelda('45292') === '2024-01-01' && I.fechaDeCelda('diciembre') === 'diciembre'
+     && I.fechaDeCelda('') === '',
+     'una fecha se entiende escrita con el día primero o como número de Excel; lo que no es fecha queda tal cual');
+
+  const sube = I.hojasParaSubir({ 'importar CLIENTES': [['Ref', 'Nombre'], ['CRM-1', ' Ana '], [], ['CRM-2', 'Beto'], ['', ''], []],
+    'Importar reservas': [], 'Leer primero': [['hola']], 'Importar cotizaciones': 'nada' });
+  ok(!('error' in sube) && Object.keys(sube.hojas).join() === 'Importar clientes' && sube.hojas['Importar clientes'].length === 4
+     && sube.hojas['Importar clientes'][1][1] === 'Ana' && sube.filas['Importar clientes'] === 2,
+     'de un Excel subido quedan solo las pestañas de importar, con las filas vacías del final afuera y las de entremedio en su lugar');
+  const sinNada = I.hojasParaSubir({ Contactos: [['Nombre'], ['Ana']] });
+  const sinRef = I.hojasParaSubir({ 'Importar clientes': [['Nombre'], ['Ana']] });
+  const enorme = I.hojasParaSubir({ 'Importar clientes': Array.from({ length: 5002 }, () => ['Ref']) });
+  ok('error' in sinNada && sinNada.error.includes('Importar-al-panel') && 'error' in sinRef && sinRef.error.includes('Ref')
+     && 'error' in enorme && 'error' in I.hojasParaSubir(null) && !/Ana/.test(JSON.stringify([sinNada, sinRef])),
+     'se rechaza un Excel sin esas pestañas, una pestaña sin su columna Ref y un archivo enorme, sin repetir datos');
+
+  const M = await import('./menus.ts');
+  const conFechas = I.planDeImportacion({
+    filasClientes: [['Ref', 'Nombre', 'Teléfono', 'Correo', 'Empresa del cliente', 'Vendedor', 'Notas'], ['CRM-0001', 'Ana Prueba', '+56951112233', '', '', '', '']],
+    filasCotizaciones: [['Ref', 'Ref cliente', 'Estado', 'Fecha del evento', 'Periodo', 'Invitados', 'Tipo de evento', 'Vendedor', 'Notas', 'Productos'],
+      ['CRM-0001-a', 'CRM-0001', 'Candidato', '18-12-2026', '', '80', 'Empresa', '', '', ''],
+      ['CRM-0001-b', 'CRM-0001', 'Candidato', '46375', '', '20', 'Empresa', '', '', '']],
+    filasReservas: [['Ref', 'Fecha', 'Nombre', 'Teléfono', 'Correo', 'Menú', 'Personas', 'Monto', 'Pago', 'Nota de pago'],
+      ['LP1', '5/12/2026', 'Beto Prueba', '', '', '2 × Tradiciones', '', '', 'Pagada', '']],
+    clientes: [], presupuestos: [], usuarios: [], menus: M.POR_DEFECTO_MENUS, fechas: [], reservas: [],
+    cfg: { cupoNormal: 60, horaApertura: '13:00' }, quien: 'admin', hoy: '2026-11-21', cuando: '2026-11-21 18:30', ahora: 1, nuevoToken: () => 't' });
+  ok(conFechas.problemas.length === 0 && conFechas.cotizaciones[0].fecha === '2026-12-18' && conFechas.cotizaciones[1].fecha === '2026-12-19'
+     && conFechas.reservas[0].fecha === '2026-12-05',
+     'el plan acepta una fecha corregida a mano con el día primero, o guardada por Excel como número');
+}
+
 console.log('\nLos días de la regla se abren solos');
 {
   const D = await import('./dias.ts');

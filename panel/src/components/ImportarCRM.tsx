@@ -14,13 +14,23 @@
  *
  * **No muestra datos de clientes**: cuentas, días y números de fila. Los
  * nombres están en la planilla, que es donde se corrigen.
+ *
+ * **El Excel se sube acá mismo** (lo pidió el cliente al ensayarlo: *"cuando
+ * aprieto pide acceso a Google Drive. No deja subir el Excel"*). La primera
+ * versión mandaba a la planilla de Google a importar el archivo, y quien
+ * importa no siempre está en el navegador con la cuenta de Google de esa
+ * planilla. Ahora el navegador lee el archivo (`lib/xlsx.ts`), el panel lo
+ * copia a las pestañas de paso y se ve la vista previa. Nada se importa
+ * todavía: eso sigue pidiendo su casilla.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Dialogo from './Dialogo';
 import CualBase from './CualBase';
 import AyudaCorta from './AyudaCorta';
 import { usarPuede } from './SesionCliente';
 import { enCorto, type Fecha } from '@/lib/fechas';
+import { normalizar } from '@/lib/columnas';
+import { leerXlsx } from '@/lib/xlsx';
 
 interface Dia {
   fecha: string; reservas: number; ganadas: number; personas: number;
@@ -40,6 +50,8 @@ interface Vista {
   pestanas: { clientes: string; cotizaciones: string; reservas: string };
   nombrePlanilla?: string; entorno?: 'produccion' | 'prueba' | '';
   planilla: string;
+  /** Solo en la respuesta de una subida: cuántas filas se copiaron a cada pestaña. */
+  subido?: Record<string, number>;
 }
 interface Hecho { fichas: number; candidatos: number; borradores: number; ganadas: number; sinGanar: number; reservas: number; avisos: number }
 
@@ -64,11 +76,38 @@ export default function ImportarCRM() {
   const [revisado, setRevisado] = useState(false);
   const [importando, setImportando] = useState(false);
   const [hecho, setHecho] = useState<Hecho | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [subido, setSubido] = useState<Record<string, number> | null>(null);
+  const archivo = useRef<HTMLInputElement>(null);
 
   if (!puede) return null;
 
+  /**
+   * Lee el Excel en el navegador y lo manda a copiar a las pestañas de paso.
+   * Solo las tres hojas del importador: de un archivo equivocado no sale nada.
+   */
+  async function subir(excel: File) {
+    if (!vista) return;
+    setSubiendo(true); setError(''); setSubido(null); setRevisado(false);
+    try {
+      const nombres = Object.values(vista.pestanas).map(normalizar);
+      const hojas = await leerXlsx(await excel.arrayBuffer(), (nombre) => nombres.includes(normalizar(nombre)));
+      if (!Object.keys(hojas).length) {
+        setError(`Ese Excel no trae las pestañas para importar (${Object.values(vista.pestanas).join(', ')}). El que se sube es «Importar-al-panel.xlsx».`);
+        return;
+      }
+      const r = await fetch('/api/mantencion/importar', {
+        method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hojas })
+      });
+      const d = await r.json();
+      if (!r.ok || d.error) { setError(d.error || 'No se pudo subir el Excel.'); return; }
+      setVista(d); setSubido(d.subido ?? null);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setSubiendo(false); }
+  }
+
   async function mirar() {
-    setVista(null); setError(''); setRevisado(false); setHecho(null);
+    setVista(null); setError(''); setRevisado(false); setHecho(null); setSubido(null);
     try {
       const r = await fetch('/api/mantencion/importar');
       const d = await r.json();
@@ -103,6 +142,17 @@ export default function ImportarCRM() {
     ...(vista.reservas ? [n(vista.reservas, 'reserva', 'reservas')] : [])
   ] : [];
   const cualBase = vista && !hecho ? <CualBase entorno={vista.entorno} nombre={vista.nombrePlanilla} /> : null;
+  // Qué quedó en la planilla después de subir: cuántas filas de cada pestaña.
+  const queEs: Record<string, [string, string]> = vista ? {
+    [vista.pestanas.clientes]: ['cliente', 'clientes'],
+    [vista.pestanas.cotizaciones]: ['cotización', 'cotizaciones'],
+    [vista.pestanas.reservas]: ['reserva', 'reservas']
+  } : {};
+  const avisoSubido = subido && !hecho && !subiendo ? (
+    <p className="text-[14px] font-semibold text-verde-texto" role="status">
+      ✓ Excel subido a la planilla: {Object.entries(subido).map(([hoja, c]) => n(c, ...(queEs[hoja] ?? ['fila', 'filas']))).join(' · ')}
+    </p>
+  ) : null;
   const sinCuenta = vista ? vista.vendedores.filter((v) => !v.usuario) : [];
 
   return (
@@ -110,17 +160,25 @@ export default function ImportarCRM() {
       <p className="text-[16px] font-bold">📥 Importar del CRM</p>
       <p className="mt-1 max-w-2xl text-[14px] text-hueso/75">
         Trae las fichas de los clientes y lo que viene a futuro —candidatos, cotizados y ganados—, y
-        las reservas del sitio viejo, desde pestañas de la planilla. Antes de escribir nada muestra qué entra.
+        las reservas del sitio viejo, desde el Excel para importar. Antes de escribir nada muestra qué entra.
       </p>
       <button type="button" onClick={() => { setAbierta(true); void mirar(); }} className="boton mt-3 min-h-[44px]">
         📥 Ver qué entra…
       </button>
 
       {abierta && (
-        <Dialogo titulo="Importar del CRM" ancho="max-w-2xl lg:max-w-6xl" onCerrar={() => setAbierta(false)} alLado={cualBase}>
+        <Dialogo titulo="Importar del CRM" ancho="max-w-2xl lg:max-w-6xl" onCerrar={() => setAbierta(false)}
+          alLado={cualBase && <div className="flex flex-wrap items-center gap-x-4 gap-y-1">{cualBase}{avisoSubido}</div>}>
           {!vista && !error && <p className="mt-3 text-[15px] text-hueso/70">Leyendo las pestañas de la planilla…</p>}
           {/* En el celular, la misma línea debajo del título. */}
           {cualBase && <div className="mt-3 lg:hidden">{cualBase}</div>}
+          {/* El archivo se elige con un botón de verdad; este campo no se ve. */}
+          <input ref={archivo} type="file" className="hidden" aria-label="El Excel para importar"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void subir(f); }} />
+          {subiendo && <p className="mt-3 text-[15px] text-hueso/70" role="status">Leyendo el Excel y copiándolo a la planilla…</p>}
+          {/* En el celular, bajo el título; en el computador va en su misma línea. */}
+          {avisoSubido && <div className="mt-2 lg:hidden">{avisoSubido}</div>}
 
           {hecho ? (
             <div className="mt-3 rounded-xl border-2 border-verde-fuerte bg-verde/10 p-3" role="status">
@@ -151,18 +209,24 @@ export default function ImportarCRM() {
             </div>
           ) : vista && faltanPestanas ? (
             <div className="mt-3 rounded-xl border-2 border-oro/50 p-3">
-              <p className="text-[15px] font-bold">Falta subir las pestañas a la planilla</p>
-              <ol className="mt-2 list-decimal space-y-1 pl-5 text-[14px]">
-                <li>Abre la planilla.</li>
-                <li><strong>Archivo → Importar → Subir</strong>, y elige el Excel para importar.</li>
-                <li>En <em>Ubicación de importación</em>, elige <strong>Insertar hojas nuevas</strong>.</li>
-                <li>
-                  Del CRM quedan dos pestañas, <strong>{vista.pestanas.clientes}</strong> y{' '}
-                  <strong>{vista.pestanas.cotizaciones}</strong>; de los pedidos del sitio viejo, <strong>{vista.pestanas.reservas}</strong>.
-                </li>
-              </ol>
+              <div className="flex items-center gap-2">
+                <p className="text-[15px] font-bold">Sube el Excel para importar</p>
+                <AyudaCorta titulo="Sube el Excel para importar">
+                  El archivo es «Importar-al-panel.xlsx». Al subirlo, el panel copia sus tres hojas a la planilla, en
+                  pestañas con el mismo nombre ({Object.values(vista.pestanas).join(', ')}), y muestra qué entra. Todavía
+                  no importa nada. Si corriges algo en el Excel, súbelo de nuevo: reemplaza lo anterior. Quien tiene la
+                  planilla abierta también puede importarlo ahí (Archivo → Importar → Insertar hojas nuevas) y apretar
+                  «Volver a mirar»: es lo mismo.
+                </AyudaCorta>
+              </div>
+              <p className="mt-1 text-[14px]">
+                Elige «Importar-al-panel.xlsx». Se copia a la planilla y acá ves qué entra, antes de importar nada.
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <a href={vista.planilla} target="_blank" rel="noreferrer" className="boton min-h-[44px]">Abrir la planilla ↗</a>
+                <button type="button" disabled={subiendo} onClick={() => archivo.current?.click()}
+                  className="boton boton-relleno min-h-[48px] disabled:opacity-60">
+                  {subiendo ? 'Subiendo…' : '⬆ Subir el Excel…'}
+                </button>
                 <button type="button" className="boton min-h-[44px]" onClick={() => void mirar()}>↻ Volver a mirar</button>
               </div>
             </div>
@@ -328,9 +392,15 @@ export default function ImportarCRM() {
 
           {vista && !hecho && !faltanPestanas && (
             <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
-              {!hayAlgo && <p className="mr-auto text-[14px] text-hueso/75">No hay nada nuevo que importar.</p>}
-              <a href={vista.planilla} target="_blank" rel="noreferrer" className="boton min-h-[44px]">Abrir la planilla ↗</a>
-              <button type="button" className="boton min-h-[44px]" onClick={() => void mirar()}>↻ Volver a mirar</button>
+              {/* A la izquierda, lo de preparar: cambiar el archivo o volver a leer la planilla. */}
+              <div className="mr-auto flex flex-wrap items-center gap-2">
+                <button type="button" disabled={subiendo} className="boton min-h-[44px]" onClick={() => archivo.current?.click()}>
+                  {subiendo ? 'Subiendo…' : '⬆ Subir otro Excel'}
+                </button>
+                <button type="button" className="boton min-h-[44px]" onClick={() => void mirar()}>↻ Volver a mirar</button>
+                <a href={vista.planilla} target="_blank" rel="noreferrer" className="boton min-h-[44px]">Planilla ↗</a>
+                {!hayAlgo && <p className="text-[14px] text-hueso/75">No hay nada nuevo que importar.</p>}
+              </div>
               {hayAlgo && (
                 <button type="button" aria-pressed={revisado} onClick={() => setRevisado(!revisado)}
                   className={`boton min-h-[44px] ${revisado ? 'border-verde-fuerte bg-verde/15 font-semibold text-verde-texto' : ''}`}>

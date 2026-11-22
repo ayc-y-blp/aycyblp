@@ -197,18 +197,53 @@ puede ayudar también para preparar el sistema para la producción"*.
 
 **Dónde**: Configuración → Mantención → **📥 Importar del CRM**
 (`ImportarCRM.tsx`), solo con el permiso `mantencion` (el administrador). La
-ruta es `/api/mantencion/importar`: `GET` es la vista previa y `POST`
-importa. Qué entra y cómo calza cada cosa vive en **`lib/importar.ts`**, pura
-y con pruebas.
+ruta es `/api/mantencion/importar`: `GET` es la vista previa, `PUT` sube el
+Excel y `POST` importa. Qué entra y cómo calza cada cosa vive en
+**`lib/importar.ts`**, pura y con pruebas.
 
 ### De dónde lee: tres pestañas de la planilla
 
-El panel no lee un Excel: lee **pestañas que se suben a la misma planilla**
-(Archivo → Importar → *Insertar hojas nuevas*). Así no hace falta una
-librería nueva y, sobre todo, **lo que se va a importar queda a la vista y se
-corrige ahí mismo** antes de apretar nada, que es el control que pidió el
-cliente. Se leen por nombre de columna; las columnas de más —las que sirven
-para revisar— se ignoran.
+El plan se arma desde **tres pestañas de la misma planilla**: así **lo que se
+va a importar queda a la vista** y se puede corregir antes de apretar nada,
+que es el control que pidió el cliente. Se leen por nombre de columna; las
+columnas de más —las que sirven para revisar— se ignoran.
+
+### El Excel se sube desde el formulario
+
+La primera versión le pedía a quien importa subir el archivo en Google Sheets
+(Archivo → Importar → *Insertar hojas nuevas*). El cliente lo ensayó y se
+quedó ahí: *"en el formulario Ver qué entra cuando aprieto pide acceso a
+Google Drive. No deja subir el Excel"*. Quien importa no siempre está en el
+navegador con la cuenta de Google de esa planilla, y no tiene por qué.
+
+- **⬆ Subir el Excel…** en la misma ventana: el navegador lee el archivo, el
+  panel copia sus hojas a las tres pestañas —las crea si no están— y muestra
+  la vista previa. **No importa nada**: eso sigue pidiendo *Revisé lo que
+  entra*.
+- **`lib/xlsx.ts` lee el `.xlsx` sin librería.** Un Excel es un zip con XML,
+  y el navegador ya sabe descomprimir (`DecompressionStream`); lo que hace
+  falta —los nombres de las hojas y el texto de cada celda— cabe en un
+  archivo. Corre igual en Node, así que tiene pruebas, y **se comparó celda
+  por celda contra tres archivos de verdad** (los dos que arma el script y el
+  respaldo del CRM): calzan las 28.327.
+- **Solo las tres hojas del importador** viajan al servidor, por su nombre;
+  las demás se ignoran en el navegador. `hojasParaSubir()` vuelve a validar
+  allá: nombres, la columna `Ref`, y un tope de tamaño que frena un archivo
+  equivocado.
+- **Reemplaza la pestaña entera** (`escribirBloque()`) de cada hoja que
+  viene, y no toca las que no vienen: corregir el Excel y subirlo de nuevo
+  deja lo último. **Cada celda se escribe como texto** (el `'` adelante): lo
+  que queda en la planilla es lo que decía el Excel, sin que Sheets convierta
+  `2026-12-05` en fecha ni lea `44.000` según su idioma.
+- **Las fechas corregidas a mano se entienden** (`fechaDeCelda()`): además
+  de `2026-12-05`, el día primero (`05-12-2026`, `5/12/2026`), que es como
+  el Excel de revisión las muestra, y el número con que Excel guarda una
+  fecha.
+- **Queda en la bitácora** como *Subió el Excel para importar*, con cuántas
+  filas por pestaña y sin nombres.
+- **Lo de antes sigue sirviendo**: quien tiene la planilla abierta puede
+  importar el archivo ahí y apretar *↻ Volver a mirar*. Va explicado en el
+  `?` de la caja.
 
 | Pestaña | Una fila es | Columnas que se leen |
 |---|---|---|
@@ -327,8 +362,9 @@ Muestra, sin datos de clientes —solo cuentas, días y números de fila—:
   llama distinto, con los dos nombres, y los que no están en *Productos*.
 - Arriba, **cuál planilla es** (`CualBase`, la misma pieza de *Dejar la base
   en cero*): *🔴 Producción* o *🧪 Versión de prueba*, con su nombre.
-- No importa sin ***Revisé lo que entra***. *↻ Volver a mirar* relee la
-  planilla después de corregir algo.
+- No importa sin ***Revisé lo que entra***. A la izquierda del pie, lo de
+  preparar: *⬆ Subir otro Excel*, *↻ Volver a mirar* —relee la planilla
+  después de corregir algo ahí— y *Planilla ↗*.
 
 ### Cómo escribe, y por qué en ese orden
 
@@ -352,9 +388,10 @@ el estado, su reserva y qué se le hizo a su día.
 ### Lo de siempre
 
 - **Lecturas de Google**: la vista previa, **una tanda** con las pestañas
-  subidas (nueve pestañas en un `batchGet`); antes de subirlas, una más para
-  mirar la lista de pestañas (`npm run lecturas`: 2). Importar gasta unas
-  ocho. **De paso, una tanda que pregunta por varias pestañas que no existen
+  subidas (diez pestañas en un `batchGet`); antes de subirlas, una más para
+  mirar la lista de pestañas (`npm run lecturas`: 2). Subir el Excel gasta
+  dos tandas —lo del panel antes de escribir y las tres pestañas después— y
+  dos escrituras por pestaña. Importar gasta unas ocho. **De paso, una tanda que pregunta por varias pestañas que no existen
   mira el libro una sola vez** (`nombreReal(…, reciente)` en `sheets.ts`):
   gastaba una lectura por cada una.
 - **Ningún permiso cambió.** `mantencion` sigue siendo del administrador.
@@ -363,7 +400,7 @@ el estado, su reserva y qué se le hizo a su día.
   ese botón borra (clientes, cotizaciones, reservas).
 - **Ayuda**: el `?` de Configuración lo explica; cada caja de la ventana
   tiene su `?`.
-- **Ventanas**: escena nueva `v-importar-crm` (609px a 1280×650). Son 45.
+- **Ventanas**: escena nueva `v-importar-crm` (634px a 1280×650, con el Excel recién subido). Son 45.
 - **Probado en el panel de ejemplo**, con gente inventada: entran 5 fichas, 3
   candidatos, 1 borrador, 2 ganadas y 4 reservas; una ficha que ya estaba no
   se duplica; un vendedor sin cuenta se dice; las dos ganadas quedan

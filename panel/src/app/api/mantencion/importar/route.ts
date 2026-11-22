@@ -13,11 +13,16 @@
  *   en este orden: fichas, líneas, cotizaciones —las ganadas, como
  *   borrador—, reservas, días, y al final gana las ganadas
  *   (`ganarImportadas()`). Si alguna no se alcanza a ganar, lo dice.
+ * - `PUT` **sube el Excel** (2026-11-21): el navegador lo lee y manda sus
+ *   hojas; acá se copian a las pestañas de paso, que se crean si no están, y
+ *   se devuelve la vista previa. Reemplaza lo que hubiera en cada pestaña que
+ *   viene en el archivo, y no toca las que no vienen. No importa nada: eso
+ *   sigue siendo el `POST`, con su casilla.
  *
  * Solo el permiso `mantencion` (el administrador).
  */
 import { NextResponse } from 'next/server';
-import { conLecturas, leerHoja, idPlanilla, esPestanaQueNoExiste, nombreDeLaPlanilla } from '@/lib/sheets';
+import { conLecturas, leerHoja, idPlanilla, esPestanaQueNoExiste, nombreDeLaPlanilla, escribirBloque } from '@/lib/sheets';
 import { exigir, quienEs } from '@/lib/permisos';
 import {
   anotar, leerClientes, leerPresupuestos, leerUsuarios, leerMenus, leerFechas, leerReservas, leerConfig,
@@ -34,7 +39,8 @@ import { ahoraEnChile } from '@/lib/bitacora';
 import { nuevoToken } from '@/lib/equipo';
 import { entornoDe } from '@/lib/produccion';
 import {
-  HOJA_IMPORTAR_CLIENTES, HOJA_IMPORTAR_COTIZACIONES, HOJA_IMPORTAR_RESERVAS, planDeImportacion, detalleDeLaImportacion
+  HOJA_IMPORTAR_CLIENTES, HOJA_IMPORTAR_COTIZACIONES, HOJA_IMPORTAR_RESERVAS, planDeImportacion, detalleDeLaImportacion,
+  hojasParaSubir
 } from '@/lib/importar';
 
 export const dynamic = 'force-dynamic';
@@ -62,26 +68,60 @@ async function armar(quien: string) {
   return { plan, estan: { clientes: c.esta, cotizaciones: q.esta, reservas: r.esta } };
 }
 
+/** La vista previa: cuentas, días y números de fila. Nada de clientes. */
+async function vistaPrevia(quien: string) {
+  const { plan, estan } = await armar(quien);
+  return {
+    estan,
+    fichas: plan.fichas.length, fichasQueYaEstaban: plan.fichasQueYaEstaban,
+    candidatos: plan.candidatos, borradores: plan.borradores, cotizacionesQueYaEstaban: plan.cotizacionesQueYaEstaban,
+    // De las ganadas y de las reservas, solo cuántas son y cómo queda cada día.
+    ganadas: plan.ganadas.length, reservas: plan.reservas.length, reservasQueYaEstaban: plan.reservasQueYaEstaban,
+    reservasPagadas: plan.reservas.filter((x) => x.pagoAnotado).length,
+    dias: plan.dias,
+    vendedores: plan.vendedores, problemas: plan.problemas, sinCatalogo: plan.sinCatalogo,
+    equivalencias: plan.equivalencias,
+    pestanas: { clientes: HOJA_IMPORTAR_CLIENTES, cotizaciones: HOJA_IMPORTAR_COTIZACIONES, reservas: HOJA_IMPORTAR_RESERVAS },
+    nombrePlanilla: await nombreDeLaPlanilla().catch(() => ''),
+    entorno: entornoDe(process.env.VERCEL_ENV),
+    planilla: `https://docs.google.com/spreadsheets/d/${idPlanilla()}`
+  };
+}
+
 export const GET = conLecturas(PESTANAS, async function GET(req: Request) {
   const no = await exigir(req, 'mantencion');
   if (no) return no;
   try {
-    const { plan, estan } = await armar((await quienEs(req)).usuario);
-    return NextResponse.json({
-      estan,
-      fichas: plan.fichas.length, fichasQueYaEstaban: plan.fichasQueYaEstaban,
-      candidatos: plan.candidatos, borradores: plan.borradores, cotizacionesQueYaEstaban: plan.cotizacionesQueYaEstaban,
-      // De las ganadas y de las reservas, solo cuántas son y cómo queda cada día: nada de clientes.
-      ganadas: plan.ganadas.length, reservas: plan.reservas.length, reservasQueYaEstaban: plan.reservasQueYaEstaban,
-      reservasPagadas: plan.reservas.filter((x) => x.pagoAnotado).length,
-      dias: plan.dias,
-      vendedores: plan.vendedores, problemas: plan.problemas, sinCatalogo: plan.sinCatalogo,
-      equivalencias: plan.equivalencias,
-      pestanas: { clientes: HOJA_IMPORTAR_CLIENTES, cotizaciones: HOJA_IMPORTAR_COTIZACIONES, reservas: HOJA_IMPORTAR_RESERVAS },
-      nombrePlanilla: await nombreDeLaPlanilla().catch(() => ''),
-      entorno: entornoDe(process.env.VERCEL_ENV),
-      planilla: `https://docs.google.com/spreadsheets/d/${idPlanilla()}`
-    });
+    return NextResponse.json(await vistaPrevia((await quienEs(req)).usuario));
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  }
+});
+
+/**
+ * Lo que no son las pestañas de paso: se precarga antes de escribir. Las de
+ * paso se leen después, ya con lo subido.
+ */
+const LAS_DEL_PANEL = [HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_USUARIOS, HOJA_MENUS, HOJA_FECHAS, HOJA_RESERVAS, HOJA_CONFIG];
+
+export const PUT = conLecturas(LAS_DEL_PANEL, async function PUT(req: Request) {
+  const no = await exigir(req, 'mantencion');
+  if (no) return no;
+  const quien = await quienEs(req);
+  let cuerpo: { hojas?: unknown } | null = null;
+  try { cuerpo = await req.json(); } catch { /* sin cuerpo: se dice abajo */ }
+  const subida = hojasParaSubir(cuerpo?.hojas);
+  if ('error' in subida) return NextResponse.json({ error: subida.error }, { status: 400 });
+  try {
+    for (const [hoja, filas] of Object.entries(subida.hojas)) {
+      // **Todo como texto** (el `'` adelante): lo que queda en la planilla es
+      // lo que decía el Excel. Sin eso Sheets lee `2026-12-05` como fecha y
+      // `44.000` como le parezca según el idioma de la planilla.
+      await escribirBloque(hoja, filas.map((f) => f.map((c) => (c === '' ? '' : `'${c}`))));
+    }
+    const detalle = Object.entries(subida.filas).map(([hoja, n]) => `${hoja}: ${n} ${n === 1 ? 'fila' : 'filas'}`).join(' · ');
+    await anotar({ ...quien, accion: 'Subió el Excel para importar', detalle });
+    return NextResponse.json({ ...(await vistaPrevia(quien.usuario)), subido: subida.filas });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
