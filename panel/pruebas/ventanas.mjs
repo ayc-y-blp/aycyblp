@@ -200,6 +200,12 @@ export const ESCENAS = {
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
   },
+  // **¿Se cayó?** (2026-11-22): la ventanita de *✕ Se cayó…*, abierta desde
+  // la fila de la lista, que es la misma que se abre en la cotización.
+  'v-se-cayo': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('button', { name: /Se cayó la cotización de Marisol Cáceres/ }));
+  },
   'v-cotizar-corregir-ganada': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
     await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);

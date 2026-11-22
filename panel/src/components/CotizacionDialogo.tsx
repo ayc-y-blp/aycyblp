@@ -40,7 +40,7 @@ import {
 import {
   prepararLineas, esDiaPublico, lineaDeProducto, yaEstaEnLaCotizacion, productoDe, showDe, cambiarCantidad,
   alternativasDe, letraDe, grupoDe, vivasDelGrupo, sigueViva, paraElLink,
-  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, type ReglaShow
+  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow
 } from '@/lib/cotizar';
 import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, type Menu } from '@/lib/menus';
 import {
@@ -53,6 +53,7 @@ import { faltaDelCliente, partirHorario, textoHorario, moverHora, PASO_HORARIO }
 import CampoRut from './CampoRut';
 import { frasesCancelacion } from '@/lib/cancelacion';
 import CancelarEvento from './CancelarEvento';
+import SeCayo from './SeCayo';
 import CorregirGanada from './CorregirGanada';
 import BloqueCancelada from './BloqueCancelada';
 import { enPesos } from '@/lib/ocupacion';
@@ -304,6 +305,8 @@ export default function CotizacionDialogo({
   /** El día en que se le mandó el contrato (lo pone el servidor). */
   const [contratoEnviado, setContratoEnviado] = useState(p?.contratoEnviado ?? '');
   const [cancelando, setCancelando] = useState(false);
+  /** La ventanita *¿Se cayó?* abierta (2026-11-22). */
+  const [cayendo, setCayendo] = useState(false);
   const [acuerdos, setAcuerdos] = useState(p?.acuerdos ?? '');
   /** El contrato firmado subido: quién y cuándo. Que esté es lo que dice "firmado". */
   const [firmado, setFirmado] = useState<null | { por: string; cuando: string }>(
@@ -1483,6 +1486,25 @@ export default function CotizacionDialogo({
         </div>
       )}
 
+      {/* **Se cayó…, en todos los pasos** (2026-11-22, lo pidió el cliente:
+          *"el vendedor responsable de su venta debería tener en cada página
+          del pop-up de cotizaciones el botón se cayó… da igual en qué fase
+          está"*). Va en la fila de los pasos, que está en los cinco. Abre la
+          ventanita que pide el motivo y confirma (`SeCayo`). **Una ganada se
+          cancela**: ahí el mismo botón abre *Cancelar el evento*, que libera
+          el cupo y calcula la devolución. Lo ve quien puede tocarla: el
+          vendedor la suya; pagos, la gerencia y el administrador, todas. */}
+      {p && puedeEditar && !cancelada && (ganada || enCarrera({ estado, idReserva: p.idReserva })) && (
+        <div className="mb-4 flex justify-end lg:mb-0 lg:shrink-0">
+          <button type="button" disabled={guardando}
+            onClick={() => (ganada ? setCancelando(true) : setCayendo(true))}
+            className="boton min-h-[44px] !border-2 !border-rojo-fuerte/50 !text-[14px] !font-semibold text-rojo-texto
+                       hover:!border-rojo-fuerte hover:!text-rojo-texto">
+            ✕ Se cayó…
+          </button>
+        </div>
+      )}
+
       {/* Para quién es, a la vista en los cuatro pasos. */}
       </div>
 
@@ -2557,8 +2579,9 @@ export default function CotizacionDialogo({
                       }
                     }}>Todavía no se mandó</button>
                 )}
-                <button type="button" className="boton min-h-[44px] hover:!border-rojo-fuerte hover:text-rojo-texto lg:min-h-[40px]"
-                  onClick={() => setEstado(ESTADO_PRESUPUESTO.rechazado)}>Se perdió…</button>
+                {/* *Se perdió…* se fue de acá el 2026-11-22: ahora es *✕ Se cayó…*,
+                    arriba, en todos los pasos y con su motivo. Dos botones para
+                    lo mismo era no saber cuál apretar. */}
                 <AyudaCorta tema="estadoCotizacion" />
               </div>
             )}
@@ -3081,6 +3104,13 @@ export default function CotizacionDialogo({
           onCerrar={() => setCorrigiendo(false)}
           onCancelarEvento={() => { setCorrigiendo(false); setCancelando(true); }}
           onListo={(hacia) => { setCorrigiendo(false); onCambio(); if (onAbrir) onAbrir(hacia || p.id, 4); else onCerrar(); }} />
+      )}
+      {cayendo && p && (
+        <SeCayo id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''}
+          alternativas={alts.filter((a) => a.id === p.id || enCarrera(a)).length}
+          antes={async () => { if (autoActivo) await auto.forzar(); }}
+          onCerrar={() => setCayendo(false)}
+          onListo={() => { setCayendo(false); onCambio(); onCerrar(); }} />
       )}
       {cancelando && p && (
         <CancelarEvento p={p} onCerrar={() => setCancelando(false)}

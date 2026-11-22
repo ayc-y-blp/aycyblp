@@ -227,6 +227,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cotización.',
       'Un candidato es alguien que preguntó: se anota con cliente, fecha e '
       + 'invitados, y se cotiza después.',
+      'Si el cliente dice que no va, "✕ Se cayó…" la da por perdida con su motivo: '
+      + 'está en cada paso de la cotización y al lado de cada fila de la lista. '
+      + 'Una ganada no se cae: se cancela, con su devolución.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
@@ -682,7 +685,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'En qué va',
     texto: [
       'El camino de arriba dice en qué va. Avanza con lo que haces: "Sí, la mandé" la deja Enviada, "Marcar ganada" crea la reserva.',
-      '"Están negociando" y "Se perdió…" son para ordenarte y para los avisos. Una perdida se puede volver a abrir.',
+      '"Están negociando" es para ordenarte y para los avisos. Si el cliente dice que no va, "✕ Se cayó…" —arriba, en cualquier paso, y al lado de cada fila de la lista— pide el motivo y la pasa a Perdidas. Una perdida se puede volver a abrir.',
       'Con varias alternativas vale para todas: van en un solo link y es una sola conversación.'
     ]
   },
@@ -1100,7 +1103,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Esperando respuesta',
     texto: [
       'Las cotizaciones mandadas que llevan días sin moverse, las que tienen el evento cerca sin estar ganadas, y los contratos mandados que no han vuelto firmados.',
-      'Contesta ahí mismo: "Está negociando", "Se perdió" o "Sigue esperando", que te vuelve a preguntar más adelante. Los plazos se cambian en cada cotización o en Configuración.'
+      'Contesta ahí mismo: "Está negociando", "✕ Se cayó…" (pide el motivo) o "Sigue esperando", que te vuelve a preguntar más adelante. Los plazos se cambian en cada cotización o en Configuración.'
     ]
   },
   seguimientoDias: {

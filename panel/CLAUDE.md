@@ -163,6 +163,7 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
+  | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -209,6 +210,59 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## *✕ Se cayó…*: dar por perdida una cotización en un toque (2026-11-22)
+
+Lo pidió el cliente: *"el vendedor responsable de su venta debería tener en
+cada página del pop-up de cotizaciones el botón se cayó… da igual en qué fase
+está, cuando llega la llamada del cliente 'no vamos'… hasta en el enlistado…
+puede ser con reconfirmación, se cayó y darle una razón, pero hacerlo muy
+fácil… para que desaparezca de la lista"*. Y después: *"esta función tiene que
+estar para el encargado de pagos y la gerencia también. Siempre comprobando
+que es correcto"*.
+
+- **Dónde está**:
+  - en la ventana de cotizar, en la fila de los pasos, así que se ve en los
+    cinco;
+  - al lado de cada fila de la lista, fuera de la fila, que ya es un botón;
+  - en *Esperando respuesta*, donde reemplaza a *Se perdió*, que tenía sus
+    propios botones de motivo: era el mismo dato con otra forma.
+- **La ventanita `SeCayo`**: los motivos de siempre (`MOTIVOS_PERDIDA`) o uno
+  escrito, y **no deja seguir sin motivo**. Antes del botón dice qué pasa:
+  *Pasa a Perdidas: sale de la lista y del calendario. Se puede volver a
+  abrir*, y cuántas alternativas se caen con ella. *Sí, se cayó* va en rojo.
+- **Qué hace** (`seCayo()` en `lib/cotizar.ts`, pura y con pruebas; la ruta
+  `POST /api/presupuestos/perdida`): la cotización y **las alternativas del
+  grupo que siguen en carrera** pasan a *Perdida* con el motivo y el último
+  seguimiento de hoy. Queda en la bitácora: *Marcó perdida una cotización ·
+  N° · motivo: …*.
+- **Quién**: quien puede tocar esa cotización (`puedeTocarPresupuesto`). El
+  vendedor ve el botón en las suyas; pagos, la gerencia, operaciones y el
+  administrador, en todas. **Ningún permiso cambió**: ya podían tocarlas. El
+  servidor lo vuelve a comprobar: con una ajena, el vendedor recibe 403.
+- **Una ganada no se cae: se cancela.** En la ventana de cotizar, el mismo
+  botón abre *Cancelar el evento*, que libera el cupo y calcula la
+  devolución. En la lista no aparece en las ganadas, y la ruta las rechaza
+  (409).
+- **En carrera** (`enCarrera()`) son candidato, borrador, enviada y en
+  negociación. Una perdida se vuelve a abrir desde el paso Envío, como
+  siempre (*No se perdió: volver a abrirla*).
+- **El *Se perdió…* del paso Envío se fue**: el de arriba lo reemplaza. Dos
+  botones para lo mismo era no saber cuál apretar.
+- **En la ventana de cotizar**, antes de escribir se manda lo pendiente del
+  autoguardado, y al terminar la ventana se cierra y la lista se recarga.
+- **Medidas**: la ventanita, 364px a 1280×650 (escena `v-se-cayo`; son 50).
+  Los pasos de cotizar no crecen: el paso 4 bajó de 625 a 612px al salir su
+  botón. En el celular el botón va en su línea, bajo los pasos.
+- **Ayuda**: el `?` de Cotizaciones, *En qué va* y *Esperando respuesta*
+  dicen *✕ Se cayó…*. Fotos rehechas: `ven-cotizar`, `ven-envio`,
+  `pag-cobros` y `ger-cobros`.
+- **Lecturas de Google**: la ruta, una tanda (`Presupuestos`), y escribe una
+  fila por cotización que se cae. Las pantallas, ninguna más.
+- **Probado en el panel de ejemplo**: el vendedor ve el botón en sus dos y
+  pagos en las tres en carrera; pagos da por caído a un candidato con
+  *Precio* y sale de *En carrera*; el vendedor recibe 403 con una ajena, y
+  una ganada se rechaza con el aviso de *Cancelar evento*.
 
 ## Productos: el candado del nombre mira el producto, no lo que se escribe (2026-11-22)
 
@@ -2251,7 +2305,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 49 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 50 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de
