@@ -113,6 +113,12 @@ export const ESCENAS = {
   'ficha-reserva-del-dia': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); },
   'ficha-persona-del-informe': personaDelInforme,
   'ficha-cliente-nuevo': async () => { await ir('/clientes'); await clic(boton(/Nuevo cliente/)); },
+  // Cambiar el vendedor de un cliente (2026-11-22): con uno ya elegido, que es cuando más mide.
+  'v-cambiar-vendedor': async () => {
+    await ir('/clientes'); await abrirPrimera();
+    await clic(boton(/Vendedor: .* Cambiar/));
+    await clic(p.locator('[role=dialog]').getByRole('button', { name: /Daniela/ }));
+  },
   // Reservas y días.
   'v-reserva-nueva': async () => { await ir('/'); await clic(boton('Agregar reserva')); },
   // *✎ Editar* es el de la reserva: con /^Editar/ la escena abría *Editar

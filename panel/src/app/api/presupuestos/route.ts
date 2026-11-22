@@ -11,6 +11,7 @@ import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_MENUS } from '@/lib/menus';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
+import { vendedoresParaAsignar } from '@/lib/asignar';
 import { horarioDe, faltaDeEmpresa, normalizarHorario } from '@/lib/contrato';
 import { UF_MINIMA, UF_MAXIMA } from '@/lib/uf';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
@@ -73,6 +74,9 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
     return NextResponse.json({
       presupuestos: presupuestos.map((p) => recortarContactoDeCotizacion(conCliente(p, clientes), alcance, quien.usuario)),
       lineas, menus, clientes: clientesVisibles,
+      // **A quién se le puede pasar una cotización** (2026-11-22, `asignar.ts`):
+      // solo para quien puede cambiar el vendedor. `Usuarios` ya venía en la tanda.
+      vendedores: puede(quien.rol as Rol, 'asignarVendedor') ? vendedoresParaAsignar(cuentas) : undefined,
       // **Los socios comerciales**, para *"¿Viene por un socio comercial?"*:
       // solo el id, el nombre y si está activo. Su trato y su cuenta, no.
       socios: fichas.filter((f) => f.tipo === 'socio')

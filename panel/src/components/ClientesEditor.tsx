@@ -26,6 +26,7 @@ import { Aviso } from './CalendarView';
 import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import CampoRut from './CampoRut';
+import CambiarVendedor from './CambiarVendedor';
 import { avisar } from './AvisoFlotante';
 import {
   buscarClientes, porNombreCliente, type Cliente, type DatosCliente
@@ -65,6 +66,10 @@ export default function ClientesEditor() {
   const [cotizaciones, setCotizaciones] = useState<Record<string, number>>({});
   const [historial, setHistorial] = useState<Record<string, EnHistorial[]>>({});
   const [sinFicha, setSinFicha] = useState(0);
+  /** Para cambiar el vendedor (2026-11-22): solo llega a quien puede. */
+  const [vendedores, setVendedores] = useState<{ usuario: string; nombre: string }[] | null>(null);
+  const [abiertas, setAbiertas] = useState<Record<string, number>>({});
+  const [ganadas, setGanadas] = useState<Record<string, number>>({});
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
   const [busqueda, setBusqueda] = useState('');
@@ -89,6 +94,9 @@ export default function ClientesEditor() {
     setCotizaciones(d.cotizaciones ?? {});
     setHistorial(d.historial ?? {});
     setSinFicha(d.sinFicha ?? 0);
+    setVendedores(d.vendedores ?? null);
+    setAbiertas(d.abiertas ?? {});
+    setGanadas(d.ganadas ?? {});
   }).catch((e) => setError(String(e)));
 
   useEffect(() => { void cargar(); }, []);
@@ -440,9 +448,17 @@ export default function ClientesEditor() {
                       )}
                       <AvisoGuardado estado={estado} error={falla} onReintentar={() => fichas.reintentar(c.id)} />
                       <span className="flex-1" />
-                      <span className="text-[13px] text-hueso/60">
-                        {c.id}{c.creadoPor && <> · creada por {c.creadoPor}</>}
-                      </span>
+{vendedores ? (
+                        <>
+                          <span className="text-[13px] text-hueso/60">{c.id}</span>
+                          <CambiarVendedor de={c.creadoPor ?? ''} vendedores={vendedores} cliente={c.id} nombre={c.nombre}
+                            abiertas={abiertas[c.id] ?? 0} ganadas={ganadas[c.id] ?? 0} onCambiado={() => void cargar()} />
+                        </>
+                      ) : (
+                        <span className="text-[13px] text-hueso/60">
+                          {c.id}{c.creadoPor && <> · creada por {c.creadoPor}</>}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}

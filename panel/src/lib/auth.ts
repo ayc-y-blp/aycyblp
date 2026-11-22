@@ -428,6 +428,14 @@ export const PERMISOS = {
    * `Por confirmar` en `lib/vendedores.ts`.
    */
   agregarSocios: [ROL.admin, ROL.pagos, ROL.gerencia, ROL.vendedor],
+  /**
+   * **Cambiar el vendedor de un cliente o de una cotización** (2026-11-22, lo
+   * pidió el cliente: *"a la gerencia y al administrador de pagos… porque se
+   * va una vendedora, pero el cliente se queda, o porque hay una venta sin
+   * asignación"*). Mueve de quién es la ficha, la cotización y —si la venta
+   * no está cerrada— su comisión. Ver `lib/asignar.ts`.
+   */
+  asignarVendedor: [ROL.admin, ROL.pagos, ROL.gerencia],
   /** Marcar que llegó la boleta de alguien en el informe (2026-11-12). */
   boleta: [ROL.admin, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /**

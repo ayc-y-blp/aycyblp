@@ -80,6 +80,17 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   que el cliente diga *"mergea"***: primero lo ensaya en la versión de
   prueba. Detalle en la sección 4 y en `panel/CLAUDE.md`, "Importar del CRM y
   del sitio viejo".
+- **En el mismo PR #293, el 22-11-2026**: el Excel se sube desde el
+  formulario (sin Google Drive); un vendedor del CRM calza con la cuenta que
+  lleva su apodo; y **cambiar el vendedor de un cliente o de una cotización**
+  (permiso nuevo `asignarVendedor`: gerencia, pagos y administrador). De paso
+  se corrigió que el importador escribía el usuario y no el nombre de la
+  cuenta como dueño. Detalle en `panel/CLAUDE.md`, "Cambiar el vendedor de un
+  cliente o de una cotización".
+- **Sin resolver**: el cliente vio los sábados y domingos *sin cupo* en el
+  calendario (no tenían fila en `Fechas Hábiles`). Abrió `/api/fechas/regla`
+  a mano y falta saber qué respondió. Si dijo `"abiertos":[]` y siguen sin
+  cupo, hay que mirar por qué `diasPorAbrir()` no los abre.
 - **Los dos Excel se le mandaron al cliente por el chat** (no están en el
   repo): el que se sube a la planilla y el de lo que hay que decidir. Se
   arman con un script que tampoco está en el repo; si llega un respaldo o un
@@ -1071,7 +1082,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 45 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 46 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

@@ -19,6 +19,7 @@
  *   cotizaciones de otros en solo lectura (`<fieldset disabled>`).
  */
 import BuscarEnLista from './BuscarEnLista';
+import CambiarVendedor from './CambiarVendedor';
 import AgregarVendedor from './AgregarVendedor';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AyudaCorta from './AyudaCorta';
@@ -97,6 +98,8 @@ export interface DatosCotizar {
   rol: string;
   /** Los socios comerciales, para *¿Viene por un socio comercial?* (2026-11-12). */
   socios?: { id: string; nombre: string; activo: boolean; porConfirmar?: boolean }[];
+  /** A quién se le puede pasar la cotización (2026-11-22): solo llega a quien puede cambiar el vendedor. */
+  vendedores?: { usuario: string; nombre: string }[];
   /** Los días cerrados y si esta cuenta puede corregirlos (2026-11-21). Ver `diaCerrado`. */
   cerrados?: string[];
   puedeCorregir?: boolean;
@@ -1755,6 +1758,17 @@ export default function CotizacionDialogo({
                 </div>
               );
             })()}
+
+            {/* **De qué vendedor es** (2026-11-22): solo para la gerencia, pagos
+                y el administrador, que reciben la lista. Una cotización que
+                todavía no se guarda no tiene dueño que cambiar. */}
+            {p && datos.vendedores && cliente && (
+              <div>
+                <CambiarVendedor de={p.creadoPor} vendedores={datos.vendedores} presupuesto={p.id}
+                  nombre={cliente.nombre} cerrada={!!String(p.comisionVendedor ?? '').trim()}
+                  onCambiado={onCambio} />
+              </div>
+            )}
 
             <Campo etiqueta="Notas internas" ancho="w-full">
               <textarea rows={2} value={notas} onChange={(e) => setNotas(e.target.value)}

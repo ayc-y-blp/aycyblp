@@ -179,6 +179,8 @@ export interface VendedorImportado {
   nombre: string;
   /** La cuenta del panel que calzó, o vacío. */
   usuario: string;
+  /** Lo que se escribe como dueño: el nombre de esa cuenta, que es lo que trae su sesión. */
+  dueno: string;
   fichas: number;
   cotizaciones: number;
 }
@@ -430,7 +432,16 @@ export function planDeImportacion(e: {
   const vendedores = new Map<string, VendedorImportado>();
   const vendedor = (nombre: string) => {
     const k = normalizar(nombre);
-    if (!vendedores.has(k)) vendedores.set(k, { nombre, usuario: cuentaDelVendedor(nombre, e.usuarios), fichas: 0, cotizaciones: 0 });
+    if (!vendedores.has(k)) {
+      const usuario = cuentaDelVendedor(nombre, e.usuarios);
+      // **Lo que se escribe como dueño es el NOMBRE de la cuenta**, no su
+      // usuario (2026-11-22): es lo que trae la sesión (`/api/sesion`) y
+      // contra lo que el panel compara para decir *esto es tuyo*. Con una
+      // cuenta *Carla Rojas* / `carla`, escribir `carla` la dejaba sin poder
+      // editar lo importado a su nombre.
+      const cuenta = e.usuarios.find((u) => u.usuario === usuario);
+      vendedores.set(k, { nombre, usuario, dueno: usuario ? (cuenta?.nombre || usuario) : '', fichas: 0, cotizaciones: 0 });
+    }
     return vendedores.get(k)!;
   };
 
@@ -455,7 +466,7 @@ export function planDeImportacion(e: {
     const v = f.vendedor ? vendedor(f.vendedor) : null;
     if (v) v.fichas++;
     const id = nuevoIdCliente([...e.clientes, ...fichas]);
-    fichas.push({ id, ...datos, creadoPor: v?.usuario ?? '', creado: e.cuando });
+    fichas.push({ id, ...datos, creadoPor: v?.dueno ?? '', creado: e.cuando });
     if (f.ref) idDeRef.set(f.ref, id);
   }
 
@@ -566,7 +577,7 @@ export function planDeImportacion(e: {
       cambiosFecha: null, cancelacionDias: null, reembolso: null,
       devolucion: 0, canceladaPor: '', cancelada: '', diaAbierto: '',
       enviada: '', ultimoSeguimiento: '', contratoEnviado: '', seguimientoDias: null, avisoEvento: null,
-      creadoPor: v?.usuario ?? '', creado: e.cuando
+      creadoPor: v?.dueno ?? '', creado: e.cuando
     };
 
     if (gana) {
@@ -575,7 +586,7 @@ export function planDeImportacion(e: {
       // vendedor, o quien importa si el vendedor no tiene cuenta.
       const reserva = reservaDesdePresupuesto(
         conCliente({ ...cotizacion, fila: 0 } as Presupuesto, todasLasFichas()),
-        suyas.map((l) => ({ ...l, fila: 0 })) as LineaPresupuesto[], e.menus, v?.usuario || e.quien);
+        suyas.map((l) => ({ ...l, fila: 0 })) as LineaPresupuesto[], e.menus, v?.dueno || e.quien);
       if (!(reserva.personas > 0)) {
         problemas.push(`${donde}: una ganada necesita cuánta gente viene (Invitados, o un menú en Productos). No entra.`); continue;
       }

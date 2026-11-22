@@ -424,6 +424,61 @@ el estado, su reserva y qué se le hizo a su día.
 - **No le enseña al panel el modelo viejo de Shopify**: los pedidos del sitio
   viejo entran una vez, por esta pestaña, y los nuevos siguen llegando solos.
 
+## Cambiar el vendedor de un cliente o de una cotización (2026-11-22)
+
+Lo pidió el cliente al ensayar el importador: *"hay que agregar la función a
+la gerencia y al administrador de pagos que pueda asignar vendedores a un
+cliente o a una cotización… porque se va una vendedora, pero el cliente se
+queda, o porque hay una venta sin asignación"* —lo que entra *sin cuenta* al
+importar—. Lógica en `lib/asignar.ts` (pura, con pruebas), la ruta en
+`/api/vendedores/asignar` y la pieza en `CambiarVendedor.tsx`.
+
+- **Permiso nuevo, `asignarVendedor`**: la gerencia, pagos y el
+  administrador. El vendedor, operaciones y el encargado reciben 403.
+- **Qué se cambia**: el `Creado por` de la ficha o de la cotización. De ahí
+  salen qué puede editar un vendedor, de quién ve el contacto y a quién se le
+  cuenta la venta: el nuevo pasa a poder y el anterior deja de poder.
+- **Las dos reglas de plata, que decidió el cliente** (*"sí a los dos"*):
+  1. **Una cotización ganada que se reasigna se lleva su comisión**, salvo
+     que ya esté cerrada —el cliente pagó todo y pagos lo revisó, o sea
+     `Comisión vendedor` ya tiene su monto—. Esa no se cambia, y la ventana
+     lo dice.
+  2. **Al cambiar el vendedor de un cliente, sus ganadas se quedan** con
+     quien las tiene. Solo se mueven las abiertas —ni ganadas, ni perdidas,
+     ni canceladas—, con una casilla que viene marcada.
+- **Dónde**: al abrir la ficha en `/clientes`, *Vendedor: Jorge · Cambiar…*
+  (donde decía *creada por*), y en la cotización, en el paso **Evento**, bajo
+  *¿Viene por un socio comercial?*. Solo se dibuja para quien recibe la lista
+  de vendedores, que el servidor manda solo con el permiso.
+- **La ventana**: la lista con buscador (`BuscarEnLista`), la casilla de las
+  abiertas y **la frase de lo que va a pasar** —*Pasa de Jorge a Daniela, con
+  su cotización abierta. Su cotización ganada se queda con quien la tiene*—
+  antes del botón *Cambiar vendedor*. Se confirma a mano: toca de quién es
+  algo y su comisión.
+- **A quién**: las cuentas activas con el rol Vendedor.
+- **La bitácora**: *Cambió el vendedor de un cliente · Cliente C-0001: de
+  Jorge a Daniela · con 1 cotización abierta*. Sin datos del cliente.
+- **`Creado por` lleva el nombre de la cuenta, no su usuario.** Es lo que
+  trae la sesión (`/api/sesion`) y contra lo que el panel compara para decir
+  *esto es tuyo*. La ruta escribe el nombre; para leer calza con cualquiera
+  de los dos (`esDelVendedor()`). **El importador escribía el usuario** y se
+  corrigió en el mismo cambio: con una cuenta *Carla Rojas* / `carla`, lo
+  importado a su nombre no le habría quedado como suyo.
+- **Lecturas de Google**: ninguna más en las pantallas. `/api/clientes` suma
+  `Usuarios` a su tanda (`npm run lecturas`: 1 de 1) y `/api/presupuestos` ya
+  la traía. Cambiar lee una tanda y escribe una fila por ficha o cotización.
+- **Ninguna columna nueva.**
+- **Ayuda**: el `?` de Clientes, el `?` de la ventana (`cambiarVendedor`) y
+  la lista de lo que puede cada rol, que sale sola de `PERMISOS`.
+- **Ventanas**: escena nueva `v-cambiar-vendedor` (307px a 1280×650; 359 en
+  el celular). El paso Evento de cotizar pasó de 423 a 471px. Son 46.
+- **Probado en el panel de ejemplo**: pagos le pasa un cliente de un vendedor
+  a otro con su cotización abierta, la ficha queda con el nuevo y apretar de
+  nuevo responde *Ya es de …*. El anfitrión, el vendedor, el encargado y
+  operaciones reciben 403.
+- **Lo que no hace**: no cambia `Anotada por` de la reserva de una ganada, y
+  no deja algo *sin vendedor* a propósito.
+
 ## El computador, más compacto (2026-11-21)
 
 Lo pidió el cliente: *"se puede compactar todas las vistas en el computador
@@ -1707,7 +1762,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 45 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 46 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

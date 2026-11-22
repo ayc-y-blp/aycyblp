@@ -5624,7 +5624,7 @@ console.log('\nImportar del CRM');
   const plan = I.planDeImportacion(base);
   ok(plan.fichas.length === 2 && plan.fichas[0].id === 'C-0008' && plan.fichas[1].id === 'C-0009' && plan.fichasQueYaEstaban === 1,
      'entran las fichas nuevas con ids correlativos, y la que ya estaba (mismo teléfono) no se duplica');
-  ok(plan.fichas[0].telefono === '+56 9 5111 2233' && plan.fichas[0].correo === 'ana@ejemplo.cl' && plan.fichas[0].creadoPor === 'carla'
+  ok(plan.fichas[0].telefono === '+56 9 5111 2233' && plan.fichas[0].correo === 'ana@ejemplo.cl' && plan.fichas[0].creadoPor === 'Carla Rojas'
      && plan.fichas[1].creadoPor === '',
      'la ficha queda con el teléfono y el correo ordenados y a nombre de la cuenta de su vendedor; "Bruno" no calza con una sola cuenta');
   ok(plan.problemas.some((x) => x.includes('Importar clientes, fila 4') && x.includes('teléfono o un correo'))
@@ -5635,7 +5635,7 @@ console.log('\nImportar del CRM');
      'entran un candidato con día, un borrador con periodo y un candidato del cliente que ya estaba');
   const [cand, borr, deYa] = plan.cotizaciones;
   ok(cand.estado === 'Candidato' && cand.fecha === '2027-03-14' && cand.idCliente === 'C-0008' && cand.invitados === 120
-     && cand.creadoPor === 'carla' && cand.token === 'tok1' && cand.id === 'PRE-1795000000000' && cand.validoHasta === '' && cand.enviada === '',
+     && cand.creadoPor === 'Carla Rojas' && cand.token === 'tok1' && cand.id === 'PRE-1795000000000' && cand.validoHasta === '' && cand.enviada === '',
      'el candidato: su día, su ficha, su vendedor, su token; sin mandar y sin vigencia');
   ok(borr.estado === 'Borrador' && borr.fecha === '' && borr.periodo.startsWith('entre el') && borr.invitados === 80
      && borr.notas.endsWith('(CRM-0002-a)') && borr.id === 'PRE-1795000000001',
@@ -5689,7 +5689,7 @@ console.log('\nImportar del CRM');
      'un día que no existe se crea privado con el cupo de siempre, y se dice cuánta gente queda sobre ese cupo');
   ok(g1.reserva.menu.includes('76') && g1.reserva.menu.includes('Lo Pirque') && !/Arriendo/.test(g1.reserva.menu)
      && g1.reserva.monto === Math.round(76 * 50000 * 1.19) + 4 * 19000 + Math.round(1500000 * 1.19)
-     && g1.reserva.estadoPago === 'pending' && g1.reserva.anotadaPor === 'carla' && g1.reserva.nombre === 'Ana Prueba'
+     && g1.reserva.estadoPago === 'pending' && g1.reserva.anotadaPor === 'Carla Rojas' && g1.reserva.nombre === 'Ana Prueba'
      && g1.reserva.notaPago === `De la cotización N° ${g1.id.slice(-6)}`,
      'su reserva es la de Marcar ganada: el total negociado, al menú solo la gente, por pagar, a nombre de su vendedor');
   ok(g2.fecha === '2026-12-05' && g2.personas === 30 && g2.reserva.anotadaPor === 'admin' && g3.personas === 40,
@@ -6313,6 +6313,62 @@ console.log('\nLas estadísticas del equipo');
      'corrección de una cotización: las notas y la facturación se nombran');
   ok(!/torta|76\.|Av\./.test(soloOtros.join()),
      'corrección de una cotización: lo que se nombra sin valor no lleva el texto ni el RUT');
+}
+
+console.log('\nCambiar el vendedor');
+{
+  const A = await import('./asignar.ts');
+  const usuarios = [
+    { usuario: 'carla', nombre: 'Carla Rojas', rol: 'vendedor', activo: true },
+    { usuario: 'bruno', nombre: 'Bruno Díaz', rol: 'vendedor', activo: true },
+    { usuario: 'elsa', nombre: 'Elsa Mora', rol: 'vendedor', activo: false },
+    { usuario: 'pagos', nombre: 'Paula', rol: 'pagos', activo: true }
+  ];
+  const vendedores = A.vendedoresParaAsignar(usuarios as never);
+  ok(vendedores.map((v) => v.usuario).join() === 'bruno,carla',
+     'se le asigna solo a una cuenta activa con el rol Vendedor');
+  const p = (id: string, mas: Record<string, unknown> = {}) =>
+    ({ id, idCliente: 'C-0001', creadoPor: 'carla', estado: 'Borrador', idReserva: '', comisionVendedor: '', ...mas }) as never;
+  const lista = [p('1'), p('2', { estado: 'Enviada' }), p('3', { estado: 'Ganada', idReserva: 'MANUAL-1' }),
+    p('4', { estado: 'Perdida' }), p('5', { idCliente: 'C-0002' }), p('6', { creadoPor: '' })];
+  const cliente = { id: 'C-0001', creadoPor: 'carla' };
+
+  let plan = A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'bruno', vendedores });
+  ok(!plan.error && plan.mover.length === 1 && !plan.cliente, 'una cotización pasa sola, sin tocar la ficha');
+  ok(plan.dueno === 'Bruno Díaz' && A.esDelVendedor(vendedores[0], 'Bruno Díaz') && A.esDelVendedor(vendedores[0], 'bruno')
+     && !A.esDelVendedor(vendedores[0], ''),
+     'se escribe el nombre de la cuenta, que es lo que trae su sesión; lo de antes calza también por usuario');
+  plan = A.planDeAsignacion({ presupuesto: lista[2], presupuestos: lista, a: 'bruno', vendedores });
+  ok(!plan.error && plan.mover.length === 1, 'una ganada sin cerrar se reasigna: su comisión va con ella');
+  plan = A.planDeAsignacion({ presupuesto: p('7', { idReserva: 'MANUAL-2', comisionVendedor: '120000 · 5% de $2.400.000' }),
+    presupuestos: lista, a: 'bruno', vendedores });
+  ok(!!plan.error && plan.mover.length === 0 && plan.error.includes('Carla Rojas'),
+     'con la comisión cerrada no cambia de manos, y dice con quién se queda');
+  ok(!!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'carla', vendedores }).error
+     && !!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'elsa', vendedores }).error
+     && !!A.planDeAsignacion({ presupuesto: lista[0], presupuestos: lista, a: 'pagos', vendedores }).error,
+     'no se asigna al mismo, ni a una cuenta apagada, ni a quien no es vendedor');
+
+  plan = A.planDeAsignacion({ cliente, presupuestos: lista, a: 'bruno', vendedores, conAbiertas: true });
+  ok(!plan.error && plan.cliente && plan.mover.map((x) => x.id).join() === '1,2,6' && plan.quedan.map((x) => x.id).join() === '3',
+     'el cliente pasa con sus abiertas; la ganada se queda, y la perdida y la de otro cliente no se tocan');
+  plan = A.planDeAsignacion({ cliente, presupuestos: lista, a: 'bruno', vendedores });
+  ok(!plan.error && plan.cliente && plan.mover.length === 0, 'sin pedirlo, solo cambia la ficha');
+  plan = A.planDeAsignacion({ cliente, presupuestos: lista, a: 'carla', vendedores, conAbiertas: true });
+  ok(!plan.error && !plan.cliente && plan.mover.map((x) => x.id).join() === '6',
+     'si la ficha ya es suya, todavía recibe la abierta que estaba sin vendedor');
+  ok(!!A.planDeAsignacion({ cliente, presupuestos: lista, a: 'carla', vendedores }).error, 'y sin nada que mover, lo dice');
+  ok(A.nombreDelVendedor('', vendedores) === 'sin vendedor' && A.nombreDelVendedor('CARLA', vendedores) === 'Carla Rojas'
+     && A.nombreDelVendedor('Alguien de antes', vendedores) === 'Alguien de antes',
+     'quien la tiene se dice por su nombre, o tal como quedó escrito');
+  plan = A.planDeAsignacion({ cliente, presupuestos: lista, a: 'bruno', vendedores, conAbiertas: true });
+  ok(A.detalleDeAsignacion(plan, 'Cliente C-0001', 'bruno', vendedores)
+     === 'Cliente C-0001: de Carla Rojas a Bruno Díaz · con 3 cotizaciones abiertas · 1 ganada se queda con quien la tenía',
+     'la bitácora dice de quién a quién y cuántas, sin datos del cliente');
+  const R = await import('./auth.ts');
+  ok(R.puede(R.ROL.gerencia, 'asignarVendedor') && R.puede(R.ROL.pagos, 'asignarVendedor') && R.puede(R.ROL.admin, 'asignarVendedor')
+     && !R.puede(R.ROL.vendedor, 'asignarVendedor') && !R.puede(R.ROL.operaciones, 'asignarVendedor') && !R.puede(R.ROL.encargado, 'asignarVendedor'),
+     'cambiar el vendedor es de la gerencia, pagos y el administrador');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

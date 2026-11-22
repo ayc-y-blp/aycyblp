@@ -44,6 +44,7 @@ export const PALABRAS: Record<Accion, string> = {
   vendedores: 'Ver el resumen de ventas y comisiones (el vendedor, solo el suyo)',
   agregarVendedores: 'Agregar vendedores: crear su cuenta, solo con el rol Vendedor, y sus datos de pago',
   agregarSocios: 'Agregar socios comerciales (los del vendedor quedan por confirmar)',
+  asignarVendedor: 'Cambiar el vendedor de un cliente o de una cotización',
   configurar: 'Cambiar precios, productos y Configuración',
   bitacora: 'Ver la bitácora de quién hizo qué',
   usuarios: 'Crear cuentas y cambiar roles',
