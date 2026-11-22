@@ -11,6 +11,8 @@
  */
 import { useEffect, useState } from 'react';
 import Dialogo from './Dialogo';
+import AyudaCorta from './AyudaCorta';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import { avisar } from './AvisoFlotante';
 import { enPesos } from '@/lib/ocupacion';
 import { enPalabras } from '@/lib/fechas';
@@ -69,7 +71,10 @@ export default function CancelarEvento({ p, onCerrar, onListo }: {
   }
 
   return (
-    <Dialogo titulo="Cancelar el evento" onCerrar={onCerrar}>
+    // **En el computador, ancha y en dos columnas** (2026-11-22): con los
+    // marcos medía 797px a 1280×650 —y antes tampoco cabía; nadie lo medía—.
+    // Lo que dice el contrato a la izquierda y lo que se anota a la derecha.
+    <Dialogo titulo="Cancelar el evento" onCerrar={onCerrar} ancho="max-w-lg lg:max-w-4xl">
       <div className="space-y-4 text-[15px]">
         <p>
           {p.fecha && <span className="first-letter:uppercase inline-block font-semibold">{enPalabras(p.fecha)}</span>}
@@ -77,8 +82,14 @@ export default function CancelarEvento({ p, onCerrar, onListo }: {
         </p>
 
         {!s && !error && <p className="text-hueso/70">Revisando el contrato…</p>}
+        {/* **En dos marcos de grupo** (2026-11-22, lo pidió el cliente: *"ponle
+            marco también a las ventanitas"*): lo que dice el contrato, en el
+            cielo del contrato, y lo que se anota al cancelar. */}
+        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
         {s && (
-          <ul className="space-y-1.5 rounded border border-hueso/15 bg-panel p-3">
+          <div className={`${marcoGrupo('cielo')} p-3`}>
+          <p className={`${TITULO_GRUPO} text-cielo-texto`}>📄 Lo que dice el contrato</p>
+          <ul className="mt-2 space-y-1.5">
             <li>
               {s.dias >= 0 ? <>Faltan <strong>{s.dias} días</strong> para el evento.</>
                 : <>El evento fue hace <strong>{-s.dias} días</strong>.</>}
@@ -97,20 +108,23 @@ export default function CancelarEvento({ p, onCerrar, onListo }: {
             <li>El cliente pagó <strong>{enPesos(s.pagado)}</strong>.</li>
             <li>Según el contrato corresponde devolver <strong>{enPesos(s.devolver)}</strong>.</li>
           </ul>
+          </div>
         )}
 
         {s && (
-          <>
+          <div className={`space-y-4 ${marcoGrupo()} p-3`}>
+            <p className={TITULO_GRUPO}>Al cancelar</p>
             <label className="block">
-              <span className="mb-1 block text-[13px] font-medium uppercase tracking-wide text-hueso/60">
+              <span className="mb-1 flex items-center text-[13px] font-medium uppercase tracking-wide text-hueso/60">
                 Se le devuelve
+                {/* Lo que explica, a su `?` (regla *lo que explica va en su ?*). */}
+                <AyudaCorta titulo="Se le devuelve">
+                  Lo propone el contrato; si se negoció otra cosa, cámbialo. Queda anotado
+                  y lo transfiere quien hace los pagos.
+                </AyudaCorta>
               </span>
               <input inputMode="numeric" value={monto} className={`${ENTRADA} sm:w-48`}
                 onChange={(e) => setMonto(e.target.value)} />
-              <span className="mt-1 block text-[14px] text-hueso/70">
-                Lo propone el contrato; si se negoció otra cosa, cámbialo. Queda anotado
-                y lo transfiere quien hace los pagos.
-              </span>
               {deMas && (
                 <span className="mt-1 block text-[14px] font-semibold text-ambar-texto">
                   Es más de lo que pagó: se anota hasta {enPesos(s.pagado)}.
@@ -131,8 +145,9 @@ export default function CancelarEvento({ p, onCerrar, onListo }: {
               para este evento y no tiene otras reservas, sale del calendario. No se
               deshace: si el cliente vuelve, se hace una cotización nueva.
             </p>
-          </>
+          </div>
         )}
+        </div>
 
         {error && <p role="alert" className="text-[15px] font-semibold text-rojo-texto">{error}</p>}
 

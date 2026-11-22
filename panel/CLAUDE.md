@@ -156,6 +156,7 @@ revisan antes de cada cambio en esta carpeta.
   | Un número grande con su nombre y su nota: qué preparar, cómo viene el pago, las mesas | `Azulejo` (la página del día y la cara de reservas de la ventana del equipo, con `compacto`) |
   | Una tarjeta de una lista que se abre: el marco, el + / − y el pie *▴ Cerrar* | `marcoTarjeta`, `SignoAbrir`, `PieCerrar` y `LISTA_TARJETAS` de `TarjetaLista` (Informe, Equipo, Extras, Vendedores, Clientes, Productos, Recepción, las reservas del día y las ventanas del equipo y de extras del día) |
   | Un grupo de tarjetas (un puesto en la ventana del equipo, *Actividades del día* en la de extras): **el marco más marcado**, su título y las tarjetas de adentro | `marcoGrupo`, `TITULO_GRUPO` y `marcoTarjeta(…, dentro)` de `TarjetaLista` |
+  | Una sección de una ventana con su color —el pago en verde, el contrato en cielo, el seguimiento en rosado— y el próximo paso | `marcoGrupo(tono)` + `TITULO_GRUPO`: `Seccion` e `Hito` de la ventana de cotizar (pasos 2, 4 y 5); en el paso 3, *Menús*, *Extras y arriendo* y *En la cotización* |
   | Elegir el puesto habitual de una persona | `ElegirPuesto`: un desplegable con los puestos que existen (la ficha de `/equipo` y la ficha que se abre desde el día) |
   | Lo de adentro de la línea de una persona en un día: campos, ajustes, total, *Ficha / Sacar del día*, *+ Nuevo …* | `CampoAlLado`, `AjustesDelDia`, `TotalDelDia`, `BotonesDeLaLinea` y `BotonNuevaPersona` de `LineaDelDia` (ventana del equipo y de las actividades extras) |
   | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
@@ -544,6 +545,92 @@ dentro* (arriba).
   lleno en uno de cada dos, la barra de cada tarjeta de una fila tiene que
   estar a la misma altura. Antes del cambio daba dos alturas.
 - Medido a 1024, 1280 y 1440px: todas las filas parejas.
+
+## La ventana de cotizar, con marcos de grupo (2026-11-22)
+
+Lo pidió el cliente con una foto del paso 3: *"en cotizaciones no estamos
+cumpliendo aún con todas las reglas y de diseño, de distribución de datos, de
+poner cómo ponemos los marcos, tarjeta principal, las informaciones adentro
+tienen otro marco. Por ejemplo, para distinguir mejor entre sección menú,
+sección extras, aplicar todas las reglas… en todos los formularios de la
+cotización"*. Es la regla *el marco de la tarjeta manda sobre lo de adentro*,
+que ya regía en la ventana del equipo, llevada a los cinco pasos.
+
+- **`marcoGrupo` ganó el color** (`TarjetaLista`): `marcoGrupo('verde' |
+  'cielo' | 'rosa' | 'ambar' | 'morado' | 'oro')`, además de `true` (el ámbar
+  de *falta gente*) y `false` (neutro), que siguen igual en el equipo y los
+  extras. Es el mismo marco —3px, el tono fuerte, el fondo apenas teñido— con
+  el color que ya decía de qué se trata cada sección.
+- **`Seccion` e `Hito` son marcos de grupo**: *Documento*, *El pago*,
+  *Seguimiento y envío*, *El contrato* y el *Próximo paso* pasaron de 2px
+  claros a 3px en su tono, y su título de 15px en mayúsculas a `TITULO_GRUPO`
+  (16px en negrita), como el nombre de un puesto. Lo de adentro —botones,
+  campos, la caja de la factura, *Cambios de fecha y cancelación*— conserva
+  su borde fino.
+- **Paso 1**: la lista de clientes va en un grupo *Clientes*, con el
+  buscador y *+ Cliente nuevo* en su primera fila, y cada cliente es una
+  tarjeta de adentro (`marcoTarjeta(…, dentro)`, verde la elegida). *Cliente
+  nuevo* es un grupo dorado.
+- **Paso 2**: las dos columnas son dos `Seccion` —*📅 Cuándo y cuántos* y
+  *🎉 El evento*— del mismo alto.
+- **Paso 3**: *Menús* y *Extras y arriendo* son **dos grupos**, cada uno con
+  su nombre en negrita a la izquierda de sus botones; *En la cotización* es
+  el tercero, con el título en la cabecera de la tabla (donde decía
+  *Producto*), cada línea como tarjeta de adentro, y el descuento y el total
+  al pie, bajo una raya. *¿El día es exclusivo?* es un grupo morado.
+- **Para que el paso 3 siguiera cabiendo**, los botones de productos tienen
+  8px de aire a los lados en el computador (eran 12): con el marco, la fila
+  de *Menús* se partía en dos y la ventana medía 654px.
+
+**Las medidas** (`npm run ventanas`, 1280×650 y en el celular a 393):
+
+| Paso | Computador antes → ahora | Celular antes → ahora |
+|---|---|---|
+| 1 · Cliente | 429 → 453 | 752 → 822 |
+| 1 · Cliente nuevo | 428 → 431 | 643 → 646 |
+| 2 · Evento | 471 → 530 | 1.079 → 1.284 |
+| 3 · Productos | 533 → 604 | 2.173 → 2.270 |
+| 4 · Envío | 627 → 625 | 2.845 → 2.840 |
+| 5 · Contrato | 622 → 620 | 2.088 → 2.088 |
+
+Todo sigue cabiendo en 1280×650. **El celular crece en los pasos 1 a 3**, a
+propósito: el marco y su título son el formato, no una cosa del computador.
+
+- **Ayuda**: las fotos de las misiones que muestran la ventana se rehicieron
+  (`ven-cotizar`, `ven-envio`, `pag-cobros`, `ger-cobros`); `ven-cotizar`
+  pide 920px de alto, porque la lista de clientes creció. Ningún texto de
+  ayuda describe los marcos.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.**
+
+**Y las ventanitas que se abren desde la cotización** (el mismo día; se le
+preguntó al cliente y dijo *"sí, ponle marco también a las ventanitas"*).
+Cada una agrupa lo suyo en un marco de grupo con su título en negrita, y los
+botones van fuera, al pie:
+
+| Ventanita | El marco |
+|---|---|
+| *¿La mandaste?* | rosado (el envío), con la pregunta como título |
+| *¿Marcarla ganada?* | verde, *Al marcarla ganada*; el aviso de sin anticipo, en su grupo ámbar |
+| *Datos de facturación* | neutro, con el nombre del cliente: se sabe de quién es la ficha |
+| *Corregir la ganada* (`CorregirGanada`) | neutro, *¿Qué pasó?*, con las salidas como botones de adentro |
+| *Cancelar el evento* (`CancelarEvento`) | cielo, *Lo que dice el contrato*, y neutro, *Al cancelar*; en el computador, lado a lado |
+| *Cambiar vendedor* (`CambiarVendedor`) | neutro, *Pasa a* |
+| *Agregar socio comercial* (`AgregarVendedor`) | sus tres pasos, cada uno un grupo; es la misma ventana de *Agregar vendedor* en Vendedores |
+| *Lo que cambia* al corregir un día cerrado (`PieCorreccion`) | ámbar. **Es la misma pieza en el equipo, los extras, las reservas y la cotización ganada**, así que cambió en todos |
+
+- ***Cancelar el evento* no cabía**: con los marcos medía 797px a 1280×650,
+  y antes tampoco cabía —no estaba en la prueba—. En el computador es ancha
+  (`lg:max-w-4xl`), con los dos grupos lado a lado, y la explicación de la
+  devolución pasó a su `?`: 518px.
+- **Tres escenas nuevas en `npm run ventanas`**, que no estaban medidas:
+  `v-cotizar-la-mandaste` (238px), `v-cotizar-corregir-ganada` (572) y
+  `v-cotizar-cancelar-evento` (518). Son 49. *¿Marcarla ganada?* no tiene
+  escena: ninguna cotización del ejemplo está lista para ganar sin anotar
+  antes un pago, y una escena no escribe. Medida a mano, con un anticipo
+  anotado en la copia de prueba: 248px.
+- Con el grupo, *Agregar vendedor* pasó de 469 a 499px y *Cambiar vendedor*
+  de 307 a 341; la ventana del equipo de un día cerrado corrigiendo, 622.
+  Todo cabe; las dos anotadas en `NO_CABEN` no crecieron.
 
 ## La lista de cotizaciones, por fecha del evento y con el año (2026-11-22)
 
@@ -2036,7 +2123,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 46 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 49 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

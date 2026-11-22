@@ -63,6 +63,7 @@ import { abrirWhatsApp } from './BotonWhatsApp';
 import { cupoParaGanar } from '@/lib/dias';
 import { tieneArriendo, esExclusivo, exclusividadDe, plazoParaLiberar } from '@/lib/exclusivo';
 import { usarSoloMira } from './SesionCliente';
+import { marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -1548,7 +1549,13 @@ export default function CotizacionDialogo({
                     —el relleno de esta ventana es *Ir al paso 2*—: va grande
                     y con borde dorado. Lo escrito en el buscador pasa a ser
                     el nombre del cliente nuevo. */}
-                <div className="flex flex-col gap-2 sm:flex-row">
+                {/* **La lista de clientes, en su marco de grupo** (2026-11-22,
+                    la regla *el marco de la tarjeta manda*): el título, el
+                    botón y el buscador arriba, y los clientes como tarjetas de
+                    adentro (2px). */}
+                <div className={`space-y-3 ${marcoGrupo()} p-3 lg:space-y-2 lg:px-3 lg:py-2`}>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <h3 className={`${TITULO_GRUPO} sm:mr-1 sm:shrink-0`}>Clientes</h3>
                   <button type="button"
                     className="boton min-h-[48px] shrink-0 !border-2 !border-oro px-5 !text-[15px] !font-bold !text-oro hover:bg-oro/10"
                     onClick={() => setNuevoCliente({ nombre: busqueda, telefono: '', correo: '', empresa: '' })}>
@@ -1563,8 +1570,8 @@ export default function CotizacionDialogo({
                   {encontrados.map((c) => (
                     <li key={c.id}>
                       <button type="button" onClick={() => { setIdCliente(c.id); setPaso(2); }}
-                        className={`tecla w-full rounded border px-3 py-2 text-left min-h-[52px] ${
-                          c.id === idCliente ? 'border-verde-fuerte bg-verde/10' : 'border-hueso/20'}`}>
+                        className={`tecla w-full px-3 py-2 text-left min-h-[52px] ${
+                          marcoTarjeta(false, c.id === idCliente ? 'verde' : 'normal', true, true)}`}>
                         <span className="block text-[15px] font-semibold">{c.nombre}</span>
                         <span className="block text-[13px] text-hueso/70">
                           {c.empresa || c.telefono || c.correo}
@@ -1573,11 +1580,12 @@ export default function CotizacionDialogo({
                     </li>
                   ))}
                 </ul>
+                </div>
               </>
             )}
             {nuevoCliente && (
-              <div className="space-y-3 rounded border border-oro/50 p-3">
-                <p className="text-[14px] font-bold uppercase tracking-wide">Cliente nuevo</p>
+              <div className={`space-y-3 ${marcoGrupo('oro')} p-3`}>
+                <p className={TITULO_GRUPO}>Cliente nuevo</p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Campo etiqueta="Nombre" ancho="w-full">
                     <input className={ENTRADA} value={nuevoCliente.nombre} autoFocus
@@ -1629,9 +1637,13 @@ export default function CotizacionDialogo({
 
         {/* ---------- 2. Evento ---------- */}
         {paso === 2 && (
-          <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:space-y-0">
+          <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-4 lg:space-y-0">
             {/* En el computador, dos columnas: a la izquierda cuándo y cuántos;
-                a la derecha qué es, por quién viene y las notas. */}
+                a la derecha qué es, por quién viene y las notas. **Cada una en
+                su marco de grupo, con su título** (2026-11-22, la regla *el
+                marco de la tarjeta manda*): la misma `Seccion` de los pasos 4
+                y 5. */}
+            <Seccion tono="neutro" icono="📅" titulo="Cuándo y cuántos">
             <div className="space-y-4 lg:space-y-3">
             <div className="flex flex-wrap items-end gap-3">
               {!sinFecha && (
@@ -1683,7 +1695,9 @@ export default function CotizacionDialogo({
               </p>
             </div>
             </div>
+            </Seccion>
 
+            <Seccion tono="neutro" icono="🎉" titulo="El evento">
             <div className="space-y-4 lg:space-y-3">
             <div>
               <p className="mb-1 text-[13px] font-medium uppercase tracking-wide text-hueso/60">
@@ -1784,6 +1798,7 @@ export default function CotizacionDialogo({
               </div>
             )}
             </div>
+            </Seccion>
           </div>
         )}
 
@@ -1812,9 +1827,14 @@ export default function CotizacionDialogo({
                   // En el computador, el nombre del grupo va a la izquierda, en
                   // su columna, y los botones a su derecha: dos filas en vez de
                   // seis. El `?` de *Agregar* va con el primer grupo.
-                  <div key={g.titulo} className="mb-3 last:mb-0 lg:mb-1.5 lg:flex lg:items-start lg:gap-2">
-                    <p className="mb-1.5 text-[13px] font-semibold text-hueso/75 lg:mb-0 lg:flex lg:min-h-[44px]
-                                  lg:w-[9.5rem] lg:shrink-0 lg:items-center">
+                  // **Cada uno en su marco de grupo** (2026-11-22, lo pidió el
+                  // cliente: *"para distinguir mejor entre sección menú, sección
+                  // extras"*): 3px y el nombre en negrita; los botones de
+                  // adentro, con su borde fino de siempre.
+                  <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-2 lg:flex lg:items-start
+                                                  lg:gap-2 lg:px-3 lg:py-2`}>
+                    <p className={`mb-2 ${TITULO_GRUPO} lg:mb-0 lg:flex lg:min-h-[44px] lg:w-[9.5rem] lg:shrink-0
+                                  lg:items-center`}>
                       {g.titulo}
                       {n === 0 && <span className="hidden lg:inline"><AyudaCorta tema="agregarProducto" /></span>}
                     </p>
@@ -1826,7 +1846,7 @@ export default function CotizacionDialogo({
                         return (
                           <button key={m.nombre} type="button" onClick={() => agregar(m)} disabled={ya}
                             title={ya ? 'Ya está en la cotización: cambia la cantidad en su línea' : undefined}
-                            className={`boton min-h-[48px] text-[14px] lg:min-h-[44px] ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
+                            className={`boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2 ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
                             {ya ? '✓' : '+'} {m.nombre}
                             <span className={`ml-1 text-hueso/60 ${ya ? 'lg:hidden' : ''}`}>
                               {ya ? '· ya está'
@@ -1837,7 +1857,7 @@ export default function CotizacionDialogo({
                         );
                       })}
                       {g.otra && (
-                        <button type="button" className="boton min-h-[48px] text-[14px] lg:min-h-[44px]"
+                        <button type="button" className="boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2"
                           onClick={() => setLineas([...vistas, {
                             presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
                             personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
@@ -1855,6 +1875,12 @@ export default function CotizacionDialogo({
               </div>
             )}
 
+            {/* **Lo cotizado, en su marco de grupo** (2026-11-22): las líneas,
+                la UF y las cuentas son una sola tarjeta, con las líneas como
+                tarjetas de adentro (2px) y el total al pie, bajo una raya. El
+                título va en la cabecera de la tabla, donde decía *Producto*. */}
+            <div className={`${marcoGrupo()} p-3 lg:px-3 lg:py-2`}>
+            <p className={`mb-2 ${TITULO_GRUPO} lg:hidden`}>En la cotización</p>
             {vistas.length === 0 ? (
               <p className="rounded border border-dashed border-hueso/20 p-4 text-[14px] text-hueso/60">
                 Todavía no hay nada cotizado.
@@ -1867,10 +1893,10 @@ export default function CotizacionDialogo({
               // Los nombres de cada campo siguen ahí para un lector de pantalla.
               <ul className="space-y-2 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto] lg:gap-x-4
                              lg:gap-y-1.5 lg:space-y-0">
-                <li aria-hidden className="hidden border border-transparent px-3 text-[13px] font-medium uppercase
+                <li aria-hidden className="hidden border-2 border-transparent px-3 text-[13px] font-medium uppercase
                                            tracking-wide text-hueso/60 lg:col-span-full lg:grid lg:grid-cols-subgrid
                                            lg:items-center">
-                  <span>Producto</span>
+                  <span className={`${TITULO_GRUPO} normal-case tracking-normal text-hueso`}>En la cotización</span>
                   <span>Cantidad</span>
                   <span className="flex items-center">Precio c/u <AyudaCorta tema="precioLinea" /></span>
                   <span className="flex items-center">Descuento <AyudaCorta tema="descuentoLinea" /></span>
@@ -1884,8 +1910,8 @@ export default function CotizacionDialogo({
                   const showMinimo = prod?.tipo === TIPO_PRODUCTO.show && showConMinimo && datos.reglaShow
                     ? datos.reglaShow : null;
                   return (
-                    <li key={i} className="rounded border border-hueso/15 bg-panel p-3 lg:col-span-full lg:grid
-                                           lg:min-h-[46px] lg:grid-cols-subgrid lg:items-center lg:py-1">
+                    <li key={i} className={`${marcoTarjeta(false, 'normal', false, true)} p-3 lg:col-span-full lg:grid
+                                           lg:min-h-[46px] lg:grid-cols-subgrid lg:items-center lg:py-1`}>
                       <div className="flex flex-wrap items-center gap-2 lg:contents">
                         <span className="flex min-w-0 flex-wrap items-center gap-2 lg:col-start-1 lg:row-start-1">
                         {prod ? (
@@ -2040,9 +2066,11 @@ export default function CotizacionDialogo({
             {/* En el computador este aviso va en el pie, junto a *volver*. */}
             {avisoMenus && <div className="lg:hidden">{avisoMenus}</div>}
 
-            {/* Las cuentas, como en una cotización: neto, descuento, IVA y total. */}
-            <div className="rounded border border-oro/40 p-3 lg:flex lg:flex-wrap lg:items-center lg:gap-x-5 lg:gap-y-1
-                            lg:py-1.5">
+            {/* Las cuentas, como en una cotización: neto, descuento, IVA y total.
+                Al pie del grupo de lo cotizado, bajo una raya, como el total
+                de una cuenta. */}
+            <div className="mt-3 border-t-2 border-hueso/20 pt-3 lg:mt-2 lg:flex lg:flex-wrap lg:items-center lg:gap-x-5
+                            lg:gap-y-1 lg:pt-2">
               {/* En el computador, las cuentas van en una fila: el
                   descuento sobre el total, y neto, IVA y total. */}
               <div className="mb-2 flex flex-wrap items-center gap-2 lg:mb-0">
@@ -2075,14 +2103,15 @@ export default function CotizacionDialogo({
                 </div>
               </dl>
             </div>
+            </div>
 
             {/* **¿El día es exclusivo?** (2026-11-12, lo pidió el cliente):
                 con arriendo se pregunta, sin obligar —con buena negociación
                 puede venir otro grupo—. Exclusivo llega así al calendario al
                 ganarla. */}
             {p && (conArriendo || esExcl) && (
-              <div className="rounded-xl border-2 border-morado-fuerte/60 bg-morado/[0.08] p-4 lg:flex lg:flex-wrap
-                              lg:items-center lg:gap-x-4 lg:gap-y-1 lg:px-3 lg:py-1.5 lg:[&>*]:mt-0">
+              <div className={`${marcoGrupo('morado')} p-4 lg:flex lg:flex-wrap
+                              lg:items-center lg:gap-x-4 lg:gap-y-1 lg:px-3 lg:py-1.5 lg:[&>*]:mt-0`}>
                 <p className="flex items-center gap-2 text-[17px] font-bold text-morado-texto">
                   🟣 ¿El día es exclusivo? <AyudaCorta tema="exclusivo" />
                 </p>
@@ -2234,14 +2263,21 @@ export default function CotizacionDialogo({
               )}
               {facturaAbierta && (
                 <Dialogo titulo="Datos de facturación" onCerrar={() => setFacturaAbierta(false)} ancho="max-w-xl">
-                  <p className="mb-3 mt-2 text-[14px] text-hueso/75">Se guardan en la ficha del cliente.</p>
-                  {camposFactura}
+                  {/* En su marco de grupo (2026-11-22), con el nombre del cliente:
+                      se sabe de quién es la ficha que se está llenando. */}
+                  <div className={`mt-2 ${marcoGrupo()} p-3`}>
+                  <p className={`flex items-center gap-2 ${TITULO_GRUPO}`}>
+                    <span aria-hidden>🧾</span>{cliente?.nombre ?? 'El cliente'}
+                    <span className="text-[14px] font-normal text-hueso/70">· se guarda en su ficha</span>
+                  </p>
+                  <div className="mt-3">{camposFactura}</div>
                   {faltaFactura.length > 0 && (
                     <p className="mt-3 rounded border border-ambar/50 bg-ambar/5 px-3 py-2 text-[14px]
                                   font-semibold text-ambar-texto">
                       Para facturarle falta: {faltaFactura.join(', ')}.
                     </p>
                   )}
+                  </div>
                   <div className="mt-4 flex justify-end">
                     <button type="button" className="boton boton-relleno min-h-[44px] px-5"
                       onClick={() => setFacturaAbierta(false)}>✓ Listo</button>
@@ -2894,9 +2930,13 @@ export default function CotizacionDialogo({
       )}
       {preguntaEnvio && (
         <Dialogo titulo="¿La mandaste?" onCerrar={() => setPreguntaEnvio('')}>
-          <p className="mt-3 text-[17px]">
+          {/* **En su marco de grupo** (2026-11-22, lo pidió el cliente: *"ponle
+              marco también a las ventanitas"*): rosado, el color del envío, con
+              la pregunta como título. Los botones van fuera, al pie. */}
+          <div className={`mt-3 ${marcoGrupo('rosa')} p-3`}>
+          <p className={TITULO_GRUPO}>
             ¿Le mandaste {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
-            <strong>{cliente?.nombre ?? 'tu cliente'}</strong>?
+            {cliente?.nombre ?? 'tu cliente'}?
           </p>
           <p className="mt-2 text-[14px] text-hueso/75">
             {preguntaEnvio === 'contrato'
@@ -2915,7 +2955,7 @@ export default function CotizacionDialogo({
             const texto = viaEnvio === 'whatsapp' ? (contrato ? textoWhatsappContrato : textoWhatsapp)
               : (contrato ? linkContrato : link);
             return (
-              <div className="mt-4 rounded-lg border border-hueso/20 bg-hueso/[0.04] p-3">
+              <div className="mt-3 rounded-lg border border-hueso/20 bg-panel p-3">
                 <p className="text-[15px] font-semibold">
                   ¿No se abrió {viaEnvio === 'whatsapp' ? 'WhatsApp' : 'el correo'}?
                 </p>
@@ -2937,6 +2977,7 @@ export default function CotizacionDialogo({
               </div>
             );
           })()}
+          </div>
           <div className="mt-5 flex flex-wrap justify-end gap-2">
             <button type="button" className="boton min-h-[48px]" onClick={() => setPreguntaEnvio('')}>
               Todavía no
@@ -2969,8 +3010,12 @@ export default function CotizacionDialogo({
             {/* **La letra en grande** (2026-11-12, lo pidió el cliente): se
                 marcó ganada la A cuando era la B. Acá se ve cuál es antes de
                 apretar, con su total, y qué pasa con las demás. */}
+            {/* **En su marco de grupo** (2026-11-22): lo que pasa al ganarla,
+                en verde; el aviso de sin anticipo, en su grupo ámbar. */}
+            <div className={`mt-3 ${marcoGrupo('verde')} p-3`}>
+            <p className={`${TITULO_GRUPO} text-verde-texto`}>Al marcarla ganada</p>
             {alts.length > 1 && (
-              <div className="mt-3 flex items-center gap-4 rounded-xl border-2 border-verde-fuerte bg-verde/10 p-3">
+              <div className="mt-3 flex items-center gap-4 rounded-xl border-2 border-verde-fuerte/60 bg-panel p-3">
                 <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-verde-fuerte
                                  text-[36px] font-extrabold text-tinta">{l}</span>
                 <span>
@@ -2991,9 +3036,10 @@ export default function CotizacionDialogo({
                   ? ` Los pagos anotados en otra alternativa pasan a la ${l}.` : ''}
               </p>
             )}
+            </div>
             {sinRespaldo && (
-              <div className="mt-3 rounded-lg border-2 border-ambar/60 bg-ambar/10 p-3 text-[15px]">
-                <p className="text-[17px] font-bold text-ambar-texto">
+              <div className={`mt-3 ${marcoGrupo('ambar')} p-3 text-[15px]`}>
+                <p className={`${TITULO_GRUPO} text-ambar-texto`}>
                   {nada ? '✋ ¿Por qué la marcas ganada sin anticipo?' : 'No tienes el anticipo pagado ni contrato firmado.'}
                 </p>
                 <p className="mt-1 text-hueso/85">
@@ -3094,29 +3140,32 @@ function PieDePaso({ paso, guardando, puede, porQueNo, aviso, medio, onVolver, o
 }
 
 /**
- * **Una sección del paso 4, con su color** (2026-11-11, lo pidió el
+ * **Una sección de la cotización, con su color** (2026-11-11, lo pidió el
  * cliente: *"darle un distinto tono de fondo para que uno cacha: aquí estoy
  * en el pago del cliente, aquí en cambio de fecha y cancelación"*). El color
  * dice de qué se trata: verde la plata, cielo el contrato, rosado lo que
  * está por confirmarse.
+ *
+ * **Es el marco de un grupo** (2026-11-22, la regla *el marco de la tarjeta
+ * manda sobre lo de adentro*): 3px en el tono fuerte (`marcoGrupo`) y el
+ * título en negrita (`TITULO_GRUPO`), como un puesto en la ventana del
+ * equipo. Lo de adentro —botones, campos, avisos— va con menos. Antes eran
+ * 2px claros y el título chico en mayúsculas: el marco de la sección pesaba
+ * lo mismo que un botón. La usan los pasos 2, 4 y 5.
  */
-const TONOS = {
-  verde: 'border-verde/35 bg-verde/[0.06] text-verde-texto',
-  cielo: 'border-cielo/35 bg-cielo/[0.06] text-cielo-texto',
-  rosa: 'border-rosa/35 bg-rosa/[0.06] text-rosa-texto',
-  ambar: 'border-ambar/45 bg-ambar/[0.07] text-ambar-texto',
-  neutro: 'border-hueso/15 bg-panel text-hueso/80'
+const TEXTO_TONO = {
+  verde: 'text-verde-texto', cielo: 'text-cielo-texto', rosa: 'text-rosa-texto',
+  ambar: 'text-ambar-texto', neutro: 'text-hueso'
 } as const;
 function Seccion({ tono, icono, titulo, ayuda, ayudaPc, children }: {
-  tono: keyof typeof TONOS; icono: string; titulo: string; ayuda?: string;
+  tono: keyof typeof TEXTO_TONO; icono: string; titulo: string; ayuda?: string;
   /** Un `?` que va en el título solo en el computador (en el celular está junto a su campo). */
   ayudaPc?: string;
   children: React.ReactNode;
 }) {
-  const [borde, fondo, texto] = TONOS[tono].split(' ');
   return (
-    <section className={`space-y-4 rounded-xl border-2 ${borde} ${fondo} p-4 lg:space-y-1.5 lg:p-3`}>
-      <h3 className={`flex items-center text-[15px] font-bold uppercase tracking-wide ${texto}`}>
+    <section className={`space-y-4 ${marcoGrupo(tono)} p-4 lg:space-y-1.5 lg:p-3`}>
+      <h3 className={`flex items-center ${TITULO_GRUPO} ${TEXTO_TONO[tono]}`}>
         <span aria-hidden className="mr-2 text-[18px]">{icono}</span>{titulo}
         {ayuda && <AyudaCorta tema={ayuda} />}
         {ayudaPc && <span className="hidden lg:inline"><AyudaCorta tema={ayudaPc} /></span>}
@@ -3126,15 +3175,15 @@ function Seccion({ tono, icono, titulo, ayuda, ayudaPc, children }: {
   );
 }
 
-/** El bloque del próximo hito: grande, con su color y lo que pasa al apretarlo. */
+/** El bloque del próximo hito: grande, con su color y lo que pasa al apretarlo. Un grupo, como las secciones. */
 function Hito({ tono, titulo, bajada, children }: {
   tono: 'verde' | 'rosa' | 'ambar' | 'cielo'; titulo: string;
   /** Una frase de lo que pasa o lo que falta. El porqué va en su `?`, no acá. */
   bajada?: string; children?: React.ReactNode;
 }) {
-  const [borde, fondo, texto] = TONOS[tono].split(' ');
+  const texto = TEXTO_TONO[tono];
   return (
-    <div className={`space-y-3 rounded-2xl border-2 ${borde} ${fondo} p-4 lg:space-y-2 lg:p-3`}>
+    <div className={`space-y-3 ${marcoGrupo(tono)} p-4 lg:space-y-2 lg:p-3`}>
       <div>
         <p className="text-[13px] font-semibold uppercase tracking-widest text-hueso/60">Próximo paso</p>
         <p className={`text-[22px] font-extrabold leading-tight lg:text-[19px] ${texto}`}>{titulo}</p>

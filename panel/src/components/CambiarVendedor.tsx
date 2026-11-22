@@ -16,6 +16,7 @@
  */
 import { useState } from 'react';
 import Dialogo from './Dialogo';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import BuscarEnLista from './BuscarEnLista';
 import AyudaCorta from './AyudaCorta';
 import { avisar } from './AvisoFlotante';
@@ -88,8 +89,11 @@ export default function CambiarVendedor({
               La comisión de esta venta ya quedó cerrada: se queda con {actual}.
             </p>
           ) : (
-            <>
-              <p className="mb-1 mt-3 text-[13px] font-medium uppercase tracking-wide text-hueso/60">Pasa a</p>
+            // **En su marco de grupo** (2026-11-22, lo pidió el cliente: *"ponle
+            // marco también a las ventanitas"*): a quién pasa, con la casilla y
+            // la frase de lo que va a pasar adentro; los botones, al pie.
+            <div className={`mt-3 ${marcoGrupo()} p-3`}>
+              <p className={`mb-2 ${TITULO_GRUPO}`}>Pasa a</p>
               {elegido ? (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-lg border-2 border-oro bg-oro/15 px-3 py-2 text-[15px] font-semibold">✓ {elegido.nombre}</span>
@@ -122,7 +126,7 @@ export default function CambiarVendedor({
                   )}
                 </p>
               )}
-            </>
+            </div>
           )}
           {error && <p className="mt-3 text-[14px] text-rojo-texto" role="alert">{error}</p>}
           <div className="mt-4 flex flex-wrap justify-end gap-2">

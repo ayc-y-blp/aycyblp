@@ -192,6 +192,28 @@ export const ESCENAS = {
     await clic(ventana().getByRole('button', { name: /datos de facturación/ }));
   },
   'v-cotizar-5-contrato': () => cotizacion(/Contrato/),
+  // **Las ventanitas de la cotización** (2026-11-22, cuando se les puso marco):
+  // no estaban medidas. Solo se abren; ninguna guarda nada. *¿La mandaste?*
+  // sale la primera vez que se copia el link de una que no se ha mandado.
+  'v-cotizar-la-mandaste': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByText('Marisol Cáceres'));
+    await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
+    await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
+  },
+  'v-cotizar-corregir-ganada': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
+    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    await clic(ventana().getByRole('button', { name: /Envío/ }));
+    await clic(ventana().locator('button:visible', { hasText: 'Corregir la ganada' }));
+  },
+  'v-cotizar-cancelar-evento': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
+    await clic(p.getByText('Gonzalo Contreras')); await p.waitForTimeout(1400);
+    // *Cancelar evento* va en el pie del paso 5, Contrato.
+    await clic(ventana().getByRole('button', { name: /Contrato/ }));
+    await clic(ventana().locator('button:visible', { hasText: 'Cancelar evento' }));
+    await p.waitForTimeout(1200);
+  },
   // Guardar una ganada cuya reserva queda en un día cerrado (2026-11-21): la
   // lista de lo que cambia, con su casilla. No guarda nada: solo la abre.
   'v-cotizar-ganada-dia-cerrado': async () => {

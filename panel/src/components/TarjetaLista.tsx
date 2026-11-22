@@ -64,9 +64,28 @@ export function marcoTarjeta(abierta: boolean, tono: TonoTarjeta = 'normal', ten
  *
  * El título del grupo va con `TITULO_GRUPO`, en negrita: es el nombre de la
  * tarjeta.
+ *
+ * **Con su color** (2026-11-22, lo pidió el cliente mirando la ventana de
+ * cotizar: *"no estamos cumpliendo aún con todas las reglas… cómo ponemos los
+ * marcos, tarjeta principal, las informaciones adentro tienen otro marco"*).
+ * Las secciones de la cotización tienen un color que dice de qué se trata
+ * —verde la plata, cielo el contrato, rosado lo que está por confirmarse— y
+ * ahora son el mismo marco de grupo, en su color: 3px, el tono fuerte y el
+ * fondo apenas teñido. `true` sigue siendo el ámbar de *falta gente*.
  */
-export function marcoGrupo(falta = false): string {
-  return `rounded-2xl border-[3px] shadow-md ${falta ? 'border-ambar-fuerte bg-ambar/5' : 'border-hueso/60 bg-hueso/[0.03]'}`;
+export type TonoGrupo = 'neutro' | 'verde' | 'cielo' | 'rosa' | 'ambar' | 'morado' | 'oro';
+const COLOR_GRUPO: Record<TonoGrupo, string> = {
+  neutro: 'border-hueso/60 bg-hueso/[0.03]',
+  verde: 'border-verde-fuerte/80 bg-verde/[0.06]',
+  cielo: 'border-cielo-fuerte/80 bg-cielo/[0.06]',
+  rosa: 'border-rosa-fuerte/80 bg-rosa/[0.06]',
+  ambar: 'border-ambar-fuerte bg-ambar/5',
+  morado: 'border-morado-fuerte/80 bg-morado/[0.08]',
+  oro: 'border-oro/80 bg-oro/[0.05]'
+};
+export function marcoGrupo(tono: boolean | TonoGrupo = false): string {
+  const t: TonoGrupo = tono === true ? 'ambar' : tono === false ? 'neutro' : tono;
+  return `rounded-2xl border-[3px] shadow-md ${COLOR_GRUPO[t]}`;
 }
 
 /** El título de un grupo: el nombre del puesto, en negrita y un punto más grande. */

@@ -1123,7 +1123,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 46 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 49 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

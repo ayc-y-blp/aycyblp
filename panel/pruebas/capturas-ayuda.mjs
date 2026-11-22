@@ -83,7 +83,9 @@ const ESCENAS = {
 
   'ven-calendario': { rol: 'vendedor', ruta: '/', alto: 1000,
     puntos: [toque(/Cotizar una reserva/), texto('personas', 0), (p) => p.locator('main a, main button').filter({ hasText: /^\W*Reservas$/ }).first()] },
-  'ven-cotizar': { rol: 'vendedor', ruta: '/presupuestos', pasos: [clic(boton('+ Cotizar'))],
+  // Más alto desde el 2026-11-22: la lista de clientes va en su marco de grupo,
+  // con su título, y el botón *Ir al paso 2* quedaba fuera de la foto.
+  'ven-cotizar': { rol: 'vendedor', ruta: '/presupuestos', pasos: [clic(boton('+ Cotizar'))], alto: 920,
     puntos: [texto('Nueva cotización'), campo(/Buscar cliente/), boton(/Cliente nuevo/), boton(/Ir al paso 2/)] },
   'ven-envio': { rol: 'vendedor', ruta: '/presupuestos', pasos: abrirEnvio('Andrés Pino'), alto: 900, foco: texto(/✓ Enviada/),
     puntos: [texto(/✓ Enviada/), texto(/● Anticipo/), boton(/Crear alternativa/)] },

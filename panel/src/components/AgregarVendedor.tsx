@@ -22,6 +22,7 @@
 import { useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import Dialogo from './Dialogo';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import DatosBancarios from './DatosBancarios';
 import CamposDocumento, { type CambioDocumento } from './CamposDocumento';
 import { copiarConAviso } from './AvisoFlotante';
@@ -125,9 +126,9 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
       ancho="max-w-2xl lg:max-w-6xl">
       {/* En el computador, los tres pasos van lado a lado (2026-11-21, regla
           *una tarjeta abierta cabe en una pantalla*): apilados medían 870px. */}
-      <form className="space-y-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-x-8 lg:gap-y-3 lg:space-y-0" onSubmit={(e) => { e.preventDefault(); if (listo && !guardando) void crear(); }}>
-        <section className="space-y-2">
-          <h3 className="text-[13px] font-semibold uppercase tracking-widest text-oro">1 · Quién</h3>
+      <form className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-x-4 lg:gap-y-3 lg:space-y-0" onSubmit={(e) => { e.preventDefault(); if (listo && !guardando) void crear(); }}>
+        <section className={`space-y-2 ${marcoGrupo()} p-3`}>
+          <h3 className={TITULO_GRUPO}>1 · Quién</h3>
           <label className="block text-[14px] font-semibold">
             {esVendedor ? 'Nombre del vendedor' : 'Nombre del socio comercial'}
             <input autoFocus className={ENTRADA} value={nombre} placeholder={esVendedor ? 'Daniela Rojas' : 'Turismo Valle del Maipo'}
@@ -164,13 +165,13 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
           )}
         </section>
 
-        <section className="space-y-2">
-          <h3 className="text-[13px] font-semibold uppercase tracking-widest text-oro">2 · Con qué documento se le paga</h3>
+        <section className={`space-y-2 ${marcoGrupo()} p-3`}>
+          <h3 className={TITULO_GRUPO}>2 · Con qué documento se le paga</h3>
           <CamposDocumento documento={documento} incluido={incluido} factura={factura} onCambio={cambiarDoc} />
         </section>
 
-        <section className="space-y-2">
-          <h3 className="text-[13px] font-semibold uppercase tracking-widest text-oro">3 · La transferencia</h3>
+        <section className={`space-y-2 ${marcoGrupo()} p-3`}>
+          <h3 className={TITULO_GRUPO}>3 · La transferencia</h3>
           <p className="text-[13px] text-hueso/70">Se puede completar después.</p>
           <DatosBancarios banco={banco} nombre={nombre.trim()} onCambio={setBanco} />
         </section>
