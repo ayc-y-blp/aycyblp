@@ -22,10 +22,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 
 ## 0. Estado en una mirada
 
-- **El lanzamiento es el domingo 22-11-2026**: el dominio
-  `brasasdelopirque.cl` pasa del sitio viejo de Shopify al sitio nuevo en
-  Vercel. **Desde ahí rigen los dos caminos para mergear** (sección 9). Si no
-  se sabe si ya pasó, se trata como que sí.
+- **El sitio nuevo está publicado en `brasasdelopirque.cl` desde el
+  22-11-2026** (el lanzamiento): el dominio pasó del sitio viejo de Shopify a
+  Vercel, y `tienda.brasasdelopirque.cl` es el dominio principal de la
+  tienda. Antes, ese mismo día, el cliente dejó la base en cero en producción
+  e importó el CRM y los pedidos del sitio viejo. **Rigen los dos caminos
+  para mergear** (sección 9). Comprobado desde el entorno al terminar: la
+  portada, `reservas.html`, `/en/` y el sitemap responden desde Vercel;
+  `/pages/ticket` y el link viejo del producto redirigen a reservas;
+  `/cart/c/…` va a `tienda.`; `/CLAUDE.md` da 404; y el panel le entrega al
+  sitio los días con su cupo, sin el domingo 22. El cliente dijo *"todo
+  funcionando"*. **`www` no se pudo mirar desde el entorno** (no está en su
+  lista de dominios): lo comprueba el cliente.
 - **La tienda real de Shopify ya está conectada** (PR #283, mergeado el
   20-11-2026 a las 23:16): `brasas-sitio.vercel.app` y, desde el
   lanzamiento, `brasasdelopirque.cl` **cobran de verdad**. Las versiones de
@@ -105,9 +113,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   repo): el que se sube a la planilla y el de lo que hay que decidir. Se
   arman con un script que tampoco está en el repo; si llega un respaldo o un
   export nuevo, se vuelven a armar.
-- **Lo que sigue lo hace el cliente**: ensayar el importador en la versión de
-  prueba, **la base en cero en producción** (pendiente 1 de la sección 7) y,
-  después, importar en producción.
+- **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
+  la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
   que quiere más junto o más alineado. Preguntó
   por qué tenía que pedir él cada revisión: desde ese día **`npm run
@@ -1024,16 +1031,16 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 | # | Qué | Siguiente paso concreto | Quién |
 |---|---|---|---|
-| 1 | **La base en cero, en producción** | El ensayo en la versión de prueba (planilla "Pruebas") salió bien el 21-11-2026 y el PR #291 está mergeado. **Antes de apretar el botón en producción**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —una que siga pagada o por pagar vuelve al día siguiente ocupando cupo; devuelta o cancelada ya no vuelve—; (b) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (c) copia de la planilla real. En la ventana tiene que decir *🔴 Producción* con el nombre de la planilla real, y **no** tiene que salir el aviso ámbar de Shopify (si sale, falta `SHOPIFY_DOMINIO`). Después: **cerrar o dejar privado el domingo 22-11** (el sitio viejo lo tenía bloqueado y la regla lo abre público), abrir a mano los días que el sitio viejo vendía y no son fin de semana (**vie 4, mar 8 y vie 11 de diciembre**), e importar (pendientes 7 y 10) | Cliente |
+| 1 | ~~La base en cero, en producción~~ | **Hecha el 22-11-2026**, con el importe después. Quedan de su lista: abrir a mano el vie 4, mar 8 y vie 11 de diciembre si se van a seguir vendiendo, y anotar el anticipo de la ganada importada. Lo de abajo queda como referencia. El ensayo en la versión de prueba (planilla "Pruebas") salió bien el 21-11-2026 y el PR #291 está mergeado. **Antes de apretar el botón en producción**: (a) en Shopify, devolver las compras de prueba pagadas y cancelar las de *solo reserva* —una que siga pagada o por pagar vuelve al día siguiente ocupando cupo; devuelta o cancelada ya no vuelve—; (b) confirmar que no hay nada real en lo que se borra (turnos, pagos, cotizaciones, días abiertos a mano); (c) copia de la planilla real. En la ventana tiene que decir *🔴 Producción* con el nombre de la planilla real, y **no** tiene que salir el aviso ámbar de Shopify (si sale, falta `SHOPIFY_DOMINIO`). Después: **cerrar o dejar privado el domingo 22-11** (el sitio viejo lo tenía bloqueado y la regla lo abre público), abrir a mano los días que el sitio viejo vendía y no son fin de semana (**vie 4, mar 8 y vie 11 de diciembre**), e importar (pendientes 7 y 10) | Cliente |
 | 2 | **Lo que quedó de las ventanas** | (a) **Hecho**: editar y borrar una reserva de un día cerrado ya van con casilla y lista; está en producción desde el merge del PR #287. (b) Las dos de `NO_CABEN` (el ajuste abierto en la línea de una persona, y la cara de reservas): solo si el cliente las marca. (c) Cuentas entre 1024 y 1279px, con la columna del rol angosta. (d) Lo que siga marcando con fotos desde la versión de prueba. Detalle en `panel/CLAUDE.md`, "Las ventanas caben en la pantalla del computador" | Claude propone; cliente decide |
 | 3 | ~~Compras de prueba en la tienda real~~ | **Hecho el 21-11-2026**, lo dijo el cliente: pasaron varias de pago y de solo reserva. Queda devolverlas o cancelarlas en Shopify antes de la base en cero (pendiente 1) | — |
 | 4 | **`SHOPIFY_DOMINIO` de Production** | **(Por confirmar)** que diga `lo-pirque.myshopify.com`; si no, ponerlo y hacer Redeploy; comprobar con *Revisar Shopify ahora* | Cliente |
 | 5 | **El link de estado de un pedido viejo** | Abrir uno `brasasdelopirque.cl/<id>/orders/…?key=…` después del lanzamiento y ver que llegue a `tienda.` con su `?key=` | Cliente |
 | 6 | ~~Base en cero~~ | Pasó a ser el pendiente 1 | — |
 | 7 | **Pedidos del sitio viejo** | **Exportar de Shopify *todos* los pedidos** (el export del 21-11 traía solo la última página, 50) y subirlo al chat: se rearma la pestaña `Importar reservas` y entran con el importador (pendiente 10). El producto viejo vendía hasta el 27-12 | Cliente sube; Claude arma |
-| 8 | **Lanzamiento** (domingo 22-11, en la noche) | En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
+| 8 | ~~Lanzamiento~~ | **Hecho el 22-11-2026.** **(Por confirmar)** con el cliente: que `www` redirija a la raíz, que el *Hydrogen Redirect Theme* quedó publicado, que *Menú Tradiciones* salió de Tienda online y que se borraron los webhooks de la tienda de desarrollo. Los pasos, como referencia. En orden: (1) en Shopify, `tienda.` como dominio principal; (2) en Cloudflare, borrar el A de `@`, crear el CNAME a Vercel y cambiar `www`; (3) Vercel muestra *Valid Configuration*; (4) publicar el *Hydrogen Redirect Theme* con Hostname `brasasdelopirque.cl`, sin redirects ni cuentas (**recién después del DNS**); (5) comprobar: `tienda.` lleva al sitio nuevo, el link viejo del producto a reservas, una compra abre el checkout en `tienda.`, *ver pedido* abre; (6) sacar *Menú Tradiciones* de Tienda online; (7) borrar los webhooks de la tienda de desarrollo. **Vuelta atrás**: los registros a sus valores de antes y `brasasdelopirque.cl` de nuevo como principal | Cliente, con Claude |
 | 9 | **Después del lanzamiento** | Links en Maps, Instagram y WhatsApp; enviar el sitemap en Google Search Console; productos en Fudo; mirar en Vercel → Logs que las tres tareas diarias corran en 200 | Cliente |
-| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **No importar en producción antes de la base en cero.** (a) El cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
+| 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **Importado en producción el 22-11-2026**, después de la base en cero. Queda: (a) el cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el nombre del negocio en Maps; el desayuno y la once a $8.000 + IVA | Cliente |
