@@ -300,6 +300,7 @@ export default function EquipoEditor() {
     mirar('activo', antes.activo, ahora.activo);
     mirar('modalidad', antes.modalidad, ahora.modalidad);
     mirar('jornada', antes.pagoJornada, ahora.pagoJornada);
+    mirar('jornada de preparación', antes.pagoPreparacion ?? 0, ahora.pagoPreparacion ?? 0);
     mirar('valor hora', antes.valorHora, ahora.valorHora);
     mirar('propina', antes.propina, ahora.propina);
     if (JSON.stringify(antes.banco) !== JSON.stringify(ahora.banco)) {
@@ -467,13 +468,13 @@ export default function EquipoEditor() {
     const copia = gente.map((t) => ({ ...t }));
     if (campo === 'activo') copia[i].activo = Boolean(valor);
     else if (campo === 'propina') copia[i].propina = Boolean(valor);
-    else if (campo === 'pagoJornada' || campo === 'valorHora') {
+    else if (campo === 'pagoJornada' || campo === 'valorHora' || campo === 'pagoPreparacion') {
       copia[i][campo] = aEntero(valor);
     } else if (campo === 'modalidad') {
       copia[i].modalidad = esContratado(valor) ? MODALIDAD.contratado : MODALIDAD.porTurno;
       // Un contratado no cobra jornada: dejar el monto escrito sería dejar un
       // número que ninguna cuenta usa, esperando a confundir a alguien.
-      if (esContratado(valor)) copia[i].pagoJornada = 0;
+      if (esContratado(valor)) { copia[i].pagoJornada = 0; copia[i].pagoPreparacion = 0; }
       // `banco` no pasa por acá: es un objeto y tiene su propio cambiador.
     } else if (campo !== 'token' && campo !== 'banco') {
       copia[i][campo] = String(valor) as never;
@@ -481,7 +482,7 @@ export default function EquipoEditor() {
     setGente(copia);
     // Solo lo que cambió viaja; un contratado lleva además su jornada en 0.
     const cambio: Partial<Trabajador> = { [campo]: copia[i][campo] };
-    if (campo === 'modalidad') cambio.pagoJornada = copia[i].pagoJornada;
+    if (campo === 'modalidad') { cambio.pagoJornada = copia[i].pagoJornada; cambio.pagoPreparacion = copia[i].pagoPreparacion; }
     fichas.programar(gente[i].nombre, cambio);
   };
 
@@ -886,6 +887,17 @@ export default function EquipoEditor() {
                           disabled={esContratado(t.modalidad)}
                           aria-label={`Jornada de ${t.nombre || 'esta persona'}`}
                           onChange={(e) => cambiarPersona(i, 'pagoJornada', e.target.value)} />
+                      </Campo>
+                      {/* **La jornada de un día de preparación** (2026-11-23): se
+                          propone sola al sumarlo a un día sin público ni
+                          reservas. En blanco, la de siempre. */}
+                      <Campo etiqueta="Preparación" ayuda="jornadaPreparacion">
+                        <input type="number" min={0} step={1000} className={ENTRADA}
+                          value={esContratado(t.modalidad) ? '' : (t.pagoPreparacion || '')}
+                          placeholder={esContratado(t.modalidad) ? 'sin jornada' : 'la de siempre'}
+                          disabled={esContratado(t.modalidad)}
+                          aria-label={`Jornada de preparación de ${t.nombre || 'esta persona'}`}
+                          onChange={(e) => cambiarPersona(i, 'pagoPreparacion', e.target.value)} />
                       </Campo>
                       <Campo etiqueta="Hora extra">
                         <input type="number" min={0} step={500} className={ENTRADA}

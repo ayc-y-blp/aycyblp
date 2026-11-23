@@ -75,6 +75,9 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HO
       if (f) {
         const o = ocupacionDe(reservas, f, cfg.cortes);
         dia = { fecha: pedido, capacidad: o.capacidad, tomadas: o.tomadas, sobrecupo: o.sobrecupo,
+                // Si el día está cerrado: con eso la ventana del equipo sabe si
+                // es de preparación (2026-11-23, `esPreparacion()`).
+                bloqueada: o.bloqueada,
                 quedanPagando: o.quedanPagando, cupoPedido: f.cupoPedido ?? '' };
       }
       capacidadMaxima = cfg.capacidadMaxima;

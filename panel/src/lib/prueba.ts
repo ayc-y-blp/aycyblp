@@ -108,7 +108,7 @@ import { leerPuestosDe, aFilasPuestos, leerTrabajadoresDe, aFilasTrabajadores,
          totalAjustes, motivosDe, leerAjustes, escribirAjustes,
          partesDeMotivo, motivoDePartes, tipoDeAjuste, montoConSigno, ajusteDelCuerpo, diasParaAjustar,
          comoTurno, pagoDelTurno, leerAjustesSueltosDe, filaAjusteSuelto, ENCABEZADO_AJUSTES_SUELTOS,
-         POR_DEFECTO_PUESTOS, esPreparacion,
+         POR_DEFECTO_PUESTOS, esPreparacion, jornadaPropuesta,
          type Puesto, type Trabajador, type Turno } from './equipo.ts';
 import { leerColaboradoresDe, aFilasColaboradores, actividadesConocidas,
          leerExtrasDe, filaExtra, normalizarExtras, extrasDelDia,
@@ -1730,6 +1730,26 @@ ok(esSi('') && esSi('sí') && !esSi('NO') && !esSi('inactivo'),
 ok(JSON.stringify(leerTrabajadoresDe(aFilasTrabajadores(gente))) === JSON.stringify(gente),
    'los trabajadores sobreviven la ida y vuelta a filas');
 
+// **La jornada de preparación** (2026-11-23, lo pidió el cliente): un segundo
+// monto en la ficha, que se propone en un día sin público ni reservas.
+{
+  const conPrep = [{ ...gente[0], pagoJornada: 35000, pagoPreparacion: 25000 }];
+  const vuelta = leerTrabajadoresDe(aFilasTrabajadores(conPrep));
+  ok(vuelta[0].pagoPreparacion === 25000 && vuelta[0].pagoJornada === 35000,
+     'la jornada de preparación sobrevive la ida y vuelta, al final de la fila');
+  ok(aFilasTrabajadores(conPrep)[0].at(-1) === 'Pago jornada preparación',
+     'y su columna va al final: una planilla vieja se lee igual');
+  ok(leerTrabajadoresDe(aFilasTrabajadores(gente))[0].pagoPreparacion === 0,
+     'sin ese monto se lee en cero, que es la jornada de siempre');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 25000 }, true) === 25000,
+     'en un día de preparación se propone la jornada de preparación');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 25000 }, false) === 35000,
+     'en un día público, la de siempre');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 0 }, true) === 35000,
+     'sin jornada de preparación, también en preparación va la de siempre');
+  ok(jornadaPropuesta(null, true) === 0, 'sin ficha no se inventa un monto');
+}
+
 /* ---------- el equipo: turnos ---------- */
 const ENC_T = [COL_TURNOS.fecha, COL_TURNOS.trabajador, COL_TURNOS.puesto];
 const turnos = leerTurnosDe([
@@ -1813,9 +1833,9 @@ ok(resumenEquipo(turnos, conRazon, '2026-12-25', 44).total === 0,
 /* ---------- quién quedó sin ficha ---------- */
 const equipo: Trabajador[] = [
   { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: '',
-    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
+    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
   { nombre: 'luis soto', telefono: '', puesto: 'Cocina', activo: true, token: '',
-    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' }
+    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 }
 ];
 const huerfanos = sinFicha(turnos, equipo);
 ok(huerfanos.length === 1 && huerfanos[0] === 'Pedro Díaz',
@@ -1912,9 +1932,9 @@ ok(t1.length >= 32, 'y son largos: 24 bytes en base64');
 ok(/^[A-Za-z0-9_-]+$/.test(t1), 'solo caracteres que sobreviven a una URL');
 
 const conAcceso: Trabajador[] = [
-  { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: 'token-de-ana', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
-  { nombre: 'Luis Soto', telefono: '', puesto: 'Cocina', activo: true, token: '', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
-  { nombre: 'Pedro Díaz', telefono: '', puesto: 'Runner', activo: false, token: 'token-de-pedro', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' }
+  { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: 'token-de-ana', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
+  { nombre: 'Luis Soto', telefono: '', puesto: 'Cocina', activo: true, token: '', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
+  { nombre: 'Pedro Díaz', telefono: '', puesto: 'Runner', activo: false, token: 'token-de-pedro', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 }
 ];
 ok(trabajadorPorToken(conAcceso, 'token-de-ana')?.nombre === 'Ana Pérez',
    'el token encuentra a su dueño');
@@ -5668,6 +5688,9 @@ console.log('\nLa plata la confirma pagos');
      && !descuentoPorVer({ ...conDesc, aprobacion: 'Por aprobar' } as Reserva)
      && pendientesDeDescuentoVisto([conDesc]).length === 1,
      'un descuento ya aplicado queda por ver hasta que pagos lo ve; uno por aprobar todavía no');
+  ok(cambiosDePlata({ banco: bv(), pagoJornada: 40000, pagoPreparacion: 0 },
+       { banco: bv(), pagoJornada: 40000, pagoPreparacion: 30000 }).join() === 'jornada de preparación',
+     'cambiar la jornada de preparación también es plata: queda por confirmar');
   ok(cambiosDePlata(null, { banco: bv(), pagoJornada: 0 }).length === 0
      && cambiosDePlata({ banco: bv(), pagoJornada: 40000 }, { banco: { ...bv(), numero: '123' }, pagoJornada: 45000 }).join() === 'cuenta bancaria,pago por jornada',
      'qué cambió de la plata, en palabras');

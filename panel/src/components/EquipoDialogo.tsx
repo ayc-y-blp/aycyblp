@@ -22,7 +22,7 @@ import Ayuda from './Ayuda';
 import Dialogo from './Dialogo';
 import { AjustesDelDia, BotonNuevaPersona, BotonesDeLaLinea, CampoAlLado, COLUMNA_ROTULO, ENTRADA_DIA, ROTULO_LADO, TotalDelDia } from './LineaDelDia';
 import ConfirmarCierre, { type PuntoDeCierre } from './ConfirmarCierre';
-import { planDelDia, VINO, MODALIDAD, pagoDe, esContratado,
+import { planDelDia, VINO, MODALIDAD, pagoDe, esContratado, jornadaPropuesta,
          repartirPropina, propinaDelDia, porNombre, faltantesDe,
          type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { faltaParaCerrar, type Cierre, yaLlego } from '@/lib/cierres';
@@ -65,9 +65,15 @@ function enColumnas<T>(lista: T[], peso: (x: T) => number, n: number): T[][] {
 export default function EquipoDialogo({
   fecha, personas, puestos, trabajadores, turnos, extras = [], cerrado = false,
   conCierre = false, verSueldos = false, enfocarPropina = false,
-  conReservas = false, conAsistencia = false, cierre, puedeCorregir = false, puedeCerrar = false, onListo, onCancelar
+  conReservas = false, conAsistencia = false, cierre, puedeCorregir = false, puedeCerrar = false, onListo, onCancelar,
+  preparacion = false
 }: {
   fecha: string;
+  /**
+   * **Si el día es de preparación** (sin público ni reservas, `esPreparacion()`):
+   * al sumar a alguien se propone su jornada de preparación (2026-11-23).
+   */
+  preparacion?: boolean;
   /** Cuántos comensales tiene el día: es contra esto que se sugiere equipo. */
   personas: number;
   puestos: Puesto[];
@@ -901,7 +907,9 @@ export default function EquipoDialogo({
                     modalidad: ficha?.modalidad ?? MODALIDAD.porTurno,
                     // El sueldo se propone desde la ficha y se congela al pasar
                     // lista; acá todavía no se le ha pagado nada a nadie.
-                    pagoJornada: ficha?.pagoJornada ?? 0,
+                    // En un día de preparación, la jornada de preparación
+                    // (2026-11-23, `jornadaPropuesta()`).
+                    pagoJornada: jornadaPropuesta(ficha, preparacion),
                     horasExtra: 0, valorHora: ficha?.valorHora ?? 0,
                     ajustes: [], propina: 0
                   }]);
@@ -941,7 +949,7 @@ export default function EquipoDialogo({
                 (x) => normalizar(x.trabajador) === normalizar(t.nombre)) ? antes : [...antes, {
                   fecha, trabajador: t.nombre, puesto,
                   asistencia: VINO.sinMarcar, modalidad: t.modalidad,
-                  pagoJornada: t.pagoJornada, horasExtra: 0, valorHora: t.valorHora,
+                  pagoJornada: jornadaPropuesta(t, preparacion), horasExtra: 0, valorHora: t.valorHora,
                   ajustes: [], propina: 0
                 }]);
             }

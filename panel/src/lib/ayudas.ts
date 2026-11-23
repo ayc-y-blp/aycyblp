@@ -1258,6 +1258,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Esto es lo que gana de costumbre. Lo de un día —cuántas horas extra hizo, un atraso, un adelanto, un feriado— se anota en ese día, con su motivo.'
     ]
   },
+  jornadaPreparacion: {
+    titulo: 'La jornada de preparación',
+    texto: [
+      'Lo que gana en un día de preparación: un día con equipo, sin público y sin reservas (montaje, limpieza, preparar un evento).',
+      'Al sumarlo a ese día se propone este monto; en un día público o con evento, la jornada de siempre. En blanco, también la de siempre.',
+      'Lo de un día se puede cambiar en su turno.'
+    ]
+  },
   propinaFicha: {
     titulo: 'Entra en la propina',
     texto: [

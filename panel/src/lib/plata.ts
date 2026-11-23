@@ -79,14 +79,15 @@ const bancoIgual = (a: Banco, b: Banco) =>
  * jornada*… Vacío si no cambió nada de plata.
  */
 export function cambiosDePlata(
-  antes: { banco: Banco; pagoJornada?: number; valorHora?: number; modalidad?: string; monto?: number } | null,
-  despues: { banco: Banco; pagoJornada?: number; valorHora?: number; modalidad?: string; monto?: number }
+  antes: { banco: Banco; pagoJornada?: number; pagoPreparacion?: number; valorHora?: number; modalidad?: string; monto?: number } | null,
+  despues: { banco: Banco; pagoJornada?: number; pagoPreparacion?: number; valorHora?: number; modalidad?: string; monto?: number }
 ): string[] {
   const vacio = { titular: '', rut: '', banco: '', tipo: '', numero: '', correo: '', nota: '' };
   const a = antes ?? { banco: vacio, pagoJornada: 0, valorHora: 0, modalidad: despues.modalidad, monto: 0 };
   const que: string[] = [];
   if (!bancoIgual(a.banco ?? vacio, despues.banco ?? vacio)) que.push('cuenta bancaria');
   if ((a.pagoJornada ?? 0) !== (despues.pagoJornada ?? 0)) que.push('pago por jornada');
+  if ((a.pagoPreparacion ?? 0) !== (despues.pagoPreparacion ?? 0)) que.push('jornada de preparación');
   if ((a.valorHora ?? 0) !== (despues.valorHora ?? 0)) que.push('valor hora extra');
   if ((a.modalidad ?? '') !== (despues.modalidad ?? '')) que.push('modalidad');
   if ((a.monto ?? 0) !== (despues.monto ?? 0)) que.push('monto habitual');

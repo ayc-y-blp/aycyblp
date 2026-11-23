@@ -52,7 +52,7 @@ import BloqueLiberar from './BloqueLiberar';
 import { esExclusivo, exclusividadDe } from '@/lib/exclusivo';
 import ExtrasDialogo from './ExtrasDialogo';
 import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
-import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO,
+import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO, esPreparacion,
          faltantesDe, textoFaltantes, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { extrasDelDia, costoExtrasDelDia, costoDeExtra,
          type Colaborador, type Extra } from '@/lib/extras';
@@ -1041,6 +1041,9 @@ export default function DayView(
         <EquipoDialogo
           fecha={fecha}
           personas={personasDelDia}
+          // Sin el día en el calendario, o cerrado, y sin gente: preparación.
+          preparacion={esPreparacion({ conEquipo: true,
+            abierto: !!cupoDia && !cupoDia.bloqueada, personas: personasDelDia })}
           puestos={equipo.puestos}
           trabajadores={equipo.trabajadores}
           turnos={equipo.turnos}

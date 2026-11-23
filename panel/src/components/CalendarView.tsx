@@ -23,7 +23,7 @@ import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
 import { POR_DEFECTO, type Config } from '@/lib/config';
 import { menusConocidos } from '@/lib/shopify';
 import { POR_DEFECTO_MENUS, paraReservar, type Menu } from '@/lib/menus';
-import { resumenEquipo, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
+import { resumenEquipo, esPreparacion, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { lineaDeSemana, type Tono } from '@/lib/semana';
 import { puede, puedeVer, type Rol } from '@/lib/auth';
 import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy } from '@/lib/fechas';
@@ -89,7 +89,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   // equipo sin que exista en el calendario, así que no hay ocupación que
   // pasarle. Ver "Agregar fecha" y la opción de preparación.
   const [planificando, setPlanificando] =
-    useState<{ fecha: string; personas: number } | null>(null);
+    useState<{ fecha: string; personas: number; preparacion?: boolean } | null>(null);
   const [avisoPlanilla, setAvisoPlanilla] = useState('');
   /**
    * Las semanas de más adelante que alguien abrió. Las dos primeras van
@@ -432,7 +432,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
              en `Fechas Hábiles`, así que el sitio sigue sin ofrecer ese día. */
           onPreparacion={(fecha) => {
             setAgregandoFecha(false);
-            setPlanificando({ fecha, personas: 0 });
+            setPlanificando({ fecha, personas: 0, preparacion: true });
           }}
         />
       )}
@@ -441,6 +441,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         <EquipoDialogo
           fecha={planificando.fecha}
           personas={planificando.personas}
+          preparacion={!!planificando.preparacion}
           puestos={equipo.puestos}
           trabajadores={equipo.trabajadores}
           turnos={equipo.turnos}
@@ -573,7 +574,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
                   ? resumenEquipo(equipo.turnos, equipo.puestos, d.fecha, d.tomadas)
                   : null}
                 onEditar={() => setEditando(d)}
-                onPlanificar={() => setPlanificando({ fecha: d.fecha, personas: d.tomadas })} />
+                onPlanificar={() => setPlanificando({ fecha: d.fecha, personas: d.tomadas,
+                  preparacion: esPreparacion({ conEquipo: true, abierto: !d.bloqueada, personas: d.tomadas }) })} />
             ))}
             </div>
             )}

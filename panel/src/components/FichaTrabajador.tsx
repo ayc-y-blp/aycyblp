@@ -53,6 +53,7 @@ export default function FichaTrabajador({
     ficha?.modalidad ?? MODALIDAD.porTurno);
   const [pagoJornada, setPagoJornada] = useState(String(ficha?.pagoJornada || ''));
   const [valorHora, setValorHora] = useState(String(ficha?.valorHora || ''));
+  const [pagoPreparacion, setPagoPreparacion] = useState(String(ficha?.pagoPreparacion || ''));
   const [propina, setPropina] = useState(ficha?.propina ?? true);
   const [banco, setBanco] = useState<Banco>(ficha?.banco ?? bancoVacio());
   // Con vista gerencia y el rol sin `sueldos`: se ven, no se cambian.
@@ -70,7 +71,7 @@ export default function FichaTrabajador({
         method: creando ? 'POST' : 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ nombre, telefono, puesto: habitual, modalidad,
-                               pagoJornada, valorHora, propina, banco,
+                               pagoJornada, valorHora, pagoPreparacion: contratado ? 0 : pagoPreparacion, propina, banco,
                                ...(creando ? {} : { activo }) })
       });
       const d = await r.json();
@@ -161,6 +162,15 @@ export default function FichaTrabajador({
                 placeholder={contratado ? 'sin jornada' : '—'}
                 aria-label={`Jornada de ${nombre || 'esta persona'}`}
                 onChange={(e) => setPagoJornada(e.target.value)} />
+            </Campo>
+            {/* La jornada de un día de preparación (2026-11-23): en blanco, la
+                de siempre. */}
+            <Campo etiqueta="Preparación" ayuda="jornadaPreparacion">
+              <input type="number" min={0} step={1000} className={ENTRADA}
+                value={contratado ? '' : pagoPreparacion} disabled={contratado}
+                placeholder={contratado ? 'sin jornada' : 'la de siempre'}
+                aria-label={`Jornada de preparación de ${nombre || 'esta persona'}`}
+                onChange={(e) => setPagoPreparacion(e.target.value)} />
             </Campo>
             {/* El rótulo es corto a propósito: "Valor de la hora extra" se
                 partía en dos líneas y empujaba el campo hacia abajo,

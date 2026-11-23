@@ -38,6 +38,8 @@ export interface CupoDelDia {
   sobrecupo: number;
   /** El pedido de más cupo que espera al gerente, o vacío (`lib/cupo.ts`). */
   cupoPedido?: string;
+  /** Si el día está cerrado (para saber si es de preparación). */
+  bloqueada?: boolean;
 }
 
 const MOTIVO = 'El día se llenó con reservas pagadas';
