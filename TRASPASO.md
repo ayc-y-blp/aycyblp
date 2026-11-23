@@ -199,8 +199,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Pestaña nueva `Notas` y dos columnas al final de `Presupuestos`
   (`Recontactar el`, `Redactar antes del`). **En el paso Envío, al pie de
   *Seguimiento y envío***: cuántos contactos van, el próximo contacto y la
-  última nota (lo pidió el cliente con una foto). Ver `panel/CLAUDE.md`, "La
-  agenda del vendedor".
+  última nota (lo pidió el cliente con una foto). **En producción, *📅
+  Elegir…* no abría el calendario en Chrome** y, con el evento mañana, no
+  quedaba ningún atajo: arreglado en el PR siguiente (`showPicker()` y
+  *Hoy*). Ver `panel/CLAUDE.md`, "La agenda del vendedor".
 - **El encargado de turno corrige un día cerrado** (23-11-2026, lo pidió el
   cliente; PR #333): se sumó al permiso `corregir`. Hasta ese día cerraba
   y le pedía la corrección a operaciones o a pagos. Ver `panel/CLAUDE.md`,
