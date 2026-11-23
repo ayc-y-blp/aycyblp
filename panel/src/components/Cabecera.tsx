@@ -23,6 +23,7 @@
  */
 import AyudaCorta from './AyudaCorta';
 import { BotonVerComo, FranjaVerComo } from './VerComo';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Nav, { PAGINAS } from './Nav';
 import { puede, puedeVer, type Rol } from '@/lib/auth';
@@ -30,8 +31,15 @@ import { NOMBRE_ROL } from '@/lib/roles';
 import BotonTema from './BotonTema';
 import Comentar from './Comentar';
 
-export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '', verComoHasta = 0, conComentar = false }: {
+export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '', verComoHasta = 0, conComentar = false,
+  empresa = 'Brasas de Lo Pirque', variasEmpresas = false, otras = [] }: {
   rol: string; usuario: string; gerencia?: boolean;
+  /** De qué empresa es esta dirección (Fase 5). */
+  empresa?: string;
+  /** Si hay más de una empresa encendida: recién ahí se nombra en la barra. */
+  variasEmpresas?: boolean;
+  /** Las otras empresas a las que esta cuenta puede pasar. */
+  otras?: { id: string; nombre: string }[];
   /** Si los comentarios están conectados a su planilla (`COMENTARIOS_SHEET_ID`). */
   conComentar?: boolean;
   /** 'admin' si es un administrador mirando como otro rol ("ver como"). */
@@ -57,6 +65,22 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
                       || ruta.startsWith('/contrato/');
   const esEntrada = ruta === '/login';
 
+  // Pasar a la otra empresa (Fase 5): el servidor arma un pase de un minuto
+  // y la otra dirección lo canjea por una sesión, sin pedir la clave.
+  const [pasando, setPasando] = useState('');
+  async function pasar(a: string) {
+    setPasando(a);
+    try {
+      const r = await fetch('/api/sesion/pasar', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ a })
+      });
+      const d = await r.json();
+      if (d.ir) { window.location.href = d.ir; return; }
+      alert(d.error ?? 'No se pudo pasar a la otra empresa.');
+    } catch { alert('No se pudo pasar a la otra empresa.'); }
+    setPasando('');
+  }
+
   async function salir() {
     await fetch('/api/sesion', { method: 'DELETE' });
     window.location.href = '/login';
@@ -77,7 +101,7 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
         {esDeTrabajador || esEntrada ? (
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-bold uppercase tracking-widest text-oro">
-              Brasas de Lo Pirque
+              {empresa}
             </span>
             {/* En la pantalla de entrada sí, porque es la primera que se abre
                 y es donde alguien se encuentra con el tema que no quería. En
@@ -97,6 +121,20 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
               <a href="/" className="text-base font-bold uppercase tracking-widest text-oro">
                 Reservas
               </a>
+              {/* **En qué empresa estás** (2026-11-23, Fase 5): con dos
+                  empresas el panel se ve igual en las dos direcciones, y
+                  esto es lo que dice cuál es. Con una sola no se dibuja. */}
+              {variasEmpresas && (
+                <span className="rounded-full border-2 border-oro/60 bg-oro/10 px-2.5 py-0.5 text-[13px] font-bold text-oro">
+                  {empresa}
+                </span>
+              )}
+              {otras.map((e) => (
+                <button key={e.id} type="button" onClick={() => pasar(e.id)} disabled={!!pasando}
+                  className="tecla boton" title={`Pasar al panel de ${e.nombre}, con tu misma cuenta`}>
+                  {pasando === e.id ? 'Pasando…' : `⇄ Ir a ${e.nombre}`}
+                </button>
+              ))}
               <span className="flex-1" />
               <BotonTema />
               {usuario && (

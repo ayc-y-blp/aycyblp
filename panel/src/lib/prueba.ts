@@ -6681,5 +6681,72 @@ console.log('\nLo que el panel recuerda va por empresa');
   A.olvidarToken();
 }
 
+// --- Dos empresas: una dirección cada una y un rol por empresa (Fase 5, pasos 3 y 4) ---
+console.log('\nDos empresas: la dirección, las cuentas y el pase');
+{
+  const M = await import('./empresas.ts');
+  const U = await import('./usuarios.ts');
+  const S = await import('./sesion.ts');
+  const apagada = {};
+  const env = { AYC_GOOGLE_SHEET_ID: 'planilla-ayc' };
+  ok(M.empresasEncendidas(apagada).length === 1 && M.empresaDeHost('panel.asadosycorderos.cl', apagada) === M.CASA,
+    'sin su planilla, Asados y Corderos está apagada: su dirección se atiende como la casa');
+  ok(M.empresaDeHost('panel.asadosycorderos.cl', env) === M.AYC && M.empresaDeHost('PANEL.asadosycorderos.cl:443', env) === M.AYC,
+    'encendida, su dirección es suya (sin mirar mayúsculas ni el puerto)');
+  ok(['panel.brasasdelopirque.cl', 'landing-pirque-alpha.vercel.app', 'landing-pirque-git-x.vercel.app', 'localhost:3000', '']
+    .every((h) => M.empresaDeHost(h, env) === M.CASA), 'cualquier otra dirección es de la casa');
+  ok(M.empresaDeHost('otra.cl', { ...env, AYC_PANEL_HOSTS: 'otra.cl, 127.0.0.1:3125' }) === M.AYC
+    && M.direccionDe(M.AYC, { ...env, AYC_PANEL_HOSTS: '127.0.0.1:3125' }) === 'http://127.0.0.1:3125'
+    && M.direccionDe(M.AYC, env) === 'https://panel.asadosycorderos.cl',
+    'las direcciones se pueden cambiar por variable, y a un computador se va sin https');
+
+  // La pestaña de cuentas: la columna del rol en la otra empresa.
+  const base = [['Nombre', 'Usuario', 'Rol', 'Activo', 'Clave (huella)', 'Vista gerencia', 'Avisos leídos'],
+                ['Ana', 'ana', 'vendedor', 'Sí', 'h', 'No', ''], ['Beto', 'beto', 'encargado', 'Sí', 'h', 'No', '']];
+  ok(U.leerUsuariosDe(base).every((u) => !u.roles) && U.aFilasUsuarios(U.leerUsuariosDe(base))[0].length === 7,
+    'una pestaña de antes se lee igual, y mientras nadie tenga rol en otra empresa se escribe igual');
+  const conRol = [[...base[0], 'rol asados y corderos'], [...base[1], 'Vendedor'], [...base[2], 'jefazo']];
+  const lista = U.leerUsuariosDe(conRol);
+  ok(lista[0].roles?.[M.AYC] === 'vendedor' && !lista[1].roles,
+    'el rol en la otra empresa se lee por el nombre de su columna; uno mal escrito no da acceso');
+  const vuelta = U.aFilasUsuarios(lista);
+  ok(vuelta[0][7] === 'Rol Asados y Corderos' && vuelta[1][7] === 'vendedor' && vuelta[2][7] === '',
+    'y va y vuelve de la planilla en su columna, al final');
+  const vista = U.vistaDeEmpresa(lista, M.AYC);
+  ok(vista.length === 1 && vista[0].usuario === 'ana' && vista[0].rol === 'vendedor' && U.vistaDeEmpresa(lista, M.CASA) === lista,
+    'desde la otra empresa se ven solo quienes entran ahí, con el rol que tienen ahí');
+  ok(U.rolEn(lista[1], M.AYC) === '' && U.rolEn(lista[1], M.CASA) === 'encargado'
+    && U.otrasDe(lista[0], M.CASA, [M.CASA, M.AYC]).join() === M.AYC && U.otrasDe(lista[1], M.CASA, [M.CASA, M.AYC]).length === 0
+    && U.otrasDe(lista[0], M.AYC, [M.CASA, M.AYC]).join() === M.CASA,
+    'sin rol en una empresa no se entra ni se pasa a ella');
+
+  // La sesión es de una empresa, y el pase no es una sesión.
+  const de = async (d: Parameters<typeof S.firmarSesion>[0], dura?: number) =>
+    S.firmarSesion(d, 'secreto', 1000, dura);
+  const vieja = await S.leerSesion(await de({ usuario: 'Ana', rol: 'vendedor' }), 'secreto', 1001);
+  ok(vieja?.empresa === M.CASA, 'una sesión sin empresa —las de antes— es de la casa');
+  const deAyc = await S.leerSesion(await de({ usuario: 'Ana', rol: 'vendedor', empresa: M.AYC, otras: [M.CASA] }), 'secreto', 1001);
+  ok(deAyc?.empresa === M.AYC && deAyc.otras?.join() === M.CASA, 'la sesión lleva su empresa y a cuáles puede pasar');
+  const pase = await de({ usuario: 'Ana', rol: 'vendedor', empresa: M.AYC, pase: true }, S.DURACION_PASE);
+  ok((await S.leerSesion(pase, 'secreto', 1001)) === null, 'un pase no abre nada como sesión');
+  ok((await S.leerPase(pase, 'secreto', 1001))?.empresa === M.AYC, 'se canjea como pase, con su empresa');
+  ok((await S.leerPase(pase, 'secreto', 1000 + S.DURACION_PASE + 1)) === null, 'y vence al minuto');
+  ok((await S.leerPase(await de({ usuario: 'Ana', rol: 'vendedor' }), 'secreto', 1001)) === null,
+    'una sesión no se canjea como pase');
+
+  // Lo leído en una petición no se cruza entre empresas.
+  const E = await import('./empresa.ts');
+  const antes = process.env.AYC_GOOGLE_SHEET_ID;
+  process.env.AYC_GOOGLE_SHEET_ID = 'planilla-ayc';
+  ok(E.empresaPorId(M.AYC).id === M.AYC && E.empresaPorId(M.AYC).planilla === 'planilla-ayc'
+    && E.empresaPorId(M.AYC).tienda.dominio === '' && E.empresaPorId('inventada').id === M.CASA,
+    'Asados y Corderos tiene su planilla y no tiene tienda; una empresa que no existe es la casa');
+  ok(E.empresaDeLaPeticion(new Request('http://x/', { headers: { host: 'panel.asadosycorderos.cl' } })).id === M.AYC
+    && E.empresaDeLaPeticion(new Request('http://x/', { headers: { host: 'panel.brasasdelopirque.cl' } })).id === M.CASA,
+    'la empresa de una petición sale de su dirección');
+  if (antes === undefined) delete process.env.AYC_GOOGLE_SHEET_ID; else process.env.AYC_GOOGLE_SHEET_ID = antes;
+  ok(E.empresaPorId(M.AYC).id === M.CASA, 'apagada, pedirla por su id entrega la casa');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

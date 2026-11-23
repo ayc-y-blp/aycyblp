@@ -433,7 +433,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Qué puede cada rol se ve bajo el rol elegido, y el detalle en su signo de pregunta. '
       + 'Sale de la misma tabla de permisos que usa el panel, así que siempre '
       + 'está al día.',
-      'Un trabajador no entra acá: su acceso es su link personal.'
+      'Un trabajador no entra acá: su acceso es su link personal.',
+      'Con dos empresas, la cuenta es una sola: bajo el rol aparece "En Asados y Corderos", '
+      + 'donde se elige si la persona entra a ese panel y con qué rol. Quien tiene las dos '
+      + 've arriba un botón para pasar de una a la otra sin escribir la clave de nuevo. '
+      + 'Las cuentas se cambian solo desde el panel de Brasas de Lo Pirque.'
     ],
     ojo: 'Es mejor desactivar una cuenta que borrarla: así sus líneas de la '
        + 'bitácora siguen diciendo quién hizo qué. Un cambio de rol vale cuando '

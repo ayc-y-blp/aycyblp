@@ -14,17 +14,29 @@ if (!ARCHIVO) throw new Error('Falta PLANILLA_EJEMPLO: la planilla de ejemplo en
 
 type Libro = { orden: string[]; hojas: Record<string, string[][]> };
 
+/**
+ * **Una planilla por id** (2026-11-23, Fase 5): la de siempre es el archivo
+ * de ejemplo; cualquier otro id —la segunda empresa— tiene el suyo al lado,
+ * que nace vacío. `actual` lo fija cada llamada antes de leer.
+ */
+let actual = ARCHIVO;
+function elegir(id: unknown) {
+  const propio = !id || id === process.env.GOOGLE_SHEET_ID || id === process.env.COMENTARIOS_SHEET_ID;
+  actual = propio ? ARCHIVO : `${ARCHIVO}.${String(id).replace(/[^a-z0-9-]/gi, '')}.json`;
+  if (!fs.existsSync(actual)) fs.writeFileSync(actual, JSON.stringify({ orden: [], hojas: {} }));
+}
+
 function leer(): Libro {
-  const crudo = JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'));
+  const crudo = JSON.parse(fs.readFileSync(actual, 'utf8'));
   const hojas: Record<string, string[][]> = crudo.hojas ?? crudo;
   const orden: string[] = crudo.orden ?? Object.keys(hojas);
   for (const k of Object.keys(hojas)) if (!orden.includes(k)) orden.push(k);
   return { orden, hojas };
 }
 function guardar(l: Libro) {
-  const tmp = ARCHIVO + '.tmp' + process.pid + Math.random().toString(36).slice(2);
+  const tmp = actual + '.tmp' + process.pid + Math.random().toString(36).slice(2);
   fs.writeFileSync(tmp, JSON.stringify({ orden: l.orden, hojas: l.hojas }, null, 1));
-  fs.renameSync(tmp, ARCHIVO);
+  fs.renameSync(tmp, actual);
 }
 const nombre = (r: string) => {
   const m = r.match(/^'((?:[^']|'')*)'/);
@@ -51,7 +63,7 @@ const recortar = (t: string[][]) => t.map((f) => {
   const g = [...f]; while (g.length && g[g.length - 1] === '') g.pop(); return g;
 });
 
-export const sheetsFalso = {
+const crudo = {
   spreadsheets: {
     get: async () => {
       const l = leer();
@@ -125,3 +137,17 @@ export const sheetsFalso = {
     }
   }
 };
+
+/** Cada llamada elige su planilla por el `spreadsheetId` que trae. */
+function conPlanilla<T extends object>(o: T): T {
+  return new Proxy(o, {
+    get(t, k) {
+      const v = (t as Record<string | symbol, unknown>)[k];
+      if (typeof v === 'function') {
+        return (...a: unknown[]) => { elegir((a[0] as { spreadsheetId?: unknown } | undefined)?.spreadsheetId); return (v as (...x: unknown[]) => unknown)(...a); };
+      }
+      return v && typeof v === 'object' ? conPlanilla(v as object) : v;
+    }
+  }) as T;
+}
+export const sheetsFalso = conPlanilla(crudo);

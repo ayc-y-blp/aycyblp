@@ -28,10 +28,13 @@
  * escapa de la pieza. El plan completo está en `panel/FASE5.md`.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { AYC, CASA, empresaDeHost, fichaDe } from './empresas.ts';
 
 export interface Empresa {
   /** Su nombre corto, fijo. No es el nombre comercial, que vive en `Config`. */
   id: string;
+  /** Cómo se llama en la barra del panel. */
+  nombre: string;
   /** El id de su planilla de Google. */
   planilla: string;
   /** La cuenta de servicio que lee y escribe esa planilla. */
@@ -65,7 +68,8 @@ const ambiente = new AsyncLocalStorage<Empresa>();
 /** La empresa armada con las variables de siempre: Brasas de Lo Pirque. */
 function delEntorno(): Empresa {
   return {
-    id: 'lo-pirque',
+    id: CASA,
+    nombre: fichaDe(CASA, process.env).nombre,
     planilla: v('GOOGLE_SHEET_ID'),
     cuenta: { correo: v('GOOGLE_SERVICE_ACCOUNT_EMAIL'), clave: v('GOOGLE_PRIVATE_KEY') },
     calendario: v('GOOGLE_CALENDAR_ID'),
@@ -79,9 +83,50 @@ function delEntorno(): Empresa {
 }
 
 /**
+ * **Asados y Corderos** (2026-11-23), con sus propias variables, todas con
+ * `AYC_` adelante. Lo que no trae:
+ *
+ * - **Tienda**: no vende por Shopify (lo decidió el cliente: es solo
+ *   eventos). Sus campos van vacíos, y así `configurado()` da falso.
+ * - **Cuenta de servicio propia, si se le da**: con `AYC_GOOGLE_…` usa la
+ *   suya —y su propio cupo de 60 lecturas por minuto—; sin ellas, la de la
+ *   casa, que entonces tiene que tener acceso a su planilla.
+ */
+function asadosYCorderos(): Empresa {
+  const casa = delEntorno();
+  return {
+    id: AYC,
+    nombre: fichaDe(AYC, process.env).nombre,
+    planilla: v('AYC_GOOGLE_SHEET_ID'),
+    cuenta: {
+      correo: v('AYC_GOOGLE_SERVICE_ACCOUNT_EMAIL') || casa.cuenta.correo,
+      clave: v('AYC_GOOGLE_PRIVATE_KEY') || casa.cuenta.clave
+    },
+    calendario: v('AYC_GOOGLE_CALENDAR_ID'),
+    tienda: { dominio: '', tokenFijo: '', clienteId: '', clienteSecreto: '', version: '', secretoWebhook: '' },
+    claveCrm: ''
+  };
+}
+
+/** Una empresa por su id. Una que no existe, o apagada, es la casa. */
+export function empresaPorId(id: string): Empresa {
+  return id === AYC && fichaDe(AYC, process.env).configurada ? asadosYCorderos() : delEntorno();
+}
+
+/** La casa: donde vive la lista de cuentas, que es una sola para todas. */
+export function laCasa(): Empresa {
+  return delEntorno();
+}
+
+/** La empresa de una petición, por su dirección. */
+export function empresaDeLaPeticion(req: { headers: { get(n: string): string | null } }): Empresa {
+  return empresaPorId(empresaDeHost(req.headers.get('host'), process.env));
+}
+
+/**
  * La empresa que atiende esta petición: la que fijó `conEmpresa()`, y si
- * nadie fijó ninguna, la del entorno. **Hoy nadie la fija fuera de las
- * pruebas**, así que el panel se comporta igual que antes.
+ * nadie fijó ninguna, la casa. La fija `conLecturas()` al entrar a cada
+ * ruta, por la dirección de la petición.
  */
 export function empresaActual(): Empresa {
   return ambiente.getStore() ?? delEntorno();

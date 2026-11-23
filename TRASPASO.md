@@ -194,6 +194,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Decidido ese día: el panel de Asados y Corderos va en
   **`panel.asadosycorderos.cl`**, y en un matrimonio la recepción **puede**
   llevar la lista de invitados uno por uno (opcional).
+- **Fase 5, pasos 3 y 4, en un PR abierto (23-11-2026)**: una dirección por
+  empresa, una sola lista de cuentas con un rol por empresa y el botón para
+  pasar de una a la otra sin clave. **Apagado** hasta que exista
+  `AYC_GOOGLE_SHEET_ID`. Para encenderlo, el cliente copia la planilla de Lo
+  Pirque, la vacía y agrega el dominio: pasos en `panel/FASE5.md`, "Para
+  encenderla". **Regla para las dos sesiones**: una ruta nueva va envuelta en
+  `conLecturas()`, y lo que un archivo recuerda de la planilla o la tienda va
+  con `porEmpresa()` (ver `panel/CLAUDE.md`, "Dos empresas en el mismo
+  panel").
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

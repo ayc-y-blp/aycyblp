@@ -1,3 +1,4 @@
+import { empresaDeHost, empresasEncendidas, fichaDe } from '@/lib/empresas';
 import type { Metadata } from 'next';
 import './globals.css';
 import Cabecera from '@/components/Cabecera';
@@ -26,6 +27,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   );
   // El botón 💬 Comentar aparece recién cuando hay planilla donde anotar.
   const conComentar = !!process.env.COMENTARIOS_SHEET_ID?.trim();
+  // **De qué empresa es esta dirección** (2026-11-23, Fase 5), y a cuáles
+  // puede pasar la cuenta. Con una sola empresa encendida no se dibuja nada.
+  const encendidas = empresasEncendidas(process.env);
+  const empresa = fichaDe(empresaDeHost(headers().get('host'), process.env), process.env);
+  const otras = encendidas.filter((e) => e.id !== empresa.id && (sesion?.otras ?? []).includes(e.id))
+    .map((e) => ({ id: e.id, nombre: e.nombre }));
   return (
     <html lang="es" data-tema="claro">
       <head>
@@ -50,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <Cabecera rol={sesion?.rol ?? ''} usuario={sesion?.usuario ?? ''} gerencia={sesion?.gerencia === true}
           rolReal={sesion?.rolReal ?? ''} verComoHasta={sesion?.rolReal ? sesion.expira : 0}
-          conComentar={conComentar} />
+          conComentar={conComentar} empresa={empresa.nombre} variasEmpresas={encendidas.length > 1} otras={otras} />
         <Recorrido rol={sesion?.rol ?? ''} />
         {/* El rol y la vista gerencia, para que cada pantalla sepa qué se
             mira y qué se toca (ver `usarSoloMira()`). */}

@@ -87,3 +87,17 @@ genérico: borrar en Vercel no anula nada en Google ni en Shopify.
   tabla), y su valor, antes, en la bóveda.
 - Después de cambiar cualquier variable, haz **Redeploy**: Vercel no aplica
   variables nuevas a un despliegue que ya está corriendo.
+
+## La segunda empresa: Asados y Corderos (2026-11-23, Fase 5)
+
+Todas opcionales. **Sin `AYC_GOOGLE_SHEET_ID` la segunda empresa está
+apagada** y el panel es el de siempre. Detalle en `panel/FASE5.md`.
+
+| Variable | Production | Preview | Qué es |
+|---|---|---|---|
+| `AYC_GOOGLE_SHEET_ID` | la planilla real de Asados y Corderos | una copia de pruebas | La enciende |
+| `AYC_GOOGLE_CALENDAR_ID` | su calendario | — | Opcional |
+| `AYC_GOOGLE_SERVICE_ACCOUNT_EMAIL`, `AYC_GOOGLE_PRIVATE_KEY` | una cuenta de servicio propia | igual | Opcionales (*Sensitive* la clave): sin ellas usa la cuenta de Lo Pirque, que entonces necesita acceso a esa planilla |
+| `AYC_PANEL_HOSTS` | — | la dirección de prueba, si se quiere probar ahí | Por defecto `panel.asadosycorderos.cl` |
+| `PANEL_HOSTS` | — | — | A dónde se vuelve al pasar a Lo Pirque. Por defecto `panel.brasasdelopirque.cl` |
+

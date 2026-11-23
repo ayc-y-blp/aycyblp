@@ -103,8 +103,8 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 |---|---|---|
 | 1 | **La empresa como una pieza** (`lib/empresa.ts`): todo lo que es de la empresa —planilla, cuenta de servicio, calendario, tienda, CRM— se pregunta en un solo lugar. Sin cambio de comportamiento | PR abierto el 2026-11-22 |
 | 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | Hecho el 2026-11-23, en el PR abierto del simulador (#313). Ver "Paso 2" |
-| 3 | Las cuentas compartidas y el rol por empresa | — |
-| 4 | Una dirección por empresa y el paso de una a la otra | — |
+| 3 | Las cuentas compartidas y el rol por empresa | Hecho el 2026-11-23, apagado. Ver "Pasos 3 y 4" |
+| 4 | Una dirección por empresa y el paso de una a la otra | Hecho el 2026-11-23, apagado. Ver "Pasos 3 y 4" |
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
 | 6 | El contrato de matrimonio | — |
 | 7 | El tablero de la gerencia | — |
@@ -206,4 +206,83 @@ respuesta de la otra.
 - **La recepción de un matrimonio: con la posibilidad de la lista de
   invitados uno por uno.** Opcional: un evento puede seguir con solo el
   total. Va con el paso 5 (los módulos de Calicanto).
+
+## Pasos 3 y 4: una cuenta, un rol por empresa y una dirección cada una (2026-11-23)
+
+Lo aprobó el cliente (*"sí, dale así"*). **Queda apagado**: mientras no
+exista `AYC_GOOGLE_SHEET_ID`, el panel es el de siempre y nada nombra a la
+otra empresa.
+
+- **La dirección dice la empresa** (`lib/empresas.ts`, sin nada de Node: la
+  usa también el middleware). `panel.asadosycorderos.cl` es de Asados y
+  Corderos; **cualquier otra dirección es de Lo Pirque** —las versiones de
+  prueba, la dirección de Vercel, un computador—. Las direcciones se pueden
+  cambiar con `PANEL_HOSTS` y `AYC_PANEL_HOSTS` (separadas por coma).
+- **Dónde se fija**: `conLecturas()` (`sheets.ts`), por donde pasa toda ruta
+  de `/api`, con la cabecera `host`. Las cinco páginas que leen la planilla
+  por su cuenta —bitácora, link del trabajador, planilla semanal, cotización
+  y contrato— usan `enEmpresaDeLaPagina()` (`lib/empresaPagina.ts`). **Una
+  ruta nueva tiene que ir envuelta en `conLecturas()`**, aunque no precargue
+  nada: si no, lee la casa.
+- **Asados y Corderos** (`empresaPorId()` en `empresa.ts`): su planilla, su
+  calendario y, si se le da, su propia cuenta de servicio (con su propio
+  cupo de 60 lecturas); sin ella usa la de la casa. **Sin tienda**: es solo
+  eventos.
+- **La lista de cuentas es una sola y vive en la planilla de Lo Pirque**
+  (`leerCuentas()`). Una columna nueva al final de `Usuarios`, **`Rol Asados
+  y Corderos`**, que aparece recién cuando alguien tiene rol ahí. En blanco
+  o mal escrito: no entra.
+- **`leerUsuarios()` es esa lista vista desde la empresa en curso**
+  (`vistaDeEmpresa()`): en la otra empresa trae solo a quienes entran ahí,
+  con el rol que tienen ahí. Así entrar, la lista de vendedores y *Cambiar
+  vendedor* contestan por la empresa en que se está sin saber que hay dos.
+  **Esa vista no se guarda nunca**: guardar va siempre con `leerCuentas()`.
+- **La sesión es de una empresa** (`Sesion.empresa`) y vale solo en su
+  dirección: lo miran el middleware y `quienEs()`. Una sesión de antes, sin
+  ese dato, es de Lo Pirque: nadie tiene que volver a entrar.
+- **Pasar de una a la otra sin escribir la clave**: `POST /api/sesion/pasar`
+  vuelve a mirar el rol en la cuenta y arma **un pase** firmado de un
+  minuto; `GET /api/sesion/pase`, en la otra dirección, lo canjea por una
+  sesión. Un pase no abre ninguna otra ruta, y vale solo para la empresa que
+  nombra. Mirando como otro rol no se pasa.
+- **Lo que se ve**: en la barra, una pastilla con el nombre de la empresa y
+  *⇄ Ir a …* para quien tiene las dos; en Cuentas, bajo el rol, *En Asados y
+  Corderos* con *— No entra* o el rol.
+- **Las cuentas se cambian solo desde el panel de Lo Pirque.** En el otro se
+  ven, con su rol de ahí, y guardar responde 409. Es una simplificación a
+  propósito: un solo lugar donde se dan permisos.
+- **El administrador de emergencia** (`PANEL_USUARIO`) lo es en las dos. La
+  clave compartida de encargado, solo en Lo Pirque.
+- **La planilla de comentarios** se escribe siempre con la cuenta de la casa.
+- **Lo recordado dentro de una petición** va con su empresa en la llave: se
+  resolvió acá lo que el paso 2 dejaba para el paso 7.
+- **Lecturas de Google**: entrar y pasar, una (`Usuarios`, de la casa). En
+  la otra empresa, una ruta que precarga `Usuarios` la lee de la casa aparte
+  de su tanda: una lectura más en `/api/presupuestos` y `/api/clientes`
+  **allá**. En Lo Pirque, ninguna más.
+- **Permisos**: ninguno nuevo. La cuenta gana un rol por empresa.
+- **Probado en el panel de ejemplo con las dos empresas** (`localhost` la
+  casa y `127.0.0.1` la otra, con el Google falso sirviendo una planilla por
+  id): la sesión de una da 401 en la otra; el pase entrega la sesión con el
+  rol de allá y no abre en la casa; quien no tiene rol allá recibe 403 al
+  pasar; las cotizaciones de una no salen en la otra; guardar cuentas desde
+  la otra da 409.
+
+### Para encenderla (lo hace el cliente, no es código)
+
+1. **La planilla**: copiar la de Lo Pirque (lo propuso el cliente: *"copiar
+   la planilla de Lo Pirque, vaciarla y trabajar a base de ella"*). Es el
+   mejor camino: **el panel espera que las pestañas existan** —con una
+   planilla vacía, el calendario falla por `Fechas Hábiles`—. Después, en el
+   panel de Asados y Corderos, *Dejar la base en cero*, y a mano lo que ese
+   botón conserva y es de Lo Pirque: `Menús`, `Config`, `Puestos`,
+   `Trabajadores`, `Colaboradores`, `Vendedores` y `Usuarios` (esa pestaña
+   allá no se usa: las cuentas viven en la de Lo Pirque).
+2. **Compartirla** con la cuenta de servicio del panel, como editor.
+3. **En Vercel**, proyecto `landing-pirque`: `AYC_GOOGLE_SHEET_ID` (en
+   Preview, una copia de pruebas) y, si se quiere, `AYC_GOOGLE_CALENDAR_ID`.
+4. **El dominio**: `panel.asadosycorderos.cl` agregado al proyecto en Vercel
+   y un CNAME `panel` en el DNS de `asadosycorderos.cl`, con nube gris si
+   está en Cloudflare.
+5. En Cuentas, darle a cada persona su rol *En Asados y Corderos*.
 

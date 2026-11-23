@@ -14,6 +14,7 @@
  * es la misma de la cotización (`TablaCotizacion`), así que el contrato no
  * puede decir un precio distinto del que el cliente aprobó.
  */
+import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig } from '@/lib/datos';
 import { porToken, lineasDe } from '@/lib/presupuestos';
 import HojaContrato from '@/components/HojaContrato';
@@ -24,7 +25,7 @@ export const metadata = vistaPrevia('Contrato', 'El contrato del evento, para re
 
 export const dynamic = 'force-dynamic';
 
-export default async function Pagina({ params }: { params: { token: string } }) {
+async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   const [lista, todas, clientes, cfg] = await Promise.all([
     leerPresupuestos(), leerLineasPresupuesto(),
     leerClientes().catch(() => []), leerConfig()
@@ -46,4 +47,9 @@ export default async function Pagina({ params }: { params: { token: string } }) 
   }
 
   return <HojaContrato p={p} lista={lista} lineas={lineasDe(todas, p.id)} clientes={clientes} cfg={cfg} />;
+}
+
+/** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */
+export default function Pagina(props: Parameters<typeof PaginaDeLaEmpresa>[0]) {
+  return enEmpresaDeLaPagina(() => PaginaDeLaEmpresa(props));
 }
