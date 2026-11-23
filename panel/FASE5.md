@@ -82,15 +82,18 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 3. **El arriendo de Calicanto y la relación comercial entre Calicanto y
    Asados y Corderos se ven después.** De partida, el arriendo va como una
    cuenta aparte, como en el contrato del CRM.
-4. **El costeo y la caja entran en esta fase** (*"yo iría por todo ahora"*),
-   en los pasos finales: el costeo cuelga de una cotización, así que
-   Calicanto tiene que cotizar primero.
+4. **El costeo entra en esta fase, como un simulador de evento** que se
+   propone desde acá (*"crear un simulador, me tinca… piensa en la lógica
+   primero, después se rellena"*): el cliente no usaba el del CRM. Va en los
+   pasos finales, porque cuelga de una cotización.
+5. **La caja queda para después** (*"el flujo de caja, no, esto lo integramos
+   después. Ahí tenemos que hacer otro trabajo antes. Pero mantenlo en
+   recordatorio"*). No es de esta fase.
 
 ## Lo que falta que el cliente decida
 
 - La dirección del panel de Asados y Corderos / Calicanto (qué dominio).
-- Cómo usan hoy el simulador de costos y la caja del CRM: hace falta verlo
-  (capturas o una explicación) antes de diseñarlos acá.
+- Quién ve los costos y el margen del simulador.
 - Si la recepción de un matrimonio necesita la lista de invitados uno por
   uno: hoy muestra reservas, no personas.
 
@@ -105,8 +108,11 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
 | 6 | El contrato de matrimonio | — |
 | 7 | El tablero de la gerencia | — |
-| 8 | El costeo de un evento | — |
-| 9 | La caja y los pagos solicitados | — |
+| 8 | El simulador de evento (costos y margen) | Lógica propuesta al cliente el 2026-11-23 |
+
+**Recordatorio, fuera de esta fase**: la caja (flujo de caja por empresa,
+pendientes con vencimiento y pagos solicitados con aprobación). El cliente
+la quiere, pero hay otro trabajo antes.
 
 ### Paso 1, en detalle
 
