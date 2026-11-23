@@ -6,7 +6,8 @@
  * `lib/simulador.ts` y la hace el servidor (`/api/simulador`), que es quien
  * sabe los costos: acá solo se muestra lo que manda.
  *
- * Un botón secundario —*🧮 Simular*— en el paso de los productos. Abre una
+ * Un botón —*🧮 Simular*— en el pie del paso de los productos, al lado de
+ * *Se cayó…* y del dorado. Abre una
  * ventana con lo que se cobra, lo que cuesta y lo que queda, grupo por grupo,
  * y *¿Y si vienen…?* con − y + para mover los invitados.
  *
@@ -69,7 +70,9 @@ export default function SimularEvento({ lineas, descuentoTotal, invitados }: {
 
   return (
     <>
-      <button type="button" className="boton min-h-[40px]" disabled={lineas.length === 0}
+      {/* Del alto de sus vecinos del pie y con borde dorado: se ve, sin ser el relleno. */}
+      <button type="button" disabled={lineas.length === 0}
+        className="boton min-h-[52px] !border-2 !border-oro/70 !px-4 !text-[15px] !font-semibold lg:min-h-[44px]"
         onClick={() => { setAbierto(true); void simular(invitados); }}>
         🧮 Simular
       </button>

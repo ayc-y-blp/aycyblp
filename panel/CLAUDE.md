@@ -523,8 +523,10 @@ piensa en la lógica primero, después se rellena"*. Dice, antes de mandar una
 cotización, **cuánto cuesta el evento y cuánto deja**. El detalle, lo que
 falta y los pasos están en **`panel/FASE5.md`**, "El simulador de evento".
 
-- **Dónde**: *🧮 Simular*, en el paso de productos de la cotización
-  (`SimularEvento.tsx`). No guarda nada.
+- **Dónde**: *🧮 Simular*, en el pie del paso de productos de la
+  cotización, al lado de *✕ Se cayó…* y del dorado (`SimularEvento.tsx`).
+  No guarda nada. **En pausa desde el mismo día**: el cliente pidió seguir
+  primero con las dos empresas.
 - **La cuenta** (`lib/simulador.ts`): lo cobrado sin IVA menos lo que se
   sirve, el equipo que piden las reglas de cada puesto y los gastos del
   evento. Si falta un costo, lo nombra y no opina.

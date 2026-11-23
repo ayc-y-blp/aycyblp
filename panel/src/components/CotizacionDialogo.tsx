@@ -2126,11 +2126,6 @@ export default function CotizacionDialogo({
                   <dt>Total</dt><dd className="text-oro">{enPesos(cuentas.total)}</dd>
                 </div>
               </dl>
-              {/* **El simulador de evento** (2026-11-23): cuánto cuesta y cuánto
-                  deja lo que hay cargado. Quien no ve los costos ve solo la señal. */}
-              <div className="mt-2 flex justify-end lg:mt-0">
-                <SimularEvento lineas={vistas} descuentoTotal={descuento} invitados={invitados} />
-              </div>
             </div>
             </div>
 
@@ -2921,7 +2916,17 @@ export default function CotizacionDialogo({
                 {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
               </> : null}
-          antesDeSeguir={botonSeCayo}
+          // **El simulador de evento** (2026-11-23), en el pie del paso de
+          // productos, al lado de *Se cayó…* y del dorado. Estaba junto al
+          // total y el cliente lo movió: *"ahí donde está, no tiene nada que
+          // ver. Mejor que esté en la última fila y un poco más visible"*.
+          antesDeSeguir={paso === 3
+            // En el celular los dos comparten una fila, mitad y mitad: con
+            // *volver* al lado no caben los tres.
+            ? <div className="flex gap-2 max-lg:basis-full max-lg:[&>*]:flex-1 lg:contents">
+                <SimularEvento lineas={vistas} descuentoTotal={descuento} invitados={invitados} />{botonSeCayo}
+              </div>
+            : botonSeCayo}
           onVolver={() => void irA(paso - 1)} onSeguir={() => void irA(paso + 1)} />
       )}
       {paso === 5 && (

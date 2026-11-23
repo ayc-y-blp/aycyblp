@@ -155,11 +155,19 @@ señal, y sirve también para Lo Pirque.
 - **`/api/simulador`** (`POST`, con `presupuestos`): no escribe nada. Una
   tanda de lecturas (Menús, Puestos, Trabajadores y Config). A quien no tiene
   `costos` le responde solo `{senal}`.
-- **`SimularEvento.tsx`**: el botón *🧮 Simular* en el paso de productos de
-  la cotización, con *¿Y si vienen…?* (− y + de a diez).
+- **`SimularEvento.tsx`**: el botón *🧮 Simular* en el pie del paso de
+  productos de la cotización, con *¿Y si vienen…?* (− y + de a diez).
 - **Ventanas**: escena `v-simulador` (524px a 1280×650).
 
-**Lo que falta del simulador**: usarlo suelto, antes de cotizar; restar la
+**En pausa desde el 2026-11-23** (lo decidió el cliente: *"dejémoslo el
+simulador ahora corto en standby y mejor concentrarse en seguir con la fase
+5… dos empresas, roles"*). Antes pidió mover el botón: *"ahí donde está, no
+tiene nada que ver. Mejor que esté en la última fila y un poco más
+visible"*. *🧮 Simular* va ahora en el pie del paso de productos, al lado de
+*✕ Se cayó…* y del dorado, con borde dorado y del mismo alto; en el celular
+comparte una fila con *Se cayó…*, mitad y mitad.
+
+**Lo que falta del simulador**, para cuando se retome: usarlo suelto, antes de cotizar; restar la
 comisión del vendedor y del socio; sumar los extras contratados (show,
 pintacaritas) por su monto habitual; anotar el gasto real después del evento;
 y un editor de los gastos del evento mejor que un renglón de texto.
