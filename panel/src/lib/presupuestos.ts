@@ -209,7 +209,15 @@ export const COL_PRESUPUESTOS = {
    * …"*. Igual que `Comisión vendedor`: desde ahí no cambia aunque se edite
    * su trato. La escribe `congelarComision()`, nunca el navegador.
    */
-  comisionSocio: 'Comisión socio'
+  comisionSocio: 'Comisión socio',
+  /**
+   * **El arriendo bajo el mínimo, autorizado** (2026-11-23): *"quién ·
+   * cuándo"*, como `Show bajo el mínimo`, cuando la gerencia general, quien
+   * paga o el administrador guardaron el arriendo bajo el mínimo de su día
+   * (`minimoDeArriendo()` en `cotizar.ts`). Mientras esté, la regla no lo
+   * vuelve a subir ni frena al ganar. Lo escribe solo el servidor.
+   */
+  arriendoBajoMinimo: 'Arriendo bajo el mínimo'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -366,6 +374,8 @@ export interface Presupuesto {
   exclusivo?: string;
   /** *"quién · cuándo"* autorizó el show bajo el mínimo: ver `COL_PRESUPUESTOS.showBajoMinimo`. */
   showBajoMinimo?: string;
+  /** *"quién · cuándo"* autorizó el arriendo bajo el mínimo: ver `COL_PRESUPUESTOS.arriendoBajoMinimo`. */
+  arriendoBajoMinimo?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -972,6 +982,7 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       comisionVendedor: en(f, i.comisionVendedor).trim(),
       socio: en(f, i.socio).trim(),
       showBajoMinimo: en(f, i.showBajoMinimo).trim(),
+      arriendoBajoMinimo: en(f, i.arriendoBajoMinimo).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1047,6 +1058,7 @@ export function filaPresupuesto(
   poner(i.comisionVendedor, p.comisionVendedor ?? '');
   poner(i.socio, p.socio ?? '');
   poner(i.showBajoMinimo, p.showBajoMinimo ?? '');
+  poner(i.arriendoBajoMinimo, p.arriendoBajoMinimo ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

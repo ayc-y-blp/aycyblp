@@ -117,6 +117,36 @@ export interface Config {
   showGratisDesde: number;
   showMinimo: number;
   /**
+   * **El arriendo mínimo** (2026-11-23, lo pidió el cliente: *"tengo que
+   * evitar que un vendedor hace una reserva en un día cerrado… arrendó a 12
+   * personas sin cobrar un ítem arriendo"*). Dos tramos por caso, cada uno
+   * *hasta N personas: mínimo $X*, neto (+ IVA); desde el último, sin cargo.
+   *
+   * - **Privado**: un día que no está abierto al público (cerrado, privado o
+   *   fuera del calendario, en la práctica de lunes a viernes). Cubre lo que
+   *   cuesta abrir el día para el grupo.
+   * - **Exclusivo**: un evento exclusivo en un día público. Repone lo que
+   *   deja el público ese día.
+   *
+   * Un 0 en el tope o en el monto apaga ese tramo. Ver `reglaArriendoDe()`
+   * en `cotizar.ts`, y "El arriendo mínimo" en `panel/CLAUDE.md`.
+   */
+  arriendoPrivadoHasta1: number;
+  arriendoPrivadoMinimo1: number;
+  arriendoPrivadoHasta2: number;
+  arriendoPrivadoMinimo2: number;
+  arriendoExclusivoHasta1: number;
+  arriendoExclusivoMinimo1: number;
+  arriendoExclusivoHasta2: number;
+  arriendoExclusivoMinimo2: number;
+  /**
+   * **Los días en que no se arrienda en exclusiva** (2026-11-23): Día de la
+   * Madre, del Padre, Fiestas Patrias. El público deja más que cualquier
+   * arriendo, así que el vendedor no puede marcar *exclusivo*; decide quien
+   * puede pasar por encima del mínimo. Fechas `AAAA-MM-DD`, ordenadas.
+   */
+  fechasSinExclusivo: string[];
+  /**
    * La unidad compartida de Google Drive donde se guardan los comprobantes
    * de pago (2026-11-10). Es el ID que va después de `folders/`; vive acá y
    * no en el código porque Calicanto tendrá la suya. En blanco, no se puede
@@ -187,6 +217,18 @@ export const POR_DEFECTO: Config = {
   // Los fijó el cliente el 2026-11-20: bajo 25 personas, $100.000 + IVA.
   showGratisDesde: 25,
   showMinimo: 100000,
+  // Los fijó el cliente el 2026-11-23, con el análisis de costos de
+  // mayo a septiembre y Lo Pirque a $50.000 + IVA ("ármalo así"). Ver
+  // "El arriendo mínimo" en panel/CLAUDE.md.
+  arriendoPrivadoHasta1: 10,
+  arriendoPrivadoMinimo1: 400000,
+  arriendoPrivadoHasta2: 15,
+  arriendoPrivadoMinimo2: 200000,
+  arriendoExclusivoHasta1: 20,
+  arriendoExclusivoMinimo1: 1000000,
+  arriendoExclusivoHasta2: 37,
+  arriendoExclusivoMinimo2: 600000,
+  fechasSinExclusivo: [],
   driveComprobantes: '',
   empresa: EMPRESA_VACIA
 };
@@ -216,6 +258,15 @@ export const CLAVES = {
   exclusivoDias: 'exclusivo_dias_minimos',
   showGratisDesde: 'show_gratis_desde',
   showMinimo: 'show_minimo_privado',
+  arriendoPrivadoHasta1: 'arriendo_privado_hasta_1',
+  arriendoPrivadoMinimo1: 'arriendo_privado_minimo_1',
+  arriendoPrivadoHasta2: 'arriendo_privado_hasta_2',
+  arriendoPrivadoMinimo2: 'arriendo_privado_minimo_2',
+  arriendoExclusivoHasta1: 'arriendo_exclusivo_hasta_1',
+  arriendoExclusivoMinimo1: 'arriendo_exclusivo_minimo_1',
+  arriendoExclusivoHasta2: 'arriendo_exclusivo_hasta_2',
+  arriendoExclusivoMinimo2: 'arriendo_exclusivo_minimo_2',
+  fechasSinExclusivo: 'fechas_sin_exclusivo',
   driveComprobantes: 'drive_comprobantes',
   empresaNombre: 'empresa_nombre',
   empresaRazonSocial: 'empresa_razon_social',
@@ -232,6 +283,28 @@ export const CLAVES = {
  * "5, 10, 15" -> [5, 10, 15]. Entre 1 y 99, sin repetidos y ordenados.
  * Null si no se entiende ni uno, para que quien llame use el de siempre.
  */
+/**
+ * "2027-05-09, 9/5/2027" -> ["2027-05-09"]: las fechas de una lista escrita a
+ * mano, como `AAAA-MM-DD`, sin repetidos y ordenadas. Acepta también el día
+ * primero (`9-5-2027`, `09/05/2027`), que es como se escribe en Chile. Lo
+ * que no es una fecha se ignora.
+ */
+export function aFechas(texto: unknown): string[] {
+  const salida: string[] = [];
+  for (const p of String(texto ?? '').split(/[,;\s]+/)) {
+    let a = 0; let m = 0; let d = 0;
+    const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(p);
+    const chi = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(p);
+    if (iso) { a = +iso[1]; m = +iso[2]; d = +iso[3]; }
+    else if (chi) { d = +chi[1]; m = +chi[2]; a = +chi[3]; }
+    else continue;
+    const f = new Date(a, m - 1, d);
+    if (f.getFullYear() !== a || f.getMonth() !== m - 1 || f.getDate() !== d) continue;
+    salida.push(`${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+  }
+  return [...new Set(salida)].sort();
+}
+
 export function aDescuentos(texto: unknown): number[] | null {
   const salida = String(texto ?? '').split(/[,;\s%]+/)
     .map((p) => Number(p.replace(',', '.')))
@@ -360,6 +433,16 @@ export function leerConfigDe(filas: string[][]): Config {
     // En cero no hay mínimo: es un valor que alguien puede querer.
     showGratisDesde: numero(v(CLAVES.showGratisDesde), POR_DEFECTO.showGratisDesde, 0, 100000),
     showMinimo: numero(v(CLAVES.showMinimo), POR_DEFECTO.showMinimo, 0, 100000000),
+    // En cero se apaga ese tramo: es un valor que alguien puede querer.
+    arriendoPrivadoHasta1: numero(v(CLAVES.arriendoPrivadoHasta1), POR_DEFECTO.arriendoPrivadoHasta1, 0, 100000),
+    arriendoPrivadoMinimo1: numero(v(CLAVES.arriendoPrivadoMinimo1), POR_DEFECTO.arriendoPrivadoMinimo1, 0, 1000000000),
+    arriendoPrivadoHasta2: numero(v(CLAVES.arriendoPrivadoHasta2), POR_DEFECTO.arriendoPrivadoHasta2, 0, 100000),
+    arriendoPrivadoMinimo2: numero(v(CLAVES.arriendoPrivadoMinimo2), POR_DEFECTO.arriendoPrivadoMinimo2, 0, 1000000000),
+    arriendoExclusivoHasta1: numero(v(CLAVES.arriendoExclusivoHasta1), POR_DEFECTO.arriendoExclusivoHasta1, 0, 100000),
+    arriendoExclusivoMinimo1: numero(v(CLAVES.arriendoExclusivoMinimo1), POR_DEFECTO.arriendoExclusivoMinimo1, 0, 1000000000),
+    arriendoExclusivoHasta2: numero(v(CLAVES.arriendoExclusivoHasta2), POR_DEFECTO.arriendoExclusivoHasta2, 0, 100000),
+    arriendoExclusivoMinimo2: numero(v(CLAVES.arriendoExclusivoMinimo2), POR_DEFECTO.arriendoExclusivoMinimo2, 0, 1000000000),
+    fechasSinExclusivo: aFechas(v(CLAVES.fechasSinExclusivo)),
     driveComprobantes: idDeDrive(v(CLAVES.driveComprobantes)),
     empresa: {
       nombre: texto(v(CLAVES.empresaNombre)),
@@ -402,6 +485,15 @@ export function aFilasConfig(c: Config): string[][] {
     [CLAVES.exclusivoDias, String(c.exclusivoDias)],
     [CLAVES.showGratisDesde, String(c.showGratisDesde)],
     [CLAVES.showMinimo, String(c.showMinimo)],
+    [CLAVES.arriendoPrivadoHasta1, String(c.arriendoPrivadoHasta1)],
+    [CLAVES.arriendoPrivadoMinimo1, String(c.arriendoPrivadoMinimo1)],
+    [CLAVES.arriendoPrivadoHasta2, String(c.arriendoPrivadoHasta2)],
+    [CLAVES.arriendoPrivadoMinimo2, String(c.arriendoPrivadoMinimo2)],
+    [CLAVES.arriendoExclusivoHasta1, String(c.arriendoExclusivoHasta1)],
+    [CLAVES.arriendoExclusivoMinimo1, String(c.arriendoExclusivoMinimo1)],
+    [CLAVES.arriendoExclusivoHasta2, String(c.arriendoExclusivoHasta2)],
+    [CLAVES.arriendoExclusivoMinimo2, String(c.arriendoExclusivoMinimo2)],
+    [CLAVES.fechasSinExclusivo, c.fechasSinExclusivo.join(', ')],
     [CLAVES.driveComprobantes, c.driveComprobantes],
     [CLAVES.empresaNombre, c.empresa.nombre],
     [CLAVES.empresaRazonSocial, c.empresa.razonSocial],

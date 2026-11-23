@@ -258,7 +258,11 @@ export const AYUDAS: Record<string, Ayuda> = {
     ojo: 'En un día público el show ecuestre va incluido y no se puede '
        + 'quitar. En un día privado o exclusivo con poca gente, si va, se cobra '
        + 'al menos el mínimo de Configuración → Extras y arriendo; si no va, se '
-       + 'quita. Para ofrecer otra opción al mismo cliente usa “Hacer una '
+       + 'quita. El arriendo también tiene mínimo: en un día que no está abierto '
+       + 'al público con poca gente, o en un evento exclusivo en un día público, '
+       + 'la línea de arriendo va siempre y no baja de lo que dice Configuración. '
+       + 'La gerencia, el encargado de pagos y el administrador pueden pasar por '
+       + 'encima de los dos. Para ofrecer otra opción al mismo cliente usa “Hacer una '
        + 'alternativa”: cuando una gana, las otras pasan solas a “No elegida”.'
   },
 
@@ -371,8 +375,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'empresa y la mantención.',
       'Extras y arriendo: desde cuántas personas el show ecuestre puede ir sin '
       + 'costo en un día privado, y cuánto se cobra como mínimo, más IVA, cuando '
-      + 'son menos. La gerencia general, el encargado de pagos y el '
-      + 'administrador pueden pasar por encima.',
+      + 'son menos. Y el arriendo mínimo: dos tramos para un día que no está '
+      + 'abierto al público, dos para un evento exclusivo en un día público, y '
+      + 'los días en que no se arrienda en exclusiva. La gerencia general, el '
+      + 'encargado de pagos y el administrador pueden pasar por encima.',
       'Reservas del sitio es lo que ven los clientes: qué días se abre, '
       + 'cuánta gente cabe y hasta cuándo se puede reservar. Esos días se '
       + 'abren solos cada mañana, públicos y con el cupo normal; uno que ya '
@@ -647,7 +653,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Aparecen los productos marcados "Se puede cotizar" en Productos, con el precio que proponen: arriba los menús, abajo los extras y el arriendo.',
       'Cada producto va una sola vez: ya agregado, su botón queda apagado con un ✓ y la cantidad se cambia en su línea.',
       'El precio se cambia en la línea: es parte de la negociación. "Otra línea" es para algo que no está en el catálogo.',
-      'En un día privado con poca gente, el show ecuestre tiene un precio mínimo (Configuración → Extras y arriendo). Si no va, quítalo.'
+      'En un día privado con poca gente, el show ecuestre tiene un precio mínimo (Configuración → Extras y arriendo). Si no va, quítalo.',
+      'El arriendo también: en un día que no está abierto al público con poca gente, o en un evento exclusivo en un día público, la línea de arriendo aparece sola con su mínimo. Se puede subir, no bajar ni quitar. Si ese día ya hay otro evento, no tiene mínimo.'
     ]
   },
   precioLinea: {
@@ -759,7 +766,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: '¿Exclusivo?',
     texto: [
       'Lleva arriendo. Exclusivo: ese día no viene nadie más, y al ganarla deja de venderse.',
-      'Si se negoció que pueda venir otro grupo, no lo es.'
+      'Si se negoció que pueda venir otro grupo, no lo es.',
+      'En un día público, exclusivo sube el arriendo a su mínimo: tiene que reponer lo que deja el público. En Día de la Madre, del Padre o Fiestas Patrias no se marca: lo decide la gerencia.'
     ]
   },
   liberarParaGanar: {

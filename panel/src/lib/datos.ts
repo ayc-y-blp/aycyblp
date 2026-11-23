@@ -17,7 +17,7 @@ import {
   indices, faltantes, esManual, ESTADO_DIA, esExclusiva, esPrivada, estaCerrado
 } from './columnas.ts';
 import type { Reserva, FechaHabil } from './tipos.ts';
-import { diaParaReservaManual, queLeHizo, deshacerDia, diasPorAbrir, diaDeLaRegla } from './dias.ts';
+import { diaParaReservaManual, diaParaGanar, queLeHizo, deshacerDia, diasPorAbrir, diaDeLaRegla } from './dias.ts';
 import { ocupaLugar } from './ocupacion.ts';
 import { filaReserva, filaFecha, buscarFilaPorId, leerReservasDe,
          idsRepetidos } from './filas.ts';
@@ -1267,11 +1267,20 @@ async function asegurarColumnas(hoja: string, encabezado: string[], columnas: st
  * abrir después desde el calendario; perder la reserva por esto sería
  * cambiar un problema chico por uno grande.
  */
-export async function abrirElDiaSiHaceFalta(fecha: string): Promise<'' | 'creado' | 'reabierto'> {
+export async function abrirElDiaSiHaceFalta(
+  fecha: string,
+  /**
+   * Al ganar una cotización (2026-11-23): un sábado o domingo que todavía no
+   * está en el calendario nace público si no es exclusiva (`diaParaGanar()`).
+   * Sin esto, el de siempre: privado.
+   */
+  ganar?: { exclusivo: boolean }
+): Promise<'' | 'creado' | 'reabierto'> {
   try {
     const [fechas, cfg] = await Promise.all([leerFechas(), leerConfig()]);
     const actual = fechas.find((f) => f.fecha === fecha);
-    const nuevo = diaParaReservaManual(actual, fecha, cfg);
+    const nuevo = ganar ? diaParaGanar(actual, fecha, cfg, ganar.exclusivo)
+      : diaParaReservaManual(actual, fecha, cfg);
     if (!nuevo) return '';
     await guardarFecha(nuevo);
     // Qué se le hizo, para que una cotización cancelada lo pueda deshacer.

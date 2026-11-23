@@ -10,8 +10,11 @@ import { cupoParaGanar } from '@/lib/dias';
 import { ocupaLugar, tienePrioridad } from '@/lib/ocupacion';
 import { condicionesDe, estadoCobros, puedeGanar, ganaSinRespaldo } from '@/lib/cobros';
 import { enPesos } from '@/lib/ocupacion';
-import { conCliente, otrasAlternativas, alternativasDe } from '@/lib/cotizar';
-import { puedeTocarPresupuesto, type Rol } from '@/lib/auth';
+import {
+  conCliente, otrasAlternativas, alternativasDe, reglaArriendoDe, arriendoDelDia, arriendoQuedaBajoMinimo,
+  personasParaMinimos, reglaShowDe, showQuedaBajoMinimo, esDiaPublico
+} from '@/lib/cotizar';
+import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { esFecha } from '@/lib/fechas';
 import { esExclusivo } from '@/lib/exclusivo';
 import {
@@ -141,6 +144,36 @@ export const POST = conLecturas([], async function POST(req: Request) {
     const aMedias = reservas.find((x) => x.fecha === p.fecha && ocupaLugar(x)
       && String(x.notaPago ?? '').startsWith(nota)
       && !lista.some((o) => o.idReserva === x.id));
+
+    // **Los mínimos se vuelven a mirar al ganar** (2026-11-23): el día pudo
+    // cambiar desde que se guardó —otro evento se cayó, el día pasó a
+    // público— y ganar es lo que le cuesta plata al local. Con el arriendo o
+    // el show bajo el mínimo, no se gana: al abrirla y guardarla, el panel
+    // los sube solos. Quien puede pasar por encima no se frena, y lo que ya
+    // autorizó tampoco.
+    if (!puede(quien.rol as Rol, 'showBajoMinimo')) {
+      const otras = reservas.filter((x) => x.fecha === p.fecha && ocupaLugar(x) && x.id !== aMedias?.id).length;
+      const personas = personasParaMinimos(suyas, p.invitados);
+      const delDia = arriendoDelDia(reglaArriendoDe(cfg), p.fecha, fechas, cfg.diasAbiertos,
+        esExclusivo(original.exclusivo), otras);
+      const minimo = delDia ? delDia(personas) : null;
+      if (!original.arriendoBajoMinimo && minimo && arriendoQuedaBajoMinimo(suyas, menus, minimo)) {
+        return NextResponse.json({
+          error: `El arriendo quedó bajo el mínimo de este día: ${personas} personas en `
+            + (minimo.caso === 'exclusivo' ? 'un día público, en exclusiva' : 'un día que no está abierto al público')
+            + `, mínimo ${enPesos(minimo.minimo)} + IVA. Abre la cotización y guárdala: el panel lo sube solo. `
+            + 'Si se acordó menos, lo autoriza la gerencia, el encargado de pagos o el administrador.'
+        }, { status: 409 });
+      }
+      const publico = esDiaPublico(p.fecha, fechas);
+      if (!original.showBajoMinimo && showQuedaBajoMinimo(suyas, menus, reglaShowDe(cfg), publico, p.invitados)) {
+        return NextResponse.json({
+          error: 'El show ecuestre quedó bajo el mínimo de un día privado con poca gente. Abre la cotización y '
+            + 'guárdala: el panel lo sube solo. Si se acordó menos, lo autoriza la gerencia, el encargado de '
+            + 'pagos o el administrador.'
+        }, { status: 409 });
+      }
+    }
     // **Con anticipo pagado tiene prioridad** (2026-11-12, la regla del
     // cliente): una reserva sin pagar queda sujeta a espacio, así que no le
     // cierra el día a una cotización que ya puso plata. Se cuentan solo las
@@ -182,8 +215,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
     // **Ganar abre el día**, igual que anotar una reserva a mano: si no
     // estaba en el calendario se crea privado con el cupo de siempre, y si
     // estaba cerrado se abre para nosotros. Sin esto el día quedaba "sin
-    // cupo" con la gente de la cotización adentro.
-    const diaAbierto = await abrirElDiaSiHaceFalta(p.fecha);
+    // cupo" con la gente de la cotización adentro. **Desde el 2026-11-23, un
+    // sábado o domingo que todavía no está en el calendario nace público** si
+    // la cotización no es exclusiva, como lo abriría la regla diaria
+    // (`diaParaGanar()`).
+    const diaAbierto = await abrirElDiaSiHaceFalta(p.fecha, { exclusivo: esExclusivo(original.exclusivo) });
     // Exclusiva: el día queda **privado exclusivo**, y se guarda cómo estaba
     // para devolverlo si se cancela (`Día pausado`).
     const diaPausado = esExclusivo(original.exclusivo)

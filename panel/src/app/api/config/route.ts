@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import { leerConfig, guardarConfig , anotar } from '@/lib/datos';
-import { leerConfigDe, aFilasConfig, aDiasSemana, aDescuentos } from '@/lib/config';
+import { leerConfigDe, aFilasConfig, aDiasSemana, aDescuentos, aFechas } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +45,11 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
     // vez de reemplazarla entera, o guardar el RUT borraría la razón social.
     if (typeof pedido.descuentos === 'string') {
       pedido.descuentos = aDescuentos(pedido.descuentos) ?? actual.descuentos;
+    }
+    // Las fechas sin exclusivo llegan escritas ("2027-05-09, 20-06-2027"):
+    // se entienden acá, con la misma tolerancia que al leer la planilla.
+    if (typeof pedido.fechasSinExclusivo === 'string') {
+      pedido.fechasSinExclusivo = aFechas(pedido.fechasSinExclusivo);
     }
     if (pedido.empresa && typeof pedido.empresa === 'object') {
       pedido.empresa = { ...actual.empresa, ...pedido.empresa };
