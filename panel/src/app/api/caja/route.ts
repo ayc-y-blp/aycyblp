@@ -24,13 +24,18 @@ export const maxDuration = 60;
  * (`/api/caja/revisar`) y lo recibe quien corresponde (`/api/caja/recibir`).
  */
 
-/** Las cuentas que pueden recibir la caja, sin la propia. */
+/**
+ * Las cuentas que pueden recibir la caja, sin la propia. **Se nombran por su
+ * nombre**, que es lo que trae la sesión (`/api/sesion`) y lo que queda en
+ * *Quién* y *Para*: así quien recibe se reconoce en su entrega.
+ */
 async function destinos(yo: string) {
   const cuentas = await leerUsuarios();
+  const nombre = (c: { nombre: string; usuario: string }) => c.nombre || c.usuario;
   return {
-    nombres: Object.fromEntries(cuentas.map((c) => [c.usuario, c.nombre || c.usuario])),
-    destinos: cuentas.filter((c) => c.activo && puede(c.rol as Rol, 'recibirCaja') && c.usuario !== yo)
-      .map((c) => ({ usuario: c.usuario, nombre: c.nombre || c.usuario, rol: c.rol }))
+    nombres: Object.fromEntries(cuentas.flatMap((c) => [[c.usuario, nombre(c)], [nombre(c), nombre(c)]])),
+    destinos: cuentas.filter((c) => c.activo && puede(c.rol as Rol, 'recibirCaja') && nombre(c) !== yo && c.usuario !== yo)
+      .map((c) => ({ usuario: nombre(c), nombre: nombre(c), rol: c.rol }))
   };
 }
 

@@ -17,7 +17,7 @@
  *   Efectivo, 🏦 Transferencia con la foto del comprobante o 💳 Tarjeta, o
  *   varios—. ***✓ Pagó todo*** la deja pagada. Solo con el permiso `caja`.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import { avisar } from './AvisoFlotante';
 import {
@@ -50,14 +50,18 @@ export interface DatosMesa {
  * falta y cómo pagó el resto. Una pieza aparte de `MesaReserva` para que su
  * estado no se mezcle con el de agregar y el valor final.
  */
-function CobroMesa({ r, editable, revisado, onGuardado }: {
+function CobroMesa({ r, editable, revisado, onGuardado, onCobrando }: {
   r: DatosMesa & { estadoPago: string };
   editable: boolean;
   /** Si pagos ya lo revisó: deshacerlo es de pagos. */
   revisado: boolean;
   onGuardado: () => void;
+  /** Mientras se elige cómo pagó, la mesa esconde lo demás: así cabe en una pantalla. */
+  onCobrando?: (si: boolean) => void;
 }) {
   const [filas, setFilas] = useState<{ medio: MedioLocal; monto: string }[]>([]);
+  const cobrando = filas.length > 0;
+  useEffect(() => { onCobrando?.(cobrando); }, [cobrando]); // eslint-disable-line react-hooks/exhaustive-deps
   const [archivo, setArchivo] = useState<File | null>(null);
   const [guardando, setGuardando] = useState(false);
   const pagado = yaPagado({ estadoPago: r.estadoPago, monto: r.monto ?? null, abonado: r.abonado ?? null });
@@ -106,16 +110,21 @@ function CobroMesa({ r, editable, revisado, onGuardado }: {
       {/* Lo que ya está: pagado en el local, o lo que falta. */}
       {hecho.length > 0 ? (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <p className="min-w-0 flex-1 text-[15px] font-bold text-verde-texto">
-            ✓ Pagó todo en el local{' '}
-            <span className="font-semibold text-hueso">· {hecho.map((p) => `${ICONO_MEDIO[p.medio]} ${p.medio} ${pesosCL(p.monto)}`).join(' · ')}</span>
-            {r.comprobanteCobro && (
-              <a href={`/api/reservas/${r.fila}/cobro`} target="_blank" rel="noreferrer"
-                className="ml-2 font-semibold text-oro underline">📎 comprobante</a>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-bold text-verde-texto">✓ Pagó todo en el local</p>
+            <p className="mt-0.5 text-[15px] font-semibold">
+              {hecho.map((p) => `${ICONO_MEDIO[p.medio]} ${p.medio} ${pesosCL(p.monto)}`).join(' · ')}
+              {r.comprobanteCobro && (
+                <a href={`/api/reservas/${r.fila}/cobro`} target="_blank" rel="noreferrer"
+                  className="ml-2 text-oro underline">📎 comprobante</a>
+              )}
+            </p>
+            {marca && (
+              <p className="text-[13px] text-hueso/65">
+                lo cobró {marca.quien}{marca.cuando ? ` a las ${marca.cuando.slice(11)}` : ''}{revisado ? ' · ✓ revisado por pagos' : ''}
+              </p>
             )}
-            {marca && <span className="font-normal text-hueso/65"> · lo cobró {marca.quien}{marca.cuando ? ` a las ${marca.cuando.slice(11)}` : ''}</span>}
-            {revisado && <span className="ml-2 font-semibold text-verde-texto">· ✓ revisado</span>}
-          </p>
+          </div>
           {editable && (
             <button type="button" disabled={guardando} onClick={() => void enviar('DELETE')}
               className="boton min-h-[40px] !text-[14px] text-hueso/80">{guardando ? 'Deshaciendo…' : 'Deshacer'}</button>
@@ -145,15 +154,15 @@ function CobroMesa({ r, editable, revisado, onGuardado }: {
 
       {editable && filas.length > 0 && (
         <div className="mt-2 space-y-2 rounded-xl border-2 border-oro/60 bg-panel p-3">
-          <p className="text-[16px] font-semibold">¿Cómo pagó los {pesosCL(falta)}?</p>
-          <ul className="space-y-1.5">
+          <ul className="space-y-1.5" aria-label={`Cómo pagó los ${pesosCL(falta)}`}>
             {filas.map((f, i) => (
               <li key={f.medio} className="flex items-center gap-2">
-                <span className="w-[9.5rem] shrink-0 text-[16px] font-bold">{ICONO_MEDIO[f.medio]} {f.medio}</span>
-                <span className="text-[20px] font-bold">$</span>
+                {/* En el celular el nombre cede: el monto es lo que se escribe. */}
+                <span className="w-[7.25rem] shrink-0 text-[15px] font-bold leading-tight sm:w-[9.5rem] sm:text-[16px]">{ICONO_MEDIO[f.medio]} {f.medio}</span>
+                <span className="hidden text-[20px] font-bold sm:inline">$</span>
                 <input inputMode="numeric" aria-label={`Monto en ${f.medio}`} value={f.monto} autoFocus={i === filas.length - 1}
                   onChange={(e) => setFilas((x) => x.map((y, j) => (j === i ? { ...y, monto: e.target.value.replace(/[^\d.]/g, '') } : y)))}
-                  className="min-h-[44px] w-full min-w-0 rounded-xl border-2 border-hueso/25 bg-tinta px-3 text-[18px] font-bold tabular-nums" />
+                  className="min-h-[44px] w-full min-w-[5.5rem] rounded-xl border-2 border-hueso/25 bg-tinta px-3 text-[18px] font-bold tabular-nums" />
                 <button type="button" aria-label={`Quitar ${f.medio}`} onClick={() => setFilas((x) => x.filter((_, j) => j !== i))}
                   className="boton h-11 w-11 shrink-0 !text-[18px]">✕</button>
               </li>
@@ -259,6 +268,8 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
   const [borrador, setBorrador] = useState<Agregado[]>([]);
   const [valorTexto, setValorTexto] = useState('');
   const [guardando, setGuardando] = useState(false);
+  /** Mientras se cobra, lo demás de la mesa se esconde (2026-11-23). */
+  const [cobrando, setCobrando] = useState(false);
   const lista = leerAgregados(r.agregados);
   const marca = partesMarcaMesa(r.mesaCerrada);
 
@@ -308,16 +319,20 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
         </p>
       )}
 
-      {editable && modo === '' && (
+      {editable && modo === '' && !cobrando && (
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className="boton min-h-[44px] !border-cielo-fuerte/70 !font-semibold text-cielo-texto"
             onClick={() => { setBorrador(lista); setModo('agregar'); }}>
             {lista.length ? '✎ Cambiar lo agregado' : '➕ Agregar a la mesa'}
           </button>
-          <button type="button" className="boton min-h-[44px] !font-semibold"
-            onClick={() => { setValorTexto(r.valorFinal != null ? String(r.valorFinal) : ''); setModo('valor'); }}>
-            🧾 {r.valorFinal != null ? 'Cambiar el valor final' : 'Anotar el valor final'}
-          </button>
+          {/* Cobrada, el valor final queda fijo: cambiarlo descuadraría lo
+              cobrado. Para cambiarlo se deshace el cobro primero. */}
+          {!r.cobroCerrado && (
+            <button type="button" className="boton min-h-[44px] !font-semibold"
+              onClick={() => { setValorTexto(r.valorFinal != null ? String(r.valorFinal) : ''); setModo('valor'); }}>
+              🧾 {r.valorFinal != null ? 'Cambiar el valor final' : 'Anotar el valor final'}
+            </button>
+          )}
         </div>
       )}
 
@@ -387,7 +402,8 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
 
       {/* **El pago de la mesa** (2026-11-23): con el valor final, o si ya se cobró. */}
       {cobrar && modo === '' && r.estadoPago !== undefined && (r.valorFinal != null || !!r.cobroLocal) && (
-        <CobroMesa r={r as DatosMesa & { estadoPago: string }} editable={editable} revisado={revisado} onGuardado={onGuardado} />
+        <CobroMesa r={r as DatosMesa & { estadoPago: string }} editable={editable} revisado={revisado}
+          onGuardado={() => { setCobrando(false); onGuardado(); }} onCobrando={setCobrando} />
       )}
     </section>
   );

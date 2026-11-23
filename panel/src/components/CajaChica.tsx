@@ -21,6 +21,7 @@ import BandaSeccion from './BandaSeccion';
 import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
 import Azulejo from './Azulejo';
+import FechaDia from './FechaDia';
 import BuscarEnLista from './BuscarEnLista';
 import { avisar } from './AvisoFlotante';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
@@ -257,8 +258,9 @@ export default function CajaChica() {
         </section>
       )}
 
-      {/* Lo que hay, y lo que se puede anotar, en una fila en el computador. */}
-      <div className="flex flex-wrap items-stretch gap-2">
+      {/* Lo que hay, y lo que se puede anotar, en una fila en el computador
+          (regla *el espacio se usa bien*): los botones, a la derecha de los saldos. */}
+      <div className="flex flex-wrap items-center gap-2">
         <Azulejo n={pesos(d.saldos.enCaja)} titulo="En la caja" nota="la tiene quien está de turno"
           color={d.saldos.enCaja < 0 ? 'text-rojo-texto' : 'text-verde-texto'} borde="border-verde/40" />
         {d.saldos.porRecibir > 0 && (
@@ -274,10 +276,8 @@ export default function CajaChica() {
             nota={d.saldos.diferencias.map((x) => `${pesos(x.recibido)} de ${pesos(x.entregado)}`).join(' · ')}
             color="text-rojo-texto" borde="border-rojo/40" />
         )}
-      </div>
-
       {form === '' && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
           {d.puede.anotar && sinInicial && (
             <button type="button" className="boton min-h-[44px] !border-oro !text-[15px] !font-bold text-oro"
               onClick={() => setForm(TIPO_CAJA.inicial)}>🏁 Saldo inicial…</button>
@@ -300,6 +300,7 @@ export default function CajaChica() {
           <AyudaCorta tema="cajaAnotar" />
         </div>
       )}
+      </div>
       {form !== '' && (
         <Formulario key={form} tipo={form} d={d} tengo={tengo} onVolver={() => setForm('')}
           onListo={() => { setForm(''); void cargar(); }} />
@@ -335,8 +336,10 @@ export default function CajaChica() {
               const sePuedeRevisar = d.puede.revisar && m.tipo !== TIPO_CAJA.cobro && !(m.tipo === TIPO_CAJA.entrega && !rec);
               return (
                 <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                  <span className="w-[5.5rem] shrink-0 text-[14px] text-hueso/70">{enPalabras(m.fecha).replace(/ de \d{4}$/, '')}</span>
-                  <p className="min-w-[14rem] flex-1 text-[15px] leading-snug">
+                  {/* En el celular, la fecha y el monto en la primera línea y el
+                      detalle debajo; en el computador, todo en una fila. */}
+                  <span className="order-1 w-[5.5rem] shrink-0"><FechaDia fecha={m.fecha} tamano="aviso" conMes /></span>
+                  <p className="order-3 min-w-0 basis-full text-[15px] leading-snug lg:order-2 lg:min-w-[14rem] lg:flex-1 lg:basis-auto">
                     <b>{ICONO_CAJA[m.tipo]} {m.tipo === TIPO_CAJA.entrega ? `Entrega a ${nombre(m.para)}` : m.tipo}</b>
                     {m.detalle && <> · {m.detalle}</>}
                     <span className="text-hueso/65"> · {nombre(m.quien)}, {m.cuando.slice(11)}</span>
@@ -351,10 +354,10 @@ export default function CajaChica() {
                       : <span className="ml-2 font-semibold text-ambar-texto">⏳ por recibir</span>)}
                     {rev && <span className="ml-2 font-semibold text-verde-texto">· ✓ revisado por {nombre(rev)}</span>}
                   </p>
-                  <span className={`w-[7.5rem] shrink-0 text-right text-[17px] font-bold tabular-nums ${entra(m.tipo) ? 'text-verde-texto' : ''}`}>
+                  <span className={`order-2 ml-auto shrink-0 text-right text-[17px] font-bold tabular-nums lg:order-3 lg:ml-0 lg:w-[7.5rem] ${entra(m.tipo) ? 'text-verde-texto' : ''}`}>
                     {entra(m.tipo) ? '+' : '−'}{pesos(m.monto)}
                   </span>
-                  <span className="flex shrink-0 gap-2">
+                  <span className="order-4 flex shrink-0 gap-2">
                     {sePuedeRevisar && (
                       <button type="button" disabled={ocupado === m.id}
                         className={`boton min-h-[40px] !text-[14px] ${m.revisado ? '' : '!border-verde-fuerte !font-semibold text-verde-texto'}`}

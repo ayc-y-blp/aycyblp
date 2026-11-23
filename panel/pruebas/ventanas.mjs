@@ -96,7 +96,9 @@ export const PANTALLAS = [
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
   ['dia', '/dia/2026-11-14'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
-  ['bitacora', '/bitacora']
+  ['bitacora', '/bitacora'],
+  // La caja chica (2026-11-23, `caja.ts`).
+  ['caja', '/caja']
 ];
 
 const b = await chromium.launch();
@@ -154,6 +156,19 @@ export const ESCENAS = {
   'ficha-reserva-del-dia': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); },
   'ficha-persona-del-informe': personaDelInforme,
   'ficha-cliente-nuevo': async () => { await ir('/clientes'); await clic(boton(/Nuevo cliente/)); },
+  // **Cobrar la mesa** (2026-11-23, `cobroLocal.ts`): la de Valentina Castro, a
+  // la que le faltan $26.000, con dos medios elegidos. La escena no cobra.
+  'ficha-recepcion-cobro': async () => {
+    await ir('/recepcion');
+    await clic(p.locator('li', { hasText: 'Valentina Castro' }).first().locator('button[aria-expanded]').first());
+    const mesa = p.locator('section[aria-label="La mesa"]:visible').first();
+    await clic(mesa.getByRole('button', { name: /Efectivo/ }));
+    await mesa.getByLabel('Monto en Efectivo').fill('20000');
+    await clic(mesa.getByRole('button', { name: /\+ 💳 Tarjeta/ }));
+  },
+  // **La caja chica** (2026-11-23): los dos formularios de quien la lleva.
+  'ficha-caja-gasto': async () => { await ir('/caja'); await clic(boton(/Anotar un gasto/)); },
+  'ficha-caja-entregar': async () => { await ir('/caja'); await clic(boton(/Entregar…/)); },
   // Cambiar el vendedor de un cliente (2026-11-22): con uno ya elegido, que es cuando más mide.
   'v-cambiar-vendedor': async () => {
     await ir('/clientes'); await abrirPrimera();
