@@ -225,8 +225,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   pidió el cliente: *"cómo me puedo llevar toda esta cultura… a otro proyecto
   nuevo"*): carpeta **`cultura/`** con un `CLAUDE.md` de usuario destilado
   (conducta que vale en cualquier proyecto) y un `README`, y **tres skills en
-  `.claude/skills/`** —`ritual-de-trabajo`, `panel-playstation` y
-  `sitio-elegante`—. **Viven en el repo y no en `~/.claude/`** porque el
+  `.claude/skills/`** —`ritual-de-trabajo`, `panel-playstation`,
+  `sitio-elegante` y `traspaso-y-guias` (cómo se mantiene este archivo entre
+  chats y cuándo se arma una guía paso a paso, con la plantilla de
+  `TRASPASO.md`; pedido por el cliente el 23-11-2026)—. **Viven en el repo y no en `~/.claude/`** porque el
   cliente trabaja solo desde la web y el contenedor de cada sesión es
   temporal: cada chat nuevo de este proyecto los tiene, y `CLAUDE.md` dice
   cuándo usar cada uno. **Un proyecto nuevo no los tiene solo**: hace falta un

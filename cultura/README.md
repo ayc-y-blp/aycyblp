@@ -10,6 +10,7 @@ Brasas de Lo Pirque (`CLAUDE.md`, `panel/CLAUDE.md` y `TRASPASO.md` tienen
 | `.claude/skills/ritual-de-trabajo/` | El paso a paso de un cambio, del PR de prueba al *"mergea"*; cómo anotar una *"regla: …"*; cómo arrancar un proyecto | En el repo: Claude Code lo carga solo |
 | `.claude/skills/panel-playstation/` | Las reglas de diseño y de producto de un panel de administración | ídem |
 | `.claude/skills/sitio-elegante/` | Las reglas del sitio público y los landings | ídem |
+| `.claude/skills/traspaso-y-guias/` | Cómo se trabaja entre chats con un `TRASPASO.md` (con su plantilla) y cómo se arma una guía paso a paso para los pasos grandes (migrar, lanzar, mover un dominio) | ídem |
 
 ## En este proyecto
 

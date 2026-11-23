@@ -2580,6 +2580,9 @@ combinación de tres piezas, cada una donde corresponde:
     `panel/` → skill `panel-playstation`.
   - Al tocar una página del sitio, un landing, el calendario de reserva o las
     traducciones → skill `sitio-elegante`.
+  - Al cerrar una etapa, al empezar un chat nuevo, o cuando el cliente hable de
+    migrar, lanzar, mudar o pasar a producción → skill `traspaso-y-guias`
+    (cómo se mantiene `TRASPASO.md` y cuándo se arma una guía paso a paso).
 - **Un chat nuevo en este proyecto ya los tiene**: salen del repo.
 - **Un proyecto nuevo no los tiene solo.** Un repo vacío no trae nada, y esta
   instrucción no puede viajar a un repo que no la tiene. Lo que lo resuelve es

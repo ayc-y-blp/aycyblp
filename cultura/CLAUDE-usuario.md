@@ -108,9 +108,17 @@
   origin main`: si se movió, se pone la rama al día y se lee lo que dejó el
   otro chat. PR chicos, y lo que choque se resuelve en la rama, sobre todo en
   `TRASPASO.md` y `CLAUDE.md`, que tocan todos.
-- **`TRASPASO.md` se actualiza al terminar cada etapa**, con una línea de lo
-  que se hizo: es por donde se enteran los otros chats. Quien no deja su línea
-  deja a la siguiente sesión a ciegas.
+- **Todo proyecto lleva un `TRASPASO.md`** (el mapa para retomarlo en un chat
+  nuevo) que se actualiza **al terminar cada etapa**, con una línea de lo que
+  se hizo: es por donde se enteran los otros chats. Quien no deja su línea
+  deja a la siguiente sesión a ciegas. Se importa desde `CLAUDE.md` con
+  `@TRASPASO.md`.
+- **Los pasos grandes —migrar, lanzar, mover un dominio, pasar a producción—
+  se documentan en una guía paso a paso, mirando hacia adelante**: qué falta,
+  en qué orden, quién hace cada paso, cómo se comprueba y cómo se vuelve atrás.
+  No para cada detalle, solo cuando viene un paso grande; se mantiene al día
+  y lo importante pasa después a `TRASPASO.md`. Ver el skill
+  `traspaso-y-guias`.
 
 ## Proyecto nuevo
 
