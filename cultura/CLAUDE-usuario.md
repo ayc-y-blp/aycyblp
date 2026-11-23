@@ -1,11 +1,16 @@
 # Cómo trabajamos (cultura, vale en todos mis proyectos)
 
-> Se instala como `~/.claude/CLAUDE.md` (nivel usuario) y Claude Code lo
-> carga en cada proyecto. Es la versión destilada de lo que se fue
-> escribiendo en Brasas de Lo Pirque: solo la conducta que sirve en
-> cualquier proyecto. Lo específico de cada negocio va en el `CLAUDE.md` de
-> ese proyecto. Los flujos largos están en los skills `ritual-de-trabajo`,
-> `panel-playstation` y `sitio-elegante`.
+> Se pega en el `CLAUDE.md` de cada proyecto nuevo (o va en
+> `~/.claude/CLAUDE.md` si algún día se trabaja desde un computador). Es la
+> versión destilada de lo que se fue escribiendo en Brasas de Lo Pirque: solo
+> la conducta que sirve en cualquier proyecto. Lo específico de cada negocio
+> va en el `CLAUDE.md` de ese proyecto. Los flujos largos están en los skills
+> `ritual-de-trabajo`, `panel-playstation` y `sitio-elegante`, que viven en
+> `.claude/skills/`.
+>
+> **Al partir un proyecto nuevo, preguntarle al cliente si quiere usar esta
+> cultura de trabajo** (y, si dice que sí, copiar `.claude/skills/` y esta
+> conducta al proyecto).
 
 ## Idioma y tono
 

@@ -2561,15 +2561,36 @@ combinación de tres piezas, cada una donde corresponde:
 | Pieza | Dónde se instala | Qué lleva |
 |---|---|---|
 | `cultura/CLAUDE-usuario.md` | `~/.claude/CLAUDE.md` (nivel usuario) | La conducta que vale en **todos** los proyectos. Corta a propósito: se carga en cada sesión |
-| `cultura/skills/ritual-de-trabajo` | `~/.claude/skills/` | El paso a paso de un cambio (propuesta, capturas, PR de prueba, *"mergea"*), cómo anotar una *"regla: …"* y cómo arrancar un proyecto |
-| `cultura/skills/panel-playstation` y `sitio-elegante` | `~/.claude/skills/` | Las reglas de diseño del panel y del sitio. Skills y no `CLAUDE.md` porque no todo proyecto los necesita, y así solo se cargan cuando el trabajo los pide |
+| `.claude/skills/ritual-de-trabajo` | **En el propio repo**: Claude Code los carga solo en cada sesión de este proyecto | El paso a paso de un cambio (propuesta, capturas, PR de prueba, *"mergea"*), cómo anotar una *"regla: …"* y cómo arrancar un proyecto |
+| `.claude/skills/panel-playstation` y `sitio-elegante` | ídem | Las reglas de diseño del panel y del sitio. Skills y no `CLAUDE.md` porque no todo proyecto los necesita, y así solo se cargan cuando el trabajo los pide |
 | El `CLAUDE.md` de cada proyecto | en el proyecto | Lo suyo: negocio, datos, decisiones |
 
-- **Es una copia destilada, no la fuente de verdad**: si algo se contradice,
-  manda este archivo. Lo específico de Brasas (precios, Shopify, dominio,
-  cotizaciones, comisiones, equipo, Calicanto) **no se llevó**, a propósito.
+- **Los skills viven en `.claude/skills/` y no en `~/.claude/`** (2026-11-23,
+  el cliente trabaja solo desde la web: *"yo nunca trabajo en el compu, solo
+  web"*). El contenedor de cada sesión es temporal y lo que se copia a
+  `~/.claude/` se pierde; lo que viaja es el repo. **Hay una sola copia de cada
+  skill, la de `.claude/skills/`**: se edita ahí, con PR.
+- **Para que se usen siempre, sin que el cliente lo pida** (lo pidió él: *"que
+  se cargan siempre cuando yo trabajo con claude"*): un skill solo se carga
+  si Claude decide que lo necesita, así que **la instrucción de usarlo vive
+  acá, que sí se lee siempre**:
+  - Al terminar un cambio, al abrir un PR, cuando el cliente diga *"regla:"* o
+    *"mergea"* → skill `ritual-de-trabajo`.
+  - Al diseñar o cambiar una pantalla, ventana, ficha, lista o formulario de
+    `panel/` → skill `panel-playstation`.
+  - Al tocar una página del sitio, un landing, el calendario de reserva o las
+    traducciones → skill `sitio-elegante`.
+- **Un chat nuevo en este proyecto ya los tiene**: salen del repo.
+- **Un proyecto nuevo no los tiene solo.** Un repo vacío no trae nada, y esta
+  instrucción no puede viajar a un repo que no la tiene. Lo que lo resuelve es
+  un repo plantilla de GitHub con `.claude/skills/` y un `CLAUDE.md` base, o
+  copiar esa carpeta al partir. En ese `CLAUDE.md` base conviene la línea
+  *"si el proyecto es nuevo, pregúntale al cliente si quiere usar la cultura de
+  trabajo"*.
 - **Cuando el cliente diga "regla: …"** y valga para todos los proyectos, se
-  anota en la misma pasada **acá y en `cultura/`**.
+  anota en la misma pasada **acá y en `cultura/` o en el skill que
+  corresponda**. Lo específico de Brasas (precios, Shopify, dominio,
+  cotizaciones, comisiones, equipo, Calicanto) **no se llevó**, a propósito.
 - **Varias sesiones, de distintos modelos, trabajan a la vez en este
   proyecto** (lo avisó el cliente): se trae `main` antes de empezar y antes de
   pedir el *"mergea"*, y `TRASPASO.md` se actualiza al terminar cada etapa.
