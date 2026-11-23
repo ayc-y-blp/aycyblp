@@ -245,8 +245,10 @@ export const AYUDAS: Record<string, Ayuda> = {
     ],
     pasos: [
       '“+ Cotizar” (o “Cotizar este día” en una tarjeta).',
-      'Cliente: búscalo o créalo. Evento: fecha —o “todavía no hay día”—, '
-      + 'invitados y tipo.',
+      'Cliente: búscalo o créalo. Para corregir su teléfono, correo o RUT sin '
+      + 'salir de la cotización, “✎ Editar cliente”: se guarda solo en su ficha, '
+      + 'y el nombre se confirma con su botón. Evento: fecha —o “todavía no hay '
+      + 'día”—, invitados y tipo.',
       'Productos: agrégalos con los botones. Cada línea tiene su precio y su '
       + 'descuento; abajo va el descuento sobre el total y el IVA.',
       'Envío: en qué va, documento, condiciones de pago y los pagos; desde ahí '
@@ -372,7 +374,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Si no está, aprieta “+ Nuevo cliente”. Si ya hay uno con ese teléfono, '
       + 'correo o RUT, el panel te pregunta si es el mismo.',
       'Para cambiar algo, abre la ficha con “+” y corrige: se guarda solo. El '
-      + 'nombre se confirma con su botón.'
+      + 'nombre se confirma con su botón. Desde una cotización, lo mismo con '
+      + '“✎ Editar cliente”, en el paso Cliente.'
     ],
     ojo: 'Una ficha con cotizaciones no se puede borrar.'
   },
