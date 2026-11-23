@@ -653,7 +653,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Un día cerrado es uno donde alguien ya confirmó quién vino, anotó la propina y revisó los montos.',
       'Mientras no se cierre, el informe de ese periodo está incompleto.',
-      'Después de cerrarlo, solo el encargado de operaciones, quien hace los pagos o la gerencia lo puede corregir.'
+      'Después de cerrarlo se puede corregir —el encargado de turno, el de operaciones, quien hace los pagos o la gerencia—: el panel muestra la lista de lo que cambia, se confirma con una casilla y queda en la bitácora.'
     ]
   },
   // ---------- La ventana de cotizar ----------
@@ -1248,7 +1248,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Un día cerrado',
     texto: [
       'Ya no se edita: lo cerró alguien que revisó quién vino y cuánto se paga.',
-      'Si algo quedó mal, el encargado de operaciones o quien hace los pagos lo corrige —lo que cambió queda en la bitácora, con su nombre—, o lo compensa con un ajuste en la semana siguiente.'
+      'Si algo quedó mal, lo corrige el encargado de turno, el de operaciones o quien hace los pagos —lo que cambió queda en la bitácora, con su nombre—, o se compensa con un ajuste en la semana siguiente.'
     ]
   },
   propinaDia: {

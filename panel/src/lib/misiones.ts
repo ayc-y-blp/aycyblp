@@ -157,7 +157,8 @@ const ENCARGADO: Mision[] = [
   {
     id: 'cerrar', emoji: '🔒', titulo: 'Marcar quién vino y cerrar el día', escena: 'enc-cerrar',
     intro: 'En la ventana del día marcas Vino o No vino de cada persona y anotas la propina. Al final, '
-      + 'Cerrar el día pregunta antes y muestra lo que declaras.',
+      + 'Cerrar el día pregunta antes y muestra lo que declaras. Si después algo quedó mal, abre el día y '
+      + 'aprieta Corregir este día: la lista de lo que cambia queda en la bitácora, con tu nombre.',
     puntos: [
       'Las dos caras del día: quién trabaja y quién reservó.',
       'Cada persona con su Vino o No vino. Mientras alguien quede sin marcar, el día no se cierra.',

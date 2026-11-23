@@ -7820,7 +7820,7 @@ una **corrección**:
 | | Qué pasa |
 |---|---|
 | Día abierto | Como siempre: se escribe y se guarda solo |
-| Día cerrado, encargado | **Solo lectura.** La ventana dice quién lo cerró y que, si hay que cambiar algo, se lo pida al administrador o a quien paga |
+| Día cerrado, encargado | **Solo lectura.** La ventana dice quién lo cerró y que, si hay que cambiar algo, se lo pida al administrador o a quien paga. **Desde el 2026-11-23 el encargado también corrige**: ve lo de la fila de abajo (ver el punto *Corrigen…*) |
 | Día cerrado, administrador o pagos | Solo lectura, con un botón **Corregir este día** |
 | Corrigiendo | Se edita, **nada se guarda solo**, y abajo hay un motivo obligatorio y *Guardar corrección*. **Desde el 2026-11-21 no se escribe el motivo**: abajo va la lista de lo que cambió, una casilla para confirmarla y *Guardar corrección* (ver "Corregir un día cerrado: la lista de cambios y una casilla") |
 
@@ -7833,6 +7833,18 @@ una **corrección**:
 - **Corrigen el administrador y quien paga** (permiso `corregir`). El
   encargado cierra el día, que es quien lo vive; corregirlo después, cuando
   ya es lo que se paga, le toca a alguien de arriba. Lo decidió el cliente.
+  **Cambió el 2026-11-23: el encargado de turno también corrige** (lo pidió
+  el cliente: *"encargado de turno debe poder corregir el día también"*).
+  Lo que lo hace posible es la lista de cambios del 2026-11-21: cada
+  corrección dice qué cambió, se confirma con una casilla y queda en la
+  bitácora a su nombre, así que pagos ve qué se tocó antes de pagar. Es solo
+  sumarlo al permiso `corregir` (`lib/auth.ts`): el botón *Corregir este
+  día* y las rutas ya miran ese permiso. **Sigue sin ver cotizaciones**, así
+  que una cotización ganada de un día cerrado la sigue corrigiendo quien
+  cotiza. En la ayuda: el `?` de *Un día cerrado* y de *Días por cerrar*, la
+  ventana *¿Cerrar el día?* y la misión *Marcar quién vino y cerrar el día*
+  (su texto; la foto no cambia). Las misiones siguen siendo cuatro por rol.
+  Ningún otro permiso cambió y ninguna lectura de Google más.
 - **El motivo es obligatorio** y queda en la bitácora con el nombre —
   *"Corrigió el equipo de un día cerrado · motivo: faltó la propina"*—. Es lo
   que se va a preguntar un mes después, sobre todo si ese día ya se pagó.

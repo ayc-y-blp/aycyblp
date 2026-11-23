@@ -4092,7 +4092,8 @@ console.log('\nEventos del CRM');
   // —con una advertencia—, pero corregirlo después ya no es suyo.
   ok(puede(ROL.admin, 'corregir') && puede(ROL.pagos, 'corregir'),
      'corrigen el administrador y quien paga');
-  ok(!puede(ROL.encargado, 'corregir'), 'el encargado no corrige un día cerrado');
+  // **Desde el 2026-11-23 el encargado de turno también corrige** (lo pidió el cliente).
+  ok(puede(ROL.encargado, 'corregir'), 'el encargado de turno corrige un día cerrado');
   ok(puede(ROL.admin, 'cerrar') && puede(ROL.encargado, 'cerrar') && puede(ROL.pagos, 'cerrar'),
      'cierran el día los tres roles del panel, el encargado incluido');
 }

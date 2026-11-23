@@ -190,6 +190,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
   la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
   otros casos".
+- **El encargado de turno corrige un día cerrado** (23-11-2026, lo pidió el
+  cliente; en preview): se sumó al permiso `corregir`. Hasta ese día cerraba
+  y le pedía la corrección a operaciones o a pagos. Ver `panel/CLAUDE.md`,
+  "Corrigen el administrador y quien paga".
 - ***✎ Editar cliente*, desde la cotización** (23-11-2026, PR #331,
   mergeado con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
   después): en el paso Cliente, la ficha del cliente en una ventanita, sin
