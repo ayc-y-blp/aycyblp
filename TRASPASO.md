@@ -218,7 +218,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   - **#322, la foto del show** en Actividades, encuadrada con el jinete,
     la bailarina y la bandera enteros.
   - **La foto del karting**, con los dos karts enteros, en Actividades
-    y en los tres landings (PR abierto, espera el *"mergea"*).
+    y en los tres landings (#329).
   - **#323, el título de los bloques foto + texto** (`.split-titulo`), más
     grande en el computador, en la portada, Actividades y Eventos.
   - El detalle de cada uno, en `CLAUDE.md`, sección "Sitio público".
