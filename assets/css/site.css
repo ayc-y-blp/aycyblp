@@ -1142,3 +1142,75 @@ footer a:hover{ color: var(--ink); }
   html{ scroll-behavior: auto; }
   *, *::before, *::after{ transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ---------- una pantalla por sección (2026-11-23) ----------
+   Lo pidió el cliente: "en la sección tres cosas que pasan por acá, no cae
+   aún bien en la pantalla del notebook… compactarla para que todo cae en
+   una pantalla… esa revisión para todas las páginas". La medida: el título
+   de una sección y su grupo de tarjetas se ven juntos en 1280x650 (574px
+   bajo la barra) y en 393x740 (659px).
+
+   En el computador se quita aire y las fotos de las tarjetas van más
+   apaisadas; las listas largas (las seis actividades, lo que incluye la
+   reserva) van en una sola fila.
+
+   En el celular, una lista de tarjetas ya no se apila —eran hasta 2.600px—:
+   va en un carrusel que se desliza con el dedo, como la galería del sitio.
+   Asoma la tarjeta siguiente, que es lo que avisa que hay más. CSS puro,
+   con scroll-snap: sin una línea de JavaScript. */
+@media (min-width: 901px){
+  .pad{ padding: 72px 0; }
+  .section-head{ margin-bottom: 28px; }
+  .card-photo img{ aspect-ratio: 16/10; }
+  .card-body{ padding: 18px 20px 20px; }
+}
+.grid-4{ grid-template-columns: repeat(4,1fr); }
+@media (max-width: 1099px){ .grid-4{ grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 1000px){
+  .tiles{ grid-template-columns: repeat(6,1fr); }
+  .tile-cuerpo{ padding: 14px 16px 18px; }
+  .incluye-grid{ grid-template-columns: repeat(6,1fr); gap:16px; }
+  .incluye-item h4{ font-size:0.88rem; }
+}
+/* Las dos experiencias: un poco más bajas, para que entren con su título. */
+@media (min-width: 901px){
+  .tier-cards{ max-width: 660px; }
+  .mapa{ aspect-ratio: 16/10; }
+}
+
+@media (max-width: 620px){
+  .grid-3, .grid-4, .tiles, .incluye-grid{
+    display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+    grid-template-columns:none; gap:12px;
+    overflow-x:auto; overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory; scroll-padding-left: var(--pad-x);
+    margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
+    padding: 0 var(--pad-x) 12px;
+    scrollbar-width: thin;
+  }
+  .grid-3 > *, .grid-4 > *, .tiles > *, .incluye-grid > *{ scroll-snap-align:start; }
+  /* Las actividades del recinto se separaban con líneas de 1px sobre un
+     fondo; en el carrusel cada una es su propia tarjeta. */
+  .tiles{ background:none; border:0; }
+  .tile{ border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  /* Las dos experiencias también se deslizan, una a la vista; en 4:5 el
+     reverso alcanza a mostrar su texto entero. */
+  .tier-cards{
+    display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+    grid-template-columns:none; max-width:none; gap:12px;
+    overflow-x:auto; overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory; scroll-padding-left: var(--pad-x);
+    margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
+    padding: 0 var(--pad-x) 12px;
+  }
+  .tier-cards > .flip-card{ scroll-snap-align:start; aspect-ratio: 4/5; }
+  .section-head{ margin-bottom: 24px; }
+  .split-photo{ min-height: 150px; }
+  .split-text{ padding: 28px var(--pad-x); }
+  .split-text .rule{ margin:12px 0; }
+  .precios{ gap:14px 22px; margin-top:18px; }
+  .incluye-horario{ padding:16px 18px; margin-top:14px; }
+  .incluye-horario .rango{ font-size:1.7rem; }
+  .incluye .etiqueta{ margin-top:18px; }
+}
+
