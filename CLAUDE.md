@@ -2550,6 +2550,32 @@ distancias y capacidades salen del cliente o de material que él entregó. Si
 falta un dato, pídelo: es preferible dejar un placeholder visible antes que
 publicar algo plausible pero falso.
 
+## La cultura de trabajo, para llevarla a otro proyecto (2026-11-23)
+
+Lo pidió el cliente: *"cómo me puedo llevar toda esta cultura que yo he creado
+en este proyecto a otro proyecto nuevo"*. Las reglas vivían repartidas en
+este archivo, en `panel/CLAUDE.md` y en `TRASPASO.md` (unas 15.000 líneas con
+toda la historia). **Se destilaron en `cultura/`**, y se eligió una
+combinación de tres piezas, cada una donde corresponde:
+
+| Pieza | Dónde se instala | Qué lleva |
+|---|---|---|
+| `cultura/CLAUDE-usuario.md` | `~/.claude/CLAUDE.md` (nivel usuario) | La conducta que vale en **todos** los proyectos. Corta a propósito: se carga en cada sesión |
+| `cultura/skills/ritual-de-trabajo` | `~/.claude/skills/` | El paso a paso de un cambio (propuesta, capturas, PR de prueba, *"mergea"*), cómo anotar una *"regla: …"* y cómo arrancar un proyecto |
+| `cultura/skills/panel-playstation` y `sitio-elegante` | `~/.claude/skills/` | Las reglas de diseño del panel y del sitio. Skills y no `CLAUDE.md` porque no todo proyecto los necesita, y así solo se cargan cuando el trabajo los pide |
+| El `CLAUDE.md` de cada proyecto | en el proyecto | Lo suyo: negocio, datos, decisiones |
+
+- **Es una copia destilada, no la fuente de verdad**: si algo se contradice,
+  manda este archivo. Lo específico de Brasas (precios, Shopify, dominio,
+  cotizaciones, comisiones, equipo, Calicanto) **no se llevó**, a propósito.
+- **Cuando el cliente diga "regla: …"** y valga para todos los proyectos, se
+  anota en la misma pasada **acá y en `cultura/`**.
+- **Varias sesiones, de distintos modelos, trabajan a la vez en este
+  proyecto** (lo avisó el cliente): se trae `main` antes de empezar y antes de
+  pedir el *"mergea"*, y `TRASPASO.md` se actualiza al terminar cada etapa.
+- Instalación y detalle: `cultura/README.md`. Solo documentación: no toca el
+  sitio ni el panel.
+
 ## Migración a la cuenta Team (2026-11-10)
 
 El proyecto pasa de la cuenta personal de Claude a una cuenta **Team**. El
