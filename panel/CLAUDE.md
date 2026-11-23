@@ -1340,6 +1340,30 @@ vendedor. Se cumple al mandarla.
   conversación anotada hoy*—; la gerencia ve las tres notas y pagos y
   operaciones ninguna; pagos recibe 403 al anotar y una fecha pasada, 400.
 
+### *📅 Elegir…* no abría el calendario (2026-11-23)
+
+Lo encontró el cliente en producción, en la ventana de notas: *"no me abre
+el calendario para anotar fecha de recontacto"*. Dos cosas, las dos de
+`ElegirFecha` (la misma pieza en las notas y en *✍ Prometiste mandarla
+antes del*):
+
+- **El calendario**: *📅 Elegir…* es un campo de fecha transparente encima
+  del botón. **En Chrome, apretar un campo de fecha solo lo enfoca**; el
+  calendario se abre con su ícono, que acá no se ve. Ahora el clic llama a
+  `showPicker()` (`abrirCalendario()`); en Safari ya se abría solo. Lo que
+  midió la prueba —que el botón esté y no corra a sus vecinos— no podía
+  verlo: se probó apretándolo, con `showPicker` contado.
+- **Los atajos desaparecían con el evento mañana**: el próximo contacto va
+  antes del evento, y *Mañana*, *En 3 días* y *En una semana* caían ese día
+  o después. Quedaban solo *Elegir…* y *Sin fecha*, que es lo de la foto.
+  Ahora, si ningún atajo cabe, aparece **Hoy**.
+- **Probado en el panel de ejemplo**, como vendedor: en Andrés Pino,
+  *📅 Elegir…* llama al calendario una vez; con el evento de Felipe Ortúzar
+  movido a mañana (solo en la respuesta, sin escribir), los atajos son *Hoy
+  · 📅 Elegir… · Sin fecha*.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe cómo se abre el calendario.
+
 ### La última nota, en *Seguimiento y envío* (2026-11-23)
 
 Lo pidió el cliente con una foto del paso Envío, donde la caja rosada tenía
