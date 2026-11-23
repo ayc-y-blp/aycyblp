@@ -168,6 +168,7 @@ revisan antes de cada cambio en esta carpeta.
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
+  | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -1231,6 +1232,54 @@ puñado a más de cien fichas.
 - Probado en el panel de ejemplo a 1280 y 393: el vendedor ve 4 en *Míos* y
   6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, ven
   *Míos (0)* y parten en *Todos*.
+
+## *✎ Editar cliente*, desde la cotización (2026-11-23)
+
+Lo pidió el cliente: *"agregar botón editar cliente en cotización"*. Para
+corregir un teléfono, un correo o el RUT de quien se está cotizando había que
+cerrar la cotización, ir a *Clientes*, buscarlo y abrir su ficha.
+
+- **Dónde**: en el paso Cliente, en la caja verde del cliente elegido,
+  ***✎ Editar cliente*** (44px, secundario: el relleno de ese paso sigue
+  siendo *Ir al paso 2*). Abre una ventanita con la ficha.
+- **Es la misma ficha de *Clientes***: los campos y su guardado salieron de
+  `ClientesEditor` a una pieza, **`EditarCliente`** (con `CamposCliente`, que
+  también arma el formulario de un cliente nuevo). Todo se guarda solo, con
+  *✓ Guardado* a la vista; **el nombre se confirma** con *Guardar el nombre*,
+  que corrige también sus cotizaciones y reservas, como siempre.
+- **En la ventana**, la ficha va en su marco de grupo (*👤 Andrés Pino · se
+  guarda en su ficha*), con los campos de a dos y las notas al lado del giro,
+  y *✓ Listo* al pie. *✓ Listo* va relleno salvo que haya un nombre por
+  confirmar: ahí el relleno es *Guardar el nombre* (un solo botón relleno).
+- **Quién**: quien tiene el permiso `clientes` (el administrador,
+  operaciones, pagos, la gerencia y el vendedor) y puede tocar la
+  cotización. **Ningún permiso cambió**: el servidor sigue comprobando que la
+  ficha sea de quien la edita (`/api/clientes`, PATCH). La de un cliente de
+  otro vendedor llega tapada (🔒) y el botón no se dibuja.
+- **Los datos de facturación se mantienen al día**: si en la ficha cambian la
+  empresa, el RUT, el giro o el domicilio, la cotización toma lo nuevo. Si
+  no, al guardarla volvería a escribir en la ficha lo de antes (`guardar()`
+  le manda a la ficha lo que tiene en *Datos de facturación*).
+- **Al cerrar la cotización la lista se vuelve a leer**, con el nombre nuevo.
+- **El autoguardado por ficha manda lo pendiente una sola vez al cerrarse**
+  (`usarGuardadoPorFicha`): al desmontar se apagan sus relojes. Antes un
+  cambio escrito justo antes de cerrar se podía mandar dos veces; con la
+  ficha en una ventana, que se desmonta al cerrarla, pasaba seguido.
+- **De paso**: la línea del N° de la cotización (*Para … · total · ✓
+  Guardado*) era un párrafo con otro adentro, y React lo marcaba como error
+  de HTML. Pasó a `div`; se ve igual.
+- **Medidas**: la ventana mide 505px a 1280×650 (escena
+  `v-cotizar-editar-cliente`; son 55) y 834px en el celular. El paso Cliente
+  no crece: el botón va en la fila del cliente.
+- **Lecturas de Google**: ninguna más al abrir. Cada guardado es el PATCH de
+  siempre de `/api/clientes`.
+- **Ayuda**: el `?` de Cotizaciones (paso Cliente) y el de Clientes. Ninguna
+  foto cambia: la de cotizar parte sin cliente elegido.
+- **Probado en el panel de ejemplo**, como vendedor: el domicilio se guarda
+  solo y llega a *Datos de facturación* del paso Envío; cambiar el nombre
+  pide confirmación y la caja verde queda con el nuevo; la ficha en el
+  servidor queda con los dos cambios. El botón se ve para el administrador,
+  pagos, la gerencia, operaciones y el vendedor.
 
 ## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
 
@@ -2852,7 +2901,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 54 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 55 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

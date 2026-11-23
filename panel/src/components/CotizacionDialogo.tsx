@@ -73,6 +73,7 @@ import { tieneArriendo, esExclusivo, exclusividadDe, plazoParaLiberar } from '@/
 import { usarSoloMira } from './SesionCliente';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
 import SimularEvento from './SimularEvento';
+import EditarCliente from './EditarCliente';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -418,6 +419,36 @@ export default function CotizacionDialogo({
   const [nuevoCliente, setNuevoCliente] = useState<null | {
     nombre: string; telefono: string; correo: string; empresa: string }>(null);
   const [parecidas, setParecidas] = useState<Cliente[]>([]);
+  /**
+   * ***✎ Editar cliente*** (2026-11-23, lo pidió el cliente: *"agregar botón
+   * editar cliente en cotización"*): la ficha del cliente elegido, en una
+   * ventanita, sin salir de la cotización. Es la misma pieza de *Clientes*
+   * (`EditarCliente`): se guarda sola, salvo el nombre.
+   */
+  const [editandoCliente, setEditandoCliente] = useState(false);
+  const clientesRef = useRef(clientes);
+  clientesRef.current = clientes;
+  /**
+   * Lo que se guardó en la ficha. Los datos de facturación que cambiaron
+   * pasan también a la cotización: si no, al guardarla volvería a escribir
+   * en la ficha lo de antes (`guardar()` le manda lo de `facturacion`).
+   */
+  const alEditarCliente = (lista: Cliente[]) => {
+    const antes = clientesRef.current.find((c) => c.id === idCliente);
+    const despues = lista.find((c) => c.id === idCliente);
+    setClientes(lista);
+    if (antes && despues) {
+      setFacturacion((f) => {
+        const n = { ...f };
+        for (const k of ['empresa', 'rut', 'giro', 'domicilio'] as const) {
+          if (despues[k] !== antes[k]) n[k] = despues[k];
+        }
+        return n;
+      });
+    }
+    // Al cerrar la cotización, la lista se vuelve a leer con el nombre nuevo.
+    huboGuardado.current = true;
+  };
 
   // Cambiar de cliente trae sus datos de facturación.
   useEffect(() => {
@@ -430,6 +461,9 @@ export default function CotizacionDialogo({
   // Con vista gerencia y sin el permiso de cotizar, todo se ve en solo
   // lectura, igual que la cotización de otro vendedor.
   const soloMira = usarSoloMira('presupuestos');
+  /** Editar la ficha es del permiso de los clientes, que el servidor vuelve a mirar. */
+  const soloMiraClientes = usarSoloMira('clientes');
+  const puedeEditarCliente = puede(datos.rol as Rol, 'clientes') && !soloMiraClientes;
   const puedeEditar = !soloMira
     && (!p || puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor));
   /** Revisar cobros es de quien hace los pagos, no de quien los anota. */
@@ -1657,8 +1691,10 @@ export default function CotizacionDialogo({
    * del N°. Reemplaza ahí a la línea *Para …* y al resumen que abría los
    * pasos 4 y 5: decían lo mismo en tres renglones más.
    */
+  // Un `div` y no un `p`: adentro va *✓ Guardado* (`AvisoGuardado`), que es
+  // un párrafo, y un párrafo dentro de otro es un error de HTML (2026-11-23).
   const resumenArriba = cliente && paso !== 1 ? (
-    <p className="text-[15px]">
+    <div className="text-[15px]">
       Para <strong>{cliente.nombre}</strong>
       {fechaReal ? <> · <span className="inline-block first-letter:uppercase">{enPalabras(fechaReal)}</span></>
         : periodo ? <> · {periodo}</> : null}
@@ -1671,7 +1707,7 @@ export default function CotizacionDialogo({
           <AvisoGuardado estado={auto.estado} error={auto.error} onReintentar={() => void auto.reintentar()} />
         </span>
       )}
-    </p>
+    </div>
   ) : null;
 
   return (
@@ -1808,7 +1844,25 @@ export default function CotizacionDialogo({
                     {[cliente.empresa, cliente.telefono, cliente.correo].filter(Boolean).join(' · ')}
                   </p>
                 </div>
+                {/* La ficha de un cliente de otro vendedor llega tapada y no
+                    se edita: el botón no se dibuja. */}
+                {puedeEditarCliente && !cliente.contactoTapado && (
+                  <button type="button" className="boton min-h-[44px] px-4"
+                    onClick={() => setEditandoCliente(true)}>✎ Editar cliente</button>
+                )}
               </div>
+            )}
+            {editandoCliente && cliente && (
+              <Dialogo titulo="Editar cliente" onCerrar={() => setEditandoCliente(false)} ancho="max-w-2xl">
+                <div className="mt-2">
+                  <EditarCliente cliente={cliente} columnas={2} onClientes={alEditarCliente}
+                    onListo={() => setEditandoCliente(false)}
+                    titulo={<>
+                      <span aria-hidden>👤</span>{cliente.nombre}
+                      <span className="text-[14px] font-normal text-hueso/70">· se guarda en su ficha</span>
+                    </>} />
+                </div>
+              </Dialogo>
             )}
             {!nuevoCliente && (
               <>
