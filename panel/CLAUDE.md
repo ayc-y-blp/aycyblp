@@ -168,6 +168,9 @@ revisan antes de cada cambio en esta carpeta.
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
+  | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
+  | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*) y `HistorialNotas` (la misma lista en la ficha del cliente) |
+  | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -1232,6 +1235,106 @@ puñado a más de cien fichas.
 - Probado en el panel de ejemplo a 1280 y 393: el vendedor ve 4 en *Míos* y
   6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, ven
   *Míos (0)* y parten en *Todos*.
+
+## La agenda del vendedor: notas, próximo contacto y lo prometido (2026-11-23)
+
+Lo pidió el cliente: *"pensar ese sistema para el vendedor, cómo dejar sus
+notas y cómo organiza sus recontactos para un posible cliente. Diariamente
+las notas se ingresan en un formulario intuitivo y luego se ordena
+automáticamente por fecha… y luego poder elegir en qué fecha recontactar al
+cliente y… que muestra las cotizaciones que se deberían redactar y su fecha
+límite"*. Se le propuso y decidió tres cosas: *"las notas solo ve el
+vendedor y la gerencia. Fusionamos esperando respuesta… y que el vendedor
+elige nomás"* (el plazo para redactar, sin un valor por defecto).
+
+**Las notas** (`lib/notas.ts`, pestaña nueva `Notas`):
+
+- **Una fila por nota**: `ID`, `ID Presupuesto` (el grupo de alternativas:
+  la A y la B son la misma conversación), `ID Cliente`, `Cuándo` (lo pone el
+  servidor), `Quién`, `Medio` (*Llamada · WhatsApp · Correo · Reunión*, o en
+  blanco) y `Nota`. La pestaña nace con la primera nota.
+- **No se borran**: son la historia con ese cliente. Su autor la corrige el
+  mismo día (`sePuedeCorregir()`).
+- **Las leen el vendedor de la cotización y la gerencia**
+  (`puedeVerNotas()`, `notasVisibles()`): el servidor solo manda esas. **El
+  administrador también**, porque es la cuenta que lo puede todo. Pagos,
+  operaciones y los demás vendedores no ven el texto, y anotar les responde
+  403. El texto no va a la bitácora: ahí lo leen otros roles.
+- **Dónde**: *🗒 Notas · N* en la ventana de cotizar, en la fila de los
+  pasos, con el próximo contacto al lado (*📞 lun 16 nov*). Abre
+  `NotasCotizacion`: en el computador, a la izquierda **Anotar** —medio, qué
+  conversaron y *Volver a contactarlo* (`ElegirFecha`)— y a la derecha lo ya
+  conversado (`HistorialNotas`), por día y la más nueva primero. Se anota con
+  *Anotar*, como un mensaje: una nota es algo que pasó, no un campo que se va
+  editando (por eso no se autoguarda). Lo escrito sin anotar queda en el
+  navegador (`localStorage`) y vuelve al abrir.
+- **En *Clientes***, la ficha abierta trae *🗒 Notas · N*, plegado, con el
+  historial de todas sus cotizaciones (solo las que esa cuenta lee).
+
+**El próximo contacto** (`Recontactar el`, columna nueva al final de
+`Presupuestos`): lo escribe solo `/api/presupuestos/notas`, en todas las
+alternativas vivas del grupo. Anotar una conversación pone además `Último
+seguimiento` en hoy, que posterga el recordatorio de siempre. Si ese día ya
+llegó y la cotización cambia de etapa (se manda, pasa a negociación), ese
+cambio fue el contacto: se borra y vuelve el recordatorio de siempre. Se
+elige de hoy en adelante y, si hay evento, antes de él.
+
+**Lo prometido** (`Redactar antes del`, la otra columna nueva): en el paso
+Evento, mientras la cotización es candidato o borrador, *✍ Prometiste
+mandarla antes del* con la misma pieza. Sin valor por defecto: lo elige el
+vendedor. Se cumple al mandarla.
+
+**La agenda** (`lib/agenda.ts`, pieza `Agenda`), una fila por grupo:
+
+- **📞 Contactar**: el día elegido (`proximoContacto()`) o, si no hay, **el
+  recordatorio de siempre de *Esperando respuesta***, que se fusionó acá
+  (`seguimientoDe()`: sin respuesta a los días de Configuración, el evento
+  cerca sin ganar, el contrato que no vuelve firmado). Mira hasta 7 días
+  adelante.
+- **✍ Por redactar**: los candidatos y borradores, por su plazo; los sin
+  plazo al final, plegados.
+- **Cada fila tiene sus botones**: *📝 Anotar*, *✍ Redactarla* (abre el paso
+  Productos), *Está negociando*, *✓ Se ganó*, *📎 Sí: subir el firmado* y
+  *✕ Se cayó…*. *Sigue esperando* pasó a ser *Anotar*; queda solo para quien
+  toca la cotización pero no lee sus notas.
+- **Dónde**: en *Tus pendientes*, la pastilla *🗓 N para hoy en tu agenda*
+  (lo de hoy y lo atrasado, de las cotizaciones propias), y en *📋 Lista* la
+  tarjeta **🗓 Agenda** —antes *Por seguir*— que muestra la agenda entera de
+  lo que se mira (no sigue al mes de arriba). Arriba, el avance: *Hoy te
+  quedan N* y *✓ N conversaciones anotadas hoy*.
+- **El próximo paso de cada fila de la Lista** lo dice: *contactar hoy*,
+  *contactar: atrasado 2 días*, *📞 contactar el lun 16 nov*, *mandarla hoy*,
+  *✍ mandarla antes del …*. La tarjeta del día en el calendario dice
+  *! contactar hoy* (antes *! esperando respuesta*).
+- `EsperandoRespuesta.tsx` se borró.
+
+**Lo de siempre**:
+
+- **Lecturas de Google**: ninguna más en las pantallas. `Notas` entra en la
+  tanda de `/api/presupuestos` y de `/api/clientes`. Anotar lee una tanda y
+  escribe la nota y las filas del grupo que cambian.
+- **Ningún permiso nuevo**: anotar pide `presupuestos` y ser el vendedor de
+  esa cotización o la gerencia.
+- **Dejar la base en cero vacía `Notas`** (`SE_VACIAN`): son de las
+  cotizaciones y los clientes que se borran.
+- **Ayuda**: el `?` de Cotizaciones (paso Cliente y la agenda) y los nuevos
+  `agenda`, `notas`, `redactarAntes` y `listaAgenda` (reemplazan a
+  `esperandoRespuesta` y `listaPorSeguir`); `seguimiento` y
+  `seguimientoDias` ya no dicen *Sigue esperando*. Fotos rehechas:
+  `ven-envio` y `ger-cobros` (llevan *🗒 Notas*) y `ven-cotizar`.
+- **Ventanas**: `v-notas` (478px a 1280×650, con dos notas) y
+  `v-cotizar-2-evento-candidato` (530px, con el plazo; son 57); la pantalla
+  `cotizaciones-agenda` entra en la prueba de espacio. La prueba de
+  alineación ya no cuenta un campo transparente (el calendario detrás de
+  *📅 Elegir…*).
+- **El panel de ejemplo** trae dos notas de Jorge con Andrés Pino, un
+  próximo contacto el lunes 16 y dos plazos prometidos (Felipe Ortúzar hoy,
+  Inmobiliaria Cordillera ayer).
+- **Probado en el panel de ejemplo**, como vendedor: desde la agenda se anota
+  una llamada a Felipe Ortúzar con *Mañana* —queda la nota, el próximo
+  contacto y el último seguimiento de hoy, y la agenda suma *✓ 1
+  conversación anotada hoy*—; la gerencia ve las tres notas y pagos y
+  operaciones ninguna; pagos recibe 403 al anotar y una fecha pasada, 400.
 
 ## *✎ Editar cliente*, desde la cotización (2026-11-23)
 
@@ -2901,7 +3004,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 55 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 57 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

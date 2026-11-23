@@ -5752,8 +5752,8 @@ console.log('\nLa Lista de cotizaciones');
   ok(base.length === 5 && r.enCarrera.n === 2 && r.enCarrera.gente === 20
      && r.cotizado.monto === 100000 && r.cotizado.n === 1 && r.cotizado.borradores === 1 && r.cotizado.montoBorradores === 50000
      && r.ganado.monto === 300000 && r.ganado.n === 1 && r.tasa.pct === 50
-     && r.porCobrar.monto === 200000 && r.porCobrar.n === 1 && r.porSeguir === 1,
-     'las tarjetas: en carrera, cotizado (solo lo mandado), ganado, tasa de cierre, por seguir y por cobrar; las alternativas una vez');
+     && r.porCobrar.monto === 200000 && r.porCobrar.n === 1,
+     'las tarjetas: en carrera, cotizado (solo lo mandado), ganado, tasa de cierre y por cobrar; las alternativas una vez');
   const paso = L.proximosPasos(ps[0], ctx)[0];
   ok(paso?.texto === 'sin respuesta hace 10 días' && paso.tono === 'rojo'
      && L.proximosPasos(ps[3], ctx).map((x) => x.texto).join() === 'falta cobrar $200.000'
@@ -6881,6 +6881,101 @@ console.log('\nDos empresas: la dirección, las cuentas y el pase');
     'la empresa de una petición sale de su dirección');
   if (antes === undefined) delete process.env.AYC_GOOGLE_SHEET_ID; else process.env.AYC_GOOGLE_SHEET_ID = antes;
   ok(E.empresaPorId(M.AYC).id === M.CASA, 'apagada, pedirla por su id entrega la casa');
+}
+
+console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
+{
+  const A = await import('./agenda.ts');
+  const N = await import('./notas.ts');
+  const L = await import('./listaCotizaciones.ts');
+  const HOY = '2026-11-13';
+  const cfg = { seguimientoDias: 5, avisoEvento: 14 };
+  const cot = (x: Record<string, unknown>) => ({ id: 'P', grupo: '', estado: 'Borrador', fecha: '2026-12-20', periodo: '',
+    creado: '2026-11-01 10:00', creadoPor: 'Jorge', socio: '', idReserva: '', invitados: 0, validoHasta: '', enviada: '',
+    ultimoSeguimiento: '', descuento: 0, tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', cliente: 'X',
+    recontactar: '', redactarAntes: '', seguimientoDias: null, avisoEvento: null, ...x } as unknown as Presupuesto);
+
+  // El próximo contacto: lo elegido manda; si no, el recordatorio de siempre.
+  const mandada = cot({ id: 'M', estado: 'Enviada', enviada: '2026-11-03', validoHasta: '2026-11-30' });
+  const auto = A.proximoContacto(mandada, HOY, cfg);
+  ok(auto?.motivo === 'sinRespuesta' && auto.fecha === HOY && auto.dias === 10,
+     'una mandada sin respuesta hace 10 días se contacta hoy, como decía Esperando respuesta');
+  const elegida = A.proximoContacto({ ...mandada, recontactar: '2026-11-17' } as Presupuesto, HOY, cfg);
+  ok(elegida?.motivo === 'elegida' && elegida.fecha === '2026-11-17',
+     'si el vendedor eligió el día, ese día manda sobre el recordatorio de siempre');
+  const prox = A.proximoContacto(cot({ id: 'R', estado: 'Enviada', enviada: '2026-11-10', validoHasta: '2026-11-30' }), HOY, cfg);
+  ok(prox?.fecha === '2026-11-15' && prox.motivo === 'sinRespuesta',
+     'una mandada hace 3 días se recuerda sola en 2 días más (los 5 de Configuración)');
+  ok(A.proximoContacto(cot({ estado: 'Perdida', recontactar: '2026-11-14' }), HOY, cfg) === null
+     && A.proximoContacto(cot({ estado: 'Cancelada', recontactar: '2026-11-14' }), HOY, cfg) === null,
+     'una perdida o cancelada no se contacta, aunque tenga día');
+  ok(A.proximoContacto(cot({ estado: 'Ganada', idReserva: 'R1', fecha: '2026-11-10', recontactar: '2026-11-14' }), HOY, cfg) === null,
+     'una ganada cuyo evento ya pasó no se recuerda');
+
+  // La agenda: una fila por grupo, lo atrasado primero, por redactar con su plazo.
+  const lista = [
+    mandada,
+    cot({ id: 'E2', grupo: 'M', estado: 'Enviada', enviada: '2026-11-03', validoHasta: '2026-11-30', recontactar: '2026-11-12' }),
+    cot({ id: 'C1', estado: 'Candidato', redactarAntes: '2026-11-12', cliente: 'Beta' }),
+    cot({ id: 'C2', estado: 'Borrador', redactarAntes: '2026-11-15', cliente: 'Alfa' }),
+    cot({ id: 'C3', estado: 'Borrador', cliente: 'Gamma' }),
+    cot({ id: 'C4', estado: 'Candidato', recontactar: '2026-11-13', cliente: 'Delta' }),
+    cot({ id: 'L', estado: 'Enviada', enviada: '2026-11-12', validoHasta: '2026-11-30', recontactar: '2026-12-01' })
+  ];
+  const ag = A.agendaDe(lista, HOY, cfg);
+  ok(ag.contactar.length === 2 && ag.contactar[0].p.id === 'E2' && ag.contactar[0].cuando === 'atrasado'
+     && ag.contactar[1].p.id === 'C4' && ag.contactar[1].cuando === 'hoy',
+     'contactar: una fila por grupo (la A y la B juntas, con el día más próximo), lo atrasado primero, y nada más allá de 7 días');
+  ok(ag.redactar.map((x) => x.p.id).join() === 'C1,C2,C4,C3'
+     && ag.redactar[0].cuando === 'atrasado' && ag.redactar[1].cuando === 'proximo' && ag.redactar[2].cuando === 'sinPlazo',
+     'por redactar: los candidatos y borradores por su plazo prometido, los sin plazo al final');
+  const cuentas = A.cuentasDeHoy(ag);
+  ok(cuentas.hoy === 3 && cuentas.atrasadas === 2 && cuentas.semana === 1,
+     'para hoy cuenta lo atrasado y lo de hoy, de las dos listas');
+  ok(A.fraseDe(ag.contactar[0], HOY).texto === 'Quedaste en contactarlo el jue 12 nov (hace 1 día)'
+     && A.fraseDe(ag.redactar[1], HOY).texto === 'Mandarla antes del dom 15 nov'
+     && A.fraseDe({ p: mandada, tipo: 'contactar', fecha: HOY, cuando: 'hoy', motivo: 'sinRespuesta', dias: 10 }, HOY).texto
+        === 'Mandada hace 10 días sin respuesta',
+     'cada fila dice qué toca y desde cuándo, y el recordatorio de siempre dice lo mismo de antes');
+  ok(A.fechaDeAgenda('2026-11-12', HOY) === null && A.fechaDeAgenda('', HOY) === '' && A.fechaDeAgenda('2026-11-20', HOY) === '2026-11-20',
+     'una fecha de la agenda es de hoy en adelante, o ninguna');
+
+  // La Lista: el próximo paso y la tarjeta de la agenda.
+  const ctx = { hoy: HOY, todas: lista, cobros: [], lineas: [], ganadaEl: {}, seguimiento: cfg };
+  ok(L.proximosPasos(lista[5], ctx)[0]?.texto === 'contactar hoy' && L.proximosPasos(lista[2], ctx).some((x) => x.texto === 'mandarla: prometida el jue 12 nov')
+     && L.proximosPasos(lista[4], ctx).some((x) => x.texto === 'sin mandar'),
+     'la fila de la lista dice a quién contactar hoy y qué cotización prometida falta mandar');
+  ok(L.tocaHoy(lista[2], ctx) && L.tocaHoy(lista[5], ctx) && !L.tocaHoy(lista[3], ctx) && !L.tocaHoy(lista[6], ctx),
+     'el filtro de la agenda es lo que toca hoy');
+
+  // Las notas: quién las lee, por día, y quién las corrige.
+  const filas = [
+    ['ID', 'ID Presupuesto', 'ID Cliente', 'Cuándo', 'Quién', 'Medio', 'Nota'],
+    ['N-1', 'M', 'C-0001', '2026-11-12 10:00', 'Jorge', 'llamada', 'Lo está pensando'],
+    ['N-2', 'M', 'C-0001', '2026-11-13 09:30', 'Jorge', 'WhatsApp', 'Pidió cambiar el menú'],
+    ['N-3', 'Z', 'C-0002', '2026-11-13 11:00', 'Daniela', '', 'Otra'],
+    ['N-4', 'M', 'C-0001', '2026-11-13 12:00', 'Jorge', '', '']
+  ];
+  const notas = N.leerNotasDe(filas);
+  ok(notas.length === 3 && notas[0].medio === 'Llamada' && notas[2].medio === '',
+     'una nota sin texto no cuenta, y el medio se lee sin importar mayúsculas');
+  ok(N.filaNota(filas[0], { ...notas[0] }).join('|') === 'N-1|M|C-0001|2026-11-12 10:00|Jorge|Llamada|Lo está pensando',
+     'una nota se escribe en sus columnas');
+  const cots = [{ id: 'M', grupo: '', creadoPor: 'Jorge' }, { id: 'Z', grupo: '', creadoPor: 'Daniela' }];
+  ok(N.notasVisibles(notas, cots, 'vendedor', 'Jorge').map((n) => n.id).join() === 'N-1,N-2'
+     && N.notasVisibles(notas, cots, 'gerencia', 'Rodrigo').length === 3
+     && N.notasVisibles(notas, cots, 'pagos', 'Verónica').length === 0
+     && N.notasVisibles(notas, cots, 'gerente', 'Marcela').length === 0,
+     'las notas las leen su vendedor y la gerencia: pagos y operaciones no');
+  ok(N.puedeVerNotas('admin', 'Paula', 'Jorge') && N.puedeVerNotas('vendedor', 'Jorge', 'Jorge')
+     && !N.puedeVerNotas('vendedor', 'Daniela', 'Jorge'),
+     'el administrador también las lee; otro vendedor no');
+  const dias = N.notasPorDia(N.notasDelGrupo(notas, 'M'));
+  ok(dias.length === 2 && dias[0][0] === '2026-11-13' && dias[1][0] === '2026-11-12',
+     'el historial va por día, el más nuevo primero');
+  ok(N.sePuedeCorregir(notas[1], 'Jorge', HOY) && !N.sePuedeCorregir(notas[0], 'Jorge', HOY)
+     && !N.sePuedeCorregir(notas[1], 'Daniela', HOY),
+     'una nota la corrige su autor el mismo día; después es historia');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

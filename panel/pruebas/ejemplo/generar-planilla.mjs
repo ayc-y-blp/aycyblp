@@ -23,6 +23,7 @@ const bit = await import(L + 'bitacora.ts');
 const ven = await import(L + 'vendedores.ts');
 const usu = await import(L + 'usuarios.ts');
 const fil = await import(L + 'filas.ts');
+const not = await import(L + 'notas.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -133,7 +134,9 @@ const cotizacion = (ms, p) => {
 const andres = cotizacion(Date.parse('2026-11-09T15:20:47.318Z'), {
   fecha: '2026-11-28', idCliente: 'C-0001', estado: 'Enviada', validoHasta: '2026-11-24', creadoPor: 'Jorge',
   creado: '2026-11-09 12:20', invitados: 80, tipoEvento: 'Empresa', documento: 'Factura', anticipo: 30,
-  enviada: '2026-11-09', ultimoSeguimiento: '2026-11-09'
+  enviada: '2026-11-09', ultimoSeguimiento: '2026-11-12',
+  // **La agenda** (2026-11-23): quedó en llamarlo el lunes 16.
+  recontactar: '2026-11-16'
 });
 linea(andres, 'Tradiciones', 70, 49000, 70);
 linea(andres, 'Niños', 10, 24000, 10);
@@ -181,15 +184,26 @@ COBROS.push({ id: 'COB-mhbb4-i9j0', presupuesto: contreras, fecha: '2026-11-04',
 // Inmobiliaria Cordillera (Daniela): borrador para el 12 de diciembre.
 const cordillera = cotizacion(Date.parse('2026-11-10T12:20:51.704Z'), {
   fecha: '2026-12-12', idCliente: 'C-0005', estado: 'Borrador', validoHasta: '2026-11-25', creadoPor: 'Daniela',
-  creado: '2026-11-10 09:20', invitados: 30, tipoEvento: 'Empresa', anticipo: 30
+  creado: '2026-11-10 09:20', invitados: 30, tipoEvento: 'Empresa', anticipo: 30,
+  // Prometida para ayer: sale atrasada en la agenda de Daniela.
+  redactarAntes: '2026-11-12'
 });
 linea(cordillera, 'Lo Pirque', 30, 55000, 30);
 
 // Felipe Ortúzar (Jorge): candidato, todavía sin cotizar.
 cotizacion(Date.parse('2026-11-11T20:40:18.593Z'), {
   fecha: '2026-12-19', idCliente: 'C-0006', estado: 'Candidato', validoHasta: '', creadoPor: 'Jorge',
-  creado: '2026-11-11 17:40', invitados: 35, tipoEvento: 'Matrimonio', anticipo: null
+  creado: '2026-11-11 17:40', invitados: 35, tipoEvento: 'Matrimonio', anticipo: null,
+  // Le prometió la cotización para hoy: sale en la agenda de Jorge.
+  redactarAntes: '2026-11-13'
 });
+
+// **Las notas del vendedor** (2026-11-23): dos conversaciones de Jorge con Andrés Pino.
+H['Notas'] = [not.ENCABEZADO_NOTAS,
+  not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHR1A2', presupuesto: andres, cliente: 'C-0001', cuando: '2026-11-09 12:40',
+    quien: 'Jorge', medio: 'WhatsApp', nota: 'Le mandé la cotización. La revisa con su gerente esta semana.' }),
+  not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHV7K9', presupuesto: andres, cliente: 'C-0001', cuando: '2026-11-12 10:15',
+    quien: 'Jorge', medio: 'Llamada', nota: 'Dice que el lunes confirma cuántos niños van. Lo llamo el lunes en la mañana.' })];
 
 const encP = pre.ENCABEZADO_PRESUPUESTOS;
 H['Presupuestos'] = [encP, ...PRES.map((p) => pre.filaPresupuesto(encP, p))];
@@ -456,7 +470,7 @@ H['Importar reservas'] = [
 
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

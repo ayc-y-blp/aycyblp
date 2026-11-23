@@ -64,7 +64,7 @@ import {
 import CorregirGanada from './CorregirGanada';
 import BloqueCancelada from './BloqueCancelada';
 import { enPesos } from '@/lib/ocupacion';
-import { enPalabras, esFecha } from '@/lib/fechas';
+import { enPalabras, esFecha, enCorto, sumarDias } from '@/lib/fechas';
 import { estaCerrado, esPrivada, esExclusiva } from '@/lib/columnas';
 import { enlaceWhatsApp, saludoAlCliente } from '@/lib/contacto';
 import { abrirWhatsApp } from './BotonWhatsApp';
@@ -74,6 +74,9 @@ import { usarSoloMira } from './SesionCliente';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
 import SimularEvento from './SimularEvento';
 import EditarCliente from './EditarCliente';
+import ElegirFecha from './ElegirFecha';
+import NotasCotizacion from './NotasCotizacion';
+import { puedeVerNotas, type Nota } from '@/lib/notas';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -131,6 +134,8 @@ export interface DatosCotizar {
   /** Los días cerrados y si esta cuenta puede corregirlos (2026-11-21). Ver `diaCerrado`. */
   cerrados?: string[];
   puedeCorregir?: boolean;
+  /** Las notas que esta cuenta puede leer (2026-11-23, la agenda): ver `lib/notas.ts`. */
+  notas?: Nota[];
 }
 
 /** El 4 se llamaba *Enviar* y ahí no se manda nada solo: tiene el documento,
@@ -288,6 +293,16 @@ export default function CotizacionDialogo({
   const [sociosNuevos, setSociosNuevos] = useState<{ id: string; nombre: string; activo: boolean; porConfirmar?: boolean }[]>([]);
   const [agregandoSocio, setAgregandoSocio] = useState(false);
   const [notas, setNotas] = useState(p?.notas ?? '');
+  /**
+   * **Para cuándo se le prometió la cotización** (2026-11-23, la agenda del
+   * vendedor; lo decidió el cliente: *"que el vendedor elige nomás"*). Solo
+   * mientras no se mande: después está cumplido. Va a *✍ Por redactar*.
+   */
+  const [redactarAntes, setRedactarAntes] = useState(p?.redactarAntes ?? '');
+  /** La ventanita de las notas y el próximo contacto (2026-11-23). */
+  const [notasAbiertas, setNotasAbiertas] = useState(false);
+  /** El próximo contacto como quedó al anotar: la cotización abierta no se recarga. */
+  const [recontactar, setRecontactar] = useState(p?.recontactar ?? '');
   const [estado, setEstado] = useState(
     p ? (estadoVisible(p, datos.hoy) === 'Vencida' ? p.estado : estadoVisible(p, datos.hoy))
       : ESTADO_PRESUPUESTO.borrador);
@@ -464,6 +479,14 @@ export default function CotizacionDialogo({
   /** Editar la ficha es del permiso de los clientes, que el servidor vuelve a mirar. */
   const soloMiraClientes = usarSoloMira('clientes');
   const puedeEditarCliente = puede(datos.rol as Rol, 'clientes') && !soloMiraClientes;
+  /**
+   * **Las notas las leen su vendedor y la gerencia** (2026-11-23, lo decidió
+   * el cliente). Valen para todo el grupo de alternativas: es una sola
+   * conversación con el cliente.
+   */
+  const grupoNotas = p ? (p.grupo || p.id) : '';
+  const veNotas = !!p && [p, ...alternativas].some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor));
+  const notasDelGrupo = (datos.notas ?? []).filter((n) => n.presupuesto === grupoNotas).length;
   const puedeEditar = !soloMira
     && (!p || puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor));
   /** Revisar cobros es de quien hace los pagos, no de quien los anota. */
@@ -658,7 +681,7 @@ export default function CotizacionDialogo({
     idCliente, fechaReal, periodo: sinFecha ? periodo : '', invitados, tipoEvento, notas,
     descuento, motivo, documento, anticipoTxt, anticipoMontoTxt, saldoTxt, uf, fechaUF, estado, lineas: vistas,
     horario, ley20393, acuerdos, fact: facturacion, cambiosTxt, cancelTxt, reembolsoTxt,
-    segTxt, avisoTxt, exclusivo, socio
+    segTxt, avisoTxt, exclusivo, socio, redactarAntes
   });
   const [guardada, setGuardada] = useState<string | null>(null);
   useEffect(() => { if (p) setGuardada(firma); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -843,7 +866,7 @@ export default function CotizacionDialogo({
         anticipo: anticipoTxt, anticipoMonto: anticipoMontoTxt, saldoDias: saldoTxt,
         horario, ley20393, acuerdos,
         cambiosFecha: cambiosTxt, cancelacionDias: cancelTxt, reembolso: reembolsoTxt,
-        seguimientoDias: segTxt, avisoEvento: avisoTxt, exclusivo, socio,
+        seguimientoDias: segTxt, avisoEvento: avisoTxt, exclusivo, socio, redactarAntes,
         ...(uf ? { uf, fechaUF } : {}),
         estado: estadoForzado ?? estado,
         lineas: vistas,
@@ -1736,6 +1759,17 @@ export default function CotizacionDialogo({
         ))}
       </nav>
 
+      {/* ***🗒 Notas*** (2026-11-23, la agenda del vendedor): lo conversado
+          con el cliente y cuándo volver a contactarlo, a la vista en los cinco
+          pasos. Solo para su vendedor y la gerencia (`puedeVerNotas()`). */}
+      {p && veNotas && (
+        <button type="button" onClick={() => setNotasAbiertas(true)}
+          className="boton mb-4 min-h-[48px] w-full justify-center font-semibold sm:w-auto lg:mb-0 lg:min-h-[44px] lg:shrink-0">
+          🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}
+          {esFecha(recontactar) && <span className="ml-1 font-normal text-hueso/70">· 📞 {enCorto(recontactar)}</span>}
+        </button>
+      )}
+
       {/* **Las alternativas, dentro de la cotización** (2026-11-10): una
           pestaña por alternativa y *+ Otra alternativa*, en vez de dos
           cotizaciones sueltas con dos números. */}
@@ -2019,6 +2053,20 @@ export default function CotizacionDialogo({
                 Adultos y niños <AyudaCorta tema="invitados" />
               </p>
             </div>
+            {/* **¿Para cuándo le prometiste la cotización?** (2026-11-23, la
+                agenda): mientras no se mande. La elige el vendedor; en blanco,
+                *✍ Por redactar* la pone al final, sin plazo. */}
+            {(!p || (!p.idReserva && (estadoNormal(estado) === ESTADO_PRESUPUESTO.candidato
+              || estadoNormal(estado) === ESTADO_PRESUPUESTO.borrador))) && (
+              <div>
+                <p className="mb-1 flex items-center gap-1.5 text-[13px] font-medium uppercase tracking-wide text-hueso/60">
+                  ✍ Prometiste mandarla antes del <AyudaCorta tema="redactarAntes" />
+                </p>
+                <ElegirFecha valor={redactarAntes} onCambio={setRedactarAntes} hoy={datos.hoy}
+                  hasta={!sinFecha && esFecha(fecha) && fecha > datos.hoy ? sumarDias(fecha, -1) : undefined}
+                  etiqueta="Mandarla antes del" sinFecha="Sin plazo" />
+              </div>
+            )}
             </div>
             </Seccion>
 
@@ -3526,6 +3574,11 @@ export default function CotizacionDialogo({
       {cancelando && p && (
         <CancelarEvento p={p} onCerrar={() => setCancelando(false)}
           onListo={() => { setCancelando(false); onCambio(); onCerrar(); }} />
+      )}
+      {notasAbiertas && p && (
+        <NotasCotizacion p={{ ...p, recontactar }} grupo={grupoNotas} notas={datos.notas ?? []} hoy={datos.hoy}
+          usuario={datos.usuario} onAnotado={setRecontactar}
+          onCambio={() => { huboGuardado.current = true; onCambio(); }} onCerrar={() => setNotasAbiertas(false)} />
       )}
     </Dialogo>
   );

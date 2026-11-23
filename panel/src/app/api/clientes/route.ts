@@ -5,7 +5,7 @@ import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerClientes, crearCliente, editarCliente, borrarCliente, leerPresupuestos,
-  migrarPresupuestosAClientes, anotar, sincronizarReserva, leerLineasPresupuesto, leerUsuarios
+  migrarPresupuestosAClientes, anotar, sincronizarReserva, leerLineasPresupuesto, leerUsuarios, leerNotas
 } from '@/lib/datos';
 import { limpiarCliente, faltaEnCliente, parecidos } from '@/lib/clientes';
 import { folioDe, estadoVisible, totalDe, lineasDe } from '@/lib/presupuestos';
@@ -13,6 +13,7 @@ import { grupoDe } from '@/lib/cotizar';
 import { hoy } from '@/lib/fechas';
 import { puede } from '@/lib/auth';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
+import { HOJA_NOTAS, notasVisibles, type Nota } from '@/lib/notas';
 import { vendedoresParaAsignar, estaAbierta } from '@/lib/asignar';
 import type { Cliente } from '@/lib/clientes';
 import { alcanceDeContacto, recortarCliente, clientePropio, estaTapado } from '@/lib/privacidad';
@@ -55,7 +56,7 @@ const contarPorCliente = (lista: { idCliente?: string }[]) => {
  * Trae además cuántos presupuestos todavía no tienen ficha, para que la
  * pantalla ofrezca pasarlos — pero solo a quien puede ver presupuestos.
  */
-export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_USUARIOS], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_USUARIOS, HOJA_NOTAS], async function GET(req: Request) {
   const no = await exigirVer(req, 'clientes');
   if (no) return no;
   try {
@@ -91,6 +92,19 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
         historial[k].sort((a, b) => (b.fecha || '9').localeCompare(a.fecha || '9'));
       }
     }
+    // **Las notas de sus cotizaciones** (2026-11-23, la agenda del vendedor):
+    // solo las que esta cuenta lee —las de sus cotizaciones, o todas si es la
+    // gerencia o el administrador—, por cliente. `Notas` va en la misma tanda.
+    const notasPorCliente: Record<string, Omit<Nota, 'fila'>[]> = {};
+    if (verPresupuestos) {
+      const clienteDe = new Map(presupuestos.map((p) => [grupoDe(p), p.idCliente ?? '']));
+      for (const n of notasVisibles(await leerNotas().catch(() => []), presupuestos, quien.rol, quien.usuario)) {
+        const c = n.cliente || clienteDe.get(n.presupuesto) || '';
+        if (!c) continue;
+        const { fila: _f, ...sinFila } = n;
+        (notasPorCliente[c] ??= []).push(sinFila);
+      }
+    }
     return NextResponse.json({
       clientes: await paraLaCuenta(quien, clientes, presupuestos),
       // **Los de esta cuenta** (2026-11-22, para el filtro *Míos*): los que
@@ -99,6 +113,7 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       mios: clientes.filter((c) => clientePropio(c, quien.usuario, presupuestos)).map((c) => c.id),
       cotizaciones,
       historial,
+      notas: notasPorCliente,
       sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0,
       // **A quién se le puede pasar un cliente** (2026-11-22, `asignar.ts`), y
       // cuántas cotizaciones abiertas y ganadas tiene cada uno, para decirlo

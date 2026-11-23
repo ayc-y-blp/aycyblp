@@ -190,6 +190,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
   la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
   otros casos".
+- **La agenda del vendedor** (23-11-2026, en preview): *🗒 Notas* en cada
+  cotización (qué se conversó y cuándo volver a contactarlo; las leen su
+  vendedor y la gerencia), *✍ Prometiste mandarla antes del* en el paso
+  Evento, y la agenda —*Tus pendientes* y *📋 Lista → 🗓 Agenda*— con
+  *📞 Contactar* y *✍ Por redactar*. *Esperando respuesta* se fusionó ahí.
+  Pestaña nueva `Notas` y dos columnas al final de `Presupuestos`
+  (`Recontactar el`, `Redactar antes del`). Ver `panel/CLAUDE.md`, "La agenda
+  del vendedor".
 - **El encargado de turno corrige un día cerrado** (23-11-2026, lo pidió el
   cliente; en preview): se sumó al permiso `corregir`. Hasta ese día cerraba
   y le pedía la corrección a operaciones o a pagos. Ver `panel/CLAUDE.md`,
@@ -434,7 +442,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Config` | un parámetro | `Clave` · `Valor` (días que se abre, cupo, vigencia, descuentos, anticipo, mínimo del show, datos de la empresa, carpeta de Drive…) | todo |
 | `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor` | Reservas (por nombre), líneas de cotización |
 | `Clientes` | una ficha | `ID` (`C-0001`), `Nombre`, `Empresa del cliente`, `RUT`, `Domicilio`, `Teléfono`, `Correo`, `Giro`, `Creado por` | `Presupuestos.ID Cliente` |
-| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas` |
+| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
 | `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF` | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |
@@ -448,6 +456,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Boletas` | una boleta recibida | `Trabajador`, `Periodo desde`, `Periodo hasta`, `Registrado por`, `Cuándo`, `Monto neto` | informe y link personal |
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
+| `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |
 
@@ -1090,6 +1099,11 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   la segunda renovación); lo que conviene vender igual se avisa (el horario
   extra, *sin documento*) o le llega a pagos para que lo mire (los acuerdos);
   el precio de cada producto sigue libre.
+- **Esperando respuesta y la agenda son una sola lista** (23-11-2026, lo
+  decidió el cliente): los dos responden *¿a quién tengo que hablarle hoy?*.
+  El día que elige el vendedor manda; si no eligió, el recordatorio de
+  siempre. **Las notas se anotan, no se autoguardan**: una nota es algo que
+  pasó. **Las lee solo su vendedor y la gerencia** (y el administrador).
 - **El arriendo mínimo cubre lo que cuesta el evento, no el costo fijo del
   día** (23-11-2026, lo decidió el cliente: *"queremos ser un poco más
   agresivos"*): tres filtros y dos tramos por caso en vez de la tabla del
@@ -1285,7 +1299,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 55 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 57 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

@@ -18,9 +18,11 @@ import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerPresupuestos, leerLineasPresupuesto, guardarPresupuesto, guardarLineas,
   borrarPresupuesto, leerMenus, leerConfig, leerClientes, leerFechas, anotar, leerCobros,
-  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres
+  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres, leerNotas
 } from '@/lib/datos';
 import { HOJA_CIERRES } from '@/lib/cierres';
+import { HOJA_NOTAS, notasVisibles } from '@/lib/notas';
+import { fechaDeAgenda } from '@/lib/agenda';
 import { HOJA_USUARIOS, cuentaDeSesion } from '@/lib/usuarios';
 import {
   nuevoId, ESTADO_PRESUPUESTO, estaMandada, aEntero, folioDe, estadoNormal, lineasDe,
@@ -54,15 +56,15 @@ export const dynamic = 'force-dynamic';
  * nombre y el contacto ya puestos. Las de antes de las fichas siguen
  * mostrando lo que tenían escrito.
  */
-export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES, HOJA_NOTAS], async function GET(req: Request) {
   const no = await exigirVer(req, 'presupuestos');
   if (no) return no;
   try {
     const quien = await quienEs(req);
-    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres] = await Promise.all([
+    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres, notas] = await Promise.all([
       leerPresupuestos(), leerLineasPresupuesto(), leerMenus(), leerConfig(),
       leerClientes(), leerFechas(), leerCobros().catch(() => []), leerReservas().catch(() => []),
-      leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => [])
+      leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => []), leerNotas().catch(() => [])
     ]);
     // **Los días que se pasaron del cupo** (2026-11-12): un pago entró sobre
     // reservas sin pagar. Va en la misma lectura —la tanda ya trae
@@ -154,7 +156,11 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       puedeCorregir: puede(quien.rol as Rol, 'corregir'),
       // **El día en que se ganó cada una** (2026-11-17, para la Lista): el día
       // en que nació su reserva, que ya viene en esta tanda.
-      ganadaEl: ganadasEl(presupuestos, reservas)
+      ganadaEl: ganadasEl(presupuestos, reservas),
+      // **Las notas del vendedor** (2026-11-23, `lib/notas.ts`): solo las que
+      // esta cuenta puede leer —las de sus cotizaciones, o todas si es la
+      // gerencia o el administrador—. `Notas` va en la misma tanda.
+      notas: notasVisibles(notas, presupuestos, quien.rol, quien.usuario).map(({ fila: _f, ...n }) => n)
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
@@ -437,6 +443,9 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
       enviada: '', ultimoSeguimiento: '', contratoEnviado: '',
       seguimientoDias: numeroONulo(cuerpo.seguimientoDias, 365),
       avisoEvento: numeroONulo(cuerpo.avisoEvento, 365),
+      // **Para cuándo se le prometió la cotización** (2026-11-23, la agenda):
+      // lo elige el vendedor; una fecha que ya pasó no se acepta.
+      redactarAntes: fechaDeAgenda(cuerpo.redactarAntes, hoy()) || '',
       creadoPor: quien.usuario,
       creado: ahoraEnChile()
     };
@@ -657,6 +666,15 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       avisoEvento: cuerpo.avisoEvento === undefined
         ? previo.avisoEvento : numeroONulo(cuerpo.avisoEvento, 365),
       enviada, ultimoSeguimiento, contratoEnviado,
+      // **La agenda** (2026-11-23): el plazo prometido lo cambia el vendedor
+      // (hoy en adelante, o en blanco). El día de recontacto no se escribe
+      // acá —va por `/api/presupuestos/notas`—, pero si ya llegó y la
+      // cotización cambió de etapa (la mandó, está negociando), ese cambio
+      // fue el contacto: se borra, y vuelve el recordatorio de siempre.
+      redactarAntes: cuerpo.redactarAntes === undefined ? (previo.redactarAntes ?? '')
+        : (fechaDeAgenda(cuerpo.redactarAntes, hoy()) ?? (previo.redactarAntes ?? '')),
+      recontactar: estado !== previo.estado && esFecha(previo.recontactar) && previo.recontactar! <= hoy()
+        ? '' : (previo.recontactar ?? ''),
       // La vigencia se recalcula solo al mandarla o si lo piden. Editar una
       // línea no puede correrle el plazo al cliente.
       validoHasta,

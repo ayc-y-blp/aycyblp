@@ -9,8 +9,10 @@
  * 1. **De quién** —para quien ve el equipo, *👤 Por vendedor…* y *🤝 Por
  *    socio…*, con buscador— y **cuándo**: *Todo · Mes · Semana* con ◀ ▶, por
  *    fecha del evento o por fecha en que se cotizó.
- * 2. **Seis tarjetas**: En carrera, Cotizado, Ganado, Tasa de cierre, Por
- *    seguir y Por cobrar. Las que son una lista se aprietan y la filtran.
+ * 2. **Seis tarjetas**: En carrera, Cotizado, Ganado, Tasa de cierre,
+ *    🗓 Agenda (antes *Por seguir*; 2026-11-23) y Por cobrar. Las que son una
+ *    lista se aprietan y la filtran; la Agenda muestra la agenda del vendedor
+ *    (`Agenda`), que no sigue al periodo: es de hoy y de los próximos días.
  * 3. **Ganado por mes**, según el día en que se ganó.
  * 4. **Estado** con cuántas hay, el buscador y la lista: las filas de
  *    siempre, con una segunda línea —quién la vende y el próximo paso—.
@@ -25,6 +27,7 @@ import BuscarEnLista from './BuscarEnLista';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
+import { agendaDe, cuentasDeHoy, type ItemAgenda } from '@/lib/agenda';
 import {
   veElEquipo, unaPorGrupo, enRango, rangoDe, pasaFiltro, calzaBusqueda, resumenLista, ganadoPorMes,
   cuentasPorFiltro, proximosPasos, ordenarLista, vendedoresDe,
@@ -48,10 +51,10 @@ const ESTADOS: [FiltroLista, string][] = [
   ['ganadas', 'Ganadas'], ['cerradas', 'Perdidas y vencidas'], ['todas', 'Todas']
 ];
 const DE_LAS_TARJETAS: Partial<Record<FiltroLista, string>> = {
-  mandadas: 'lo mandado', porSeguir: 'las que esperan que alguien las siga', porCobrar: 'las ganadas con plata por cobrar'
+  mandadas: 'lo mandado', porCobrar: 'las ganadas con plata por cobrar'
 };
 
-export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos }: {
+export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda }: {
   ctx: ContextoLista;
   rol: string;
   /** Las que deja ver *Mías / De todos*. */
@@ -65,6 +68,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   fila: (p: Presupuesto, detalle: ReactNode) => ReactNode;
   /** Elegir un vendedor o un socio mira *De todos*. */
   onDeTodos: () => void;
+  /** La agenda de lo que se está mirando, con los botones de cada fila (`Agenda`). */
+  verAgenda: (a: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }) => ReactNode;
 }) {
   const equipo = veElEquipo(rol);
   const [filtro, setFiltro] = useState<FiltroLista>('enCarrera');
@@ -90,6 +95,10 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   const r = useMemo(() => resumenLista(base, ctx), [base, ctx]);
   const meses = useMemo(() => ganadoPorMes(unaPorGrupo(deQuien, ctx), ctx), [deQuien, ctx]);
   const cuantas = useMemo(() => cuentasPorFiltro(base, ctx), [base, ctx]);
+  // **La agenda no sigue al periodo** (2026-11-23): es de hoy y de los
+  // próximos días, de lo que se mira en *De quién*.
+  const agenda = useMemo(() => agendaDe(deQuien, ctx.hoy, ctx.seguimiento), [deQuien, ctx]);
+  const deHoy = cuentasDeHoy(agenda);
   const lista = useMemo(() => ordenarLista(
     base.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx),
   [base, filtro, busqueda, ctx]);
@@ -176,10 +185,15 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         <Tarjeta que="Tasa de cierre" ayuda="listaTasa" valor={r.tasa.pct == null ? '—' : `${r.tasa.pct}%`}
           nota={`${r.tasa.ganadas} ${r.tasa.ganadas === 1 ? 'ganada' : 'ganadas'} · ${r.tasa.perdidas} ${r.tasa.perdidas === 1 ? 'perdida' : 'perdidas'}`}
           tono="border-hueso/20 bg-panel" />
-        <Tarjeta que="Por seguir" ayuda="listaPorSeguir" valor={String(r.porSeguir)}
-          nota={r.porSeguir ? 'esperan que alguien las mueva' : 'nada pendiente'}
-          tono={r.porSeguir ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto' : 'border-hueso/20 bg-panel'}
-          activa={filtro === 'porSeguir'} onClick={() => alternar('porSeguir')} />
+        {/* **🗓 Agenda** (2026-11-23, reemplaza a *Por seguir*): lo que toca
+            hoy —contactar o mandar una cotización prometida—. Se aprieta y se
+            ve la agenda entera. */}
+        <Tarjeta que="🗓 Agenda" ayuda="listaAgenda" valor={String(deHoy.hoy)}
+          nota={deHoy.hoy ? `para hoy${deHoy.atrasadas ? ` · ${deHoy.atrasadas} atrasadas` : ''}`
+            : deHoy.semana ? `nada hoy · ${deHoy.semana} esta semana` : 'nada pendiente'}
+          tono={deHoy.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
+            : deHoy.hoy ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
+          activa={filtro === 'agenda'} onClick={() => alternar('agenda')} />
         <Tarjeta que="Por cobrar" ayuda="listaPorCobrar" valor={enPesos(r.porCobrar.monto)}
           nota={`${r.porCobrar.n} ${r.porCobrar.n === 1 ? 'ganada' : 'ganadas'} con saldo`}
           tono={r.porCobrar.monto ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
@@ -234,7 +248,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       </div>
 
       <div className="mt-3">
-        {lista.length === 0 ? (
+        {filtro === 'agenda' ? verAgenda(agenda) : lista.length === 0 ? (
           <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">Ninguna calza.</p>
         ) : (
           <ul className="space-y-2">

@@ -18,17 +18,18 @@
  * calendario. Puro y con pruebas.
  */
 import {
-  estadoVisible, cuentaComoPosible, seguimientoDe, porVencer, diasParaVencer, totalDe, lineasDe, gentePosible,
+  estadoVisible, estadoNormal, cuentaComoPosible, porVencer, diasParaVencer, totalDe, lineasDe, gentePosible,
   folioDe, ESTADO_PRESUPUESTO, type Presupuesto, type LineaPresupuesto
 } from './presupuestos.ts';
 import { grupoDe, alternativasDe, principalDe } from './cotizar.ts';
 import { normalizar } from './columnas.ts';
 import { ROL } from './auth.ts';
-import { esFecha, sumarDias, fechaEnZona } from './fechas.ts';
+import { esFecha, sumarDias, fechaEnZona, enCorto } from './fechas.ts';
+import { proximoContacto, cuandoEs, diasEntre } from './agenda.ts';
 
 /** Qué se muestra: los estados, y lo que piden las tarjetas. */
 export type FiltroLista = 'enCarrera' | 'esperando' | 'negociando' | 'ganadas' | 'cerradas' | 'todas'
-  | 'mandadas' | 'porSeguir' | 'porCobrar';
+  | 'mandadas' | 'agenda' | 'porCobrar';
 export type PorFecha = 'evento' | 'cotizada';
 /** Un rango de fechas, o `null`: todo. */
 export type Rango = { desde: string; hasta: string } | null;
@@ -140,10 +141,27 @@ export function pasaFiltro(p: Presupuesto, filtro: FiltroLista, ctx: ContextoLis
       && (e === ESTADO_PRESUPUESTO.enviado || e === ESTADO_PRESUPUESTO.negociacion);
     case 'ganadas': return e === ESTADO_PRESUPUESTO.aceptado;
     case 'cerradas': return esCerrada(e);
-    case 'porSeguir': return !!seguimientoDe(p, ctx.hoy, ctx.seguimiento);
+    // **La agenda** (2026-11-23): lo que toca hoy, de contactar o de mandar.
+    case 'agenda': return tocaHoy(p, ctx);
     case 'porCobrar': return faltaCobrarDe(p, ctx) > 0;
   }
 }
+
+/**
+ * **Si esta cotización está en la agenda de hoy** (2026-11-23): hay que
+ * contactar al cliente —el día elegido o el recordatorio de siempre— o
+ * mandarle la cotización prometida.
+ */
+export function tocaHoy(p: Presupuesto, ctx: Pick<ContextoLista, 'hoy' | 'seguimiento'>): boolean {
+  const c = proximoContacto(p, ctx.hoy, ctx.seguimiento);
+  if (c && c.fecha <= ctx.hoy) return true;
+  return sinMandar(p) && esFecha(p.redactarAntes) && p.redactarAntes! <= ctx.hoy;
+}
+
+const sinMandar = (p: Presupuesto) => {
+  const e = estadoNormal(p.estado);
+  return !p.idReserva && (e === ESTADO_PRESUPUESTO.candidato || e === ESTADO_PRESUPUESTO.borrador);
+};
 
 /** Busca en el cliente, el N°, el tipo de evento, quién la vende y el periodo. */
 export function calzaBusqueda(p: Presupuesto, texto: string): boolean {
@@ -158,15 +176,17 @@ export interface ResumenLista {
   cotizado: { monto: number; n: number; borradores: number; montoBorradores: number };
   ganado: { monto: number; n: number };
   tasa: { ganadas: number; perdidas: number; pct: number | null };
-  porSeguir: number;
   porCobrar: { monto: number; n: number };
 }
 
-/** Las seis tarjetas, sobre lo que se está mirando (de quién y cuándo). */
+/**
+ * Las tarjetas, sobre lo que se está mirando (de quién y cuándo). La de la
+ * agenda no va acá: no sigue al periodo (`agendaDe()`).
+ */
 export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLista {
   const r: ResumenLista = {
     enCarrera: { n: 0, gente: 0 }, cotizado: { monto: 0, n: 0, borradores: 0, montoBorradores: 0 },
-    ganado: { monto: 0, n: 0 }, tasa: { ganadas: 0, perdidas: 0, pct: null }, porSeguir: 0,
+    ganado: { monto: 0, n: 0 }, tasa: { ganadas: 0, perdidas: 0, pct: null },
     porCobrar: { monto: 0, n: 0 }
   };
   for (const p of base) {
@@ -183,7 +203,6 @@ export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLi
     }
     if (e === ESTADO_PRESUPUESTO.aceptado) { r.ganado.n++; r.ganado.monto += total; r.tasa.ganadas++; }
     if (e === ESTADO_PRESUPUESTO.rechazado) r.tasa.perdidas++;
-    if (seguimientoDe(p, ctx.hoy, ctx.seguimiento)) r.porSeguir++;
     const falta = faltaCobrarDe(p, ctx);
     if (falta > 0) { r.porCobrar.n++; r.porCobrar.monto += falta; }
   }
@@ -209,7 +228,7 @@ export function ganadoPorMes(base: Presupuesto[], ctx: ContextoLista, n = 6): { 
 /** Cuántas hay en cada botón de estado. */
 export function cuentasPorFiltro(base: Presupuesto[], ctx: ContextoLista): Record<FiltroLista, number> {
   const filtros: FiltroLista[] = ['enCarrera', 'esperando', 'negociando', 'ganadas', 'cerradas', 'todas',
-    'mandadas', 'porSeguir', 'porCobrar'];
+    'mandadas', 'agenda', 'porCobrar'];
   return Object.fromEntries(filtros.map((f) => [f, base.filter((p) => pasaFiltro(p, f, ctx)).length])) as Record<FiltroLista, number>;
 }
 
@@ -224,9 +243,18 @@ export type Paso = { texto: string; tono: 'rojo' | 'ambar' | 'verde' | 'neutro' 
  */
 export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
   const e = estadoVisible(p, ctx.hoy);
-  const s = seguimientoDe(p, ctx.hoy, ctx.seguimiento);
+  // **La agenda** (2026-11-23): el día elegido para contactarlo manda sobre
+  // el recordatorio de siempre, que sigue diciendo lo mismo que antes.
+  const c = proximoContacto(p, ctx.hoy, ctx.seguimiento);
+  const s = c && c.motivo !== 'elegida' && c.fecha === ctx.hoy ? c : null;
   const pasos: Paso[] = [];
-  if (s?.motivo === 'contratoSinFirmar') pasos.push({ texto: `contrato sin volver hace ${s.dias} días`, tono: 'ambar' });
+  if (c?.motivo === 'elegida') {
+    const cuando = cuandoEs(c.fecha, ctx.hoy);
+    const atraso = -diasEntre(ctx.hoy, c.fecha);
+    pasos.push(cuando === 'atrasado' ? { texto: `contactar: atrasado ${atraso} ${atraso === 1 ? 'día' : 'días'}`, tono: 'rojo' }
+      : cuando === 'hoy' ? { texto: 'contactar hoy', tono: 'ambar' }
+        : { texto: `📞 contactar el ${enCorto(c.fecha)}`, tono: 'neutro' });
+  } else if (s?.motivo === 'contratoSinFirmar') pasos.push({ texto: `contrato sin volver hace ${s.dias} días`, tono: 'ambar' });
   else if (s?.motivo === 'eventoCerca') pasos.push({ texto: s.dias === 0 ? 'el evento es hoy y no se gana' : `evento en ${s.dias} ${s.dias === 1 ? 'día' : 'días'} sin ganar`, tono: 'rojo' });
   else if (s?.motivo === 'sinRespuesta') pasos.push({ texto: `sin respuesta hace ${s.dias} días`, tono: 'rojo' });
   else if (porVencer(p, ctx.hoy)) {
@@ -238,7 +266,15 @@ export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
     pasos.push(falta > 0 ? { texto: `falta cobrar ${pesos(falta)}`, tono: 'ambar' } : { texto: '✓ pagada', tono: 'verde' });
   }
   if (!pasos.length && e === ESTADO_PRESUPUESTO.rechazado && p.motivo) pasos.push({ texto: `perdida: ${p.motivo}`, tono: 'neutro' });
-  if (!pasos.length && (e === ESTADO_PRESUPUESTO.candidato || e === ESTADO_PRESUPUESTO.borrador)) pasos.push({ texto: 'sin mandar', tono: 'neutro' });
+  // **Lo prometido** (2026-11-23): para cuándo se le dijo que le llegaba la cotización.
+  if (sinMandar(p)) {
+    const f = p.redactarAntes ?? '';
+    const cuando = cuandoEs(f, ctx.hoy);
+    pasos.push(cuando === 'atrasado' ? { texto: `mandarla: prometida el ${enCorto(f)}`, tono: 'rojo' }
+      : cuando === 'hoy' ? { texto: 'mandarla hoy', tono: 'ambar' }
+        : cuando === 'proximo' ? { texto: `✍ mandarla antes del ${enCorto(f)}`, tono: 'neutro' }
+          : { texto: 'sin mandar', tono: 'neutro' });
+  }
   return pasos;
 }
 

@@ -33,7 +33,9 @@ export async function revisarAlineacion(page) {
     const visible = (el) => {
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
+      // Un campo transparente no se ve (2026-11-23): el calendario del
+      // navegador detrás de *📅 Elegir…* (`ElegirFecha`) se mide por su botón.
+      return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && s.opacity !== '0';
     };
     const nombreDe = (el) => (el.getAttribute('aria-label') || el.getAttribute('placeholder')
       || el.closest('label')?.innerText || el.innerText || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40);
