@@ -28,8 +28,9 @@ lugares con **una sola cuenta**; y poder seguir con Lo Pirque mientras tanto,
 
 ## La propuesta (por confirmar con el cliente)
 
-- **Un panel, una entrada, un selector de empresa arriba.** Quien trabaja en
-  una sola no ve el selector.
+- **Una dirección por empresa, una sola cuenta.** La dirección dice en qué
+  mundo se está; quien tiene las dos pasa de una a la otra con un botón, sin
+  volver a entrar. Quien trabaja en una sola no ve el botón.
 - **Los datos no se mezclan**: una planilla por empresa, como ya estaba
   decidido (`panel/CLAUDE.md`, "La empresa es la planilla"). Cada una con su
   `Config`, sus Productos y sus módulos encendidos o apagados.
@@ -67,14 +68,31 @@ Sale de mirar el respaldo del CRM del socio (que no está en el repo):
 Sirve tal cual: clientes, la cotización en cinco pasos, cobros con
 comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 
+## Lo que el cliente decidió (2026-11-22)
+
+1. **Cada empresa con su dirección**, y una sola cuenta: *"que el que solo
+   tenga acceso al panel de Asados y Corderos, arriba en la URL también ve
+   estoy en Asados y Corderos… los mundos viven independientes y con sus
+   URLs"*. La gerencia y los vendedores de los dos lugares pasan de un mundo
+   al otro sin volver a entrar. Reemplaza la propuesta de una sola dirección
+   con selector.
+2. **Calicanto es solo eventos: no lleva la tienda de Shopify.** Todo lo
+   demás sirve igual, también la recepción (*"en un matrimonio… se ven todos
+   los asistentes"*) y el calendario de Google.
+3. **El arriendo de Calicanto y la relación comercial entre Calicanto y
+   Asados y Corderos se ven después.** De partida, el arriendo va como una
+   cuenta aparte, como en el contrato del CRM.
+4. **El costeo y la caja entran en esta fase** (*"yo iría por todo ahora"*),
+   en los pasos finales: el costeo cuelga de una cotización, así que
+   Calicanto tiene que cotizar primero.
+
 ## Lo que falta que el cliente decida
 
-1. ¿Una sola dirección con selector, o dos direcciones con la misma cuenta?
-2. ¿Calicanto abre al público o es solo eventos? (Si es solo eventos, sin
-   tienda en línea, cupo público ni recepción.)
-3. ¿El arriendo de Calicanto lo cobra Asados y Corderos o el dueño del
-   recinto?
-4. ¿El costeo y la caja entran en esta fase o después?
+- La dirección del panel de Asados y Corderos / Calicanto (qué dominio).
+- Cómo usan hoy el simulador de costos y la caja del CRM: hace falta verlo
+  (capturas o una explicación) antes de diseñarlos acá.
+- Si la recepción de un matrimonio necesita la lista de invitados uno por
+  uno: hoy muestra reservas, no personas.
 
 ## Los pasos
 
@@ -83,10 +101,12 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 | 1 | **La empresa como una pieza** (`lib/empresa.ts`): todo lo que es de la empresa —planilla, cuenta de servicio, calendario, tienda, CRM— se pregunta en un solo lugar. Sin cambio de comportamiento | PR abierto el 2026-11-22 |
 | 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | — |
 | 3 | Las cuentas compartidas y el rol por empresa | — |
-| 4 | El selector de empresa | — |
+| 4 | Una dirección por empresa y el paso de una a la otra | — |
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
 | 6 | El contrato de matrimonio | — |
 | 7 | El tablero de la gerencia | — |
+| 8 | El costeo de un evento | — |
+| 9 | La caja y los pagos solicitados | — |
 
 ### Paso 1, en detalle
 
