@@ -10,6 +10,7 @@ dos documentos, ordenado por tema y con fecha:
 | `panel/CLAUDE.md` | Todo el panel: reservas, cotizaciones, equipo, informe, roles, la regla PlayStation, el límite de Google | Al trabajar en `panel/` |
 | `migracion-team/` | Las 18 variables de Vercel (sin valores), `verificar.sh`, el entorno de Claude Code | A mano |
 | `panel/DESPLIEGUE.md` | Cómo se despliega el panel, los webhooks, la planilla | A mano |
+| `panel/FASE5.md` | La ampliación a Calicanto: cómo se trabaja en paralelo, la propuesta, lo que falta decidir y los pasos | Al trabajar en la Fase 5 |
 
 **Antes de tocar algo, busca su sección** en esos archivos (`grep -n` por la
 palabra o el nombre de la función): casi todo lo que parece raro tiene una
@@ -173,6 +174,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
   `panel/CLAUDE.md`, "El periodo en un marco".
+- **La Fase 5 partió el 22-11-2026** (el panel para Calicanto / Asados y
+  Corderos): sin rama larga, en PR chicos que se mergean apagados. El plan,
+  lo que el cliente tiene que decidir y los pasos están en
+  **`panel/FASE5.md`**. Paso 1, *la empresa como una pieza*
+  (`lib/empresa.ts`), sin cambio de comportamiento.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

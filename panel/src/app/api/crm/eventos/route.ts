@@ -8,6 +8,7 @@ import {
 } from '@/lib/crm';
 import { leerReservas } from '@/lib/datos';
 import { esFecha } from '@/lib/fechas';
+import { empresaActual } from '@/lib/empresa';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,7 @@ export const GET = conLecturas([], async function GET(req: Request) {
   const no = await exigirVer(req, 'presupuestos');
   if (no) return no;
 
-  const clave = process.env.CRM_API_KEY;
+  const clave = empresaActual().claveCrm;
   // Apagada (ver `CRM_APAGADO`): igual que sin clave, vacío y sin error.
   if (CRM_APAGADO || !clave) {
     return NextResponse.json({ dias: {}, periodos: [], configurado: false });

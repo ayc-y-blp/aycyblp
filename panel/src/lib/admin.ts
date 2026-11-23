@@ -7,6 +7,7 @@
  * que el sitio lleva en un archivo público porque solo lee catálogo.
  */
 import type { PedidoShopify } from './shopify.ts';
+import { empresaActual } from './empresa.ts';
 
 /** La versión estable al 2026-10-20, soportada hasta octubre de 2027. */
 export const VERSION_ADMIN = '2026-10';
@@ -20,7 +21,7 @@ export const VERSION_ADMIN = '2026-10';
  * natural del mundo.
  */
 export function dominio(): string {
-  return String(process.env.SHOPIFY_DOMINIO ?? '')
+  return String(empresaActual().tienda.dominio ?? '')
     .trim()
     .replace(/^https?:\/\//, '')
     .replace(/\/+$/, '');
@@ -35,7 +36,7 @@ export function dominio(): string {
  * credencial, que es justo lo que uno ya revisó tres veces.
  */
 export function token(): string {
-  return String(process.env.SHOPIFY_ADMIN_TOKEN ?? '').trim();
+  return String(empresaActual().tienda.tokenFijo ?? '').trim();
 }
 
 /**
@@ -54,8 +55,8 @@ export function token(): string {
  * de la tienda de desarrollo.
  */
 export function credenciales(): { id: string; secreto: string } | null {
-  const id = String(process.env.SHOPIFY_CLIENT_ID ?? '').trim();
-  const secreto = String(process.env.SHOPIFY_CLIENT_SECRET ?? '').trim();
+  const id = String(empresaActual().tienda.clienteId ?? '').trim();
+  const secreto = String(empresaActual().tienda.clienteSecreto ?? '').trim();
   return id && secreto ? { id, secreto } : null;
 }
 
@@ -140,7 +141,7 @@ export async function pedidosDesde(desde: Date): Promise<PedidoShopify[]> {
     throw new Error('Faltan SHOPIFY_DOMINIO y SHOPIFY_ADMIN_TOKEN (o SHOPIFY_CLIENT_ID y SHOPIFY_CLIENT_SECRET) en el entorno.');
   }
   const clave = await tokenDeAcceso();
-  const version = (process.env.SHOPIFY_VERSION || VERSION_ADMIN).trim();
+  const version = (empresaActual().tienda.version || VERSION_ADMIN).trim();
 
   const url = `https://${tienda}/admin/api/${version}/orders.json` +
     `?status=any&limit=250&updated_at_min=${encodeURIComponent(desde.toISOString())}`;
