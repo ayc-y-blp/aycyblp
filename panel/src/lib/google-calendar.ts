@@ -14,9 +14,10 @@
 import { google } from 'googleapis';
 import { autenticacion } from './sheets.ts';
 import type { Evento } from './calendario.ts';
+import { empresaActual } from './empresa.ts';
 
 export function hayCalendario(): boolean {
-  return !!process.env.GOOGLE_CALENDAR_ID;
+  return !!empresaActual().calendario;
 }
 
 /**
@@ -27,7 +28,7 @@ export function hayCalendario(): boolean {
  * responde 409 cuando el id ya existe, y ese 409 es la señal, no un error.
  */
 export async function guardarEvento(e: Evento): Promise<'creado' | 'actualizado' | 'omitido'> {
-  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  const calendarId = empresaActual().calendario;
   if (!calendarId) return 'omitido';
 
   const cal = google.calendar({ version: 'v3', auth: autenticacion() });
@@ -51,7 +52,7 @@ export async function guardarEvento(e: Evento): Promise<'creado' | 'actualizado'
  * cuenta sillas mirándolo.
  */
 export async function borrarEvento(id: string): Promise<void> {
-  const calendarId = process.env.GOOGLE_CALENDAR_ID;
+  const calendarId = empresaActual().calendario;
   if (!calendarId) return;
   const cal = google.calendar({ version: 'v3', auth: autenticacion() });
   try {

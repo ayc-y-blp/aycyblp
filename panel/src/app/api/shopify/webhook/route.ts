@@ -25,6 +25,7 @@ import { eventoDe, idDeEvento } from '@/lib/calendario';
 import { guardarEvento, borrarEvento, hayCalendario } from '@/lib/google-calendar';
 import { ocupaLugar } from '@/lib/ocupacion';
 import type { Reserva } from '@/lib/tipos';
+import { empresaActual } from '@/lib/empresa';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ export const POST = conLecturas([], async function POST(req: Request) {
   const cuerpo = await req.text();
   const firma = req.headers.get('x-shopify-hmac-sha256');
 
-  if (!firmaValida(cuerpo, firma, process.env.SHOPIFY_WEBHOOK_SECRET)) {
+  if (!firmaValida(cuerpo, firma, empresaActual().tienda.secretoWebhook)) {
     // Sin detalles en la respuesta: a quien manda una firma inválida no se
     // le explica por qué falló.
     console.warn('[webhook] firma inválida',

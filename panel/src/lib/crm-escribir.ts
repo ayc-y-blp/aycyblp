@@ -23,6 +23,7 @@ import { leerReservas, leerFechas, leerConfig } from './datos.ts';
 import { ocupacionDe } from './ocupacion.ts';
 import { hoy, sumarDias, esFecha, type Fecha } from './fechas.ts';
 import type { FechaHabil } from './tipos.ts';
+import { empresaActual } from './empresa.ts';
 
 /**
  * Cuánto se espera al CRM. **Es un empujón, no el guardado**: si su API está
@@ -32,10 +33,10 @@ import type { FechaHabil } from './tipos.ts';
  */
 const ESPERA_MS = 6000;
 
-export const configurado = () => !!process.env.CRM_API_KEY;
+export const configurado = () => !!empresaActual().claveCrm;
 
 async function pedir(ruta: string, init: RequestInit = {}) {
-  const clave = process.env.CRM_API_KEY;
+  const clave = empresaActual().claveCrm;
   if (!clave) throw new Error('Falta CRM_API_KEY.');
   const r = await fetch(`${CRM_API}${ruta}`, {
     ...init,

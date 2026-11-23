@@ -6,6 +6,7 @@ import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { celdas } from './celdas.ts';
+import { empresaActual } from './empresa.ts';
 
 // La planilla, y los eventos del calendario. El segundo se agregó el
 // 2026-10-21 al jubilar el Apps Script, que era quien los creaba.
@@ -25,7 +26,7 @@ const ALCANCE = [
 let cliente: sheets_v4.Sheets | null = null;
 
 export function idPlanilla(): string {
-  const id = process.env.GOOGLE_SHEET_ID;
+  const id = empresaActual().planilla;
   if (!id) throw new Error('Falta GOOGLE_SHEET_ID en el entorno.');
   return id;
 }
@@ -41,8 +42,7 @@ let credencial: InstanceType<typeof google.auth.JWT> | null = null;
 export function autenticacion() {
   if (credencial) return credencial;
 
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const clave = process.env.GOOGLE_PRIVATE_KEY;
+  const { correo: email, clave } = empresaActual().cuenta;
   if (!email || !clave) {
     throw new Error(
       'Faltan GOOGLE_SERVICE_ACCOUNT_EMAIL o GOOGLE_PRIVATE_KEY. Ver .env.example.'
