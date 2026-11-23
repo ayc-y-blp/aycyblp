@@ -40,7 +40,8 @@ import {
 import {
   prepararLineas, esDiaPublico, lineaDeProducto, yaEstaEnLaCotizacion, productoDe, showDe, cambiarCantidad,
   alternativasDe, letraDe, grupoDe, vivasDelGrupo, sigueViva, paraElLink,
-  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow
+  MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow,
+  arriendoDelDia, personasParaMinimos, enFormaDeLinea, type ReglaArriendo
 } from '@/lib/cotizar';
 import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, type Menu } from '@/lib/menus';
 import {
@@ -83,6 +84,14 @@ export interface DatosCotizar {
   condiciones?: { anticipoPct: number; saldoDias: number };
   /** El mínimo del show en un día privado con poca gente (2026-11-20). */
   reglaShow?: ReglaShow | null;
+  /**
+   * **El arriendo mínimo** (2026-11-23): la regla, qué días abre la regla
+   * diaria, las fechas sin exclusivo y cuántas reservas ocupan lugar cada día.
+   */
+  reglaArriendo?: ReglaArriendo | null;
+  diasAbiertos?: number[];
+  fechasSinExclusivo?: string[];
+  reservasPorDia?: Record<string, number>;
   /** Los plazos del seguimiento de Configuración: los que rigen en blanco. */
   seguimiento?: { dias: number; antesEvento: number };
   /** El nombre comercial, para el asunto del correo. */
@@ -381,10 +390,27 @@ export default function CotizacionDialogo({
   /** Si la gerencia, pagos o el administrador ya autorizaron el show bajo el mínimo. */
   const showAutorizado = (p?.showBajoMinimo ?? '').split(' · ')[0];
   const reglaShow = pasaPorEncima || showAutorizado ? null : datos.reglaShow ?? null;
+  /**
+   * **El arriendo mínimo** (2026-11-23): la misma regla del servidor
+   * (`arriendoDelDia()`). *Otras reservas* son las que ya ocupan lugar ese
+   * día sin contar la de esta cotización, si está ganada.
+   */
+  const arriendoAutorizado = (p?.arriendoBajoMinimo ?? '').split(' · ')[0];
+  const otrasDelDia = Math.max(0, (datos.reservasPorDia?.[fechaReal] ?? 0)
+    - (ganada && p?.fecha === fechaReal ? 1 : 0));
+  const arriendoDelDiaFn = useMemo(
+    () => arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
+      esExclusivo(exclusivo), otrasDelDia),
+    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia]);
+  /** Si la regla del arriendo corre para esta cuenta: no para quien pasa por encima, ni si ya se autorizó. */
+  const arriendoForzado = !pasaPorEncima && !arriendoAutorizado;
   // **Lo que se ve es lo que se guarda**: la misma función del servidor.
   const vistas = useMemo(
-    () => prepararLineas(lineas, datos.menus, invitados, publico, uf, reglaShow),
-    [lineas, datos.menus, invitados, publico, uf, reglaShow]);
+    () => prepararLineas(lineas, datos.menus, invitados, publico, uf, reglaShow,
+      arriendoForzado ? arriendoDelDiaFn : null),
+    [lineas, datos.menus, invitados, publico, uf, reglaShow, arriendoForzado, arriendoDelDiaFn]);
+  /** El mínimo del arriendo de esta cotización, para decirlo; también a quien puede pasar por encima. */
+  const minimoArriendo = arriendoDelDiaFn ? arriendoDelDiaFn(personasParaMinimos(vistas, invitados)) : null;
   const cuentas = cuentasDe(vistas, descuento);
   /** Cuánta gente suman los menús: tiene que calzar con los invitados. */
   const enMenus = vistas.reduce((n, l) => n + l.personas, 0);
@@ -426,6 +452,16 @@ export default function CotizacionDialogo({
    */
   const showSubio = lineas.some((l, i) => productoDe(l.concepto, datos.menus)?.tipo === TIPO_PRODUCTO.show
     && !!vistas[i] && (vistas[i].precio !== l.precio || vistas[i].descuento !== l.descuento));
+  /**
+   * **Y lo mismo con el arriendo** (2026-11-23): una cotización de antes de la
+   * regla, en un día que la pide, se abre con el arriendo agregado o subido y
+   * se guarda en el acto. Si no, *Marcar ganada* la frenaría sin que nadie
+   * pudiera guardarla.
+   */
+  const esArriendo = (l: { concepto: string }) => productoDe(l.concepto, datos.menus)?.tipo === TIPO_PRODUCTO.arriendo;
+  const arriendoSubio = (vistas.some(esArriendo) && !lineas.some(esArriendo))
+    || lineas.some((l, i) => esArriendo(l) && !!vistas[i]
+      && (vistas[i].precio !== l.precio || vistas[i].descuento !== l.descuento));
   const sucio = !p || (guardada !== null && firma !== guardada);
 
   /**
@@ -503,9 +539,9 @@ export default function CotizacionDialogo({
   const auto = usarAutoguardado(firma, async () => {
     if (!(await guardar(undefined, true))) return ultimoError.current || 'No se pudo guardar';
   }, 1200, autoActivo);
-  // El guardado del mínimo del show al abrir (ver `showSubio`).
+  // El guardado de los mínimos del show y del arriendo al abrir (ver `showSubio`).
   useEffect(() => {
-    if (!showSubio || !autoActivo) return;
+    if (!(showSubio || arriendoSubio) || !autoActivo) return;
     const t = setTimeout(() => { void auto.reintentar(); }, 1200);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1030,6 +1066,9 @@ export default function CotizacionDialogo({
    */
   const conArriendo = tieneArriendo(vistas, datos.menus);
   const esExcl = esExclusivo(exclusivo);
+  /** Un día en que el vendedor no puede marcar exclusivo (Configuración, 2026-11-23). */
+  const sinExclusivo = esFecha(fechaReal) && !pasaPorEncima
+    && (datos.fechasSinExclusivo ?? []).includes(fechaReal);
   const otrasPersonas = tomadasDia?.todas ?? 0;
   const choqueExclusivo = esExcl && !ganada && esFecha(fechaReal) && otrasPersonas > 0;
   const decisionExcl = exclusividadDe(marcaExcl);
@@ -1932,6 +1971,11 @@ export default function CotizacionDialogo({
                   // El show con mínimo (2026-11-20): día privado y poca gente.
                   const showMinimo = prod?.tipo === TIPO_PRODUCTO.show && showConMinimo && datos.reglaShow
                     ? datos.reglaShow : null;
+                  // El arriendo con mínimo (2026-11-23): un día que no está abierto
+                  // al público con poca gente, o un exclusivo en un día público.
+                  const arriendoMinimo = prod?.tipo === TIPO_PRODUCTO.arriendo && !(l.precioUF > 0)
+                    ? minimoArriendo : null;
+                  const arriendoFijo = !!arriendoMinimo && arriendoForzado;
                   return (
                     <li key={i} className={`${marcoTarjeta(false, 'normal', false, true)} p-3 lg:col-span-full lg:grid
                                            lg:min-h-[46px] lg:grid-cols-subgrid lg:items-center lg:py-1`}>
@@ -1956,7 +2000,7 @@ export default function CotizacionDialogo({
                                            lg:row-start-1 lg:justify-self-end">
                             incluido: día público
                           </span>
-                        ) : (
+                        ) : arriendoFijo ? null : (
                           <button type="button" className="boton hover:border-rojo-fuerte hover:text-rojo-texto
                                                            lg:col-start-6 lg:row-start-1"
                             onClick={() => setLineas(vistas.filter((_, k) => k !== i))}>Quitar</button>
@@ -2015,6 +2059,20 @@ export default function CotizacionDialogo({
                                   cambiarLinea(i, { precio: final, ...(final !== v ? { descuento: 0 } : {}) });
                                 }}
                                 className={ENTRADA} />
+                            ) : arriendoFijo && arriendoMinimo ? (
+                              // Igual que el show: se aplica al salir del campo, y lo
+                              // que queda bajo el mínimo sube al mínimo.
+                              <input key={`arriendo-${l.precio}`} type="number" step={500}
+                                min={enFormaDeLinea(arriendoMinimo.minimo, l.ivaIncluido)}
+                                defaultValue={l.precio || ''} placeholder="0"
+                                onBlur={(e) => {
+                                  const v = Number(e.target.value) || 0;
+                                  const minimo = enFormaDeLinea(arriendoMinimo.minimo, l.ivaIncluido);
+                                  const final = v * (1 - (l.descuento || 0) / 100) < minimo ? minimo : v;
+                                  e.target.value = String(final);
+                                  cambiarLinea(i, { precio: final, ...(final !== v ? { descuento: 0 } : {}) });
+                                }}
+                                className={ENTRADA} />
                             ) : (
                             <input type="number" min={0} step={500} value={l.precio || ''} placeholder="0"
                               onChange={(e) => cambiarLinea(i, { precio: Number(e.target.value) || 0 })}
@@ -2058,6 +2116,21 @@ export default function CotizacionDialogo({
                           {reglaShow ? 'Si no va, quítalo.'
                             : showAutorizado && !pasaPorEncima ? `Lo autorizó ${showAutorizado}: va bajo el mínimo.`
                             : 'Tú puedes cobrar menos o dejarlo sin costo.'}
+                        </p>
+                      )}
+                      {/* **El arriendo mínimo** (2026-11-23): la misma pieza que el
+                          show. Dice por qué el precio no baja y que la línea no se
+                          quita; a quien puede pasar por encima, el mínimo sin forzarlo. */}
+                      {arriendoMinimo && (
+                        <p data-arriendo-minimo
+                          className={`mt-2 rounded border px-3 py-2 text-[14px] font-semibold lg:col-span-full lg:row-start-2
+                                       lg:mb-1 lg:mt-1 lg:py-1 ${arriendoFijo
+                          ? 'border-ambar/50 bg-ambar/5 text-ambar-texto' : 'border-hueso/20 text-hueso/75'}`}>
+                          🏠 {arriendoMinimo.caso === 'exclusivo' ? 'Exclusivo en un día público' : 'Día no abierto al público'},{' '}
+                          {personasParaMinimos(vistas, invitados)} personas: arriendo mínimo {enPesos(arriendoMinimo.minimo)} + IVA.{' '}
+                          {arriendoFijo ? 'Va siempre, y no baja de ahí.'
+                            : arriendoAutorizado && !pasaPorEncima ? `Lo autorizó ${arriendoAutorizado}: va bajo el mínimo.`
+                            : 'Tú puedes cobrar menos o sacarlo.'}
                         </p>
                       )}
                     </li>
@@ -2147,7 +2220,8 @@ export default function CotizacionDialogo({
                     {([['sí', 'Sí, exclusivo'], ['no', 'No, puede venir otro grupo']] as const).map(([v, texto]) => {
                       const marcado = v === 'sí' ? esExcl : exclusivo === 'no';
                       return (
-                        <button key={v} type="button" aria-pressed={marcado} disabled={!puedeEditar}
+                        <button key={v} type="button" aria-pressed={marcado}
+                          disabled={!puedeEditar || (v === 'sí' && sinExclusivo && !esExcl)}
                           onClick={() => setExclusivo(marcado ? '' : v)}
                           className={`tecla min-h-[48px] rounded-xl border-2 px-4 text-[16px] font-bold
                                       disabled:cursor-not-allowed lg:min-h-[44px] lg:text-[15px] ${marcado
@@ -2159,8 +2233,15 @@ export default function CotizacionDialogo({
                     })}
                   </div>
                 )}
-                {!exclusivo && !ganada && (
+                {!exclusivo && !ganada && !sinExclusivo && (
                   <p className="mt-2 text-[14px] text-ambar-texto">Sin contestar cuenta como no exclusivo.</p>
+                )}
+                {/* **Los días sin arriendo exclusivo** (2026-11-23): Día de la Madre,
+                    del Padre, Fiestas Patrias. El servidor tampoco lo acepta. */}
+                {sinExclusivo && !ganada && (
+                  <p className="mt-2 text-[14px] font-semibold text-rojo-texto">
+                    🚫 Ese día no se arrienda en exclusiva: lo decide la gerencia, el encargado de pagos o el administrador.
+                  </p>
                 )}
                 {esExcl && !ganada && !choqueExclusivo && esFecha(fechaReal) && tomadasDia !== null && (
                   <p className="mt-2 text-[14px] text-verde-texto">✓ Ese día no tiene otras reservas.</p>
