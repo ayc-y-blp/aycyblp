@@ -28,8 +28,11 @@ import {
 } from '@/lib/presupuestos';
 import {
   prepararLineas, esDiaPublico, conCliente, ESTADOS_A_MANO, grupoDe, otrasAlternativas, reglaShowDe,
-  showQuedaBajoMinimo, showBajoMinimoDe
+  showQuedaBajoMinimo, showBajoMinimoDe, reglaArriendoDe, arriendoDelDia,
+  arriendoQuedaBajoMinimo, personasParaMinimos
 } from '@/lib/cotizar';
+import { ocupaLugar } from '@/lib/ocupacion';
+import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
 import { hoy, esFecha } from '@/lib/fechas';
@@ -95,6 +98,16 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // aplica con la misma función del servidor, salvo a quien puede pasar
       // por encima: eso lo decide con el rol, que ya viaja.
       reglaShow: reglaShowDe(cfg),
+      // **El arriendo mínimo** (2026-11-23): la regla, qué días de la semana
+      // abre la regla diaria (un sábado que todavía no está en el calendario
+      // cuenta como público), las fechas sin exclusivo, y cuántas reservas
+      // ocupan lugar cada día que viene —solo el número: con otra reserva el
+      // día ya está abierto y no hay mínimo—. Sale de lo ya leído.
+      reglaArriendo: reglaArriendoDe(cfg),
+      diasAbiertos: cfg.diasAbiertos,
+      fechasSinExclusivo: cfg.fechasSinExclusivo,
+      reservasPorDia: reservas.filter((r) => r.fecha >= hoy() && ocupaLugar(r))
+        .reduce<Record<string, number>>((n, r) => { n[r.fecha] = (n[r.fecha] ?? 0) + 1; return n; }, {}),
       condiciones: { anticipoPct: cfg.anticipoPct, saldoDias: cfg.saldoDias },
       seguimiento: { dias: cfg.seguimientoDias, antesEvento: cfg.avisoEvento },
       empresa: cfg.empresa.nombre,
@@ -176,18 +189,51 @@ function cuandoDelCuerpo(cuerpo: Record<string, unknown>, antes?: Presupuesto) {
 
 const pct = (v: unknown) => Math.min(100, Math.max(0, aEntero(v)));
 
+/** Lo que decide los mínimos de una cotización además de sus líneas. */
+interface ParaMinimos {
+  /** La respuesta a *¿el día es exclusivo?* (`sí`, `no` o vacío). */
+  exclusivo: string;
+  /** La reserva de esta misma cotización, si ya se ganó: no cuenta como *otra* reserva del día. */
+  idReserva: string;
+  /** Si ya hay una autorización guardada (`Show bajo el mínimo`, `Arriendo bajo el mínimo`). */
+  showAutorizado: boolean;
+  arriendoAutorizado: boolean;
+}
+
+/** El mínimo del arriendo de esta cotización en su día (`arriendoDelDia()`), con las reservas ya leídas. */
+function arriendoParaElDia(
+  fecha: string, para: Pick<ParaMinimos, 'exclusivo' | 'idReserva'>,
+  cfg: Awaited<ReturnType<typeof leerConfig>>, fechas: Awaited<ReturnType<typeof leerFechas>>,
+  reservas: Awaited<ReturnType<typeof leerReservas>>
+) {
+  return arriendoDelDia(reglaArriendoDe(cfg), fecha, fechas, cfg.diasAbiertos, esExclusivo(para.exclusivo),
+    reservas.filter((r) => r.fecha === fecha && ocupaLugar(r) && r.id !== para.idReserva).length);
+}
+
 async function lineasListas(crudo: unknown, id: string, invitados: number, fecha: string,
-  uf: number, rol: Rol, excepcion = false) {
-  const [menus, fechas, cfg] = await Promise.all([leerMenus(), leerFechas(), leerConfig()]);
-  // **El mínimo del show en un día privado** (2026-11-20): rige para todos
-  // menos quien puede pasar por encima (la gerencia, quien paga y el
-  // administrador), y no corre en una cotización donde uno de ellos ya lo
-  // autorizó (`excepcion`).
+  uf: number, rol: Rol, para: ParaMinimos) {
+  const [menus, fechas, cfg, reservas] = await Promise.all([
+    leerMenus(), leerFechas(), leerConfig(), leerReservas().catch(() => [])
+  ]);
+  // **Los mínimos del show y del arriendo** (2026-11-20 y 2026-11-23): rigen
+  // para todos menos quien puede pasar por encima (la gerencia, quien paga y
+  // el administrador), y no corren en una cotización donde uno de ellos ya
+  // los autorizó.
+  const pasaPorEncima = puede(rol, 'showBajoMinimo');
   const deConfig = reglaShowDe(cfg);
-  const regla = puede(rol, 'showBajoMinimo') || excepcion ? null : deConfig;
+  const regla = pasaPorEncima || para.showAutorizado ? null : deConfig;
   const publico = esFecha(fecha) && esDiaPublico(fecha, fechas);
-  const lineas = prepararLineas(lineasDelCuerpo(crudo, id), menus, invitados, publico, uf, regla);
-  return { lineas, bajoMinimo: showQuedaBajoMinimo(lineas, menus, deConfig, publico, invitados) };
+  const arriendo = arriendoParaElDia(fecha, para, cfg, fechas, reservas);
+  const lineas = prepararLineas(lineasDelCuerpo(crudo, id), menus, invitados, publico, uf, regla,
+    pasaPorEncima || para.arriendoAutorizado ? null : arriendo);
+  const personas = personasParaMinimos(lineas, invitados);
+  const minimo = arriendo ? arriendo(personas) : null;
+  return {
+    lineas,
+    bajoMinimo: showQuedaBajoMinimo(lineas, menus, deConfig, publico, invitados),
+    arriendoBajo: arriendoQuedaBajoMinimo(lineas, menus, minimo),
+    minimo, personas
+  };
 }
 
 /**
@@ -215,7 +261,7 @@ function ufDelCuerpo(cuerpo: Record<string, unknown>, antes: { uf: number; fecha
  * Con `duplicarDe` es una **alternativa**: copia el cliente, la fecha, los
  * invitados y las líneas de otra, y queda en su mismo grupo.
  */
-export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS], async function POST(req: Request) {
+export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_RESERVAS], async function POST(req: Request) {
   const no = await exigir(req, 'presupuestos');
   if (no) return no;
   try {
@@ -317,8 +363,11 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
       creadoPor: quien.usuario,
       creado: ahoraEnChile()
     };
-    const nuevas = await lineasListas(cuerpo.lineas, id, invitados, p.fecha, p.uf, quien.rol as Rol);
+    const nuevas = await lineasListas(cuerpo.lineas, id, invitados, p.fecha, p.uf, quien.rol as Rol,
+      { exclusivo: '', idReserva: '', showAutorizado: false, arriendoAutorizado: false });
     p.showBajoMinimo = showBajoMinimoDe('', puede(quien.rol as Rol, 'showBajoMinimo'), nuevas.bajoMinimo,
+      quien.usuario, ahoraEnChile());
+    p.arriendoBajoMinimo = showBajoMinimoDe('', puede(quien.rol as Rol, 'showBajoMinimo'), nuevas.arriendoBajo,
       quien.usuario, ahoraEnChile());
     await guardarPresupuesto(p);
     await guardarLineas(id, nuevas.lineas);
@@ -343,7 +392,7 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
  *   reescribe sola** (`sincronizarReserva()`). Si el día de la reserva ya
  *   está cerrado, eso es corregirlo: con la lista de cambios confirmada.
  */
-export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_FECHAS], async function PATCH(req: Request) {
+export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_FECHAS, HOJA_RESERVAS], async function PATCH(req: Request) {
   const no = await exigir(req, 'presupuestos');
   if (no) return no;
   try {
@@ -502,21 +551,45 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     // nuevo, y la regla del show depende del día. Se preparan antes de
     // guardar la cotización, porque de ellas sale la marca del show bajo el
     // mínimo (2026-11-20).
+    // **Los días en que no se arrienda en exclusiva** (2026-11-23): Día de la
+    // Madre, del Padre, Fiestas Patrias. Marcarla exclusiva en uno de ellos
+    // —o moverla ahí ya marcada— lo decide quien puede pasar por encima.
+    if (esExclusivo(p.exclusivo) && esFecha(p.fecha) && cfgSeg.fechasSinExclusivo.includes(p.fecha)
+        && !(esExclusivo(previo.exclusivo) && previo.fecha === p.fecha)
+        && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+      return NextResponse.json({
+        error: 'Ese día no se arrienda en exclusiva: el público deja más que cualquier arriendo. '
+          + 'Si de verdad conviene, lo decide la gerencia, el encargado de pagos o el administrador.'
+      }, { status: 409 });
+    }
+
+    // Las líneas se vuelven a preparar también cuando cambia *¿exclusivo?*:
+    // de eso depende el mínimo del arriendo en un día público (2026-11-23).
     let nuevas: Awaited<ReturnType<typeof lineasListas>> | null = null;
     if (cuerpo.lineas !== undefined || cuerpo.invitados !== undefined
-        || cuerpo.fecha !== undefined || cuerpo.uf !== undefined) {
+        || cuerpo.fecha !== undefined || cuerpo.uf !== undefined || cuerpo.exclusivo !== undefined) {
       const crudo = cuerpo.lineas !== undefined
         ? cuerpo.lineas : lineasDe(await leerLineasPresupuesto(), id);
-      nuevas = await lineasListas(crudo, id, invitados, p.fecha, p.uf, quien.rol as Rol,
-        !!previo.showBajoMinimo);
+      nuevas = await lineasListas(crudo, id, invitados, p.fecha, p.uf, quien.rol as Rol, {
+        exclusivo: p.exclusivo ?? '', idReserva: previo.idReserva,
+        showAutorizado: !!previo.showBajoMinimo, arriendoAutorizado: !!previo.arriendoBajoMinimo
+      });
       p.showBajoMinimo = showBajoMinimoDe(previo.showBajoMinimo ?? '', puede(quien.rol as Rol, 'showBajoMinimo'),
         nuevas.bajoMinimo, quien.usuario, ahoraEnChile());
+      p.arriendoBajoMinimo = showBajoMinimoDe(previo.arriendoBajoMinimo ?? '', puede(quien.rol as Rol, 'showBajoMinimo'),
+        nuevas.arriendoBajo, quien.usuario, ahoraEnChile());
     }
     await guardarPresupuesto(p);
     if (nuevas) await guardarLineas(id, nuevas.lineas);
     if (p.showBajoMinimo && !previo.showBajoMinimo) {
       await anotar({ ...quien, accion: 'Dejó el show bajo el mínimo',
         detalle: `${folioDe(p)} · ${p.fecha || p.periodo} · bajo ${reglaShowDe(await leerConfig())?.desde ?? ''} personas` });
+    }
+    if (p.arriendoBajoMinimo && !previo.arriendoBajoMinimo && nuevas?.minimo) {
+      await anotar({ ...quien, accion: 'Dejó el arriendo bajo el mínimo',
+        detalle: `${folioDe(p)} · ${p.fecha} · ${nuevas.personas} personas · `
+          + `${nuevas.minimo.caso === 'exclusivo' ? 'exclusivo en un día público' : 'día no público'} · `
+          + `mínimo $${nuevas.minimo.minimo.toLocaleString('es-CL')} + IVA` });
     }
     if (p.idReserva) await sincronizarReserva(id);
 

@@ -22,11 +22,12 @@ import { aReserva, estadoDe, telefonoDe, emailDe, nombreDe, personasDe, menuDe,
          camposDeShopify,
          type PedidoShopify } from './shopify.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
-import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos,
+import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
 import { prepararLineas, esDiaPublico, clienteDe, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
          alternativasDe, letraDe, principalDe, sigueViva, vivasDelGrupo, faltaElegir, paraElLink,
-         ESTADOS_A_MANO, productoDe, showDe, reglaShowDe, showQuedaBajoMinimo, showBajoMinimoDe } from './cotizar.ts';
+         ESTADOS_A_MANO, productoDe, showDe, reglaShowDe, showQuedaBajoMinimo, showBajoMinimoDe,
+         reglaArriendoDe, minimoDeArriendo, esPublicoParaArriendo, arriendoQuedaBajoMinimo, arriendoDe } from './cotizar.ts';
 import { estadoNormal, cuentasDe, documentoDe, DOCUMENTO, numeroONulo } from './presupuestos.ts';
 import { condicionesDe, estadoCobros, leerCobrosDe, filaCobro, ENCABEZADO_COBROS, limpiarCobro,
          montoCobro, cobrosDe, CONCEPTO_COBRO, avisosDeCobro, diasEntre, porRevisar,
@@ -4258,6 +4259,95 @@ console.log('\nCotizaciones, fase 2');
   ok(puede(ROL.gerencia, 'showBajoMinimo') && puede(ROL.admin, 'showBajoMinimo') && puede(ROL.pagos, 'showBajoMinimo')
      && !puede(ROL.vendedor, 'showBajoMinimo') && !puede(ROL.operaciones, 'showBajoMinimo'),
      'show: pasan por encima la gerencia, pagos y el administrador; el vendedor y operaciones no');
+
+  // --- El arriendo mínimo (2026-11-23) ---
+  const reglaA = reglaArriendoDe(POR_DEFECTO)!;
+  ok(reglaA.privado.length === 2 && reglaA.privado[0].hasta === 10 && reglaA.privado[0].minimo === 400000
+     && reglaA.privado[1].hasta === 15 && reglaA.privado[1].minimo === 200000
+     && reglaA.exclusivo[0].hasta === 20 && reglaA.exclusivo[0].minimo === 1000000
+     && reglaA.exclusivo[1].hasta === 37 && reglaA.exclusivo[1].minimo === 600000,
+     'arriendo: los números de partida son los que fijó el cliente (10/15 y 20/37)');
+  ok(reglaArriendoDe({ ...POR_DEFECTO, arriendoPrivadoHasta1: 0, arriendoPrivadoMinimo2: 0,
+       arriendoExclusivoHasta1: 0, arriendoExclusivoHasta2: 0 }) === null,
+     'arriendo: con todos los tramos en 0 no hay regla');
+  const sinPrimero = reglaArriendoDe({ ...POR_DEFECTO, arriendoPrivadoMinimo1: 0 })!;
+  ok(sinPrimero.privado.length === 1 && sinPrimero.privado[0].hasta === 15,
+     'arriendo: un 0 apaga solo su tramo');
+  const minA = (personas: number, publico = false, exclusivo = false, otras = 0) =>
+    minimoDeArriendo(reglaA, { publico, exclusivo, otrasReservas: otras }, personas);
+  ok(minA(5)?.minimo === 400000 && minA(10)?.minimo === 400000 && minA(11)?.minimo === 200000
+     && minA(15)?.minimo === 200000 && minA(16) === null,
+     'arriendo: en un día no público, hasta 10 son $400.000, de 11 a 15 $200.000, y desde 16 sin mínimo');
+  ok(minA(12)?.caso === 'privado' && minA(12, false, true)?.minimo === 200000,
+     'arriendo: en un día no público, marcarlo exclusivo no cambia el tramo');
+  ok(minA(12, false, false, 1) === null,
+     'arriendo: si el día ya tiene otras reservas, la apertura ya está pagada: sin mínimo');
+  ok(minA(12, true) === null, 'arriendo: un grupo que se suma a un día público no paga arriendo');
+  ok(minA(20, true, true)?.minimo === 1000000 && minA(21, true, true)?.minimo === 600000
+     && minA(37, true, true)?.minimo === 600000 && minA(38, true, true) === null
+     && minA(20, true, true)?.caso === 'exclusivo',
+     'arriendo: exclusivo en un día público, hasta 20 $1.000.000, de 21 a 37 $600.000, desde 38 sin mínimo');
+  ok(minA(20, true, true, 3)?.minimo === 1000000,
+     'arriendo: el exclusivo en un día público cobra aunque haya otras reservas (igual no se gana hasta liberarlo)');
+  ok(minimoDeArriendo(null, { publico: false, exclusivo: false, otrasReservas: 0 }, 5) === null,
+     'arriendo: sin regla no hay mínimo');
+
+  const dias = [{ fecha: '2026-11-21', estado: ESTADO_DIA.abierta }, { fecha: '2026-11-24', estado: ESTADO_DIA.privada },
+                { fecha: '2026-11-28', estado: ESTADO_DIA.cerrada }];
+  ok(esPublicoParaArriendo('2026-11-21', dias, [6, 0]) && !esPublicoParaArriendo('2026-11-24', dias, [6, 0])
+     && !esPublicoParaArriendo('2026-11-28', dias, [6, 0]),
+     'arriendo: un día del calendario es público si está abierto y no privado');
+  ok(esPublicoParaArriendo('2026-12-05', dias, [6, 0]) && !esPublicoParaArriendo('2026-12-08', dias, [6, 0])
+     && !esDiaPublico('2026-12-05', dias),
+     'arriendo: un sábado que todavía no está en el calendario cuenta como público; un martes, no (y para el show sigue privado)');
+
+  const conArriendo = [...catalogo, nuevoProducto({ nombre: 'Arriendo del recinto', tipo: TIPO_PRODUCTO.arriendo,
+    cotizacion: true, cobro: COBRO.fijo, iva: '+ IVA', precioCotizacion: 2500000 })];
+  ok(arriendoDe(conArriendo)?.nombre === 'Arriendo del recinto' && !arriendoDe(catalogo),
+     'arriendo: el producto es el de tipo Arriendo que se puede cotizar');
+  const conMinimo = (lineas: LineaPresupuesto[], personas = 12, f: Parameters<typeof prepararLineas>[6] = (n) => minA(n)) =>
+    prepararLineas(lineas, conArriendo, personas, false, 0, null, f);
+  const agregado = conMinimo([li({ cantidad: 12, personas: 12 })]).find((l) => l.concepto === 'Arriendo del recinto');
+  ok(!!agregado && agregado.precio === 200000 && agregado.ivaIncluido === false && agregado.cantidad === 1
+     && agregado.descuento === 0 && agregado.personas === 0,
+     'arriendo: 12 personas en un martes sin arriendo: se agrega solo, a $200.000 + IVA');
+  ok(conMinimo([li({ cantidad: 5, personas: 5 })], 5).find((l) => l.concepto === 'Arriendo del recinto')?.precio === 400000,
+     'arriendo: con 5 personas, el primer tramo');
+  ok(!conMinimo([li({ cantidad: 20, personas: 20 })], 20).some((l) => l.concepto === 'Arriendo del recinto'),
+     'arriendo: con 20 personas en un martes no hay mínimo y no se agrega nada');
+  const bajo = conMinimo([li({ cantidad: 12, personas: 12 }),
+    li({ concepto: 'Arriendo del recinto', cantidad: 1, personas: 0, precio: 150000, descuento: 20, ivaIncluido: false })])
+    .find((l) => l.concepto === 'Arriendo del recinto');
+  ok(bajo?.precio === 200000 && bajo.descuento === 0,
+     'arriendo: bajo el mínimo (con su descuento) sube al mínimo y pierde el descuento');
+  ok(conMinimo([li({ cantidad: 12, personas: 12 }),
+       li({ concepto: 'Arriendo del recinto', cantidad: 1, personas: 0, precio: 100000, ivaIncluido: true })])
+       .find((l) => l.concepto === 'Arriendo del recinto')?.precio === 238000,
+     'arriendo: en una línea con IVA incluido, el mínimo es $238.000');
+  ok(conMinimo([li({ cantidad: 12, personas: 12 }),
+       li({ concepto: 'Arriendo del recinto', cantidad: 1, personas: 0, precio: 900000, ivaIncluido: false })])
+       .find((l) => l.concepto === 'Arriendo del recinto')?.precio === 900000,
+     'arriendo: sobre el mínimo se respeta lo negociado');
+  ok(!conMinimo([li({ cantidad: 12, personas: 12 })], 12, null).some((l) => l.concepto === 'Arriendo del recinto'),
+     'arriendo: quien pasa por encima (llega null) no recibe el arriendo agregado');
+  ok(!prepararLineas([li({ cantidad: 12, personas: 12 })], catalogo, 12, false, 0, null, (n) => minA(n))
+       .some((l) => l.concepto === 'Arriendo del recinto'),
+     'arriendo: sin producto de arriendo en el catálogo no se inventa una línea');
+  const gerenciaBajo = conMinimo([li({ cantidad: 12, personas: 12 }),
+    li({ concepto: 'Arriendo del recinto', cantidad: 1, personas: 0, precio: 50000, ivaIncluido: false })], 12, null);
+  ok(arriendoQuedaBajoMinimo(gerenciaBajo, conArriendo, minA(12))
+     && !arriendoQuedaBajoMinimo(gerenciaBajo, conArriendo, minA(20))
+     && arriendoQuedaBajoMinimo([li({ cantidad: 12, personas: 12 })], conArriendo, minA(12))
+     && !arriendoQuedaBajoMinimo(conMinimo([li({ cantidad: 12, personas: 12 })]), conArriendo, minA(12)),
+     'arriendo: se sabe cuándo quedó bajo el mínimo, también si falta la línea; lo que arma la regla no queda bajo');
+
+  ok(JSON.stringify(aFechas('2027-05-09, 9/5/2027 ; 20-06-2027 xx 2027-02-30 2027-9-18'))
+       === JSON.stringify(['2027-05-09', '2027-06-20', '2027-09-18']),
+     'fechas sin exclusivo: se entienden escritas de las dos formas, sin repetir ni inventar días');
+  const cfgFechas = leerConfigDe(aFilasConfig({ ...POR_DEFECTO, fechasSinExclusivo: ['2027-05-09', '2027-09-18'],
+    arriendoPrivadoMinimo1: 350000 }));
+  ok(cfgFechas.fechasSinExclusivo.join() === '2027-05-09,2027-09-18' && cfgFechas.arriendoPrivadoMinimo1 === 350000,
+     'el arriendo y las fechas sin exclusivo se guardan y se leen de vuelta en Configuración');
 
   const once = lineaDeProducto(catalogo[1], 'PRE-1', 25, 8000);
   ok(!once.sigue && once.cantidad === 25 && !once.ivaIncluido,
