@@ -174,11 +174,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
   `panel/CLAUDE.md`, "El periodo en un marco".
-- **La reserva en tres pasos** (23-11-2026, en preview hasta el *"mergea"*):
-  el formulario de `reservas.html` en pasos numerados, entero en una
-  pantalla de computador, con el resumen de la fecha, *Ahorras $…* en
-  *Pagar ahora* y una barra fija en el celular; y *Reservar* relleno en los
-  cierres del sitio. Ver `CLAUDE.md`, "La reserva en tres pasos".
+- **La reserva en tres pasos, PR #314, mergeado el 23-11-2026** con el
+  *"mergea"* del cliente: el formulario de `reservas.html` en pasos
+  numerados, entero en una pantalla de computador (510px en 1280×650), con
+  el resumen de la fecha, *Ahorras $…* en *Pagar ahora* y una barra fija en
+  el celular; *Reservar* relleno en los cierres del sitio, y todo
+  *Reservar* —menú, pie y portada— llega directo al formulario. Ver `CLAUDE.md`, "La reserva en tres pasos".
 - **La Fase 5 partió el 22-11-2026** (el panel para Calicanto / Asados y
   Corderos): sin rama larga, en PR chicos que se mergean apagados. El plan,
   lo que el cliente tiene que decidir y los pasos están en
