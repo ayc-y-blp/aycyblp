@@ -190,8 +190,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
   la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
   otros casos".
-- ***✎ Editar cliente*, desde la cotización** (23-11-2026, PR #331, en
-  preview): en el paso Cliente, la ficha del cliente en una ventanita, sin
+- ***✎ Editar cliente*, desde la cotización** (23-11-2026, PR #331,
+  mergeado con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
+  después): en el paso Cliente, la ficha del cliente en una ventanita, sin
   salir de la cotización. Es la misma pieza de *Clientes* (`EditarCliente`):
   se guarda sola y el nombre se confirma. Ningún permiso ni columna nueva.
   Ver `panel/CLAUDE.md`, "*✎ Editar cliente*, desde la cotización".
