@@ -1340,6 +1340,44 @@ vendedor. Se cumple al mandarla.
   conversación anotada hoy*—; la gerencia ve las tres notas y pagos y
   operaciones ninguna; pagos recibe 403 al anotar y una fecha pasada, 400.
 
+### La última nota, en *Seguimiento y envío* (2026-11-23)
+
+Lo pidió el cliente con una foto del paso Envío, donde la caja rosada tenía
+espacio abajo: *"podías dejar… la última nota que escribió el vendedor. No
+todas las notas, sino solo la última. Y en ese lugar también mostrar cuándo
+debería recontactar de nuevo y cuántos recontactos hubo"*.
+
+- **Al pie de *Seguimiento y envío*** (`LoConversado` en
+  `CotizacionDialogo`): *CONTACTOS · 3* con su `?` y **📝 Anotar** (abre la
+  ventana de notas), el próximo contacto con **la misma frase y el mismo
+  color de la agenda** (`agendaDe()` + `fraseDe()`: *📞 Contactar el lun 16
+  nov*, *Quedaste en contactarlo hoy*…), y la **última nota** —día, medio,
+  quién y el texto, en dos renglones en el computador y tres en el celular—.
+  Las demás siguen en *🗒 Notas*. Sin día ni recordatorio: *Sin próximo
+  contacto: elígelo al anotar*.
+- **Quién ve qué**: la nota y la cuenta, quien lee las notas (su vendedor y
+  la gerencia); el próximo contacto, todos los que abren la cotización —el
+  rótulo dice *PRÓXIMO CONTACTO*—. Es el mismo reparto de siempre.
+- **Para que la ventana siguiera cabiendo** (con una cotización mandada
+  medía 736px a 1280×650), solo en el computador: ***Mandarla de nuevo* se
+  pliega tras *📤 Mandar…***, como *Recordarme* (ya se mandó: es lo
+  secundario); *Enviada el lun 9 nov · vigente hasta el mar 24 nov* va con
+  el día corto y en un renglón (también en el celular); y el resumen de
+  *Recordarme* dice *5 días sin respuesta · 14 antes del evento*, en un
+  renglón. Mide **615px** (era 612 antes de la caja).
+- **De paso, el `?` que salía solo** bajo el título *Seguimiento y envío*
+  (en un borrador, la fila de *Están negociando* quedaba sin botones y con
+  su `?` solo): ese `?` (*En qué va*) explica el camino de arriba, así que
+  va pegado a su último paso (`Camino`, en los pasos 4 y 5), y la fila se
+  dibuja solo cuando tiene botones.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**:
+  `notas` y `estadoCotizacion`; fotos rehechas: `ven-envio`, `pag-cobros` y
+  `ger-cobros`.
+- **Probado en el panel de ejemplo**, como vendedor: Andrés Pino dice
+  *CONTACTOS · 2*, *Contactar el lun 16 nov* y la nota de Jorge; *📝 Anotar*
+  desde la caja suma una por WhatsApp y la caja queda en *CONTACTOS · 3* con
+  la nueva. Pagos ve solo *PRÓXIMO CONTACTO*.
+
 ## *✎ Editar cliente*, desde la cotización (2026-11-23)
 
 Lo pidió el cliente: *"agregar botón editar cliente en cotización"*. Para

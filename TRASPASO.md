@@ -190,20 +190,23 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
   la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
   otros casos".
-- **La agenda del vendedor** (23-11-2026, en preview): *🗒 Notas* en cada
+- **La agenda del vendedor** (23-11-2026, PR #333, mergeado con el
+  *"mergea"* del cliente): *🗒 Notas* en cada
   cotización (qué se conversó y cuándo volver a contactarlo; las leen su
   vendedor y la gerencia), *✍ Prometiste mandarla antes del* en el paso
   Evento, y la agenda —*Tus pendientes* y *📋 Lista → 🗓 Agenda*— con
   *📞 Contactar* y *✍ Por redactar*. *Esperando respuesta* se fusionó ahí.
   Pestaña nueva `Notas` y dos columnas al final de `Presupuestos`
-  (`Recontactar el`, `Redactar antes del`). Ver `panel/CLAUDE.md`, "La agenda
-  del vendedor".
+  (`Recontactar el`, `Redactar antes del`). **En el paso Envío, al pie de
+  *Seguimiento y envío***: cuántos contactos van, el próximo contacto y la
+  última nota (lo pidió el cliente con una foto). Ver `panel/CLAUDE.md`, "La
+  agenda del vendedor".
 - **El encargado de turno corrige un día cerrado** (23-11-2026, lo pidió el
-  cliente; en preview): se sumó al permiso `corregir`. Hasta ese día cerraba
+  cliente; PR #333): se sumó al permiso `corregir`. Hasta ese día cerraba
   y le pedía la corrección a operaciones o a pagos. Ver `panel/CLAUDE.md`,
   "Corrigen el administrador y quien paga".
 - **Los encargados mandan el link personal** (23-11-2026, lo pidió el
-  cliente; en preview): permiso nuevo `enviarLink` —crear, copiar y renovar
+  cliente, también el de operaciones; PR #333): permiso nuevo `enviarLink` —crear, copiar y renovar
   el link de un trabajador o un colaborador—, para los dos encargados, pagos,
   la gerencia y el administrador. Quitarlo sigue en `links`. Ver
   `panel/CLAUDE.md`, "Los encargados mandan el link personal".

@@ -729,7 +729,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   estadoCotizacion: {
     titulo: 'En qué va',
     texto: [
-      'El camino de arriba dice en qué va. Avanza con lo que haces: "Sí, la mandé" la deja Enviada, "Marcar ganada" crea la reserva.',
+      'Este camino dice en qué va. Avanza con lo que haces: "Sí, la mandé" la deja Enviada, "Marcar ganada" crea la reserva.',
       '"Están negociando" es para ordenarte y para los avisos. Si el cliente dice que no va, "✕ Se cayó…" —arriba, en cualquier paso, y al lado de cada fila de la lista— pide el motivo y la pasa a Perdidas. Una perdida se puede volver a abrir.',
       'Con varias alternativas vale para todas: van en un solo link y es una sola conversación.'
     ]
@@ -1196,7 +1196,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Qué conversaron con el cliente, por qué medio y cuándo volver a contactarlo. Se ordenan solas por día, la más nueva primero, y valen para todas las alternativas de la cotización.',
       'Las leen solo el vendedor de la cotización y la gerencia. Una nota no se borra: quien la escribió la corrige el mismo día.',
-      'El día que elijas aparece en tu agenda. Si no eliges uno, una cotización mandada te la recuerda sola a los días de Configuración.'
+      'El día que elijas aparece en tu agenda. Si no eliges uno, una cotización mandada te la recuerda sola a los días de Configuración.',
+      'En el paso Envío, al pie de Seguimiento y envío, ves cuántos contactos van anotados (Contactos · N), cuándo toca el próximo y la última nota. Las demás, en 🗒 Notas.'
     ]
   },
   redactarAntes: {
