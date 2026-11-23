@@ -876,12 +876,21 @@ ahorro de pagar ahora había que restarlo a mano.
 - **Tres pasos numerados**: *① Elige la fecha · ② ¿Cuántos van? · ③ Paga y
   asegura tu lugar*. En el computador, **dos columnas** (fecha a la
   izquierda, pedido y pago a la derecha) con casillas del calendario de 44px
-  de alto en vez de cuadradas: **el formulario entero mide 570px y cabe en
-  1280×650**, en los tres idiomas. El título *Reserva en línea* queda solo
+  de alto en vez de cuadradas: **el formulario entero mide 510px y cabe en
+  1280×650 con holgura** (quedan 574 bajo la barra), en los tres idiomas.
+  La segunda pasada, el mismo día, la pidió el cliente: *"achicaría más la
+  portada en reservas y compactar otra vez un poco… tener todo en una vista
+  en la pantalla, con los botones… juega un poco con los tamaños de la
+  tipografía también, pero sin perder elegancia"*. Se quitó aire y se bajó
+  un punto el texto de apoyo; los números del calendario, los precios y
+  *Pagar ahora* siguen pesando lo mismo. Los botones *Reservar* que llevan a
+  `#reserva-en-linea` dejan el formulario entero bajo la barra fija
+  (`scroll-margin-top`). El título *Reserva en línea* queda solo
   para lectores de pantalla en el computador (los pasos ya lo dicen). El
   aviso *Tienda de prueba* suma 32px, solo en las versiones de prueba.
-- **El héroe de la página es una franja** (`hero-corto`): el formulario
-  empieza en la primera pantalla.
+- **El héroe de la página es una franja** (`hero-corto`, 190px en el
+  computador, con el título en una línea): el formulario empieza en la
+  primera pantalla.
 - **El resumen antes de pagar**: *Sábado, 28 de noviembre · Personas 3*, lo
   escribe `reserva.js`. Sin JS dice *Fecha por elegir*.
 - **Pagar ahora manda**: ancho entero, más alto, y una pastilla *Ahorras

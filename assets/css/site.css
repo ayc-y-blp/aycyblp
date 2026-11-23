@@ -836,12 +836,22 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
    pantallas y media. Ahora: el heroe es una franja, los pasos van
    numerados, en el computador en dos columnas que caben en 1280x650, y en
    el celular cada fila del pedido usa un renglon menos. */
-.hero-corto{ min-height: 260px; }
-.hero-corto .hero-in{ padding-top:40px; padding-bottom:36px; }
+.hero-corto{ min-height: 190px; }
+.hero-corto .hero-in{ padding-top:28px; padding-bottom:24px; }
+/* Mas chico que el de las otras paginas (2026-11-23, lo pidio el cliente:
+   "achicaria mas la portada en reservas"): aca el protagonista es el
+   formulario. */
+.hero-corto h1{ font-size: clamp(1.8rem, 3.6vw, 2.6rem); max-width:none; }
+.hero-corto .lede{ margin-top:10px; font-size:0.98rem; max-width:62ch; }
 .reserva-seccion{ padding-top:40px; }
+/* Los botones Reservar del sitio llevan a #reserva-en-linea. Sin esto la
+   seccion quedaba bajo la barra fija de arriba y tapaba el paso 1. */
+#reserva-en-linea{ scroll-margin-top:40px; }
+@media (max-width: 700px){ #reserva-en-linea{ scroll-margin-top:64px; } }
 @media (max-width: 700px){
   .hero-corto{ min-height:0; }
-  .hero-corto .hero-in{ padding-top:72px; padding-bottom:26px; }
+  .hero-corto .hero-in{ padding-top:44px; padding-bottom:22px; }
+  .hero-corto .lede{ font-size:0.92rem; }
   .reserva-seccion{ padding-top:24px; }
 }
 
@@ -912,7 +922,7 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
    pago a la derecha. El calendario deja de ser de casillas cuadradas —a
    ese ancho median 70px de alto— y pasa a 44px, con la misma letra. */
 @media (min-width: 900px){
-  .reserva-widget{ max-width:none; padding:16px 32px 18px; }
+  .reserva-widget{ max-width:none; padding:16px 30px 16px; }
   /* El titulo se deja para los lectores de pantalla: en el computador los
      tres pasos numerados ya dicen que esto es la reserva, y esos 50px son
      los que faltaban para que el formulario entero quepa en 1280x650. */
@@ -921,28 +931,48 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
     clip:rect(0 0 0 0); white-space:nowrap; margin:0;
   }
   .reserva-widget{ position:relative; }
-  .reserva-widget .reserva-prueba{ margin:0 0 8px; }
+  .reserva-widget .reserva-prueba{ margin:0 0 6px; font-size:0.88rem; }
   .reserva-cols{
     display:grid; grid-template-columns: minmax(0,0.85fr) minmax(0,1.15fr);
     gap:0 44px; align-items:start;
   }
   .reserva-col-pedido{ margin-top:0; }
-  .calendario{ padding:10px 14px 12px; }
-  .cal-cab{ margin-bottom:6px; }
-  .cal-grilla{ gap:5px; }
-  .cal-dia{ aspect-ratio:auto; height:44px; }
-  .cal-leyenda{ margin-top:10px; }
-  .reserva-widget .aviso{ margin:10px 0 0; }
-  .reserva-fila{ grid-template-columns: 1fr 140px auto; padding:3px 0; }
-  .reserva-fila .valor{ white-space:nowrap; min-width:90px; }
-  .contador .paso{ width:44px; height:44px; }
-  .reserva-upgrade{ padding:9px 14px; }
-  .reserva-upgrade small{ margin-top:2px; }
+  /* Segunda pasada (2026-11-23, el cliente: "compactar otra vez un poco…
+     tener todo en una vista en la pantalla, con los botones… juega un poco
+     con los tamaños de la tipografía también, pero sin perder elegancia").
+     Se quita aire y se bajan un punto los textos de apoyo; los numeros del
+     calendario, los precios y Pagar ahora siguen siendo lo que mas pesa. */
+  .calendario{ padding:8px 12px 10px; }
+  .cal-cab{ margin-bottom:4px; }
+  .cal-nav{ width:38px; height:38px; font-size:1.25rem; }
+  .cal-mes{ font-size:0.95rem; }
+  .cal-wd{ padding:0 0 4px; font-size:0.8rem; }
+  .cal-grilla{ gap:4px; }
+  .cal-dia{ aspect-ratio:auto; height:40px; font-size:1rem; }
+  .cal-leyenda{ margin-top:8px; }
+  .cal-etapa{ padding:3px 10px; font-size:0.82rem; }
+  .reserva-widget .aviso{ margin:8px 0 0; font-size:0.9rem; }
+  .reserva-widget .reserva-paso{ margin-bottom:4px; font-size:0.85rem; }
+  .reserva-paso .num{ width:26px; height:26px; font-size:0.95rem; }
+  .reserva-fila{ grid-template-columns: 1fr 128px auto; padding:2px 0; gap:12px; }
+  .reserva-fila .quien{ font-size:0.9rem; }
+  .reserva-fila .quien small{ font-size:0.82rem; margin-top:1px; }
+  .reserva-fila .valor{ white-space:nowrap; min-width:86px; font-size:1.05rem; }
+  .contador .paso{ width:38px; height:38px; font-size:1.6rem; }
+  .reserva-widget .contador input[type="number"]{ width:50px; padding:7px 0; font-size:1rem; }
+  .reserva-upgrade{ padding:7px 12px; gap:10px; }
+  .reserva-upgrade b{ font-size:0.9rem; }
+  .reserva-upgrade small{ margin-top:1px; }
+  .reserva-upgrade input[type="checkbox"]{ width:18px; height:18px; }
   .reserva-col-pedido > .reserva-paso:not(:first-child){ margin-top:10px; }
-  .reserva-widget .reserva-paso{ margin-bottom:6px; }
-  .reserva-widget .reserva-total{ padding:9px 14px; margin-bottom:10px; }
-  .btn-row.dos .btn-pagar{ min-height:52px; }
-  .reserva-condicion{ margin-top:8px; font-size:0.82rem; line-height:1.5; }
+  .reserva-widget .reserva-total{ padding:7px 14px; margin-bottom:8px; }
+  .resumen-fecha{ font-size:0.9rem; }
+  .reserva-total b{ font-size:1.1rem; }
+  .btn-row.dos{ gap:8px; }
+  .btn-row.dos .btn-pagar{ min-height:48px; padding-top:8px; padding-bottom:8px; font-size:0.9rem; }
+  .btn-row.dos .btn-pagar b{ font-size:1.15rem; }
+  .btn-row.dos .btn-solo{ min-height:40px; padding-top:7px; padding-bottom:7px; }
+  .reserva-condicion{ margin-top:6px; font-size:0.82rem; line-height:1.45; }
 }
 
 /* La barra fija del celular: Pagar ahora siempre a mano una vez que hay
