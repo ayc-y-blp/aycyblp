@@ -168,6 +168,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   compactó (la nota del show sube a la fila de los extras). La presentación para la gerencia es un artifact privado
   del cliente. Ver `panel/CLAUDE.md`, "El arriendo mínimo en las
   cotizaciones".
+- **Lo que el vendedor puede prometer** (23-11-2026, PR siguiente al #312, en
+  preview hasta el *"mergea"*): las condiciones para el cliente —anticipo,
+  saldo, descuentos, cambios de fecha, cancelación y devolución— tienen su tope
+  en Configuración (regla A); algo más generoso se pide con *✋ Pedir
+  condiciones especiales…* y lo aprueban la gerencia, pagos o el administrador
+  desde la bandeja. Y lo que el calendario ya no permite (regla B): la vigencia
+  no pasa del día antes del evento, el contrato no ofrece una cancelación o un
+  cambio de fecha fuera de plazo y cobra el saldo al firmar si ya venció, un
+  evento pasado no se gana, y hay un plazo nuevo para cambiar la fecha.
+  Configuración se reordenó en grupos, con la sección nueva *Condiciones para
+  el cliente* (la de *Contrato* se fue). Dos columnas nuevas en
+  `Presupuestos`. Ver `panel/CLAUDE.md`, "Lo que el vendedor puede prometer".
 - **El periodo en un marco** (22-11-2026, PR #309, mergeado con el *"mergea"*
   del cliente): en
   Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
@@ -979,6 +991,13 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 - **El encargado de turno no ve cotizaciones; el vendedor ve todo y toca lo
   suyo; el contacto de los clientes se recorta por rol en el servidor**
   (`lib/privacidad.ts`).
+- **El vendedor ofrece igual o menos que Configuración, nunca más**
+  (23-11-2026, lo decidió el cliente: *"aplica regla A tal cual, pero deja la
+  opción de solicitar otro monto"*): lo más generoso se pide y lo aprueban la
+  gerencia, pagos o el administrador. Al editar, solo pasa por el tope lo que
+  cambia: lo que el cliente ya vio no cambia solo.
+- **El contrato se lee con la fecha de la firma, o la de hoy** (23-11-2026): no
+  ofrece lo que ya no se alcanza a usar.
 - **El arriendo mínimo cubre lo que cuesta el evento, no el costo fijo del
   día** (23-11-2026, lo decidió el cliente: *"queremos ser un poco más
   agresivos"*): tres filtros y dos tramos por caso en vez de la tabla del
@@ -1172,7 +1191,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 50 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 51 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

@@ -117,6 +117,13 @@ export interface Config {
   showGratisDesde: number;
   showMinimo: number;
   /**
+   * **Con cuántos días de aviso se puede cambiar la fecha** (2026-11-23, lo
+   * pidió el cliente: *"sí, agrego el plazo para cambiar la fecha en
+   * configuraciones"*). En 0, sin plazo, como antes. El contrato lo dice, y
+   * pasado ese plazo el contrato no ofrece el cambio (`plazosVencidos()`).
+   */
+  cambiosFechaDias: number;
+  /**
    * **El arriendo mínimo** (2026-11-23, lo pidió el cliente: *"tengo que
    * evitar que un vendedor hace una reserva en un día cerrado… arrendó a 12
    * personas sin cobrar un ítem arriendo"*). Dos tramos por caso, cada uno
@@ -217,6 +224,8 @@ export const POR_DEFECTO: Config = {
   // Los fijó el cliente el 2026-11-20: bajo 25 personas, $100.000 + IVA.
   showGratisDesde: 25,
   showMinimo: 100000,
+  // En 0, sin plazo: el número lo pone el cliente en Configuración.
+  cambiosFechaDias: 0,
   // Los fijó el cliente el 2026-11-23, con el análisis de costos de
   // mayo a septiembre y Lo Pirque a $50.000 + IVA ("ármalo así"). Ver
   // "El arriendo mínimo" en panel/CLAUDE.md.
@@ -258,6 +267,7 @@ export const CLAVES = {
   exclusivoDias: 'exclusivo_dias_minimos',
   showGratisDesde: 'show_gratis_desde',
   showMinimo: 'show_minimo_privado',
+  cambiosFechaDias: 'contrato_cambios_fecha_aviso',
   arriendoPrivadoHasta1: 'arriendo_privado_hasta_1',
   arriendoPrivadoMinimo1: 'arriendo_privado_minimo_1',
   arriendoPrivadoHasta2: 'arriendo_privado_hasta_2',
@@ -433,6 +443,7 @@ export function leerConfigDe(filas: string[][]): Config {
     // En cero no hay mínimo: es un valor que alguien puede querer.
     showGratisDesde: numero(v(CLAVES.showGratisDesde), POR_DEFECTO.showGratisDesde, 0, 100000),
     showMinimo: numero(v(CLAVES.showMinimo), POR_DEFECTO.showMinimo, 0, 100000000),
+    cambiosFechaDias: numero(v(CLAVES.cambiosFechaDias), POR_DEFECTO.cambiosFechaDias, 0, 365),
     // En cero se apaga ese tramo: es un valor que alguien puede querer.
     arriendoPrivadoHasta1: numero(v(CLAVES.arriendoPrivadoHasta1), POR_DEFECTO.arriendoPrivadoHasta1, 0, 100000),
     arriendoPrivadoMinimo1: numero(v(CLAVES.arriendoPrivadoMinimo1), POR_DEFECTO.arriendoPrivadoMinimo1, 0, 1000000000),
@@ -485,6 +496,7 @@ export function aFilasConfig(c: Config): string[][] {
     [CLAVES.exclusivoDias, String(c.exclusivoDias)],
     [CLAVES.showGratisDesde, String(c.showGratisDesde)],
     [CLAVES.showMinimo, String(c.showMinimo)],
+    [CLAVES.cambiosFechaDias, String(c.cambiosFechaDias)],
     [CLAVES.arriendoPrivadoHasta1, String(c.arriendoPrivadoHasta1)],
     [CLAVES.arriendoPrivadoMinimo1, String(c.arriendoPrivadoMinimo1)],
     [CLAVES.arriendoPrivadoHasta2, String(c.arriendoPrivadoHasta2)],

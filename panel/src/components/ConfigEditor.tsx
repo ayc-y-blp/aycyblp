@@ -162,6 +162,19 @@ export default function ConfigEditor() {
       (t) => ({ empresa: { [k]: t } }) as unknown as Cambio, ejemplo));
 
   /**
+   * **Un grupo dentro de una sección** (2026-11-23, lo pidió el cliente al
+   * crecer Configuración: *"esta sección ya va a ser bastante amplia. Hay que
+   * organizarlo de forma muy buena y muy entendible"*). Un subtítulo con su
+   * raya y sus campos debajo, en las mismas dos columnas de la sección.
+   */
+  const grupo = (titulo: string, cuerpo: React.ReactNode) => (
+    <div key={titulo} data-grupo className="border-t-2 border-hueso/15 pb-1 pt-3 first:border-t-0 lg:col-span-2">
+      <h3 className="text-[15px] font-bold text-hueso/90">{titulo}</h3>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-x-10 lg:[&>*:nth-child(2)]:border-t-0">{cuerpo}</div>
+    </div>
+  );
+
+  /**
    * **Las secciones de la página** (2026-11-10, lo pidió el cliente: *"ya
    * estamos ampliando mucho esa parte"*). Cada una es una tarjeta con su
    * título y una línea que dice para qué sirve, y arriba hay un índice con
@@ -221,23 +234,14 @@ export default function ConfigEditor() {
     },
     {
       id: 'cotizaciones', titulo: 'Cotizaciones',
-      para: 'Lo que propone cada cotización nueva. Los descuentos y las condiciones de pago ' +
-            'se pueden cambiar en cada una.',
+      para: 'Cómo se trabaja una cotización: cuánto vale desde que se manda, cuándo el panel ' +
+            'pregunta cómo va, y dónde se guardan los comprobantes. Lo que se le ofrece al ' +
+            'cliente está en Condiciones para el cliente.',
       cuerpo: <>
         {campo('vigencia', 'Vigencia',
-          'Cuántos días vale una cotización desde que se manda al cliente. En 0 no vence.',
+          'Cuántos días vale una cotización desde que se manda al cliente. Nunca pasa del día ' +
+          'antes del evento. En 0 no vence.',
           numerico('vigencia', config.vigenciaPresupuesto, (n) => ({ vigenciaPresupuesto: n }), { min: 0, max: 365, unidad: 'días' }))}
-        {campo('descuentos', 'Descuentos con botón',
-          'Los que se ofrecen con un toque, por línea y sobre el total. Separados por coma.',
-          textoLibre('descuentos', config.descuentos.join(', '),
-            (t) => ({ descuentos: t }) as unknown as Cambio, '5, 10, 15'))}
-        {campo('anticipoPct', 'Anticipo',
-          'El % del total que se paga al firmar para reservar la fecha. Sin él pagado la ' +
-          'cotización no pasa a ganada. En 0 no hay anticipo.',
-          numerico('anticipoPct', config.anticipoPct, (n) => ({ anticipoPct: n }), { min: 0, max: 100, unidad: '%' }))}
-        {campo('saldoDias', 'Saldo',
-          'Hasta cuántos días antes del evento se paga el resto.',
-          numerico('saldoDias', config.saldoDias, (n) => ({ saldoDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
         {campo('seguimientoDias', 'Seguimiento: sin respuesta',
           'A cuántos días de mandada una cotización, sin moverse, el panel pregunta "¿y?". ' +
           'Cada cotización lo puede cambiar. En 0 no pregunta.',
@@ -246,11 +250,6 @@ export default function ConfigEditor() {
           'Cuántos días antes del evento pregunta si se ganó o se perdió. Cada cotización lo ' +
           'puede cambiar. En 0 no pregunta.',
           numerico('avisoEvento', config.avisoEvento, (n) => ({ avisoEvento: n }), { min: 0, max: 365, unidad: 'días antes' }))}
-        {campo('exclusivoDias', 'Evento exclusivo: liberar el día',
-          'Hasta cuántos días antes del evento se puede pedir liberar un día que ya tiene ' +
-          'reservas, para un evento exclusivo. Con menos, va como caso especial y quien ' +
-          'aprueba anota el motivo.',
-          numerico('exclusivoDias', config.exclusivoDias, (n) => ({ exclusivoDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
         {campo('driveComprobantes', 'Carpeta de comprobantes',
           'La unidad compartida de Google Drive donde se guardan los comprobantes y los ' +
           'contratos firmados. Pega el link de la unidad. La cuenta del panel tiene que ser ' +
@@ -262,6 +261,61 @@ export default function ConfigEditor() {
       </>
     },
     {
+      // **Condiciones para el cliente** (2026-11-23, regla A, `condiciones.ts`):
+      // lo que antes estaba repartido entre Cotizaciones y Contrato, junto,
+      // porque es una sola idea: lo más generoso que se le ofrece al cliente.
+      id: 'condiciones', titulo: 'Condiciones para el cliente',
+      para: 'Lo más generoso que un vendedor puede ofrecerle a un cliente sin pedir permiso: el ' +
+            'anticipo, el saldo, los descuentos, los cambios de fecha y la cancelación. Cada ' +
+            'cotización nueva parte con estos valores y el vendedor los puede endurecer —más ' +
+            'anticipo, menos devolución—, no ablandar. Para algo más generoso pide condiciones ' +
+            'especiales en la cotización, y lo aprueba la gerencia general, el encargado de pagos ' +
+            'o el administrador. Lo que el cliente ya recibió y los contratos firmados no cambian.',
+      cuerpo: <>
+        {grupo('El pago', <>
+          {campo('anticipoPct', 'Anticipo',
+            'El % del total que se paga al firmar para reservar la fecha. Sin él pagado la ' +
+            'cotización no pasa a ganada. Es el mínimo: el vendedor no puede pedir menos. En 0 ' +
+            'no hay anticipo.',
+            numerico('anticipoPct', config.anticipoPct, (n) => ({ anticipoPct: n }), { min: 0, max: 100, unidad: '%' }))}
+          {campo('saldoDias', 'Saldo',
+            'Hasta cuántos días antes del evento se paga el resto. Es el mínimo: el vendedor no ' +
+            'puede dejarlo para más tarde. Si el evento ya está más cerca que esto, el contrato ' +
+            'dice que todo se paga al firmar.',
+            numerico('saldoDias', config.saldoDias, (n) => ({ saldoDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
+        </>)}
+        {grupo('Descuentos', <>
+          {campo('descuentos', 'Descuentos con botón',
+            'Los que se ofrecen con un toque, por línea y sobre el total. Separados por coma. El ' +
+            'más alto es el tope: uno mayor se pide como condición especial.',
+            textoLibre('descuentos', config.descuentos.join(', '),
+              (t) => ({ descuentos: t }) as unknown as Cambio, '5, 10, 15'))}
+        </>)}
+        {grupo('Cambios de fecha y cancelación', <>
+          {campo('cambiosFecha', 'Cambios de fecha',
+            'Cuántas veces el cliente puede cambiar la fecha del evento, por fuerza mayor y si ' +
+            'la nueva está libre. Es el máximo que ofrece un vendedor. En 0 el contrato no ' +
+            'ofrece cambios.',
+            numerico('cambiosFecha', config.cambiosFecha, (n) => ({ cambiosFecha: n }), { min: 0, max: 10, unidad: 'veces' }))}
+          {campo('cambiosFechaDias', 'Aviso para cambiar la fecha',
+            'Con cuántos días de anticipación, como mínimo, el cliente puede pedir cambiar la ' +
+            'fecha. Con el evento más cerca, el contrato no ofrece el cambio y en el panel la ' +
+            'fecha de una ganada solo la mueve la gerencia, el encargado de pagos o el ' +
+            'administrador. En 0, sin plazo.',
+            numerico('cambiosFechaDias', config.cambiosFechaDias, (n) => ({ cambiosFechaDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
+          {campo('cancelacionDias', 'Cancelación',
+            'Hasta cuántos días antes del evento el cliente puede cancelar con devolución. Es lo ' +
+            'menos que ofrece un vendedor: no puede dejar cancelar más tarde. Con el evento más ' +
+            'cerca, el contrato no ofrece cancelar. En 0 el contrato no ofrece cancelar.',
+            numerico('cancelacionDias', config.cancelacionDias, (n) => ({ cancelacionDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
+          {campo('reembolsoPct', 'Devolución al cancelar',
+            'Qué % de lo que el cliente ya pagó se le devuelve si cancela a tiempo. Es el máximo ' +
+            'que ofrece un vendedor. En 0, sin devolución.',
+            numerico('reembolsoPct', config.reembolsoPct, (n) => ({ reembolsoPct: n }), { min: 0, max: 100, unidad: '% de lo pagado' }))}
+        </>)}
+      </>
+    },
+    {
       // **Extras y arriendo** (2026-11-20, lo pidió el cliente): las reglas de
       // lo que se cotiza aparte del menú. El show ecuestre en un día privado
       // y, desde el 2026-11-23, el arriendo mínimo.
@@ -270,6 +324,7 @@ export default function ConfigEditor() {
             'vendedor y el encargado de operaciones; la gerencia general, el encargado de pagos y ' +
             'el administrador pueden pasar por encima.',
       cuerpo: <>
+        {grupo('Show ecuestre', <>
         {campo('showGratisDesde', 'Show ecuestre sin costo desde',
           'En un día privado o exclusivo, desde cuántas personas de la cotización se puede ' +
           'dejar el show incluido sin costo. En un día público va siempre incluido. En 0 ' +
@@ -279,6 +334,8 @@ export default function ConfigEditor() {
           'Lo menos que se cobra por el show cuando son menos personas, neto: se le suma el ' +
           'IVA. Si el show no va en la cotización, no se cobra. En 0 no hay mínimo.',
           numerico('showMinimo', config.showMinimo, (n) => ({ showMinimo: n }), { min: 0, max: 100000000, unidad: '+ IVA' }))}
+        </>)}
+        {grupo('Arriendo mínimo', <>
         {/* **El arriendo mínimo** (2026-11-23, lo pidió el cliente). Cada tramo
             en una fila: hasta cuántas personas y el mínimo, uno bajo el otro
             en la columna de los valores. Ver `reglaArriendoDe()`. */}
@@ -300,6 +357,13 @@ export default function ConfigEditor() {
         {tramoArriendo('arriendoExclusivo2', 'Exclusivo en día público: 2º tramo',
           'El tramo siguiente. Desde aquí, sin mínimo. En 0 se apaga.',
           'arriendoExclusivoHasta2', 'arriendoExclusivoMinimo2')}
+        </>)}
+        {grupo('Eventos exclusivos', <>
+        {campo('exclusivoDias', 'Liberar un día con reservas',
+          'Hasta cuántos días antes del evento se puede pedir liberar un día que ya tiene ' +
+          'reservas, para un evento exclusivo. Con menos, va como caso especial y quien ' +
+          'aprueba anota el motivo.',
+          numerico('exclusivoDias', config.exclusivoDias, (n) => ({ exclusivoDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
         {campo('fechasSinExclusivo', 'Días sin arriendo exclusivo',
           'Las fechas en que no se arrienda en exclusiva porque el público deja más que cualquier ' +
           'arriendo: Día de la Madre, del Padre, Fiestas Patrias. Separadas por coma, como ' +
@@ -307,32 +371,13 @@ export default function ConfigEditor() {
           'gerencia, el encargado de pagos o el administrador.',
           textoLibre('fechasSinExclusivo', config.fechasSinExclusivo.join(', '),
             (t) => ({ fechasSinExclusivo: t }), '2027-05-09, 2027-06-20'))}
-      </>
-    },
-    {
-      id: 'contrato', titulo: 'Contrato',
-      para: 'Lo que propone el contrato de cada cotización nueva. Cada cotización lo puede ' +
-            'cambiar en su bloque Contrato, y eso es lo que se imprime y lo que se aplica al ' +
-            'cancelar. Los contratos ya firmados no cambian.',
-      cuerpo: <>
-        {empresa('ciudadFirma', 'Ciudad de firma', 'El contrato empieza “En …, a”.', 'Pirque')}
-        {campo('cambiosFecha', 'Cambios de fecha',
-          'Cuántas veces el cliente puede cambiar la fecha del evento, por fuerza mayor y si ' +
-          'la nueva está libre. En 0 el contrato no ofrece cambios.',
-          numerico('cambiosFecha', config.cambiosFecha, (n) => ({ cambiosFecha: n }), { min: 0, max: 10, unidad: 'veces' }))}
-        {campo('cancelacionDias', 'Cancelación',
-          'Hasta cuántos días antes del evento el cliente puede cancelar. En 0 el contrato ' +
-          'no ofrece cancelar.',
-          numerico('cancelacionDias', config.cancelacionDias, (n) => ({ cancelacionDias: n }), { min: 0, max: 365, unidad: 'días antes' }))}
-        {campo('reembolsoPct', 'Reembolso al cancelar',
-          'Qué % de lo que el cliente ya pagó se le devuelve si cancela a tiempo. En 0, sin reembolso.',
-          numerico('reembolsoPct', config.reembolsoPct, (n) => ({ reembolsoPct: n }), { min: 0, max: 100, unidad: '% de lo pagado' }))}
+        </>)}
       </>
     },
     {
       id: 'empresa', titulo: 'La empresa',
-      para: 'Quién vende: sale en el encabezado de la cotización y del contrato. Este panel ' +
-            'es de una sola empresa; la otra tendrá el suyo.',
+      para: 'Quién vende: sale en el encabezado de la cotización y del contrato, y donde se ' +
+            'firma. Este panel es de una sola empresa; la otra tendrá el suyo.',
       cuerpo: <>
         {empresa('nombre', 'Nombre comercial', 'Como la conocen los clientes.')}
         {empresa('razonSocial', 'Razón social', 'Como figura en el SII.')}
@@ -340,6 +385,7 @@ export default function ConfigEditor() {
         {empresa('domicilio', 'Domicilio', '')}
         {empresa('representante', 'Representante legal', 'Su nombre completo, como firma el contrato.')}
         {empresa('ciRepresentante', 'Cédula del representante', 'Su RUT, para el contrato.')}
+        {empresa('ciudadFirma', 'Ciudad de firma', 'El contrato empieza “En …, a”.', 'Pirque')}
         {empresa('whatsapp', 'WhatsApp de ventas', 'El que va al pie de la cotización.')}
         {empresa('transferencia', 'Datos para transferir',
           'Banco, tipo y número de cuenta, para el anticipo y el saldo de los clientes.')}
@@ -402,7 +448,7 @@ export default function ConfigEditor() {
                 columna parte sin línea arriba, como la primera. */}
             <fieldset disabled={soloMira}
               className="m-0 mt-2 min-w-0 border-0 border-t border-hueso/15 p-0
-                         lg:grid lg:grid-cols-2 lg:gap-x-10 lg:[&>*:nth-child(2)]:border-t-0">
+                         lg:grid lg:grid-cols-2 lg:gap-x-10 lg:[&>*:nth-child(2):not([data-grupo])]:border-t-0">
               {x.cuerpo}
             </fieldset>
           </section>

@@ -8,6 +8,8 @@ import { gentePosible, cuentasDe, folioDe,
 import { grupoDe, letraDe } from '@/lib/cotizar';
 import { condicionesDe } from '@/lib/cobros';
 import { tranquilidadDeCotizacion } from '@/lib/cancelacion';
+import { fechaDelContrato } from '@/lib/condiciones';
+import { hoy } from '@/lib/fechas';
 import { clausulasDe, comparecencia, horarioDe, aliasDe, RAYA, type Parrafo } from '@/lib/contrato';
 import { negocioDe } from '@/lib/negocio';
 import type { Config } from '@/lib/config';
@@ -55,7 +57,10 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
     condiciones: condicionesDe(p, cuentas.total, cfg),
     ley20393: p.ley20393,
     acuerdos: p.acuerdos,
-    tranquilidad: tranquilidadDeCotizacion(p, cfg)
+    tranquilidad: tranquilidadDeCotizacion(p, cfg),
+    // **El contrato se lee con la fecha de su firma** (2026-11-23): o la de
+    // hoy, si todavía no se firma. Ver `fechaDelContrato()`.
+    fechaRef: fechaDelContrato(p, hoy())
   };
   const clausulas = clausulasDe(datos);
 

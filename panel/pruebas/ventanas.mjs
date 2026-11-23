@@ -122,6 +122,11 @@ const cotizacion = async (paso) => {
   await p.waitForTimeout(1400);
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
+/** Abre una escena con la sesión del vendedor y vuelve a la del administrador. */
+const comoVendedor = async (abrir) => {
+  await ctx.addCookies([{ name: 'sesion', value: SESIONES.vendedor, url: URL_PANEL }]);
+  try { await abrir(); } finally { await ctx.addCookies([{ name: 'sesion', value: SESIONES.admin, url: URL_PANEL }]); }
+};
 const personaDelInforme = async () => {
   // *Mes* va en el marco del periodo desde el 2026-11-22 (antes, *Por mes*).
   await ir('/informe'); await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes', exact: true })); await p.waitForTimeout(1300);
@@ -216,6 +221,16 @@ export const ESCENAS = {
     // Se dibuja dos veces (computador y celular): se pide el que se ve.
     await clic(p.locator('button:visible[aria-label="Se cayó la cotización de Marisol Cáceres"]'));
   },
+  // **Las condiciones especiales** (2026-11-23): como vendedor, porque quien
+  // aprueba no tiene tope y no ve el botón *✋ Pedir condiciones especiales…*,
+  // que alarga los pasos 4 y 5. La sesión vuelve a ser la del administrador
+  // apenas se abre la ventana.
+  'v-cotizar-4-envio-vendedor': () => comoVendedor(() => cotizacion(/Envío/)),
+  'v-cotizar-5-contrato-vendedor': () => comoVendedor(() => cotizacion(/Contrato/)),
+  'v-pedir-condiciones': () => comoVendedor(async () => {
+    await cotizacion(/Envío/);
+    await clic(ventana().locator('button:visible', { hasText: 'Pedir condiciones especiales' }));
+  }),
   'v-cotizar-corregir-ganada': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(boton(/^Ganadas/));
     await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
@@ -296,8 +311,9 @@ for (const [nombre, abrir] of Object.entries(ESCENAS)) {
     continue;
   }
   // Lo que se carga al abrir (las reservas de un día) tiene que haber llegado:
-  // medir un "Cargando…" daría una ventana corta que no es.
-  await p.locator('[role=dialog]').last().getByText(/^Cargando/).first()
+  // medir un "Cargando…" —o el "Revisando el contrato…" de *Cancelar evento*—
+  // daría una ventana corta que no es.
+  await p.locator('[role=dialog]').last().getByText(/^(Cargando|Revisando)/).first()
     .waitFor({ state: 'hidden', timeout: 8000 }).catch(() => {});
   const m = await medir();
   // Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada escena. Una ventana
