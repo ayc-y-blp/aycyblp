@@ -1229,7 +1229,7 @@ PR, documentación—, con tuteo y sin voseo.
   PR propio. Nunca commits nuevos sobre historia ya mergeada.
 - **Dos sesiones trabajan en paralelo desde el 22-11-2026**: una sigue con
   Lo Pirque y otra con la Fase 5 (Calicanto / Asados y Corderos, notas en
-  `panel/FASE5.md`, que llega con el PR #311). Las dos en PR chicos desde el `main` del día. **Antes de
+  `panel/FASE5.md`). Las dos en PR chicos desde el `main` del día. **Antes de
   pedir el *"mergea"*, se trae `main` y se resuelve ahí lo que choque**,
   sobre todo `TRASPASO.md`, `CLAUDE.md` y `lib/prueba.ts`, que son los que
   tocan las dos. Cada una deja escrito acá lo suyo al cerrar cada etapa: es

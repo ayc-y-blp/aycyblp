@@ -300,7 +300,7 @@ tramo. **En temporada alta** (abril a junio y septiembre) el público deja el
 doble: se suben los montos ahí; no hay una lógica de temporadas, a propósito.
 **Cada planilla tiene su Configuración**, así que con la Fase 5 cada empresa
 tendrá sus propios números (Calicanto pide además una tabla de arriendo por
-día y temporada: ver `panel/FASE5.md`, del PR #311; esta regla es por dónde puede crecer).
+día y temporada: ver `panel/FASE5.md`; esta regla es por dónde puede crecer).
 
 **Lo que conviene saber**:
 
