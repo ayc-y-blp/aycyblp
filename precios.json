@@ -18,6 +18,8 @@
   "_recinto": "Arriendo del recinto, solo arriendo y sin catering. Mas IVA en todo el sitio (eventos.html y los tres landings de empresa) desde el 2026-11-18. El \"+ IVA\" es texto de la pagina.",
   "recinto":           { "fin_de_semana": 2500000, "dias_de_semana": 1500000 },
 
+  "_paquetes": "INVENTADOS, POR CONFIRMAR (2026-11-23). Los cinco productos de empresa de promociones.html: el documento del cliente no trae precios, y estos son de ejemplo, sacados de los precios de empresa (Lo Pirque 50.000, Brasas 70.000 con bar abierto, Sommelier 90.000 con maridaje). Por persona y MAS IVA. La pagina los muestra con la etiqueta 'Precio de ejemplo' hasta que el cliente los confirme.",
+  "paquetes":          { "combate": 85000, "gran_premio": 95000, "dia_campo": { "adulto": 55000, "nino": 25000 }, "ia": 75000, "directorio": 120000 },
   "_promociones": "El descuento de la pagina de promociones, en porcentaje. Las etiquetas de esa pagina se calculan solas con el precio de pagar en el local menos este porcentaje.",
   "promociones":       { "descuento": 11 }
 }
