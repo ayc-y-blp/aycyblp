@@ -1034,6 +1034,17 @@ la pierna y también la bandera chilena completa"*; comprobado en 393, 390,
 foto + texto (la portada y el arriendo de Eventos) se revisaron y se ven
 bien.
 
+### La foto del karting, con los dos cascos (2026-11-23)
+
+Lo marcó el cliente con una captura: *"el karting está mal recortado
+también. Se cortan las dos cabezas"*. La foto (`imgs/img-011.jpg`) lleva los
+cascos en el tercio de arriba, y el recorte al centro los cortaba. Ahora la
+`<img>` lleva `foco-karting` (`object-position` 50% 18%). **Es la misma foto
+en cuatro lugares**: la tarjeta de *Actividades adicionales* de
+`actividades.html` (regla en `site.css`) y la de los tres landings, socios,
+promociones y dossier (regla en el `<style>` de cada uno). Como cambiaron
+socios y dossier, se rehicieron sus PDF.
+
 ### El título de los bloques foto + texto, más grande en el computador (2026-11-23)
 
 Lo pidió el cliente sobre *El show ecuestre*: *"agranda un poco el título

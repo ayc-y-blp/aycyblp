@@ -440,6 +440,8 @@
   @media (max-width: 900px){ .ext-grid{ grid-template-columns: repeat(2,1fr); } }
   .ext-card{ border: 1px solid var(--line); border-radius: 3px; overflow:hidden; }
   .ext-card .ext-photo{ aspect-ratio: 1/1; }
+  /* El karting: los cascos van arriba; al centro se cortaban (2026-11-23). */
+  .ext-photo img.foco-karting{ object-position: 50% 18%; }
   .ext-card .ext-body{ padding: 18px 18px 22px; }
   .ext-card h3{ font-size: 0.86rem; }
   .ext-card p{ font-size: 0.84rem; color: var(--ink-dim); margin-top: 8px; }
@@ -969,7 +971,7 @@
             <div class="ext-body"><h3>Cheese-making workshop</h3><p>Each participant makes and takes home their own cheeses, with a paired tasting at the end.</p></div>
           </div>
           <div class="ext-card">
-            <div class="ext-photo"><img src="../assets/imgs/img-011.jpg" alt="Karting" width="792" height="638" loading="lazy" decoding="async"></div>
+            <div class="ext-photo"><img class="foco-karting" src="../assets/imgs/img-011.jpg" alt="Karting" width="792" height="638" loading="lazy" decoding="async"></div>
             <div class="ext-body"><h3>Karting</h3><p>Speed and teamwork, well suited to corporate team building.</p></div>
           </div>
           <div class="ext-card">
