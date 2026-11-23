@@ -25,6 +25,8 @@ import { filaReserva, filaFecha, buscarFilaPorId, leerReservasDe,
 import { HOJA_CONFIG, leerConfigDe, aFilasConfig, POR_DEFECTO,
          type Config } from './config.ts';
 import { camposDeShopify } from './shopify.ts';
+import { estadoConCobroLocal } from './cobroLocal.ts';
+import { HOJA_CAJA, ENCABEZADO_CAJA, leerCajaDe, filaCaja, nuevoIdCaja, type Movimiento } from './caja.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
 import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
@@ -143,6 +145,10 @@ export async function editarReserva(fila: number, cambios: Partial<Reserva>): Pr
   }
   // La mesa (2026-11-17, `mesa.ts`).
   for (const k of ['agregados', 'valorFinal', 'mesaCerrada'] as const) {
+    if (cambios[k] !== undefined) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS[k]);
+  }
+  // El cobro en el local (2026-11-23, `cobroLocal.ts`).
+  for (const k of ['cobroLocal', 'comprobanteCobro', 'cobroCerrado'] as const) {
     if (cambios[k] !== undefined) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS[k]);
   }
   const previa = filas[fila - 1];
@@ -343,8 +349,14 @@ export async function guardarPedido(
   const fila = buscarFilaPorId(filas, enc, r.id);
 
   if (fila > 1) {
-    await escribirFila(HOJA_RESERVAS, fila,
-      filaReserva(enc, camposDeShopify(r), filas[fila - 1]));
+    const campos = camposDeShopify(r);
+    // **Lo cobrado en la mesa manda sobre *por pagar*** (2026-11-23,
+    // `cobroLocal.ts`): la tienda no sabe que el cliente pagó en el local, y
+    // sin esto la próxima pasada devolvería la reserva a *por pagar*.
+    const iCobro = indices(enc, COL_RESERVAS).cobroCerrado;
+    const cobro = iCobro === -1 ? '' : String(filas[fila - 1]?.[iCobro] ?? '');
+    if (campos.estadoPago !== undefined) campos.estadoPago = estadoConCobroLocal(campos.estadoPago, cobro);
+    await escribirFila(HOJA_RESERVAS, fila, filaReserva(enc, campos, filas[fila - 1]));
     return 'actualizada';
   }
   if (!ocupaLugar(r as Reserva)) return 'omitida';
@@ -1085,6 +1097,57 @@ export async function leerNotasOCrear(): Promise<Nota[]> {
     try { await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS); } catch { /* la próxima vez */ }
     return [];
   }
+}
+
+/* ---------- La caja chica (2026-11-23, `lib/caja.ts`) ---------- */
+
+/**
+ * Los movimientos de la caja chica. **Si la pestaña no está, se crea**, como
+ * las notas: la bandeja la lee en cada carga, y mientras nadie anotara cada
+ * lectura habría costado una más buscándola.
+ */
+export async function leerCaja(): Promise<Movimiento[]> {
+  try {
+    return leerCajaDe(await leerHoja(HOJA_CAJA));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_CAJA, ENCABEZADO_CAJA); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** Anota movimientos; la pestaña nace con el primero. */
+export async function agregarMovimientos(lista: Omit<Movimiento, 'id' | 'fila'>[]): Promise<Movimiento[]> {
+  if (!lista.length) return [];
+  const filas = await asegurarEncabezado(HOJA_CAJA, ENCABEZADO_CAJA);
+  const enc = filas[0] ?? ENCABEZADO_CAJA;
+  const nuevos = lista.map((m, n) => ({ ...m, id: nuevoIdCaja(Date.now() + n) }));
+  await agregarFilas(HOJA_CAJA, nuevos.map((m) => filaCaja(enc, m)));
+  return nuevos.map((m, n) => ({ ...m, fila: filas.length + 1 + n }));
+}
+
+/** Cambia la recepción o la revisión de un movimiento, leyendo la pestaña fresca. Devuelve cómo quedó. */
+export async function editarMovimiento(
+  id: string, cambios: Partial<Pick<Movimiento, 'recibido' | 'revisado'>>
+): Promise<Movimiento | undefined> {
+  const filas = await asegurarEncabezado(HOJA_CAJA, ENCABEZADO_CAJA);
+  const m = leerCajaDe(filas).find((x) => x.id === id);
+  if (!m) return undefined;
+  await escribirFila(HOJA_CAJA, m.fila, filaCaja(filas[0] ?? ENCABEZADO_CAJA, cambios, filas[m.fila - 1]));
+  return { ...m, ...cambios };
+}
+
+/** Borra movimientos por id, leyendo la pestaña fresca. Devuelve los borrados. */
+export async function borrarMovimientos(ids: string[]): Promise<Movimiento[]> {
+  if (!ids.length) return [];
+  let filas: string[][];
+  try { filas = await leerHoja(HOJA_CAJA, true); } catch (e) {
+    if (esPestanaQueNoExiste(e)) return [];
+    throw e;
+  }
+  const quitar = leerCajaDe(filas).filter((m) => ids.includes(m.id));
+  if (quitar.length) await borrarFilas(HOJA_CAJA, quitar.map((m) => m.fila));
+  return quitar;
 }
 
 /** Anota una; la pestaña nace con la primera. */

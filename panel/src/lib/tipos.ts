@@ -32,6 +32,10 @@ export interface Reserva {
   valorFinal?: number | null;
   /** Quién y cuándo anotó el valor final: *"2026-11-17 17:40 · Fernanda"*. */
   mesaCerrada?: string;
+  /** El cobro en el local al cerrar la mesa: ver `lib/cobroLocal.ts`. */
+  cobroLocal?: string;
+  comprobanteCobro?: string;
+  cobroCerrado?: string;
   /**
    * **Cómo se ingresa en Fudo** (`comoIngresar()`). No es una columna: lo
    * arma el servidor al responder, para que la pantalla no tenga que

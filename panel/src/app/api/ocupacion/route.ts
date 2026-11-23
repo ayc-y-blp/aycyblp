@@ -10,8 +10,11 @@ import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import { leerReservas, leerFechas, leerConfig, posiblesDeLosDias, leerPresupuestos, leerClientes,
   leerTrabajadores, leerColaboradores, leerVendedores } from '@/lib/datos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
+import { HOJA_CAJA } from '@/lib/caja';
+import { leerCaja } from '@/lib/datos';
 import { puede, type Rol } from '@/lib/auth';
-import { pendientesDeExclusivo, pendientesDeCuenta, pendientesDeCondiciones, pendientesDeAcuerdos } from '@/lib/aprobaciones';
+import { pendientesDeExclusivo, pendientesDeCuenta, pendientesDeCondiciones, pendientesDeAcuerdos,
+  pendientesDeCaja } from '@/lib/aprobaciones';
 import { topesDe } from '@/lib/condiciones';
 import { conCliente, grupoDe } from '@/lib/cotizar';
 import { ocupacionDeTodos } from '@/lib/ocupacion';
@@ -55,7 +58,7 @@ export const dynamic = 'force-dynamic';
  * personas. Lo notó el cliente mirando octubre.
  */
 export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_CLIENTES,
-  HOJA_TRABAJADORES, HOJA_COLABORADORES, HOJA_VENDEDORES], async function GET(req: Request) {
+  HOJA_TRABAJADORES, HOJA_COLABORADORES, HOJA_VENDEDORES, HOJA_CAJA], async function GET(req: Request) {
   const no = await exigirVer(req, 'ver');
   if (no) return no;
   try {
@@ -125,7 +128,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
     // para la bandeja de quien decide (`exclusividad`). Salen de la misma
     // tanda: `Presupuestos` ya venía por lo cotizado, y `Clientes` se sumó a
     // la precarga para el nombre. Ninguna lectura más.
-    const { rol } = await quienEs(req);
+    const { rol, usuario } = await quienEs(req);
     let exclusivos: ReturnType<typeof pendientesDeExclusivo> = [];
     let condiciones: ReturnType<typeof pendientesDeCondiciones> = [];
     let acuerdos: ReturnType<typeof pendientesDeAcuerdos> = [];
@@ -152,7 +155,14 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
       ? pendientesDeCuenta(await leerTrabajadores().catch(() => []), await leerColaboradores().catch(() => []),
         (await leerVendedores().catch(() => [])).filter((f) => f.tipo === 'socio'))
       : [];
-    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos });
+    // **La caja chica** (2026-11-23, `caja.ts`): las entregas por recibir de
+    // esta cuenta y, para pagos, cuántos movimientos faltan por revisar.
+    // `Caja chica` se sumó a la precarga: ninguna lectura más.
+    const recibe = puede(rol as Rol, 'recibirCaja');
+    const revisa = puede(rol as Rol, 'pagar');
+    const caja = recibe || revisa
+      ? pendientesDeCaja(await leerCaja().catch(() => []), { usuario }, { recibe, revisa }) : [];
+    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos, caja });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

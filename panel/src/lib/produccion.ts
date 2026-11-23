@@ -42,6 +42,7 @@ import { HOJA_USUARIOS } from './usuarios.ts';
 import { HOJA_CONFIG } from './config.ts';
 import { HOJA_MENUS } from './menus.ts';
 import { HOJA_VENDEDORES } from './vendedores.ts';
+import { HOJA_CAJA } from './caja.ts';
 
 export interface PestanaProduccion { hoja: string; que: string }
 
@@ -61,7 +62,9 @@ export const SE_VACIAN: PestanaProduccion[] = [
   { hoja: HOJA_PAGOS, que: 'Pagos al equipo, extras y vendedores' },
   { hoja: HOJA_BOLETAS, que: 'Boletas' },
   { hoja: HOJA_FECHAS, que: 'Días abiertos y sus cupos' },
-  { hoja: HOJA_BITACORA, que: 'Bitácora' }
+  { hoja: HOJA_BITACORA, que: 'Bitácora' },
+  // La caja chica (2026-11-23): sus movimientos son de las reservas y los días que se borran.
+  { hoja: HOJA_CAJA, que: 'Movimientos de la caja chica' }
 ];
 
 /** Lo que se conserva. Los comentarios viven en otra planilla y no se tocan. */

@@ -23,6 +23,7 @@ import { pagoPorRevisar, descuentoPorVer, partesMarca } from './plata.ts';
 import { condicionesEspecialesDe, leerPedido, frasePedido, type Topes } from './condiciones.ts';
 import { acuerdosPorRevisar, huellaDe } from './acuerdos.ts';
 import { ESTADO_PAGO } from './columnas.ts';
+import { porRecibirDe, porRevisarCaja, partesRecibido, type Movimiento } from './caja.ts';
 
 /** Lo que tienen todas las cosas por aprobar. */
 interface Base {
@@ -157,11 +158,28 @@ export interface PendienteAcuerdos extends Base {
   huella: string;
 }
 
-export type Pendiente = PendienteDescuento | PendienteCupo | PendienteSobrecupo | PendienteExclusivo
-  | PendientePago | PendienteDescuentoVisto | PendienteCuenta | PendienteCondiciones | PendienteAcuerdos;
+/**
+ * **La caja chica** (2026-11-23, `caja.ts`): una entrega que esta cuenta
+ * tiene que confirmar (*Fernanda te entregó $120.000*), o, para pagos, cuántos
+ * movimientos le quedan por revisar. Ninguno frena nada.
+ */
+export interface PendienteCaja extends Base {
+  tipo: 'caja';
+  que: 'recibir' | 'revisar';
+  /** El movimiento por recibir; vacío en el resumen de pagos. */
+  id: string;
+  monto: number;
+  /** Cuántos movimientos, en el resumen de pagos. */
+  cuantos: number;
+  /** Cuántas entregas se recibieron con otro monto: pagos las mira primero. */
+  diferencias: number;
+}
 
-/** Los tipos que le llegan solo a pagos: se marcan vistos, no se rechazan. */
-export const DE_PAGOS = new Set<Pendiente['tipo']>(['pago', 'descuentoVisto', 'cuenta', 'acuerdos']);
+export type Pendiente = PendienteDescuento | PendienteCupo | PendienteSobrecupo | PendienteExclusivo
+  | PendientePago | PendienteDescuentoVisto | PendienteCuenta | PendienteCondiciones | PendienteAcuerdos | PendienteCaja;
+
+/** Los tipos que le llegan solo a pagos: se marcan vistos, no se rechazan. La caja tampoco se rechaza. */
+export const DE_PAGOS = new Set<Pendiente['tipo']>(['pago', 'descuentoVisto', 'cuenta', 'acuerdos', 'caja']);
 
 const porFecha = (a: Pendiente, b: Pendiente) => a.fecha.localeCompare(b.fecha) || a.cuando.localeCompare(b.cuando);
 
@@ -336,6 +354,33 @@ export function pendientesDeAcuerdos(
       texto: String(p.acuerdos).trim(), huella: huellaDe(p.acuerdos)
     }))
     .sort(porFecha) as PendienteAcuerdos[];
+}
+
+/**
+ * **Lo de la caja chica para esta cuenta** (2026-11-23): las entregas que le
+ * hicieron y no confirma, si recibe; y, si revisa, un aviso con cuántos
+ * movimientos faltan.
+ */
+export function pendientesDeCaja(movs: Movimiento[], cuenta: { usuario: string; nombre?: string },
+  o: { recibe: boolean; revisa: boolean }): PendienteCaja[] {
+  const lista: PendienteCaja[] = [];
+  if (o.recibe) {
+    for (const m of porRecibirDe(movs, cuenta)) {
+      lista.push({ tipo: 'caja', que: 'recibir', clave: `caja-${m.id}`, id: m.id, fecha: m.fecha, pide: m.quien || 'alguien',
+        cuando: m.cuando, motivo: '', comentario: m.detalle, monto: m.monto, cuantos: 1, diferencias: 0 });
+    }
+  }
+  if (o.revisa) {
+    const falta = porRevisarCaja(movs);
+    if (falta.length) {
+      const dif = falta.filter((m) => { const r = partesRecibido(m); return !!r && r.monto !== m.monto; }).length;
+      const primero = [...falta].sort((a, b) => a.cuando.localeCompare(b.cuando))[0];
+      lista.push({ tipo: 'caja', que: 'revisar', clave: 'caja-revisar', id: '', fecha: primero.fecha, pide: '',
+        cuando: '', motivo: '', comentario: '', monto: falta.reduce((s, m) => s + m.monto, 0),
+        cuantos: falta.length, diferencias: dif });
+    }
+  }
+  return lista;
 }
 
 export function juntarPendientes(...listas: Pendiente[][]): Pendiente[] {

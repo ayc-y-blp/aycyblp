@@ -285,6 +285,24 @@ export const AYUDAS: Record<string, Ayuda> = {
        + 'alternativa”: cuando una gana, las otras pasan solas a “No elegida”.'
   },
 
+  caja: {
+    titulo: 'La caja chica',
+    cuerpo: [
+      'Es la plata en efectivo del local. Entra sola cuando una mesa paga en efectivo (✓ Pagó todo, en la mesa), '
+      + 'y sale con un gasto o cuando se entrega a alguien.',
+      'Arriba, lo que hay: en la caja, lo entregado que nadie ha confirmado, y lo que tiene en la mano cada '
+      + 'persona que recibió.'
+    ],
+    pasos: [
+      'La primera vez, 🏁 Saldo inicial: con cuánto parte la caja.',
+      '🧾 Anotar un gasto: el monto, en qué y la foto de la boleta.',
+      '📤 Entregar…: a quién (de partida, el encargado de operaciones) y cuánto. Queda por recibir hasta que esa '
+      + 'persona apriete ✓ Recibí, acá o en su bandeja. Si recibió otro monto, lo escribe y queda marcado para pagos.',
+      'Quien recibió anota qué hizo con la plata: 🏦 Depósito, con la foto del comprobante, o 🛒 Compra, con la boleta.',
+      'Pagos revisa cada movimiento con ✓ Revisado (Por revisar deja solo esos). No frena a nadie.',
+      'Algo anotado por error se borra mientras pagos no lo haya revisado. Queda en la bitácora.'
+    ]
+  },
   informe: {
     titulo: 'El informe para pagar',
     cuerpo: [
@@ -652,6 +670,22 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   valorFinal: {
     titulo: 'El valor final',
     texto: ['Es el total de la cuenta de esta mesa en Fudo, con lo ya pagado incluido.']
+  },
+  cajaAnotar: {
+    titulo: 'Qué se anota en la caja',
+    texto: [
+      'Gasto y Entregar: quien lleva la caja. Depósito y Compra: quien recibió la plata, de lo que tiene en la mano.',
+      'El efectivo de las mesas no se anota acá: entra solo al cobrar la mesa.'
+    ]
+  },
+  cobroMesa: {
+    titulo: 'Cobrar la mesa',
+    texto: [
+      'Ya pagado es lo que entró antes: en línea, un abono o los cobros de su cotización. Falta por cobrar es el valor final menos eso.',
+      'Elige cómo pagó el resto. Si pagó con dos medios, aprieta + Otro medio y reparte el monto. Una transferencia va con la foto del comprobante.',
+      '✓ Pagó todo deja la reserva pagada. A Shopify no se le cambia nada. El efectivo entra a la caja chica, y pagos lo revisa en su bandeja.',
+      'Si te equivocaste, Deshacer lo borra mientras pagos no lo haya revisado.'
+    ]
   },
   // ---------- Turnos ----------
   diasPorCerrar: {

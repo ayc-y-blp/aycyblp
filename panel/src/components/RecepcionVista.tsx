@@ -56,9 +56,19 @@ interface R {
   valorFinal?: number | null;
   mesaCerrada?: string;
   opciones?: string[];
+  /** El pago, para cobrar la mesa (2026-11-23): solo llega a quien tiene `caja`. */
+  estadoPago?: string;
+  monto?: number | null;
+  abonado?: number | null;
+  cobroLocal?: string;
+  comprobanteCobro?: string;
+  cobroCerrado?: string;
+  cobroRevisado?: boolean;
 }
 interface Datos {
   fecha: string; apertura: string; abierta: boolean; cerrado: boolean; reservas: R[];
+  /** Si esta cuenta cobra las mesas (`caja`). */
+  cobrar?: boolean;
 }
 
 const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -274,7 +284,8 @@ export default function RecepcionVista() {
                 <div className={`space-y-2 ${CUERPO_ABIERTO} px-3 py-2.5`}>
                   {!noVino && <IngresoFudo ingreso={r.ingreso} />}
                   {vino && (
-                    <MesaReserva r={r} opciones={r.opciones ?? []} editable={!bloqueada} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado} />
+                    <MesaReserva r={r} opciones={r.opciones ?? []} editable={!bloqueada} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
+                      cobrar={!!d.cobrar} revisado={!!r.cobroRevisado} />
                   )}
                   {!bloqueada && (
                     <button type="button" className="boton min-h-[48px] w-full !text-[15px]"

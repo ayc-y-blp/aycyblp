@@ -34,6 +34,8 @@ export const PAGINAS: {
   { href: '/equipo', texto: 'Equipo', accion: 'equipo', tema: 'equipo' },
   { href: '/turnos', texto: 'Turnos', accion: 'equipo', tema: 'turnos' },
   { href: '/extras', texto: 'Extras', accion: 'extras', tema: 'extras' },
+  // La caja chica (2026-11-23, `caja.ts`): el efectivo de las mesas, los gastos y las entregas.
+  { href: '/caja', texto: 'Caja', accion: 'caja', tema: 'caja' },
   { href: '/presupuestos', texto: 'Cotizaciones', accion: 'presupuestos', tema: 'presupuestos' },
   { href: '/clientes', texto: 'Clientes', accion: 'clientes', tema: 'clientes' },
   // Desde el 2026-11-10 es el catálogo de todo lo que se vende y se cotiza,
