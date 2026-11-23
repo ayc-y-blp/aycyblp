@@ -336,10 +336,11 @@ a:focus-visible, button:focus-visible, summary:focus-visible,
    jinete (lo marcó el cliente el 2026-11-23). */
 .split-photo img.foco-show{ object-position: 50% 22%; }
 /* En el celular la franja de foto era de unos 115px y cortaba al jinete y
-   al caballo: esta foto pide más alto para que se vean los dos enteros. */
+   al caballo: esta foto pide más alto. Desde la bandera chilena completa
+   arriba hasta los pies de la bailarina abajo (lo pidió el cliente). */
 @media (max-width: 900px){
-  .split-photo.split-show{ min-height: clamp(210px, calc(var(--alto-util) - 400px), 260px); }
-  .split-photo img.foco-show{ object-position: 50% 30%; }
+  .split-photo.split-show{ min-height: clamp(260px, calc(var(--alto-util) - 360px), 290px); }
+  .split-photo img.foco-show{ object-position: 50% 19%; }
 }
 .split-text{ display:flex; flex-direction:column; justify-content:center; padding: 64px; }
 @media (max-width: 900px){

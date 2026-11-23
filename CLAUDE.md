@@ -1026,8 +1026,11 @@ Lo marcó el cliente con una captura: *"esa foto está mal recortada"*. La de
 el huaso y la bailarina van en el tercio de arriba; con el recorte al centro
 se cortaba la cabeza del jinete, y en el celular la franja de 115px dejaba
 fuera al caballo. Ahora la `<img>` lleva `foco-show` (`object-position`
-50% 22%, y 30% en el celular) y su `split-photo` lleva `split-show`, que en
-el celular le da entre 210 y 260px de alto. Las otras dos fotos de bloque
+50% 22%, y 19% en el celular) y su `split-photo` lleva `split-show`, que en
+el celular le da entre 260 y 290px de alto. En el celular el cliente pidió
+una segunda pasada: *"bajar más hasta que la bailarina queda visible toda
+la pierna y también la bandera chilena completa"*; comprobado en 393, 390,
+375 y 360px. Las otras dos fotos de bloque
 foto + texto (la portada y el arriendo de Eventos) se revisaron y se ven
 bien.
 
