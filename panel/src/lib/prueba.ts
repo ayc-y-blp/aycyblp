@@ -4414,6 +4414,51 @@ console.log('\nCotizaciones, fase 2');
        === JSON.stringify({ anticipo: 10, saldoDias: 0, cambiosFecha: 5, cancelacionDias: 1, reembolso: 100, descuento: 30 }),
      'condiciones: se sabe qué haría falta pedir');
   ok(C.frasePedido({ reembolso: 40 }, topes) === 'Devolución al cancelar 40% (en Configuración 20%)', 'condiciones: el pedido en una frase');
+  // **Lo que también se pide con el mismo botón** (2026-11-23): un mínimo menor y renovar.
+  const conExtras = C.leerPedido('reembolso=40|show=50000|arriendo=0|renovar=1');
+  ok(conExtras.show === 50000 && conExtras.arriendo === 0 && conExtras.renovar === 1 && conExtras.reembolso === 40,
+     'condiciones: el pedido lee el show, el arriendo y renovar');
+  ok(C.escribirPedido(conExtras) === 'reembolso=40|show=50000|arriendo=0|renovar=1', 'condiciones: y los vuelve a escribir igual');
+  const aprobConExtras = { condicionesEspeciales: C.marcaCondiciones('aprobada', 'Rodrigo Vera', 'x'),
+    condicionesPedidas: 'reembolso=40|show=50000' };
+  ok(JSON.stringify(C.aprobadasDe(aprobConExtras)) === JSON.stringify({ reembolso: 40 })
+     && JSON.stringify(C.minimosAprobados(aprobConExtras)) === JSON.stringify({ show: 50000 }),
+     'condiciones: lo aprobado separa los topes de los mínimos');
+  ok(Object.keys(C.minimosAprobados({ ...aprobConExtras, condicionesEspeciales: C.marcaCondiciones('pedida', 'Jorge', 'x') })).length === 0,
+     'condiciones: un mínimo pedido no rige hasta que se aprueba');
+  ok(C.frasePedido({ show: 50000, renovar: 1 }, topes) === 'Show ecuestre a $50.000 + IVA (bajo el mínimo) · Renovar la vigencia (ya se renovó una vez)',
+     'condiciones: el show y renovar, en la frase');
+  {
+    const { conMinimoShow, conMinimoArriendo } = await import('./cotizar.ts');
+    const regla = { desde: 25, minimo: 100000 };
+    ok(conMinimoShow(regla, 50000)?.minimo === 50000 && conMinimoShow(regla, 200000)?.minimo === 100000
+       && conMinimoShow(regla, 0) === null && conMinimoShow(regla, undefined) === regla,
+       'mínimos aprobados: el del show baja al aprobado, nunca sube, y en 0 no hay mínimo');
+    const fn = (_: number) => ({ caso: 'privado' as const, minimo: 400000, hasta: 10 });
+    const con = conMinimoArriendo(fn, 150000);
+    ok(con?.(8)?.minimo === 150000 && conMinimoArriendo(fn, 0) === null && conMinimoArriendo(null, 5) === null,
+       'mínimos aprobados: el del arriendo igual');
+  }
+  {
+    const A = await import('./acuerdos.ts');
+    const texto = 'Se incluye el champagne de bienvenida';
+    const marca = A.marcaAcuerdos('Verónica Lagos', '2026-11-23 10:05', texto);
+    ok(A.acuerdosVistos(marca, texto)?.quien === 'Verónica Lagos' && !A.acuerdosPorRevisar({ acuerdos: texto, acuerdosRevisados: marca }),
+       'acuerdos: vistos, salen de la bandeja');
+    ok(A.acuerdosPorRevisar({ acuerdos: texto + ' y la torta', acuerdosRevisados: marca }),
+       'acuerdos: si cambian, vuelven a la bandeja');
+    ok(A.huellaDe('  Se incluye   el champagne de bienvenida ') === A.huellaDe(texto),
+       'acuerdos: los espacios no cuentan como cambio');
+    ok(!A.acuerdosPorRevisar({ acuerdos: '  ', acuerdosRevisados: '' }), 'acuerdos: sin texto, nada que revisar');
+    const { pendientesDeAcuerdos } = await import('./aprobaciones.ts');
+    const pend = pendientesDeAcuerdos([
+      { id: 'P1', fecha: '2026-12-05', cliente: 'Andrés', estado: 'Enviada', acuerdos: texto, acuerdosRevisados: '', creadoPor: 'Jorge' },
+      { id: 'P2', fecha: '2026-12-06', cliente: 'Rocío', estado: 'Perdida', acuerdos: texto, acuerdosRevisados: '', creadoPor: 'Jorge' },
+      { id: 'P3', fecha: '2026-12-07', cliente: 'Felipe', estado: 'Ganada', acuerdos: texto, acuerdosRevisados: marca, creadoPor: 'Jorge' }
+    ]);
+    ok(pend.length === 1 && pend[0].id === 'P1' && pend[0].pide === 'Jorge' && pend[0].huella === A.huellaDe(texto),
+       'acuerdos: a la bandeja de pagos solo los que siguen y nadie vio');
+  }
 
   // --- Contra la fecha de hoy (regla B) ---
   ok(C.vigenciaHasta('2026-11-23', 15, '2026-11-30') === '2026-11-29' && C.vigenciaHasta('2026-11-23', 15, '2027-01-30') === '2026-12-08'

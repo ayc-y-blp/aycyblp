@@ -21,6 +21,7 @@ import type { Presupuesto } from './presupuestos.ts';
 import { esExclusivo, exclusividadDe, plazoParaLiberar } from './exclusivo.ts';
 import { pagoPorRevisar, descuentoPorVer, partesMarca } from './plata.ts';
 import { condicionesEspecialesDe, leerPedido, frasePedido, type Topes } from './condiciones.ts';
+import { acuerdosPorRevisar, huellaDe } from './acuerdos.ts';
 import { ESTADO_PAGO } from './columnas.ts';
 
 /** Lo que tienen todas las cosas por aprobar. */
@@ -141,11 +142,26 @@ export interface PendienteCondiciones extends Base {
   pedido: string;
 }
 
+/**
+ * **Acuerdos adicionales que pagos todavía no mira** (2026-11-23,
+ * `acuerdos.ts`). Ya rigen —van al contrato—: se marcan vistos, no se
+ * rechazan. Si algo no corresponde, se corrige en la cotización.
+ */
+export interface PendienteAcuerdos extends Base {
+  tipo: 'acuerdos';
+  id: string;
+  folio: string;
+  cliente: string;
+  texto: string;
+  /** La huella del texto que se muestra: `✓ Visto` marca justo ese. */
+  huella: string;
+}
+
 export type Pendiente = PendienteDescuento | PendienteCupo | PendienteSobrecupo | PendienteExclusivo
-  | PendientePago | PendienteDescuentoVisto | PendienteCuenta | PendienteCondiciones;
+  | PendientePago | PendienteDescuentoVisto | PendienteCuenta | PendienteCondiciones | PendienteAcuerdos;
 
 /** Los tipos que le llegan solo a pagos: se marcan vistos, no se rechazan. */
-export const DE_PAGOS = new Set<Pendiente['tipo']>(['pago', 'descuentoVisto', 'cuenta']);
+export const DE_PAGOS = new Set<Pendiente['tipo']>(['pago', 'descuentoVisto', 'cuenta', 'acuerdos']);
 
 const porFecha = (a: Pendiente, b: Pendiente) => a.fecha.localeCompare(b.fecha) || a.cuando.localeCompare(b.cuando);
 
@@ -304,6 +320,22 @@ export function pendientesDeCondiciones(
     });
   }
   return lista.sort(porFecha) as PendienteCondiciones[];
+}
+
+/** Las cotizaciones en carrera o ganadas con acuerdos adicionales que pagos no ha visto. */
+export function pendientesDeAcuerdos(
+  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'cliente' | 'estado' | 'acuerdos' | 'acuerdosRevisados' | 'creadoPor'>[],
+  folio: (id: string) => string = (id) => id
+): PendienteAcuerdos[] {
+  const fuera = new Set(['perdida', 'no elegida', 'cancelada']);
+  return presupuestos
+    .filter((p) => !fuera.has(String(p.estado ?? '').trim().toLowerCase()) && acuerdosPorRevisar(p))
+    .map((p) => ({
+      tipo: 'acuerdos' as const, clave: `acuerdos-${p.id}`, fecha: p.fecha || '', pide: p.creadoPor || 'alguien',
+      cuando: '', motivo: '', comentario: '', id: p.id, folio: folio(p.id), cliente: p.cliente || 'sin nombre',
+      texto: String(p.acuerdos).trim(), huella: huellaDe(p.acuerdos)
+    }))
+    .sort(porFecha) as PendienteAcuerdos[];
 }
 
 export function juntarPendientes(...listas: Pendiente[][]): Pendiente[] {

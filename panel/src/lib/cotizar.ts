@@ -225,6 +225,28 @@ export function arriendoDelDia(regla: ReglaArriendo | null, fecha: string,
   return (personas) => minimoDeArriendo(regla, dia, personas);
 }
 
+/**
+ * **Un mínimo aprobado para esta cotización** (2026-11-23, `condiciones.ts`):
+ * el monto que aprobó la gerencia, pagos o el administrador reemplaza al de
+ * Configuración si es menor. En 0, sin mínimo.
+ */
+export function conMinimoShow(regla: ReglaShow | null, aprobado?: number): ReglaShow | null {
+  if (!regla || typeof aprobado !== 'number') return regla;
+  return aprobado <= 0 ? null : { ...regla, minimo: Math.min(regla.minimo, aprobado) };
+}
+
+/** Lo mismo para el arriendo: el mínimo del día, pero nunca más que lo aprobado. */
+export function conMinimoArriendo(
+  fn: ((personas: number) => MinimoArriendo | null) | null, aprobado?: number
+): ((personas: number) => MinimoArriendo | null) | null {
+  if (!fn || typeof aprobado !== 'number') return fn;
+  if (aprobado <= 0) return null;
+  return (personas) => {
+    const m = fn(personas);
+    return m ? { ...m, minimo: Math.min(m.minimo, aprobado) } : m;
+  };
+}
+
 /** El producto de arriendo del catálogo: el primero activo, de tipo Arriendo, que se puede cotizar. */
 export function arriendoDe(catalogo: Menu[]): Menu | undefined {
   return catalogo.find((m) => m.activo && m.cotizacion && m.tipo === TIPO_PRODUCTO.arriendo);

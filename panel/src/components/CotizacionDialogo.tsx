@@ -41,7 +41,7 @@ import {
   prepararLineas, esDiaPublico, lineaDeProducto, yaEstaEnLaCotizacion, productoDe, showDe, cambiarCantidad,
   alternativasDe, letraDe, grupoDe, vivasDelGrupo, sigueViva, paraElLink,
   MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow,
-  arriendoDelDia, personasParaMinimos, enFormaDeLinea, type ReglaArriendo
+  arriendoDelDia, personasParaMinimos, enFormaDeLinea, conMinimoShow, conMinimoArriendo, type ReglaArriendo
 } from '@/lib/cotizar';
 import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, type Menu } from '@/lib/menus';
 import {
@@ -57,7 +57,7 @@ import CancelarEvento from './CancelarEvento';
 import SeCayo from './SeCayo';
 import PedirCondiciones from './PedirCondiciones';
 import {
-  topesDe, topesConAprobadas, aprobadasDe, alTope, condicionesEspecialesDe, leerPedido, frasePedido,
+  topesDe, topesConAprobadas, aprobadasDe, minimosAprobados, alTope, condicionesEspecialesDe, leerPedido, frasePedido,
   fraseCondiciones, valorCondicion, NOMBRE_CONDICION, plazosVencidos, fechaDelContrato, sobreElTope,
   type CampoCondicion, type Topes
 } from '@/lib/condiciones';
@@ -118,6 +118,8 @@ export interface DatosCotizar {
    */
   topes?: Topes;
   cambiosFechaDias?: number;
+  /** Los días de vigencia de Configuración: los de una renovación. */
+  vigencia?: number;
   hoy: string;
   usuario: string;
   rol: string;
@@ -152,11 +154,19 @@ function estadoDelDia(fecha: string, fechas: DatosCotizar['fechas']): string {
  * formato"*). Desde y hasta con − y + de media hora; se guarda como
  * `13:00 a 18:00`. En blanco rige el de Configuración, y lo dice.
  */
-function ElegirHorario({ valor, deSiempre, onCambio }: {
-  valor: string; deSiempre: string; onCambio: (v: string) => void;
+function ElegirHorario({ valor, deSiempre, onCambio, rotulo }: {
+  valor: string; deSiempre: string; onCambio: (v: string) => void; rotulo: string;
 }) {
   const propio = partirHorario(valor);
   const base = propio ?? partirHorario(deSiempre) ?? { desde: '13:00', hasta: '18:00' };
+  /**
+   * **Pasa del cierre de siempre** (2026-11-23, lo decidió el cliente: *"como
+   * recomendación, no como condición… puede ser que se dice, no, ok, los
+   * dejamos hasta las 23. Mejor vender"*). Se avisa y no se frena: el tiempo
+   * extra conviene que vaya en el precio.
+   */
+  const cierre = partirHorario(deSiempre)?.hasta ?? '';
+  const pasaCierre = !!propio && !!cierre && (base.hasta > cierre || base.hasta <= base.desde);
   const poner = (desde: string, hasta: string) => onCambio(textoHorario(desde, hasta));
   const fila = (rotulo: string, hora: string, cambiar: (h: string) => void) => (
     <div className="flex items-center gap-2">
@@ -170,23 +180,37 @@ function ElegirHorario({ valor, deSiempre, onCambio }: {
         onClick={() => cambiar(moverHora(hora, PASO_HORARIO))}>+</button>
     </div>
   );
+  // *Volver al de siempre* va en la línea del rótulo, a la derecha: debajo
+  // sumaba un renglón entero a la columna (2026-11-23).
+  const volver = !!valor.trim() && !!propio && valor !== deSiempre;
   return (
     <div className="space-y-2">
+      <div className="-mb-1 flex min-h-[20px] flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <span className="block text-[13px] font-medium uppercase tracking-wide text-hueso/60">{rotulo}</span>
+        {volver && (
+          <button type="button" className="boton min-h-[36px] !text-[13px]" title={`Volver al de siempre (${deSiempre})`}
+            aria-label={`Volver al de siempre (${deSiempre})`} onClick={() => onCambio('')}>
+            ↺ Volver al de siempre
+          </button>
+        )}
+      </div>
       {fila('Desde', base.desde, (h) => poner(h, base.hasta))}
       {fila('Hasta', base.hasta, (h) => poner(base.desde, h))}
       {base.hasta <= base.desde && (
         <p className="text-[13px] text-hueso/70">Termina después de medianoche.</p>
       )}
+      {pasaCierre && (
+        <p className="text-[14px] font-semibold text-ambar-texto">
+          ⚠ Pasa del cierre ({cierre}): cobra el extra
+          <AyudaCorta tema="horarioExtra" />
+        </p>
+      )}
       {!valor.trim() ? (
         <p className="text-[13px] text-hueso/70">El de siempre (Configuración).</p>
-      ) : !propio ? (
+      ) : !propio && (
         <p className="text-[13px] font-semibold text-ambar-texto">
           Estaba escrito a mano: “{valor}”. Con − y + queda en el formato de siempre.
         </p>
-      ) : valor !== deSiempre && (
-        <button type="button" className="boton min-h-[40px]" onClick={() => onCambio('')}>
-          Volver al de siempre ({deSiempre})
-        </button>
       )}
     </div>
   );
@@ -319,6 +343,14 @@ export default function CotizacionDialogo({
   const [pidiendoCond, setPidiendoCond] = useState(false);
   /** Lo último que quedó en su tope, para decirlo al lado del campo. */
   const [recorteCond, setRecorteCond] = useState('');
+  /**
+   * **La vigencia y cuántas veces se renovó** (2026-11-23): la primera
+   * renovación la hace el vendedor; la segunda se pide. Viven acá para que
+   * *Renovar* se vea en el acto, sin recargar la lista.
+   */
+  const [validoHastaVivo, setValidoHastaVivo] = useState(p?.validoHasta ?? '');
+  const [renovacionesVivas, setRenovacionesVivas] = useState(p?.renovaciones ?? 0);
+  const [renovando, setRenovando] = useState(false);
   /** Los plazos del seguimiento de esta cotización; en blanco rige Configuración. */
   const [segTxt, setSegTxt] = useState(p?.seguimientoDias == null ? '' : String(p.seguimientoDias));
   const [avisoTxt, setAvisoTxt] = useState(p?.avisoEvento == null ? '' : String(p.avisoEvento));
@@ -413,7 +445,10 @@ export default function CotizacionDialogo({
   const pasaPorEncima = puede(datos.rol as Rol, 'showBajoMinimo');
   /** Si la gerencia, pagos o el administrador ya autorizaron el show bajo el mínimo. */
   const showAutorizado = (p?.showBajoMinimo ?? '').split(' · ')[0];
-  const reglaShow = pasaPorEncima || showAutorizado ? null : datos.reglaShow ?? null;
+  /** Los mínimos aprobados como condición especial (2026-11-23): mandan sobre los de Configuración. */
+  const minAprobados = minimosAprobados({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas });
+  const reglaShowEfectiva = conMinimoShow(datos.reglaShow ?? null, minAprobados.show);
+  const reglaShow = pasaPorEncima || showAutorizado ? null : reglaShowEfectiva;
   /**
    * **El arriendo mínimo** (2026-11-23): la misma regla del servidor
    * (`arriendoDelDia()`). *Otras reservas* son las que ya ocupan lugar ese
@@ -423,9 +458,9 @@ export default function CotizacionDialogo({
   const otrasDelDia = Math.max(0, (datos.reservasPorDia?.[fechaReal] ?? 0)
     - (ganada && p?.fecha === fechaReal ? 1 : 0));
   const arriendoDelDiaFn = useMemo(
-    () => arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
-      esExclusivo(exclusivo), otrasDelDia),
-    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia]);
+    () => conMinimoArriendo(arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
+      esExclusivo(exclusivo), otrasDelDia), minAprobados.arriendo),
+    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia, minAprobados.arriendo]);
   /** Si la regla del arriendo corre para esta cuenta: no para quien pasa por encima, ni si ya se autorizó. */
   const arriendoForzado = !pasaPorEncima && !arriendoAutorizado;
   // **Lo que se ve es lo que se guarda**: la misma función del servidor.
@@ -439,7 +474,7 @@ export default function CotizacionDialogo({
   /** Cuánta gente suman los menús: tiene que calzar con los invitados. */
   const enMenus = vistas.reduce((n, l) => n + l.personas, 0);
   /** Si en esta cotización el show tiene mínimo: día no público y poca gente. */
-  const showConMinimo = aplicaReglaShow(datos.reglaShow, publico, enMenus > 0 ? enMenus : invitados);
+  const showConMinimo = aplicaReglaShow(reglaShowEfectiva, publico, enMenus > 0 ? enMenus : invitados);
   const cond = condicionesDe(
     { anticipo: numeroONulo(anticipoTxt, 100), anticipoMonto: montoONulo(anticipoMontoTxt),
       saldoDias: numeroONulo(saldoTxt, 365), fecha: fechaReal },
@@ -504,6 +539,22 @@ export default function CotizacionDialogo({
   }, vistas, topesBase) : {};
   const haySobreTope = Object.keys(sobreTope).length > 0;
   const puedePedirCond = !!p && !pasaPorEncima && puedeEditar && !cancelada && marcaCond.estado !== 'pedida';
+  /**
+   * **Vencida, y si se puede renovar sola** (2026-11-23): la primera
+   * renovación la hace el vendedor; desde la segunda se pide.
+   */
+  const vencidaViva = !!p && !ganada && !cancelada && estado !== ESTADO_PRESUPUESTO.rechazado
+    && !!validoHastaVivo && validoHastaVivo < datos.hoy;
+  const puedeRenovarSola = pasaPorEncima || renovacionesVivas < 1;
+  /** Lo que también se pide con el mismo botón: un mínimo que rige, y renovar. */
+  const conLineaDe = (tipo: string) => vistas.some((l) => productoDe(l.concepto, datos.menus)?.tipo === tipo && !(l.precioUF > 0));
+  const showSePide = !!reglaShow && showConMinimo && conLineaDe(TIPO_PRODUCTO.show);
+  const arriendoSePide = arriendoForzado && !!minimoArriendo && conLineaDe(TIPO_PRODUCTO.arriendo);
+  const extrasPedido = {
+    show: showSePide && reglaShow ? reglaShow.minimo : null,
+    arriendo: arriendoSePide && minimoArriendo ? minimoArriendo.minimo : null,
+    renovar: vencidaViva && !puedeRenovarSola
+  };
   const botonPedirCond = (
     <span className="flex items-center gap-1">
       <button type="button" className="boton min-h-[40px] lg:min-h-[44px]" onClick={() => setPidiendoCond(true)}>
@@ -534,7 +585,7 @@ export default function CotizacionDialogo({
       )}
       {marcaCond.estado === 'aprobada' && (
         <p className="mt-2 text-[14px] font-semibold text-verde-texto lg:mt-1">
-          ✓ {corta ? `Condiciones especiales aprobadas por ${marcaCond.quien}`
+          ✓ {corta || !fraseCondiciones(leerPedido(condPedidas)) ? `Condiciones especiales aprobadas por ${marcaCond.quien}`
             : `Aprobadas por ${marcaCond.quien}: ${fraseCondiciones(leerPedido(condPedidas))}`}
         </p>
       )}
@@ -788,6 +839,25 @@ export default function CotizacionDialogo({
       if (solo) huboGuardado.current = true; else onCambio();
       return p?.id ?? d.presupuesto?.id ?? '';
     } finally { setGuardando(false); }
+  }
+
+  /** Renovar la vigencia: la primera vez, el vendedor; desde la segunda, quien aprueba. */
+  async function renovarVigencia() {
+    if (!p) return;
+    setRenovando(true);
+    try {
+      if (autoActivo) await auto.forzar();
+      const r = await fetch('/api/presupuestos', {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: p.id, renovarVigencia: true })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d.error) { avisar(d.error || 'No se pudo renovar.', 'atencion'); return; }
+      setValidoHastaVivo(d.validoHasta ?? '');
+      setRenovacionesVivas((n) => n + 1);
+      huboGuardado.current = true;
+      avisar(d.validoHasta ? `Renovada: vale hasta el ${enPalabras(d.validoHasta)}` : 'Renovada');
+    } finally { setRenovando(false); }
   }
 
   /** Cerrar manda lo pendiente y, si se guardó algo, recarga la lista una vez. */
@@ -2115,8 +2185,8 @@ export default function CotizacionDialogo({
                   const prod = productoDe(l.concepto, datos.menus);
                   const esShowIncluido = publico && prod?.tipo === TIPO_PRODUCTO.show;
                   // El show con mínimo (2026-11-20): día privado y poca gente.
-                  const showMinimo = prod?.tipo === TIPO_PRODUCTO.show && showConMinimo && datos.reglaShow
-                    ? datos.reglaShow : null;
+                  const showMinimo = prod?.tipo === TIPO_PRODUCTO.show && showConMinimo && reglaShowEfectiva
+                    ? reglaShowEfectiva : null;
                   // El arriendo con mínimo (2026-11-23): un día que no está abierto
                   // al público con poca gente, o un exclusivo en un día público.
                   const arriendoMinimo = prod?.tipo === TIPO_PRODUCTO.arriendo && !(l.precioUF > 0)
@@ -2258,10 +2328,12 @@ export default function CotizacionDialogo({
                                        lg:mb-0.5 lg:mt-0.5 lg:py-0.5 ${reglaShow
                           ? 'border-ambar/50 bg-ambar/5 text-ambar-texto' : 'border-hueso/20 text-hueso/75'}`}>
                           🐎 Día privado con menos de {showMinimo.desde} personas: el show se cobra, mínimo{' '}
-                          {enPesos(showMinimo.minimo)} + IVA.{' '}
+                          {enPesos(showMinimo.minimo)} + IVA{typeof minAprobados.show === 'number' ? ' (aprobado)' : ''}.{' '}
                           {reglaShow ? 'Si no va, quítalo.'
                             : showAutorizado && !pasaPorEncima ? `Lo autorizó ${showAutorizado}: va bajo el mínimo.`
                             : 'Tú puedes cobrar menos o dejarlo sin costo.'}
+                          {/* En el celular, el pedido va acá; en el computador, al pie. */}
+                          {reglaShow && puedePedirCond && <span className="mt-2 block font-normal lg:hidden">{botonPedirCond}</span>}
                         </p>
                       )}
                       {/* **El arriendo mínimo** (2026-11-23): la misma pieza que el
@@ -2273,10 +2345,11 @@ export default function CotizacionDialogo({
                                        lg:mb-0.5 lg:mt-0.5 lg:py-0.5 ${arriendoFijo
                           ? 'border-ambar/50 bg-ambar/5 text-ambar-texto' : 'border-hueso/20 text-hueso/75'}`}>
                           🏠 {arriendoMinimo.caso === 'exclusivo' ? 'Exclusivo en un día público' : 'Día no abierto al público'},{' '}
-                          {personasParaMinimos(vistas, invitados)} personas: arriendo mínimo {enPesos(arriendoMinimo.minimo)} + IVA.{' '}
+                          {personasParaMinimos(vistas, invitados)} personas: arriendo mínimo {enPesos(arriendoMinimo.minimo)} + IVA{typeof minAprobados.arriendo === 'number' ? ' (aprobado)' : ''}.{' '}
                           {arriendoFijo ? 'Va siempre, y no baja de ahí.'
                             : arriendoAutorizado && !pasaPorEncima ? `Lo autorizó ${arriendoAutorizado}: va bajo el mínimo.`
                             : 'Tú puedes cobrar menos o sacarlo.'}
+                          {arriendoFijo && puedePedirCond && <span className="mt-2 block font-normal lg:hidden">{botonPedirCond}</span>}
                         </p>
                       )}
                     </li>
@@ -2475,6 +2548,14 @@ export default function CotizacionDialogo({
               <Elegir etiqueta="Documento de la venta" opciones={Object.values(DOCUMENTO)}
                 valor={documento} onElegir={(v) => setDocumento(documentoDe(v))} />
               {!documento && <p className="mt-1.5 text-[14px] text-hueso/70">Por definir.</p>}
+              {/* **Sin documento** (2026-11-23, lo decidió el cliente: *"haz un
+                  aviso pero no pides aprobación en ese momento"*). Se puede; se
+                  dice y queda en la bitácora. */}
+              {documento === DOCUMENTO.sin && (
+                <p className="mt-1.5 text-[14px] font-semibold text-ambar-texto">
+                  ⚠ Sin boleta ni factura: queda anotado en la bitácora. <AyudaCorta tema="sinDocumento" />
+                </p>
+              )}
               {/* En el computador, los datos de la factura en dos renglones y
                   su botón; se escriben en una ventanita (`facturaAbierta`). */}
               {documento === DOCUMENTO.factura && (
@@ -2807,7 +2888,7 @@ export default function CotizacionDialogo({
                     alternativas del grupo, y el servidor borra la fecha de
                     envío y la vigencia: corren de nuevo cuando de verdad se
                     mande. */}
-                {estado === ESTADO_PRESUPUESTO.enviado && (
+                {estado === ESTADO_PRESUPUESTO.enviado && (!vencidaViva || pasaPorEncima) && (
                   <button type="button" className="boton min-h-[44px] lg:min-h-[40px]"
                     onClick={() => {
                       if (confirm('¿Todavía no se mandó? Vuelve a Borrador: deja de contar en el calendario y su vigencia corre de nuevo cuando la mandes.')) {
@@ -2837,12 +2918,27 @@ export default function CotizacionDialogo({
                     onClick={() => setEstado(ESTADO_PRESUPUESTO.negociacion)}>Pasar a Negociación</button>
                 </div>
               )}
-              {p && (p.enviada || p.validoHasta) && (
+              {p && (p.enviada || validoHastaVivo) && (
                 <p className="text-[14px] text-hueso/75">
                   {p.enviada ? <>Enviada el {enPalabras(p.enviada)}. </> : null}
-                  {p.validoHasta ? <>Vigente hasta el {enPalabras(p.validoHasta)}.</> : null}
+                  {validoHastaVivo ? (vencidaViva
+                    ? <b className="text-ambar-texto">Venció el {enPalabras(validoHastaVivo)}.</b>
+                    : <>Vigente hasta el {enPalabras(validoHastaVivo)}.</>) : null}
                 </p>
               )}
+              {/* **Renovar la vigencia** (2026-11-23, lo decidió el cliente): la
+                  primera la hace el vendedor; la segunda se pide con el mismo
+                  botón de las condiciones especiales. */}
+              {vencidaViva && puedeEditar && (puedeRenovarSola ? (
+                <button type="button" disabled={renovando} className="boton min-h-[44px] lg:min-h-[40px]"
+                  onClick={() => void renovarVigencia()}>
+                  {renovando ? 'Renovando…' : `↻ Renovar la vigencia · ${datos.vigencia ?? 15} días`}
+                </button>
+              ) : (
+                <p className="text-[14px] font-semibold text-ambar-texto">
+                  Ya se renovó una vez: la siguiente se pide con ✋ Pedir condiciones especiales…
+                </p>
+              ))}
 
               {/* Antes de mandarla, los botones están en el próximo paso, grandes;
                   acá aparecen después, para volver a mandarla. Dos veces en la
@@ -2995,10 +3091,7 @@ export default function CotizacionDialogo({
                       </label>
                     ))}
                     <div className="sm:col-span-2">
-                      <span className="mb-1 block text-[13px] font-medium uppercase tracking-wide text-hueso/60">
-                        Horario del evento
-                      </span>
-                      <ElegirHorario valor={horario} onCambio={setHorario}
+                      <ElegirHorario valor={horario} onCambio={setHorario} rotulo="Horario del evento"
                         deSiempre={datos.contrato?.horario ?? '13:00 a 18:00'} />
                     </div>
                   </div>
@@ -3152,7 +3245,7 @@ export default function CotizacionDialogo({
             : !p ? 'Al seguir, se crea la cotización.'
             : estado === ESTADO_PRESUPUESTO.candidato ? 'Al seguir, deja de ser candidato y pasa a borrador.'
             : ''}
-          medio={paso === 3 ? avisoMenus
+          medio={paso === 3 ? <>{avisoMenus}{puedePedirCond && (showSePide || arriendoSePide) && botonPedirCond}</>
             : paso === 4 ? <>
                 {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
@@ -3370,7 +3463,7 @@ export default function CotizacionDialogo({
           onListo={() => { setCayendo(false); onCambio(); onCerrar(); }} />
       )}
       {pidiendoCond && p && (
-        <PedirCondiciones id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''} topes={topes}
+        <PedirCondiciones id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''} topes={topes} extras={extrasPedido}
           antes={async () => { if (autoActivo) await auto.forzar(); }}
           onCerrar={() => setPidiendoCond(false)}
           onListo={(m) => { setCondPedidas(m.condicionesPedidas); setCondMarca(m.condicionesEspeciales);

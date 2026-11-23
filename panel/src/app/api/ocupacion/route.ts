@@ -11,7 +11,7 @@ import { leerReservas, leerFechas, leerConfig, posiblesDeLosDias, leerPresupuest
   leerTrabajadores, leerColaboradores, leerVendedores } from '@/lib/datos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { puede, type Rol } from '@/lib/auth';
-import { pendientesDeExclusivo, pendientesDeCuenta, pendientesDeCondiciones } from '@/lib/aprobaciones';
+import { pendientesDeExclusivo, pendientesDeCuenta, pendientesDeCondiciones, pendientesDeAcuerdos } from '@/lib/aprobaciones';
 import { topesDe } from '@/lib/condiciones';
 import { conCliente, grupoDe } from '@/lib/cotizar';
 import { ocupacionDeTodos } from '@/lib/ocupacion';
@@ -128,10 +128,13 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
     const { rol } = await quienEs(req);
     let exclusivos: ReturnType<typeof pendientesDeExclusivo> = [];
     let condiciones: ReturnType<typeof pendientesDeCondiciones> = [];
+    let acuerdos: ReturnType<typeof pendientesDeAcuerdos> = [];
     // **Las condiciones especiales pedidas** (2026-11-23, `condiciones.ts`),
     // para quien puede aprobarlas: de la misma tanda de `Presupuestos`.
     const veCondiciones = puede(rol as Rol, 'showBajoMinimo');
-    if (puede(rol as Rol, 'exclusividad') || veCondiciones) {
+    // **Los acuerdos adicionales** (2026-11-23, `acuerdos.ts`): para quien paga.
+    const veAcuerdos = puede(rol as Rol, 'pagar');
+    if (puede(rol as Rol, 'exclusividad') || veCondiciones || veAcuerdos) {
       const [pres, clientes] = await Promise.all([leerPresupuestos(), leerClientes()]);
       const porId = new Map(pres.map((p) => [p.id, p]));
       const folio = (id: string) => folioDe({ id: grupoDe(porId.get(id) ?? { id, grupo: '' }) });
@@ -140,6 +143,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
         exclusivos = pendientesDeExclusivo(conNombre, reservas, hoy(), cfg.exclusivoDias, folio);
       }
       if (veCondiciones) condiciones = pendientesDeCondiciones(conNombre, topesDe(cfg), folio);
+      if (veAcuerdos) acuerdos = pendientesDeAcuerdos(conNombre, folio);
     }
     // **Las cuentas y tarifas por confirmar** (2026-11-13, `plata.ts`), solo
     // para pagos: las cambió alguien que no es pagos. `Trabajadores` y
@@ -148,7 +152,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
       ? pendientesDeCuenta(await leerTrabajadores().catch(() => []), await leerColaboradores().catch(() => []),
         (await leerVendedores().catch(() => [])).filter((f) => f.tipo === 'socio'))
       : [];
-    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones });
+    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

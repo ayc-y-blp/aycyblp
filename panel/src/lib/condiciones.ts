@@ -188,20 +188,44 @@ export function sobreElTope(p: CondicionesCotizacion, lineas: { descuento?: numb
 
 /* ---------- el pedido y su marca ---------- */
 
-/** `Condiciones pedidas`: *"reembolso=40|cancelacionDias=30"*. */
-export function escribirPedido(pedido: Partial<Topes>): string {
-  return CAMPOS_CONDICION.filter((c) => typeof pedido[c] === 'number')
+/**
+ * **Lo que se pide además de los topes** (2026-11-23, lo decidió el cliente:
+ * *"de acuerdo"* con pedir con el mismo botón una excepción a los mínimos y
+ * la segunda renovación de la vigencia):
+ *
+ * - `show` y `arriendo`: un monto menor que el mínimo de esa cotización,
+ *   neto (+ IVA). Aprobado, pasa a ser su mínimo (`conMinimoShow()` y
+ *   `conMinimoArriendo()` de `cotizar.ts`).
+ * - `renovar`: renovar la vigencia cuando ya se renovó una vez. Aprobado, se
+ *   renueva en el acto (`/api/presupuestos/condiciones`).
+ */
+export type ExtraPedido = 'show' | 'arriendo' | 'renovar';
+export const EXTRAS_PEDIDO: ExtraPedido[] = ['show', 'arriendo', 'renovar'];
+export type Pedido = Partial<Topes> & Partial<Record<ExtraPedido, number>>;
+
+const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
+
+/** Un extra pedido en palabras: *Show ecuestre a $50.000 + IVA*, *Renovar la vigencia*. */
+function fraseExtra(k: ExtraPedido, n: number): string {
+  if (k === 'renovar') return 'Renovar la vigencia';
+  return `${k === 'show' ? 'Show ecuestre' : 'Arriendo'} a ${pesos(n)} + IVA`;
+}
+
+/** `Condiciones pedidas`: *"reembolso=40|cancelacionDias=30|show=50000"*. */
+export function escribirPedido(pedido: Pedido): string {
+  return [...CAMPOS_CONDICION, ...EXTRAS_PEDIDO].filter((c) => typeof pedido[c] === 'number')
     .map((c) => `${c}=${Math.round(pedido[c] as number)}`).join('|');
 }
 
 /** Lee `Condiciones pedidas`. Lo que no se entiende se ignora. */
-export function leerPedido(texto: string | undefined): Partial<Topes> {
-  const salida: Partial<Topes> = {};
+export function leerPedido(texto: string | undefined): Pedido {
+  const salida: Pedido = {};
+  const conocidos: string[] = [...CAMPOS_CONDICION, ...EXTRAS_PEDIDO];
   for (const par of String(texto ?? '').split('|')) {
     const [k, v] = par.split('=').map((x) => x.trim());
     const n = Number(v);
-    if ((CAMPOS_CONDICION as string[]).includes(k) && v !== '' && Number.isFinite(n) && n >= 0) {
-      salida[k as CampoCondicion] = Math.round(n);
+    if (conocidos.includes(k) && v !== '' && Number.isFinite(n) && n >= 0) {
+      salida[k as CampoCondicion | ExtraPedido] = Math.round(n);
     }
   }
   return salida;
@@ -216,23 +240,42 @@ export const MAXIMO_CONDICION: Record<CampoCondicion, number> = {
 export const marcaCondiciones = marcaExclusividad;
 export const condicionesEspecialesDe = exclusividadDe;
 
-/** Lo aprobado para esta cotización: el pedido, si su marca dice *Aprobada*. */
+/** Lo aprobado para esta cotización en los topes: el pedido, si su marca dice *Aprobada*. */
 export function aprobadasDe(p: { condicionesEspeciales?: string; condicionesPedidas?: string }): Partial<Topes> {
-  return condicionesEspecialesDe(p.condicionesEspeciales).estado === 'aprobada' ? leerPedido(p.condicionesPedidas) : {};
+  if (condicionesEspecialesDe(p.condicionesEspeciales).estado !== 'aprobada') return {};
+  const pedido = leerPedido(p.condicionesPedidas);
+  const topes: Partial<Topes> = {};
+  for (const c of CAMPOS_CONDICION) if (typeof pedido[c] === 'number') topes[c] = pedido[c];
+  return topes;
+}
+
+/** Los mínimos aprobados para esta cotización: el show y el arriendo, si se pidieron y se aprobaron. */
+export function minimosAprobados(p: { condicionesEspeciales?: string; condicionesPedidas?: string }): { show?: number; arriendo?: number } {
+  if (condicionesEspecialesDe(p.condicionesEspeciales).estado !== 'aprobada') return {};
+  const pedido = leerPedido(p.condicionesPedidas);
+  return {
+    ...(typeof pedido.show === 'number' ? { show: pedido.show } : {}),
+    ...(typeof pedido.arriendo === 'number' ? { arriendo: pedido.arriendo } : {})
+  };
 }
 
 /** Lo pedido o aprobado, sin los topes: *Devolución al cancelar 40% · Cancelación hasta 30 días antes*. */
-export function fraseCondiciones(pedido: Partial<Topes>): string {
-  return CAMPOS_CONDICION.filter((c) => typeof pedido[c] === 'number')
-    .map((c) => `${NOMBRE_CONDICION[c]} ${valorCondicion(c, pedido[c] as number)}`)
-    .join(' · ');
+export function fraseCondiciones(pedido: Pedido): string {
+  return [
+    ...CAMPOS_CONDICION.filter((c) => typeof pedido[c] === 'number')
+      .map((c) => `${NOMBRE_CONDICION[c]} ${valorCondicion(c, pedido[c] as number)}`),
+    ...EXTRAS_PEDIDO.filter((k) => typeof pedido[k] === 'number').map((k) => fraseExtra(k, pedido[k] as number))
+  ].join(' · ');
 }
 
-/** El pedido en una frase: *Devolución al cancelar 40% (en Configuración 20%) · Cancelación hasta 30 días antes (en Configuración hasta 60 días antes)*. */
-export function frasePedido(pedido: Partial<Topes>, topes: Topes): string {
-  return CAMPOS_CONDICION.filter((c) => typeof pedido[c] === 'number')
-    .map((c) => `${NOMBRE_CONDICION[c]} ${valorCondicion(c, pedido[c] as number)} (en Configuración ${valorCondicion(c, topes[c])})`)
-    .join(' · ');
+/** El pedido en una frase: *Devolución al cancelar 40% (en Configuración 20%) · Show ecuestre a $50.000 + IVA (bajo el mínimo)*. */
+export function frasePedido(pedido: Pedido, topes: Topes): string {
+  return [
+    ...CAMPOS_CONDICION.filter((c) => typeof pedido[c] === 'number')
+      .map((c) => `${NOMBRE_CONDICION[c]} ${valorCondicion(c, pedido[c] as number)} (en Configuración ${valorCondicion(c, topes[c])})`),
+    ...EXTRAS_PEDIDO.filter((k) => typeof pedido[k] === 'number')
+      .map((k) => fraseExtra(k, pedido[k] as number) + (k === 'renovar' ? ' (ya se renovó una vez)' : ' (bajo el mínimo)'))
+  ].join(' · ');
 }
 
 /* ---------- la regla B: contra la fecha de hoy ---------- */
