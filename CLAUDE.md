@@ -1002,6 +1002,20 @@ seguros"*.
 - Se mide con un script de Playwright que recorre las páginas y lista las
   secciones cuyo contenido pasa del alto útil; no está en el repo.
 
+### El desayuno y la once, solo en socios y en el dossier (2026-11-23)
+
+Lo pidió el cliente: *"si accedes a experiencias desde el sitio público,
+borra la sección del desayuno y del once campestre. Ahí no hay que
+mostrar. Solo en los socios comerciales… en el dossier sí"*. Se sacó de
+`experiencias.html`, de `eventos.html` y del panel *El recinto y los
+extras* de `promociones.html`, cuya bajada pasó a *Arriendo exclusivo y
+eventos a medida*. **Queda en `landing-afiliados.html` y `dossier.html`**
+(y en sus PDF). El *"y en promociones no"* salió de una frase dictada
+(*"si en la producción no"*), leída junto con el *solo en los socios*: si
+promociones sí lo llevaba, se repone desde el dossier. Los precios siguen
+en `precios.json`; las llaves que ya no usaba nadie salieron de los
+diccionarios.
+
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
 Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no
