@@ -88,9 +88,12 @@ responde, se revierte primero y se investiga después.
    fijas propias* (las de la cultura ya vienen del nivel usuario) · *dónde está
    cada cosa* · *datos del negocio confirmados* · *decisiones abiertas* ·
    *cómo previsualizar* · *Git*.
-3. Crear **`TRASPASO.md`**: estado en una mirada, el sistema, flujos
+3. Crear **`TRASPASO.md`** con la plantilla del skill `traspaso-y-guias`
+   (`plantilla-traspaso.md`): estado en una mirada, el sistema, flujos
    críticos, lo hecho, decisiones y por qué, problemas conocidos y lo que no
-   hay que romper, pendientes en orden, convenciones y reglas.
+   hay que romper, pendientes en orden, convenciones y reglas. Se importa desde
+   `CLAUDE.md` con `@TRASPASO.md`. Cuando venga un paso grande (migrar,
+   lanzar), ese mismo skill dice cómo se arma la guía paso a paso.
 4. Si el proyecto es un panel de administración, cargar el skill
    `panel-playstation`; si es un sitio público, `sitio-elegante`.
 5. Anotar qué es público y qué no, antes del primer commit: un repo público

@@ -1,11 +1,16 @@
 # Cómo trabajamos (cultura, vale en todos mis proyectos)
 
-> Se instala como `~/.claude/CLAUDE.md` (nivel usuario) y Claude Code lo
-> carga en cada proyecto. Es la versión destilada de lo que se fue
-> escribiendo en Brasas de Lo Pirque: solo la conducta que sirve en
-> cualquier proyecto. Lo específico de cada negocio va en el `CLAUDE.md` de
-> ese proyecto. Los flujos largos están en los skills `ritual-de-trabajo`,
-> `panel-playstation` y `sitio-elegante`.
+> Se pega en el `CLAUDE.md` de cada proyecto nuevo (o va en
+> `~/.claude/CLAUDE.md` si algún día se trabaja desde un computador). Es la
+> versión destilada de lo que se fue escribiendo en Brasas de Lo Pirque: solo
+> la conducta que sirve en cualquier proyecto. Lo específico de cada negocio
+> va en el `CLAUDE.md` de ese proyecto. Los flujos largos están en los skills
+> `ritual-de-trabajo`, `panel-playstation` y `sitio-elegante`, que viven en
+> `.claude/skills/`.
+>
+> **Al partir un proyecto nuevo, preguntarle al cliente si quiere usar esta
+> cultura de trabajo** (y, si dice que sí, copiar `.claude/skills/` y esta
+> conducta al proyecto).
 
 ## Idioma y tono
 
@@ -103,9 +108,17 @@
   origin main`: si se movió, se pone la rama al día y se lee lo que dejó el
   otro chat. PR chicos, y lo que choque se resuelve en la rama, sobre todo en
   `TRASPASO.md` y `CLAUDE.md`, que tocan todos.
-- **`TRASPASO.md` se actualiza al terminar cada etapa**, con una línea de lo
-  que se hizo: es por donde se enteran los otros chats. Quien no deja su línea
-  deja a la siguiente sesión a ciegas.
+- **Todo proyecto lleva un `TRASPASO.md`** (el mapa para retomarlo en un chat
+  nuevo) que se actualiza **al terminar cada etapa**, con una línea de lo que
+  se hizo: es por donde se enteran los otros chats. Quien no deja su línea
+  deja a la siguiente sesión a ciegas. Se importa desde `CLAUDE.md` con
+  `@TRASPASO.md`.
+- **Los pasos grandes —migrar, lanzar, mover un dominio, pasar a producción—
+  se documentan en una guía paso a paso, mirando hacia adelante**: qué falta,
+  en qué orden, quién hace cada paso, cómo se comprueba y cómo se vuelve atrás.
+  No para cada detalle, solo cuando viene un paso grande; se mantiene al día
+  y lo importante pasa después a `TRASPASO.md`. Ver el skill
+  `traspaso-y-guias`.
 
 ## Proyecto nuevo
 

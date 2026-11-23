@@ -223,14 +223,21 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   y Corderos sin pasar a producción".
 - **La cultura de trabajo, empaquetada para otros proyectos** (23-11-2026, lo
   pidió el cliente: *"cómo me puedo llevar toda esta cultura… a otro proyecto
-  nuevo"*): carpeta **`cultura/`**, con un `CLAUDE.md` de usuario destilado
-  (conducta que vale en cualquier proyecto) y tres skills —`ritual-de-trabajo`,
-  `panel-playstation` y `sitio-elegante`—, más un `README` con cómo instalarlos
-  en `~/.claude/`. Es una **copia destilada**: la fuente de verdad sigue siendo
+  nuevo"*): carpeta **`cultura/`** con un `CLAUDE.md` de usuario destilado
+  (conducta que vale en cualquier proyecto) y un `README`, y **tres skills en
+  `.claude/skills/`** —`ritual-de-trabajo`, `panel-playstation`,
+  `sitio-elegante` y `traspaso-y-guias` (cómo se mantiene este archivo entre
+  chats y cuándo se arma una guía paso a paso, con la plantilla de
+  `TRASPASO.md`; pedido por el cliente el 23-11-2026)—. **Viven en el repo y no en `~/.claude/`** porque el
+  cliente trabaja solo desde la web y el contenedor de cada sesión es
+  temporal: cada chat nuevo de este proyecto los tiene, y `CLAUDE.md` dice
+  cuándo usar cada uno. **Un proyecto nuevo no los tiene solo**: hace falta un
+  repo plantilla con `.claude/skills/` o copiarlos al partir (pendiente del
+  cliente). Es una **copia destilada**: la fuente de verdad sigue siendo
   `CLAUDE.md` y `panel/CLAUDE.md`. **Cuando el cliente diga "regla: …" y valga
-  para todos los proyectos, se anota también en `cultura/`.** Es solo
-  documentación: no toca el sitio ni el panel, sin lecturas de Google ni
-  permisos. Ver `cultura/README.md`.
+  para todos los proyectos, se anota también en el skill o en `cultura/`.** Es
+  solo documentación: no toca el sitio ni el panel, sin lecturas de Google ni
+  permisos. PR #325 y el siguiente. Ver `cultura/README.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
