@@ -1112,7 +1112,8 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   Calicanto u otros lugares.**
 - **Límite de 60 lecturas por minuto** de Google para todo el panel; si
   vuelve a aparecer con uso normal, lo siguiente es pedir más cupo en Google
-  Cloud (gratis).
+  Cloud (gratis). Cuándo dejar la planilla por una base de datos: pendiente
+  16 (sección 7).
 - **Los `?` chicos se ven de 24px** y se aprietan en 36 (un área invisible
   alrededor): `revisarPlayStation()` los sigue listando, porque mide lo que
   se ve. **(Por confirmar)** si el cliente los quiere más grandes a la vista.
@@ -1219,6 +1220,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA; **aclarar el tema del taller de queso** (lo pidió el cliente el 22-11-2026; hoy figura como actividad adicional en *Actividades* y en los tres landings de empresa); pintacaritas y castillo inflable en *Productos* (¿+ IVA o IVA incluido?). Los dos últimos, también en la guía *Traspaso a producción* | Cliente |
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
 | 15 | ~~Ganar en un sábado que todavía no está en el calendario~~ | **Hecho el 23-11-2026** (el cliente: *"sí, cambia lo del sábado"*): nace público si la cotización no es exclusiva (`diaParaGanar()`). Las reservas a mano y lo importado siguen creándolo privado | — |
+| 16 | **Cuándo pasar a una base de datos de verdad** (23-11-2026, lo preguntó el cliente) | **Hoy no hace falta.** Se cambia cuando pase **cualquiera** de estas: (a) errores del límite de lecturas de Google con uso normal, aun después de pedir más cupo (es gratis); (b) más o menos 10 a 15 personas usando el panel a la vez; (c) cambios que se pisan: algo guardado que se pierde, una reserva duplicada o un día sobrevendido; (d) algo que la planilla no puede hacer: apartar un cupo mientras alguien paga en Shopify, informes de varios años o que crucen las dos empresas. **Antes, lo barato**: pedir más cupo en Google Cloud y pasar la bitácora de cada año a otra planilla. **Se revisa con un número cuando Asados y Corderos esté en uso real**: las dos empresas usan la misma cuenta del panel y comparten el límite. **Cuando toque**: Postgres desde la pestaña *Storage* de Vercel (hoy es Neon, por el Marketplace): se cobra en la misma cuenta, conecta sus variables al panel solo y cada versión de prueba puede tener su copia de la base, como hoy la planilla "Pruebas". No Blob ni Edge Config: guardan archivos y configuración, no datos. Los precios se revisan ese día. Lo que se pierde es abrir la planilla: conviene dejar una copia diaria de solo lectura en Google Sheets. Es un proyecto propio, en un mes tranquilo; lo facilita que todo pasa por `lib/sheets.ts` | Cliente decide; Claude mide |
 
 ---
 
