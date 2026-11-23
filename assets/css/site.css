@@ -1209,6 +1209,7 @@ footer a:hover{ color: var(--ink); }
   .split-text{ padding: 28px var(--pad-x); }
   .split-text .rule{ margin:12px 0; }
   .precios{ gap:14px 22px; margin-top:18px; }
+  .pasos{ gap:20px; }
   .incluye-horario{ padding:16px 18px; margin-top:14px; }
   .incluye-horario .rango{ font-size:1.7rem; }
   .incluye .etiqueta{ margin-top:18px; }

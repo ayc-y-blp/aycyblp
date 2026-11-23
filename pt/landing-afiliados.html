@@ -538,6 +538,56 @@
 
   footer{ padding: 40px 0; border-top: 1px solid var(--line); }
   footer .wrap{ display:flex; flex-wrap:wrap; justify-content:space-between; gap: 16px; font-size: 0.8rem; color: var(--ink-faint); }
+
+  /* ---------- una pantalla por sección (2026-11-23) ----------
+     Lo pidió el cliente: que cada sección quepa en la pantalla del notebook
+     (1280x650) y del celular (393x740), en todo el sitio. Es lo mismo que
+     el sitio público: en el computador menos aire, fotos más apaisadas y
+     las seis actividades en una fila; en el celular, las listas de tarjetas
+     se deslizan en un carrusel con scroll-snap (CSS puro) en vez de
+     apilarse, asomando la siguiente. */
+  @media (min-width: 901px){
+    .pad{ padding: 64px 0; }
+    .section-head{ margin-bottom: 26px; }
+    .flip-card{ aspect-ratio: 1/1; }
+    .venue-photo{ aspect-ratio: 5/4; }
+    .service-photo{ aspect-ratio: 16/11; }
+    .oferta{ margin-top: 22px; }
+    .oferta-nota{ margin-top: 12px; }
+  }
+  @media (min-width: 1000px){
+    .fam-grid{ grid-template-columns: repeat(6,1fr); }
+    .fam-cuerpo{ padding: 14px 16px 18px; }
+    .ext-card .ext-photo{ aspect-ratio: 4/3; }
+  }
+  @media (max-width: 620px){
+    .fam-grid, .ext-grid, .tier-cards{
+      display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+      grid-template-columns:none; justify-content:start; gap:12px;
+      overflow-x:auto; overscroll-behavior-x:contain;
+      scroll-snap-type:x mandatory; scroll-padding-left: 32px;
+      margin-left:-32px; margin-right:-32px; padding: 0 32px 12px;
+      background:none; border:0;
+    }
+    .fam-grid > *, .ext-grid > *, .tier-cards > *{ scroll-snap-align:start; }
+    .fam-card{ border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+    .tier-cards > .flip-card{ aspect-ratio: 4/5; }
+    .section-head{ margin-bottom: 24px; }
+    .venue-photo, .service-photo{ aspect-ratio: 16/10; }
+    .venue-split, .service-split{ gap: 22px; }
+    .service-cards{ gap: 12px; }
+    .service-card{ padding: 14px 16px; }
+    /* La oferta de promociones: cada dato en una fila, el numero a la
+       izquierda y lo que significa a la derecha. */
+    .oferta-dato{ display:grid; grid-template-columns: 118px 1fr; align-items:center; gap:2px 14px; padding: 12px 16px; }
+    .oferta-dato b{ grid-row: span 2; font-size: 1.8rem; white-space:nowrap; }
+    .oferta-dato span, .oferta-dato small{ grid-column: 2; margin-top:0; }
+    .oferta{ margin-top: 20px; }
+    .intro-text .lede{ font-size: 0.95rem; }
+    .intro-text .hero-cta{ margin-top: 18px !important; }
+    .wrap{ padding: 0 22px; }
+    .fam-grid, .ext-grid, .tier-cards{ scroll-padding-left: 22px; margin-left:-22px; margin-right:-22px; padding: 0 22px 12px; }
+  }
 </style>
 <!--i18n:alternate-->
 <link rel="alternate" hreflang="es" href="https://brasasdelopirque.cl/landing-afiliados.html">

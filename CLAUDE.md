@@ -947,6 +947,38 @@ ahorro de pagar ahora había que restarlo a mano.
   en el computador, también en los tres landings (por eso se rehicieron los
   PDF; el contenido es el mismo).
 
+### Cada sección cabe en una pantalla (2026-11-23)
+
+Lo pidió el cliente: *"en la página principal… la sección tres cosas que
+pasan por acá, no cae también aún bien aquí en la pantalla del notebook…
+compactarla para que todo cae en una pantalla… para todas las páginas,
+tanto los landing pages… para todo el sitio"*. **La medida**: el título de
+una sección y su grupo de tarjetas se ven juntos en 1280×650 (574px bajo la
+barra; 562 en los landings) y en 393×740 (659px; 663 en los landings).
+
+- **En el computador**: menos aire entre secciones (`.pad` 72px; 64 en los
+  landings), fotos de tarjetas en 16:10, **las seis actividades del recinto
+  en una fila** (sitio y landings), lo que incluye la reserva también, las
+  actividades adicionales en cuatro columnas (`grid-4`), y las experiencias,
+  el arriendo y el mapa un poco más bajos.
+- **En el celular, una lista de tarjetas ya no se apila: se desliza** en un
+  carrusel con `scroll-snap`, una tarjeta a la vista y la siguiente
+  asomando. Vale para la portada, las actividades, lo que incluye la
+  reserva, las experiencias (las tarjetas que giran, en 4:5 para que el
+  reverso no se corte), la 404 y, en los landings, las experiencias, las
+  actividades y las adicionales. CSS puro, como la galería. Las fotos de
+  los bloques foto + texto son más bajas, y los landings usan en el celular
+  el mismo margen de 22px del sitio.
+- **La oferta de promociones en el celular** va en filas: el número a la
+  izquierda y lo que significa a la derecha.
+- **Lo que sigue sin caber, a propósito**: las secciones que además traen
+  los desplegables del menú (*Ver el menú completo*) —las tarjetas con su
+  título sí caben—, el formulario de reserva en el celular (va por pasos,
+  con la barra fija) y, en el celular, la introducción de promociones, que
+  es texto largo: 715px de 663, con el segundo botón bajo el borde.
+- Se mide con un script de Playwright que recorre las páginas y lista las
+  secciones cuyo contenido pasa de la pantalla; no está en el repo.
+
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
 Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no
