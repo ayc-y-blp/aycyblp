@@ -6630,5 +6630,56 @@ console.log('\nLa empresa es una pieza');
   ok(sueltas.length === 0, `solo empresa.ts lee las variables de la empresa${sueltas.length ? ' — sueltas: ' + sueltas.join(', ') : ''}`);
 }
 
+// --- La memoria de cada instancia, por empresa (Fase 5, paso 2) ---
+console.log('\nLo que el panel recuerda va por empresa');
+{
+  const E = await import('./empresa.ts');
+  const A = await import('./admin.ts');
+  const base = E.empresaActual();
+  const una = { ...base, id: 'lo-pirque', planilla: 'planilla-una',
+    tienda: { ...base.tienda, dominio: 'una.myshopify.com', clienteId: 'app-una', clienteSecreto: 's1' } };
+  const otra = { ...base, id: 'calicanto', planilla: 'planilla-otra',
+    tienda: { ...base.tienda, dominio: 'otra.myshopify.com', clienteId: 'app-otra', clienteSecreto: 's2' } };
+  ok(E.conEmpresa(otra, () => E.empresaActual().id) === 'calicanto' && E.empresaActual().id === 'lo-pirque',
+    'conEmpresa fija la empresa adentro, y afuera sigue la del entorno');
+  const despues = await E.conEmpresa(otra, async () => {
+    await new Promise((r) => setTimeout(r, 5));
+    return E.empresaActual().planilla;
+  });
+  ok(despues === 'planilla-otra', 'la empresa sigue siendo la misma después de esperar');
+  // Dos peticiones a la vez, una de cada empresa: ninguna ve la de la otra.
+  const juntas = await Promise.all([una, otra].map((e, i) => E.conEmpresa(e, async () => {
+    await new Promise((r) => setTimeout(r, i ? 2 : 8));
+    return E.empresaActual().id;
+  })));
+  ok(juntas.join() === 'lo-pirque,calicanto', 'dos peticiones cruzadas no se mezclan');
+
+  const memoria = E.porEmpresa(() => ({ pestanas: [] as string[] }));
+  E.conEmpresa(una, () => memoria().pestanas.push('Reservas'));
+  E.conEmpresa(otra, () => memoria().pestanas.push('Matrimonios'));
+  ok(E.conEmpresa(una, () => memoria().pestanas.join()) === 'Reservas'
+    && E.conEmpresa(otra, () => memoria().pestanas.join()) === 'Matrimonios',
+    'cada empresa tiene su memoria: la lista de pestañas de una no sale en la otra');
+  ok(E.conEmpresa({ ...una, planilla: 'planilla-nueva' }, () => memoria().pestanas.length) === 0,
+    'la misma empresa con otra planilla parte con la memoria en blanco');
+
+  // El token de Shopify: uno por tienda, sin pisarse.
+  A.olvidarToken();
+  const pedidas: string[] = [];
+  const shopify = (async (url: unknown) => {
+    const tienda = String(url).split('/')[2];
+    pedidas.push(tienda);
+    return new Response(JSON.stringify({ access_token: 'token-de-' + tienda, expires_in: 86399 }), { status: 200 });
+  }) as typeof fetch;
+  const t1 = await E.conEmpresa(una, () => A.tokenDeAcceso(1000, shopify));
+  const t2 = await E.conEmpresa(otra, () => A.tokenDeAcceso(1000, shopify));
+  const t3 = await E.conEmpresa(una, () => A.tokenDeAcceso(2000, shopify));
+  const t4 = await E.conEmpresa(otra, () => A.tokenDeAcceso(2000, shopify));
+  ok(t1 === 'token-de-una.myshopify.com' && t2 === 'token-de-otra.myshopify.com' && t3 === t1 && t4 === t2,
+    'cada tienda recibe su token, nunca el de la otra');
+  ok(pedidas.length === 2, `y alternar entre las dos no vuelve a pedirlo (se pidió ${pedidas.length} veces)`);
+  A.olvidarToken();
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

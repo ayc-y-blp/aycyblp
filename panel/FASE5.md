@@ -102,7 +102,7 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 | # | Paso | Estado |
 |---|---|---|
 | 1 | **La empresa como una pieza** (`lib/empresa.ts`): todo lo que es de la empresa —planilla, cuenta de servicio, calendario, tienda, CRM— se pregunta en un solo lugar. Sin cambio de comportamiento | PR abierto el 2026-11-22 |
-| 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | — |
+| 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | Hecho el 2026-11-23, en el PR abierto del simulador (#313). Ver "Paso 2" |
 | 3 | Las cuentas compartidas y el rol por empresa | — |
 | 4 | Una dirección por empresa y el paso de una a la otra | — |
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
@@ -171,3 +171,30 @@ comparte una fila con *Se cayó…*, mitad y mitad.
 comisión del vendedor y del socio; sumar los extras contratados (show,
 pintacaritas) por su monto habitual; anotar el gasto real después del evento;
 y un editor de los gastos del evento mejor que un renglón de texto.
+
+## Paso 2: la memoria de cada instancia, por empresa (2026-11-23)
+
+**No cambia nada de lo que el panel hace hoy**: sigue habiendo una sola
+empresa. Deja listo que, cuando haya dos, lo recordado de una no salga como
+respuesta de la otra.
+
+- **`porEmpresa(crear)`** en `lib/empresa.ts`: la memoria de la empresa en
+  curso. La llave es su id, su planilla y su cuenta de servicio.
+- **`conEmpresa(empresa, fn)`**: fija la empresa de una petición; todo lo que
+  pregunte `empresaActual()` adentro —también después de esperar— recibe
+  ésa. **Hoy solo lo usan las pruebas**; el paso 4 (*una dirección por
+  empresa*) lo va a llamar al entrar a cada ruta.
+- **Qué pasó a ir por empresa**: en `sheets.ts`, el cliente, la credencial,
+  la lista de pestañas con sus ids, el nombre del libro y las lecturas en
+  vuelo con su tanda; en `drive.ts`, el cliente; en `datos.ts`, si la
+  bitácora ya tiene encabezado; en `admin.ts`, el token de Shopify, uno por
+  tienda y por app.
+- **Lo que queda para el paso 7** (el tablero de la gerencia con *Las dos*):
+  lo leído dentro de una petición (`conLecturas()`) se guarda por nombre de
+  pestaña, pensando en una empresa por petición. Una petición que lea las dos
+  planillas tiene que abrir un ámbito por empresa.
+- **Pruebas** (`npm run prueba`, *Lo que el panel recuerda va por empresa*):
+  dos peticiones cruzadas no se mezclan, cada empresa tiene su memoria, y
+  alternar entre dos tiendas no cruza ni vuelve a pedir el token.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** Ninguna
+  variable nueva en Vercel.

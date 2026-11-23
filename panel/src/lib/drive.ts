@@ -25,11 +25,14 @@
 import { Readable } from 'node:stream';
 import { google, type drive_v3 } from 'googleapis';
 import { autenticacion } from './sheets.ts';
+import { porEmpresa } from './empresa.ts';
 
-let cliente: drive_v3.Drive | null = null;
+/** El cliente de Drive, uno por empresa: va con la credencial de cada una. */
+const memoria = porEmpresa(() => ({ cliente: null as drive_v3.Drive | null }));
 function drive(): drive_v3.Drive {
-  if (!cliente) cliente = google.drive({ version: 'v3', auth: autenticacion() });
-  return cliente;
+  const m = memoria();
+  if (!m.cliente) m.cliente = google.drive({ version: 'v3', auth: autenticacion() });
+  return m.cliente;
 }
 
 /** Comillas y barras fuera: el nombre va dentro de una consulta de Drive. */

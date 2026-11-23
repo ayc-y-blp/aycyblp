@@ -6,7 +6,7 @@ import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { celdas } from './celdas.ts';
-import { empresaActual } from './empresa.ts';
+import { empresaActual, porEmpresa } from './empresa.ts';
 
 // La planilla, y los eventos del calendario. El segundo se agregó el
 // 2026-10-21 al jubilar el Apps Script, que era quien los creaba.
@@ -23,15 +23,32 @@ const ALCANCE = [
   'https://www.googleapis.com/auth/drive.file'
 ];
 
-let cliente: sheets_v4.Sheets | null = null;
+interface Pedida { hoja: string; res: (f: string[][]) => void; rej: (e: unknown) => void }
+
+/**
+ * Lo que esta instancia recuerda de la planilla, **por empresa**
+ * (2026-11-23): cada una tiene su cliente, su credencial, su lista de
+ * pestañas y sus lecturas en vuelo. Ver `porEmpresa()`.
+ */
+const memoria = porEmpresa(() => ({
+  cliente: null as sheets_v4.Sheets | null,
+  credencial: null as InstanceType<typeof google.auth.JWT> | null,
+  /** El título real de cada pestaña. */
+  titulos: null as Map<string, string> | null,
+  /** El id de cada pestaña por su título real: no cambia nunca. */
+  ids: new Map<string, number>(),
+  /** El nombre del libro entero (*Pruebas*, o el de la planilla real). */
+  nombreLibro: '',
+  titulosEnVuelo: null as Promise<Map<string, string>> | null,
+  lecturas: new Map<string, Promise<string[][]>>(),
+  tanda: null as Map<string, Pedida> | null
+}));
 
 export function idPlanilla(): string {
   const id = empresaActual().planilla;
   if (!id) throw new Error('Falta GOOGLE_SHEET_ID en el entorno.');
   return id;
 }
-
-let credencial: InstanceType<typeof google.auth.JWT> | null = null;
 
 /**
  * La cuenta de servicio, una sola para la planilla y el calendario.
@@ -40,7 +57,8 @@ let credencial: InstanceType<typeof google.auth.JWT> | null = null;
  * con la misma clave privada sería dos lugares donde equivocarse.
  */
 export function autenticacion() {
-  if (credencial) return credencial;
+  const m = memoria();
+  if (m.credencial) return m.credencial;
 
   const { correo: email, clave } = empresaActual().cuenta;
   if (!email || !clave) {
@@ -49,7 +67,7 @@ export function autenticacion() {
     );
   }
 
-  credencial = new google.auth.JWT({
+  m.credencial = new google.auth.JWT({
     email,
     // En un .env los saltos de línea van como \n literales. Si no se
     // deshacen, la librería falla con un error de clave inválida que no
@@ -57,13 +75,13 @@ export function autenticacion() {
     key: clave.replace(/\\n/g, '\n'),
     scopes: ALCANCE
   });
-  return credencial;
+  return m.credencial;
 }
 
 export function sheets(): sheets_v4.Sheets {
-  if (cliente) return cliente;
-  cliente = google.sheets({ version: 'v4', auth: autenticacion() });
-  return cliente;
+  const m = memoria();
+  if (!m.cliente) m.cliente = google.sheets({ version: 'v4', auth: autenticacion() });
+  return m.cliente;
 }
 
 /**
@@ -93,44 +111,41 @@ export function sheets(): sheets_v4.Sheets {
  *
  * Volver a mirar cuesta una llamada, y solo cuando no se encontró.
  */
-let titulos: Map<string, string> | null = null;
-/** El id de cada pestaña por su título real: no cambia nunca. */
-let ids = new Map<string, number>();
-/** El nombre del libro entero (*Pruebas*, o el de la planilla real). */
-let nombreLibro = '';
 
 function clave(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 }
 
-let titulosEnVuelo: Promise<Map<string, string>> | null = null;
 function leerTitulos(): Promise<Map<string, string>> {
+  const m = memoria();
   // Varias lecturas que llegan juntas a una instancia recién prendida
   // comparten la misma consulta del libro.
-  if (!titulosEnVuelo) {
-    titulosEnVuelo = leerTitulosYa();
-    const p = titulosEnVuelo;
-    const soltar = () => { if (titulosEnVuelo === p) titulosEnVuelo = null; };
+  if (!m.titulosEnVuelo) {
+    m.titulosEnVuelo = leerTitulosYa();
+    const p = m.titulosEnVuelo;
+    const soltar = () => { if (m.titulosEnVuelo === p) m.titulosEnVuelo = null; };
     p.then(soltar, soltar);
   }
-  return titulosEnVuelo;
+  return m.titulosEnVuelo;
 }
 
 async function leerTitulosYa(): Promise<Map<string, string>> {
+  // La memoria se toma antes de esperar a Google: es la de quien preguntó.
+  const m = memoria();
   const libro = await conReintento(() => sheets().spreadsheets.get({
     spreadsheetId: idPlanilla(), fields: 'properties.title,sheets.properties(title,sheetId)'
   }));
-  nombreLibro = String(libro.data.properties?.title ?? '');
-  ids = new Map((libro.data.sheets ?? [])
+  m.nombreLibro = String(libro.data.properties?.title ?? '');
+  m.ids = new Map((libro.data.sheets ?? [])
     .filter((s) => s.properties?.title && s.properties.sheetId != null)
     .map((s) => [s.properties!.title!, s.properties!.sheetId!]));
-  titulos = new Map(
+  m.titulos = new Map(
     (libro.data.sheets ?? [])
       .map((s) => s.properties?.title)
       .filter((t): t is string => !!t)
       .map((t) => [clave(t), t])
   );
-  return titulos;
+  return m.titulos;
 }
 
 /**
@@ -141,8 +156,8 @@ async function leerTitulosYa(): Promise<Map<string, string>> {
  * más. Vacío si Google no lo dice.
  */
 export async function nombreDeLaPlanilla(): Promise<string> {
-  if (!titulos) await leerTitulos();
-  return nombreLibro;
+  if (!memoria().titulos) await leerTitulos();
+  return memoria().nombreLibro;
 }
 
 /**
@@ -166,7 +181,7 @@ export async function nombreReal(
    */
   reciente = false
 ): Promise<string> {
-  let mapa = titulos;
+  let mapa = memoria().titulos;
   // Si hubo que leer el libro recién, lo que dice es de ahora mismo y no hay
   // nada que volver a mirar.
   let alDia = reciente;
@@ -224,9 +239,6 @@ export function esLimiteDeGoogle(e: unknown): boolean {
  * petición sí se recuerda —ver `conLecturas()`—, porque ahí no hay otra
  * instancia que escriba sin avisar.
  */
-const lecturas = new Map<string, Promise<string[][]>>();
-interface Pedida { hoja: string; res: (f: string[][]) => void; rej: (e: unknown) => void }
-let tanda: Map<string, Pedida> | null = null;
 /** Cuánto espera una tanda a que lleguen las demás lecturas. */
 const ESPERA_TANDA = 8;
 
@@ -256,7 +268,7 @@ export function conLecturas<A extends unknown[], R>(
 
 function olvidar(hoja: string) {
   const k = clave(hoja);
-  lecturas.delete(k);
+  memoria().lecturas.delete(k);
   ambito.getStore()?.delete(k);
 }
 
@@ -275,8 +287,9 @@ async function conReintento<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function despachar(): Promise<void> {
-  const pedidas = [...(tanda?.values() ?? [])];
-  tanda = null;
+  const m = memoria();
+  const pedidas = [...(m.tanda?.values() ?? [])];
+  m.tanda = null;
   // El nombre real de cada pestaña. Una que no existe falla sola, sin
   // arrastrar a las demás.
   const listas: (Pedida & { real: string })[] = [];
@@ -309,13 +322,18 @@ async function despachar(): Promise<void> {
 /** Pide una pestaña: se suma a la tanda abierta, o abre una. */
 function pedir(hoja: string): Promise<string[][]> {
   const k = clave(hoja);
+  const m = memoria();
+  const { lecturas } = m;
   const hay = lecturas.get(k);
   if (hay) return hay;
-  if (!tanda) { tanda = new Map(); setTimeout(() => void despachar(), ESPERA_TANDA); }
+  // El reloj hereda la empresa de quien abrió la tanda: `despachar()` lee su
+  // memoria y su planilla, no las de otra.
+  if (!m.tanda) { m.tanda = new Map(); setTimeout(() => void despachar(), ESPERA_TANDA); }
+  const tanda = m.tanda;
   const ya = tanda.get(k);
   const filas = new Promise<string[][]>((res, rej) => {
-    if (!ya) tanda!.set(k, { hoja, res, rej });
-    else tanda!.set(k, {
+    if (!ya) tanda.set(k, { hoja, res, rej });
+    else tanda.set(k, {
       hoja,
       res: (f) => { ya.res(f); res(f); },
       rej: (e) => { ya.rej(e); rej(e); }
@@ -367,8 +385,8 @@ export async function leerEncabezado(hoja: string): Promise<string[]> {
 /** El id interno de una pestaña, sin leer el libro entero cada vez. */
 async function idDeHoja(hoja: string): Promise<number> {
   const real = await nombreReal(hoja);
-  if (!ids.has(real)) await leerTitulos();
-  const id = ids.get(real);
+  if (!memoria().ids.has(real)) await leerTitulos();
+  const id = memoria().ids.get(real);
   if (id == null) throw new Error(`No existe la hoja "${hoja}" en la planilla.`);
   return id;
 }
@@ -484,10 +502,10 @@ export async function asegurarHoja(hoja: string): Promise<string> {
         // "A sheet with the name X already exists": alguien la creó entremedio.
         // Eso es justo lo que queríamos, así que no es un error — pero sí hay
         // que volver a mirar el libro, porque lo que recordábamos ya no sirve.
-        titulos = null;
+        memoria().titulos = null;
         return await nombreReal(hoja);
       }
-      titulos = null;          // el cache quedó viejo: ahora hay una pestaña más
+      memoria().titulos = null;          // el cache quedó viejo: ahora hay una pestaña más
       return hoja;
     }
   } catch (e) {
