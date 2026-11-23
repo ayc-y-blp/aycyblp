@@ -180,8 +180,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Configuración se reordenó en grupos, con la sección nueva *Condiciones para
   el cliente* (la de *Contrato* se fue). Dos columnas nuevas en
   `Presupuestos`. Ver `panel/CLAUDE.md`, "Lo que el vendedor puede prometer".
-- **Los otros siete casos** (23-11-2026, PR siguiente al #318, en preview
-  hasta el *"mergea"*): un horario que pasa del cierre se avisa como
+- **Los otros siete casos** (23-11-2026, PR #326, mergeado con el
+  *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después): un horario que pasa del cierre se avisa como
   recomendación; los acuerdos adicionales le llegan a pagos (✓ Visto, y
   vuelven si cambian); *sin documento* se avisa y queda en la bitácora; la
   vigencia la renueva el vendedor una vez y la segunda se pide; y el show o el
