@@ -1252,7 +1252,11 @@ elige nomás"* (el plazo para redactar, sin un valor por defecto).
 - **Una fila por nota**: `ID`, `ID Presupuesto` (el grupo de alternativas:
   la A y la B son la misma conversación), `ID Cliente`, `Cuándo` (lo pone el
   servidor), `Quién`, `Medio` (*Llamada · WhatsApp · Correo · Reunión*, o en
-  blanco) y `Nota`. La pestaña nace con la primera nota.
+  blanco) y `Nota`. **La pestaña se crea sola la primera vez que se abre
+  Cotizaciones** (`leerNotasOCrear()`): una tanda que pregunta por una
+  pestaña que no existe gasta una lectura más mirando el libro, y mientras
+  nadie anotara, abrir Cotizaciones habría costado dos lecturas en vez de
+  una.
 - **No se borran**: son la historia con ese cliente. Su autor la corrige el
   mismo día (`sePuedeCorregir()`).
 - **Las leen el vendedor de la cotización y la gerencia**

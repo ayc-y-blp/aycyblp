@@ -1070,6 +1070,23 @@ export async function leerNotas(): Promise<Nota[]> {
   }
 }
 
+/**
+ * **Las notas, y si la pestaña no está, se crea** (2026-11-23). Una tanda que
+ * pregunta por una pestaña que no existe gasta una lectura más mirando el
+ * libro, y Cotizaciones se abre todo el día: mientras nadie anotara, cada vez
+ * costaba dos lecturas en vez de una. Se crea con su encabezado una sola vez,
+ * la primera vez que se abre Cotizaciones; desde ahí, una lectura.
+ */
+export async function leerNotasOCrear(): Promise<Nota[]> {
+  try {
+    return leerNotasDe(await leerHoja(HOJA_NOTAS));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
 /** Anota una; la pestaña nace con la primera. */
 export async function agregarNota(n: Omit<Nota, 'id' | 'fila'>): Promise<Nota> {
   const filas = await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS);
