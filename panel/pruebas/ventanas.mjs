@@ -194,6 +194,12 @@ export const ESCENAS = {
     await ir('/presupuestos'); await clic(boton('+ Cotizar', true));
     await clic(ventana().getByRole('button', { name: /Cliente nuevo/ }));
   },
+  // ***✎ Editar cliente*** (2026-11-23): la ficha del cliente, desde el paso 1
+  // de una cotización que ya tiene cliente. Solo se abre; no guarda nada.
+  'v-cotizar-editar-cliente': async () => {
+    await cotizacion(/Cliente/);
+    await clic(ventana().getByRole('button', { name: /Editar cliente/ }));
+  },
   'v-cotizar-2-evento': () => cotizacion(/Evento/),
   'v-cotizar-3-productos': () => cotizacion(/Productos/),
   // El simulador de evento (2026-11-23): solo calcula, no guarda nada.

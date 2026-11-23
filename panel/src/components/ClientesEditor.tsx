@@ -10,29 +10,22 @@
  * cliente?"* antes de crear otro.
  *
  * Mismo patrón que `/equipo`: cerrada, cada ficha es una línea; se abre una a
- * la vez con `+`, y se guarda con un botón dentro de la ficha porque lo que
- * se edita es la identidad de alguien (ver "Lo que es un valor se guarda
- * solo" en CLAUDE.md).
+ * la vez con `+`. Abierta, se guarda sola salvo el nombre, que se confirma
+ * (`EditarCliente`, la misma pieza de *✎ Editar cliente* en la cotización).
  */
 import AvisoFijo from './AvisoFijo';
-import AyudaCorta from './AyudaCorta';
 import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } from './TarjetaLista';
-import AvisoGuardado from './AvisoGuardado';
-import { usarGuardadoPorFicha } from './usarGuardadoPorFicha';
 import { useEffect, useMemo, useState } from 'react';
 import Ayuda from './Ayuda';
 import { usarSoloMira } from './SesionCliente';
 import { Aviso } from './CalendarView';
-import Campo from './Campo';
-import CampoTelefono from './CampoTelefono';
-import CampoRut from './CampoRut';
 import { BotonMias, BotonTodos } from './BotonMias';
 import CambiarVendedor from './CambiarVendedor';
+import EditarCliente, { CLIENTE_VACIO, CamposCliente } from './EditarCliente';
 import { avisar } from './AvisoFlotante';
 import {
   buscarClientes, porNombreCliente, type Cliente, type DatosCliente
 } from '@/lib/clientes';
-import { avisoCorreo } from '@/lib/contacto';
 import { PastillaEstado } from './CotizacionesVista';
 import { enPesos } from '@/lib/ocupacion';
 import FechaDia from './FechaDia';
@@ -46,21 +39,6 @@ interface EnHistorial {
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
   'focus:border-oro focus:outline-none';
-
-const VACIO: DatosCliente = {
-  nombre: '', empresa: '', rut: '', domicilio: '', giro: '', telefono: '', correo: '', notas: ''
-};
-
-const CAMPOS: (keyof DatosCliente)[] =
-  ['nombre', 'empresa', 'rut', 'domicilio', 'giro', 'telefono', 'correo', 'notas'];
-
-const NOMBRE_CAMPO: Record<keyof DatosCliente, string> = {
-  nombre: 'nombre', empresa: 'empresa', rut: 'RUT', domicilio: 'domicilio', giro: 'giro',
-  telefono: 'teléfono', correo: 'correo', notas: 'notas'
-};
-
-const datosDe = (c: Cliente): DatosCliente =>
-  Object.fromEntries(CAMPOS.map((k) => [k, c[k]])) as DatosCliente;
 
 export default function ClientesEditor() {
   const [clientes, setClientes] = useState<Cliente[] | null>(null);
@@ -87,10 +65,11 @@ export default function ClientesEditor() {
    */
   const [mios, setMios] = useState<string[]>([]);
   const [ver, setVer] = useState<'mios' | 'todos' | null>(null);
-  /** Qué ficha está abierta. Una a la vez, como en `/equipo`. */
+  /**
+   * Qué ficha está abierta. Una a la vez, como en `/equipo`. Lo escrito y su
+   * guardado viven en `EditarCliente`, la misma pieza de la ventana de cotizar.
+   */
   const [abierta, setAbierta] = useState<string | null>(null);
-  /** Lo escrito en la ficha abierta, todavía sin guardar. */
-  const [edicion, setEdicion] = useState<DatosCliente | null>(null);
   /** El formulario de un cliente nuevo, o null si no se está creando. */
   const [nuevo, setNuevo] = useState<DatosCliente | null>(null);
   /** Las fichas que se parecen al nuevo, cuando el servidor las encontró. */
@@ -124,33 +103,10 @@ export default function ClientesEditor() {
       .sort(porNombreCliente) : []),
     [clientes, busqueda, soloMios, sonMios]);
 
-  /**
-   * **La ficha se guarda sola** (2026-11-12, regla del cliente: autoguardado
-   * por defecto): empresa, RUT, domicilio, giro, teléfono, correo y notas.
-   * Solo el nombre se confirma con un botón.
-   */
-  const fichas = usarGuardadoPorFicha<Partial<DatosCliente>>(async (id, cambios) => {
-    const r = await fetch('/api/clientes', {
-      method: 'PATCH', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, ...cambios })
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.error) return d.error || 'No se pudo guardar.';
-    if (d.clientes) setClientes(d.clientes);
-    if (d.parecidos?.length) {
-      avisar(`Ojo: se parece a ${d.parecidos.map((x: Cliente) => x.nombre).join(', ')}`, 'atencion');
-    }
-  }, 1200);
-
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!clientes) return <p className="text-hueso/50">Cargando…</p>;
 
-  const abrir = (c: Cliente) => {
-    if (abierta === c.id) { setAbierta(null); setEdicion(null); return; }
-    setAbierta(c.id);
-    setEdicion(datosDe(c));
-    setAviso('');
-  };
+  const abrir = (c: Cliente) => setAbierta(abierta === c.id ? null : c.id);
 
   async function crear(forzar = false) {
     if (!nuevo) return;
@@ -166,32 +122,10 @@ export default function ClientesEditor() {
       setClientes(d.clientes);
       setNuevo(null); setParecidas([]);
       setAbierta(d.id);
-      setEdicion(datosDe(d.clientes.find((c: Cliente) => c.id === d.id)));
       avisar(`Cliente creado: ${nuevo.nombre}`);
     } finally { setGuardando(false); }
   }
 
-
-  /** El nombre: el único campo de la ficha que se confirma. */
-  async function guardar(c: Cliente) {
-    if (!edicion) return;
-    setGuardando(true); setAviso('');
-    try {
-      const r = await fetch('/api/clientes', {
-        method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: c.id, nombre: edicion.nombre })
-      });
-      const d = await r.json();
-      if (d.error) return setAviso(d.error);
-      setClientes(d.clientes);
-      const guardado = d.clientes.find((x: Cliente) => x.id === c.id);
-      if (guardado) setEdicion({ ...edicion, nombre: guardado.nombre });
-      if (d.parecidos?.length) {
-        avisar(`Guardado. Ojo: se parece a ${d.parecidos.map((x: Cliente) => x.nombre).join(', ')}`,
-          'atencion');
-      } else avisar(`Ahora se llama ${edicion.nombre}`);
-    } finally { setGuardando(false); }
-  }
 
   async function borrar(c: Cliente) {
     if (!confirm(`¿Borrar la ficha de ${c.nombre}? No tiene cotizaciones, así que no se pierde ninguna.`)) return;
@@ -199,7 +133,7 @@ export default function ClientesEditor() {
     const d = await r.json();
     if (d.error) return avisar(d.error, 'atencion');
     setClientes(d.clientes);
-    if (abierta === c.id) { setAbierta(null); setEdicion(null); }
+    if (abierta === c.id) setAbierta(null);
     avisar(`Ficha borrada: ${c.nombre}`);
   }
 
@@ -216,57 +150,6 @@ export default function ClientesEditor() {
       await cargar();
     } finally { setGuardando(false); }
   }
-
-  /** Los campos de una ficha, iguales para crear y para editar. */
-  const formulario = (d: DatosCliente, poner: (k: keyof DatosCliente, v: string) => void,
-                      quien: string) => (
-    // En el computador, cuatro campos por fila (2026-11-21): con dos, la ficha
-    // abierta no entraba en la pantalla.
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <Campo etiqueta="Nombre" ancho="w-full">
-        <input type="text" value={d.nombre} className={ENTRADA}
-          placeholder="Nombre y apellido, o de la empresa"
-          onChange={(e) => poner('nombre', e.target.value)} />
-      </Campo>
-      <Campo etiqueta="Empresa del cliente" ancho="w-full">
-        <input type="text" value={d.empresa} className={ENTRADA}
-          placeholder="Si es una empresa: su razón social"
-          onChange={(e) => poner('empresa', e.target.value)} />
-      </Campo>
-      <Campo etiqueta="Teléfono" ancho="w-full">
-        <CampoTelefono valor={d.telefono} className={ENTRADA}
-          etiqueta={`Teléfono de ${quien}`} onCambio={(v) => poner('telefono', v)} />
-      </Campo>
-      <Campo etiqueta="Correo" ancho="w-full">
-        <input type="email" value={d.correo} className={ENTRADA}
-          placeholder="nombre@correo.cl"
-          onChange={(e) => poner('correo', e.target.value)} />
-        {avisoCorreo(d.correo) && (
-          <p className="mt-0.5 text-[13px] text-ambar-texto">{avisoCorreo(d.correo)}</p>
-        )}
-      </Campo>
-      <Campo etiqueta="RUT" ancho="w-full">
-        <CampoRut valor={d.rut} className={ENTRADA} etiqueta="RUT"
-          placeholder="Lo pide el contrato, no la cotización"
-          onCambio={(v) => poner('rut', v)} />
-      </Campo>
-      <Campo etiqueta="Domicilio" ancho="w-full">
-        <input type="text" value={d.domicilio} className={ENTRADA}
-          placeholder="Lo pide el contrato"
-          onChange={(e) => poner('domicilio', e.target.value)} />
-      </Campo>
-      <Campo etiqueta="Giro" ancho="w-full">
-        <input type="text" value={d.giro} className={ENTRADA}
-          placeholder="Lo pide la factura"
-          onChange={(e) => poner('giro', e.target.value)} />
-      </Campo>
-      <Campo etiqueta="Notas" ancho="w-full sm:col-span-2 lg:col-span-4">
-        <textarea value={d.notas} rows={2} className={ENTRADA}
-          placeholder="Lo que conviene saber: cómo llegó, qué le importa"
-          onChange={(e) => poner('notas', e.target.value)} />
-      </Campo>
-    </div>
-  );
 
   return (
     <section>
@@ -303,7 +186,7 @@ export default function ClientesEditor() {
           </div>
         )}
         {!nuevo && !soloMira && (
-          <button onClick={() => { setNuevo({ ...VACIO, nombre: busqueda }); setParecidas([]);
+          <button onClick={() => { setNuevo({ ...CLIENTE_VACIO, nombre: busqueda }); setParecidas([]);
                                    setAviso(''); }}
             className="boton boton-relleno min-h-[44px] px-5 text-[15px]">
             + Nuevo cliente
@@ -315,7 +198,8 @@ export default function ClientesEditor() {
         // `data-ficha`: así la encuentra `npm run ventanas`, que mide si cabe.
         <div data-ficha="nueva" className="mb-5 rounded border border-oro/50 bg-panel p-4">
           <h2 className="mb-3 text-[15px] font-bold uppercase tracking-wide">Nuevo cliente</h2>
-          {formulario(nuevo, (k, v) => setNuevo({ ...nuevo, [k]: v }), 'el cliente nuevo')}
+          <CamposCliente datos={nuevo} quien="el cliente nuevo"
+            poner={(k, v) => setNuevo({ ...nuevo, [k]: v })} />
 
           {parecidas.length > 0 && (
             <div className="mt-4 rounded border border-ambar/50 bg-ambar/5 p-3">
@@ -333,7 +217,7 @@ export default function ClientesEditor() {
                     </span>
                     <button className="boton" onClick={() => {
                       setNuevo(null); setParecidas([]); setBusqueda('');
-                      setAbierta(c.id); setEdicion(datosDe(c));
+                      setAbierta(c.id);
                     }}>Sí, es este</button>
                   </li>
                 ))}
@@ -370,9 +254,7 @@ export default function ClientesEditor() {
         <ul className={LISTA_TARJETAS}>
           {visibles.map((c) => {
             const n = cotizaciones[c.id] ?? 0;
-            const abiertaEsta = abierta === c.id && edicion;
-            const cambiaNombre = !!abiertaEsta && edicion!.nombre.trim() !== c.nombre;
-            const { estado, error: falla } = fichas.estadoDe(c.id);
+            const abiertaEsta = abierta === c.id;
             return (
               <li key={c.id} className={`overflow-hidden ${marcoTarjeta(!!abiertaEsta)}`}>
                 <div className="flex items-center gap-2 pr-2">
@@ -443,40 +325,11 @@ export default function ClientesEditor() {
                         </ul>
                       )}
                     </div>
-                    {/* **La ficha de un cliente de otro vendedor** (2026-11-13,
-                        `privacidad.ts`): llega con el contacto tapado y no
-                        se edita. Cotizarle la vuelve suya. */}
-                    {c.contactoTapado ? (
-                      <p className="flex flex-wrap items-center gap-1.5 rounded-lg border border-hueso/15 px-3 py-2.5 text-[15px] text-hueso/75">
-                        🔒 Es un cliente de otro vendedor{c.telefono ? ` · ${c.telefono}` : ''}. <AyudaCorta tema="clienteDeOtro" />
-                      </p>
-                    ) : (
-                    <fieldset disabled={soloMira} className="m-0 min-w-0 border-0 p-0">
-                    {formulario(edicion!, (k, v) => {
-                      setEdicion({ ...edicion!, [k]: v });
-                      // El nombre espera su botón; lo demás se guarda solo.
-                      if (k !== 'nombre') fichas.programar(c.id, { [k]: v });
-                    }, c.nombre)}
-                    </fieldset>
-                    )}
-                    {aviso && <p className="mt-3 text-[15px] text-rojo-texto">{aviso}</p>}
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
-                      {cambiaNombre && !soloMira && (
-                        <>
-                          <span className="text-[14px] text-ambar-texto">Cambiaste el nombre.</span>
-                          <button type="button" className="boton boton-relleno"
-                            disabled={!edicion!.nombre.trim() || guardando}
-                            onClick={() => {
-                              if (confirm(`¿Cambiar el nombre de ${c.nombre} a ${edicion!.nombre.trim()}? `
-                                + 'Se corrige también en sus cotizaciones y reservas.')) void guardar(c);
-                            }}>Guardar el nombre</button>
-                          <button type="button" className="boton"
-                            onClick={() => setEdicion({ ...edicion!, nombre: c.nombre })}>Deshacer</button>
-                        </>
-                      )}
-                      <AvisoGuardado estado={estado} error={falla} onReintentar={() => fichas.reintentar(c.id)} />
-                      <span className="flex-1" />
-{vendedores ? (
+                    {/* La ficha, con la misma pieza que la ventana de cotizar
+                        (`EditarCliente`). La de un cliente de otro vendedor
+                        llega con el contacto tapado y no se edita. */}
+                    <EditarCliente cliente={c} soloMira={soloMira} onClientes={setClientes}
+                      pie={vendedores ? (
                         <>
                           <span className="text-[13px] text-hueso/60">{c.id}</span>
                           <CambiarVendedor de={c.creadoPor ?? ''} vendedores={vendedores} cliente={c.id} nombre={c.nombre}
@@ -486,8 +339,7 @@ export default function ClientesEditor() {
                         <span className="text-[13px] text-hueso/60">
                           {c.id}{c.creadoPor && <> · creada por {c.creadoPor}</>}
                         </span>
-                      )}
-                    </div>
+                      )} />
                   </div>
                 )}
                 {abiertaEsta && <PieCerrar nombre={c.nombre} onCerrar={() => abrir(c)} />}

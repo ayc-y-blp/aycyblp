@@ -93,9 +93,14 @@ export function usarGuardadoPorFicha<C extends object>(
   /** Si hay algo sin guardar (en el reloj o en camino). */
   const hayPendientes = () => pendientes.current.size > 0 || enCamino.current.size > 0;
 
-  // Al irse, lo que quede se manda igual.
+  // Al irse, lo que quede se manda igual, una vez: se apagan los relojes, que
+  // si no lo volverían a mandar (2026-11-23: con *✎ Editar cliente* la ficha
+  // se desmonta al cerrar su ventana, no solo al cambiar de página).
   useEffect(() => () => {
+    for (const reloj of relojes.current.values()) clearTimeout(reloj);
+    relojes.current.clear();
     for (const [clave, cambios] of pendientes.current) void enviarRef.current(clave, cambios);
+    pendientes.current.clear();
   }, []);
 
   return {

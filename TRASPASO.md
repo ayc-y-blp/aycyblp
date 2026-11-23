@@ -190,6 +190,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
   la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
   otros casos".
+- ***✎ Editar cliente*, desde la cotización** (23-11-2026, PR #331, en
+  preview): en el paso Cliente, la ficha del cliente en una ventanita, sin
+  salir de la cotización. Es la misma pieza de *Clientes* (`EditarCliente`):
+  se guarda sola y el nombre se confirma. Ningún permiso ni columna nueva.
+  Ver `panel/CLAUDE.md`, "*✎ Editar cliente*, desde la cotización".
 - **El periodo en un marco** (22-11-2026, PR #309, mergeado con el *"mergea"*
   del cliente): en
   Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
@@ -1275,7 +1280,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 54 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 55 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más
