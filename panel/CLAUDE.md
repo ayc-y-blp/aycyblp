@@ -221,6 +221,29 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Filtrar por de dónde viene la reserva (2026-11-23)
+
+Lo pidió el cliente: *"poder filtrar también por dónde viene la reserva…
+cotización, Shopify o manual"*. Eligió las dos pantallas.
+
+- **La misma pieza en las dos** (`QUE_RESERVAS` y `origenDeReserva()` en
+  `lib/estadisticas.ts`): *🛒 Shopify · ✍ A mano · 🤝 Cotización*. Una reserva
+  es de cotización si su cotización la tiene como `ID Reserva`; si no, de
+  Shopify si su id es un número, y si no, a mano.
+- **Estadísticas**: *Todo · Visitas · Eventos* pasó a *Todo · 🛒 Shopify · ✍ A
+  mano · 🤝 Cotización* (`enTipo()`: Shopify son sus dos modalidades). *Visitas*
+  juntaba Shopify y a mano. **Ahora va siempre en la fila de arriba**, junto a
+  *Volver*: al lado del marco del periodo, los cuatro botones le quitaban tanto
+  ancho que el marco se partía en tres renglones (lo marcó `revisarEspacio()`).
+  Así el marco queda en una fila.
+- **La página del día**: los tres, al lado de *Mías* y del filtro del pago, y
+  se suman a ellos. **Como *Mías*, se aprietan para filtrar y otra vez para
+  soltar** —un segundo *Todas* al lado del de pago confundía—, con cuántas hay
+  de cada una; el que no tiene ninguna va apagado. *Exportar CSV* baja lo que
+  se ve. Ir a una reserva desde un aviso suelta también este filtro.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?`
+  de Estadísticas y el de la página del día.
+
 ## El cobro en la mesa y la caja chica (2026-11-23)
 
 Lo pidió el cliente, por la encargada de turno: *"al cerrar la reserva, pone

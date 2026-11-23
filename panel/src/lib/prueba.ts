@@ -6257,10 +6257,15 @@ console.log('\nLas estadísticas de reservas');
      'por día de la semana: personas promedio por día que recibió gente, de lunes a domingo');
   ok(r.serie.map((x) => `${x.clave.slice(8)}:${x.personas}/${x.cupo}`).join() === '14:6/60,15:46/60,21:5/60,22:0/60' && !r.serieSemanal,
      'la serie por día: los días que reciben gente, con su cupo');
-  const vis = E.resumen(filas, dias, nov, { ...o, tipo: 'visitas' });
-  const eve = E.resumen(filas, dias, nov, { ...o, tipo: 'eventos' });
-  ok(vis.reservas === 4 && vis.personas === 17 && eve.reservas === 1 && eve.personas === 40,
-     'Visitas son Shopify y a mano; Eventos, las cotizaciones');
+  const sho = E.resumen(filas, dias, nov, { ...o, tipo: 'shopify' });
+  const man = E.resumen(filas, dias, nov, { ...o, tipo: 'mano' });
+  const cot = E.resumen(filas, dias, nov, { ...o, tipo: 'cotizacion' });
+  ok(sho.reservas === 3 && sho.personas === 11 && man.reservas === 1 && man.personas === 6
+     && cot.reservas === 1 && cot.personas === 40,
+     'Shopify son sus dos modalidades; a mano y cotización, cada una lo suyo');
+  ok(E.origenDeReserva({ id: '6512345678901' }, false) === 'shopify' && E.origenDeReserva({ id: 'MANUAL-1' }, false) === 'mano'
+     && E.origenDeReserva({ id: 'MANUAL-1' }, true) === 'cotizacion',
+     'de dónde viene una reserva del panel: cotización, Shopify por su número, o a mano');
   const res = E.resumen(filas, dias, nov, { ...o, base: 'reservada' });
   ok(res.reservas === 4 && res.ocupacion === null, 'por fecha en que se reservó cuenta otras reservas, y la ocupación no aplica');
   const oct = E.resumen(filas, dias, E.anteriorDe('mes', nov), o);

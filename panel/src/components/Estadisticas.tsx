@@ -8,7 +8,7 @@
  * Arriba, **cuándo y por qué fecha en una sola pieza** (`ElegirPeriodo`,
  * la misma de la Lista de cotizaciones, 2026-11-22): *Mes · Semana · Día ·
  * Personalizado*, el periodo con ◀ ▶ y si se cuenta por la fecha de la
- * visita o la de la reserva. **Qué** (*Todo · Visitas · Eventos*) va a su
+ * visita o la de la reserva. **Qué** (*Todo · Shopify · A mano · Cotización*) va a su
  * derecha, en la misma fila (en el celular, arriba). Abajo, cuatro bloques: cuánto se movió, si vinieron,
  * la plata, y de dónde y cómo. Cada número se compara con el periodo
  * anterior y tiene su `?`.
@@ -28,7 +28,7 @@ import { enPesos } from '@/lib/ocupacion';
 import { enCorto, enPalabras, mesEnPalabras, rangoEnPalabras, diaSemana, type Fecha } from '@/lib/fechas';
 import {
   resumen, rangoDe, moverRango, anteriorDe, rangoPersonalizado, cambio, largoDe,
-  type FilaEst, type DiaEst, type Rango, type Modo, type Base, type Tipo, type Resumen
+  type FilaEst, type DiaEst, type Rango, type Modo, type Base, type Tipo, type Resumen, QUE_RESERVAS
 } from '@/lib/estadisticas';
 
 const ELEGIDO = 'border-oro bg-oro/15 font-semibold text-oro';
@@ -249,25 +249,30 @@ export default function Estadisticas() {
   };
 
   /**
-   * **Qué reservas** (*Todo · Visitas · Eventos*), a la derecha. **Desde
+   * **Qué reservas** (*Todo · Shopify · A mano · Cotización*), a la derecha. **Desde
    * 1280px va en la fila del periodo**, a la derecha del marco: ahí caben los
    * dos (la prueba de espacio lo pidió: *dos filas que cabrían en una*). Van
    * en una fila que no se parte (`juntos`): si el título del periodo es largo
    * —una semana entre dos meses, un día—, **cede el marco**, que dobla sus
-   * fechas adentro, y *Todo · Visitas · Eventos* no queda solo en otra fila.
+   * fechas adentro, y *Todo · Shopify · A mano · Cotización* no queda solo en otra fila.
    * Más angosto, en *Personalizado* (el marco ocupa casi todo el ancho) y en
    * el celular, va en la fila de la cabecera, junto a *Volver*. En la vista
    * del equipo no se dibuja, y el periodo entra en la fila de la cabecera.
    */
   const queReservas = vista === 'equipo' && datos?.equipo ? null : (
     <div className="flex w-full gap-1 lg:w-auto xl:shrink-0" role="group" aria-label="Qué reservas">
-      {([['todo', 'Todo'], ['visitas', 'Visitas'], ['eventos', 'Eventos']] as const).map(([k, t]) => (
+      {QUE_RESERVAS.map(([k, t]) => (
         <button key={k} type="button" aria-pressed={tipo === k} onClick={() => setTipo(k)}
           className={`boton min-h-[40px] flex-1 lg:flex-none ${tipo === k ? ELEGIDO : ''}`}>{t}</button>
       ))}
     </div>
   );
-  const juntos = !!queReservas && modo !== 'personalizado';
+  // **Desde el 2026-11-23 va siempre en la fila de la cabecera**: con *Todo ·
+  // 🛒 Shopify · ✍ A mano · 🤝 Cotización* (cuatro botones), al lado del marco
+  // le quitaba tanto ancho que el marco se partía en tres renglones —la prueba
+  // de espacio lo marcó—. Arriba, junto a *Volver*, hay lugar, y el marco
+  // queda entero. `juntos` queda por si vuelve a caber.
+  const juntos = false && !!queReservas && modo !== 'personalizado';
 
   const cabecera = (periodo?: React.ReactNode) => (
     <>
@@ -293,7 +298,7 @@ export default function Estadisticas() {
         )}
         <span className="hidden flex-1 lg:block" />
         {/* Con `juntos`, desde 1280px una fila propia: el marco a la izquierda y
-            *Todo · Visitas · Eventos* a la derecha (va primero en el HTML, por
+            *Todo · Shopify · A mano · Cotización* a la derecha (va primero en el HTML, por
             eso `flex-row-reverse`). Más angosto, `contents`: como si no hubiera
             caja. */}
         {periodo && juntos ? (

@@ -303,7 +303,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   solo documentación: no toca el sitio ni el panel, sin lecturas de Google ni
   permisos. PR #325 y el siguiente. Ver `cultura/README.md`.
 - **La caja chica, el cobro en la mesa y la jornada de preparación**
-  (23-11-2026, PR abierto, en preview): la encargada de turno cobra lo que
+  (23-11-2026, PR #335, mergeado con el *"mergea"* del cliente;
+  `verificar.sh` dio 15 de 15 después): la encargada de turno cobra lo que
   falta de una mesa —efectivo, transferencia con su foto o tarjeta— y la deja
   pagada (a Shopify no se le toca nada); el efectivo entra a la **caja chica**
   (menú *Caja*), que se entrega a operaciones con *✓ Recibí*, se deposita o se
@@ -313,6 +314,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   pestaña `Caja chica`, tres columnas al final de `Reservas` y una de
   `Trabajadores`. Ver `panel/CLAUDE.md`, "El cobro en la mesa y la caja chica"
   y "La jornada de preparación".
+- **Filtrar por de dónde viene la reserva** (23-11-2026, el cliente dijo
+  *"luego mergea"*): *🛒 Shopify · ✍ A mano · 🤝 Cotización*, en Estadísticas
+  (reemplaza a *Visitas · Eventos*) y en la página del día, al lado de *Mías*.
+  Ver `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

@@ -4,7 +4,8 @@
  * cuántas reservas se hicieron en este rango de tiempo, cuál es la tasa de
  * no-shows, cuál es el valor promedio"*, para operaciones hacia arriba y
  * *"para que la gerencia pueda ver también números en grandes rasgos"*).
- * Aprobó la propuesta entera, con el filtro *Todo · Visitas · Eventos*.
+ * Aprobó la propuesta entera, con el filtro *Todo · Visitas · Eventos*, que el
+ * 2026-11-23 pasó a *Todo · Shopify · A mano · Cotización* (`QUE_RESERVAS`).
  *
  * **Puro y sin red**: lo importa la pantalla, que calcula en el navegador
  * con lo que manda `/api/estadisticas` —una fila chica por reserva, sin
@@ -21,8 +22,24 @@ import { diaSemana, sumarDias, sumarMeses, semanaDe, diasDelMes, type Fecha } fr
 
 /** De dónde viene una reserva: las dos de Shopify, a mano o de una cotización. */
 export type Origen = 'directo' | 'soloReserva' | 'mano' | 'cotizacion';
-/** *Todo · Visitas · Eventos*: visitas son Shopify y a mano; eventos, las cotizaciones. */
-export type Tipo = 'todo' | 'visitas' | 'eventos';
+/**
+ * **De dónde viene la reserva**, para filtrar (2026-11-23, lo pidió el cliente:
+ * *"poder filtrar también por dónde viene la reserva… cotización, Shopify o
+ * manual"*). Reemplaza a *Todo · Visitas · Eventos*: *Visitas* juntaba Shopify y
+ * a mano. Es el mismo filtro en Estadísticas y en la página del día.
+ */
+export type Tipo = 'todo' | 'shopify' | 'mano' | 'cotizacion';
+
+/** Los botones del filtro, en su orden: la misma pieza en las dos pantallas. */
+export const QUE_RESERVAS: [Tipo, string][] = [
+  ['todo', 'Todo'], ['shopify', '🛒 Shopify'], ['mano', '✍ A mano'], ['cotizacion', '🤝 Cotización']
+];
+
+/** De dónde viene una reserva del panel: de una cotización, de Shopify (su id es un número) o a mano. */
+export function origenDeReserva(r: { id: string }, deCotizacion: boolean): Exclude<Tipo, 'todo'> {
+  if (deCotizacion) return 'cotizacion';
+  return /^\d+$/.test(String(r.id ?? '').trim()) ? 'shopify' : 'mano';
+}
 /** Por qué fecha se mira: la de la visita o la del día en que se reservó. */
 export type Base = 'visita' | 'reservada';
 export type Modo = 'dia' | 'semana' | 'mes' | 'personalizado';
@@ -148,10 +165,11 @@ export interface Resumen {
 const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : null);
 const sumar = <T>(xs: T[], f: (x: T) => number) => xs.reduce((n, x) => n + f(x), 0);
 
-/** Si la fila entra en *Todo · Visitas · Eventos*. */
+/** Si la fila entra en *Todo · Shopify · A mano · Cotización*. Shopify son las dos modalidades. */
 export function enTipo(f: Pick<FilaEst, 'origen'>, tipo: Tipo): boolean {
   if (tipo === 'todo') return true;
-  return (f.origen === 'cotizacion') === (tipo === 'eventos');
+  if (tipo === 'shopify') return f.origen === 'directo' || f.origen === 'soloReserva';
+  return f.origen === tipo;
 }
 
 /** La fecha por la que se cuenta la fila. */
