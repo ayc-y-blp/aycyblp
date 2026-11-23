@@ -24,6 +24,7 @@ import { condicionesEspecialesDe, leerPedido, frasePedido, type Topes } from './
 import { acuerdosPorRevisar, huellaDe } from './acuerdos.ts';
 import { ESTADO_PAGO } from './columnas.ts';
 import { porRecibirDe, porRevisarCaja, partesRecibido, type Movimiento } from './caja.ts';
+import { leerCobroLocal, sumaCobro, fraseCobro } from './cobroLocal.ts';
 
 /** Lo que tienen todas las cosas por aprobar. */
 interface Base {
@@ -102,6 +103,9 @@ export interface PendientePago extends Base {
   monto: number | null;
   abonado: number | null;
   nota: string;
+  /** Si se cobró en la mesa (2026-11-23, `cobroLocal.ts`): cuánto y cómo. */
+  cobrado?: number;
+  cobro?: string;
 }
 
 /** Un descuento ya aplicado —estándar o aprobado— que pagos todavía no vio. */
@@ -275,7 +279,11 @@ export function pendientesDePago(reservas: Reserva[], deCotizacion: Set<string> 
       tipo: 'pago', clave: `pago-${r.fila}`, fila: r.fila, fecha: r.fecha, pide: m.quien || 'alguien',
       cuando: m.cuando, motivo: '', comentario: '', nombre: r.nombre || 'sin nombre',
       estado: r.estadoPago === ESTADO_PAGO.abonado ? 'Abonada' : 'Pagada',
-      monto: r.monto ?? null, abonado: r.abonado ?? null, nota: String(r.notaPago ?? '').trim()
+      monto: r.monto ?? null, abonado: r.abonado ?? null, nota: String(r.notaPago ?? '').trim(),
+      ...(String(r.cobroLocal ?? '').trim() ? {
+        cobrado: sumaCobro(leerCobroLocal(r.cobroLocal)), cobro: fraseCobro(leerCobroLocal(r.cobroLocal)),
+        pide: partesMarca(r.cobroCerrado)?.quien || m.quien || 'alguien'
+      } : {})
     });
   }
   return lista.sort(porFecha) as PendientePago[];

@@ -265,8 +265,11 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   - **Le llega a pagos** como un pago anotado (`Pago anotado`, la bandeja de
     siempre): `pagoPorRevisar()` ahora incluye una de Shopify cobrada en la
     mesa, y la firma del pago (`firmaPago()`) suma el cobro al final —las
-    firmas de antes siguen calzando—. Los de una cotización, en sus cobros. Si
-    cobra pagos, queda revisado.
+    firmas de antes siguen calzando—. **El aviso dice lo cobrado en la mesa,
+    no el total de la reserva**: *Tomás Herrera cobró en la mesa a Martín
+    Araya · $18.000*, con los medios debajo, y su detalle dice contra qué
+    revisarlo (la caja, el banco, el cierre del POS). Los de una cotización, en
+    sus cobros. Si cobra pagos, queda revisado.
 - **Cobrada, se lee** *✓ Pagó todo en el local* con los medios, el comprobante
   y quién la cobró. **El valor final queda fijo** (el servidor responde 409):
   para cambiarlo, *Deshacer* primero.

@@ -147,6 +147,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
     if (p.tipo === 'descuento') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}</>;
     if (p.tipo === 'cupo') return <><b>{p.pide}</b> pide subir el cupo a <b className="text-ambar-texto">{p.cupoPedido}</b> · {dia}</>;
     if (p.tipo === 'sobrecupo') return <>{dia}: <b className="text-rojo-texto">{p.exceso} {p.exceso === 1 ? 'persona' : 'personas'} sobre el cupo</b> ({p.tomadas} de {p.cupoActual})</>;
+    // **Cobrado en la mesa** (2026-11-23): lo que se revisa es lo cobrado ahí, no el total de la reserva.
+    if (p.tipo === 'pago' && p.cobro) return <><b>{p.pide}</b> cobró en la mesa a <b>{p.nombre}</b> · {pesos(p.cobrado ?? 0)} · {dia}</>;
     if (p.tipo === 'pago') return <><b>{p.pide}</b> anotó el pago de <b>{p.nombre}</b>{p.monto ? <> · {pesos(p.monto)}</> : null} · {dia}</>;
     if (p.tipo === 'descuentoVisto') return <><b>{p.pide}</b> aplicó <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}{p.aprobo && <> · lo aprobó {p.aprobo}</>}</>;
     if (p.tipo === 'cuenta' && p.de === 'socio') return <><b>{p.pide}</b> agregó el socio comercial <b>{p.nombre}</b>: <b className="text-ambar-texto">confirma su trato</b></>;
@@ -268,7 +270,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                           dobla debajo en vez de bajar entera. */}
                       <EstadoDelPago className="mr-2 align-middle" r={{ id: 'MANUAL', tipoPago: '', notaPago: '',
                         estadoPago: p.estado === 'Abonada' ? 'partially_paid' : 'paid', abonado: p.abonado }} />
-                      {p.nota && <span className="align-middle">{p.nota}</span>}
+                      {(p.cobro || p.nota) && <span className="align-middle">{p.cobro || p.nota}</span>}
                     </p>
                   )}
                 </div>
@@ -299,7 +301,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   <p className="text-[14px] text-hueso/80 lg:flex-1">
                     {p.tipo === 'descuento' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'}</>}
                     {p.tipo === 'cupo' && <>Hoy es <b>{p.cupoActual}</b> · ya reservaron <b>{p.tomadas}</b></>}
-                    {p.tipo === 'pago' && <>Ya rige: la reserva cuenta como {p.estado.toLowerCase()}. Revísalo contra el banco o la caja; si algo no calza, corrígelo en la reserva</>}
+                    {p.tipo === 'pago' && (p.cobro
+                      ? <>Ya rige: la reserva cuenta como pagada. Revisa el efectivo contra la caja chica, la transferencia contra el banco (su comprobante está en la mesa) y la tarjeta contra el cierre del POS</>
+                      : <>Ya rige: la reserva cuenta como {p.estado.toLowerCase()}. Revísalo contra el banco o la caja; si algo no calza, corrígelo en la reserva</>)}
                     {p.tipo === 'descuentoVisto' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'} · ya rige en lo que se cobra</>}
                     {p.tipo === 'cuenta' && p.de === 'socio' && <>Ya se puede cotizar con él. Nació con el trato de partida —5% desde 22, 10% desde 55, 15% desde 77—: míralo en su tarjeta, <a className="text-oro underline" href={`/vendedores?usuario=${encodeURIComponent(p.id ?? '')}`}>Vendedores →</a>, y confírmalo</>}
                     {p.tipo === 'cuenta' && p.de !== 'socio' && <>Ya rige. Antes de transferir, mira la ficha y confirma que los datos están bien</>}

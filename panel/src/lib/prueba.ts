@@ -7132,6 +7132,12 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(deCaja.length === 2 && deCaja[0].que === 'recibir' && deCaja[0].monto === 5000 && deCaja[0].pide === 'fernanda'
      && deCaja[1].que === 'revisar' && deCaja[1].cuantos === 4 && deCaja[1].diferencias === 1,
      'la bandeja: la entrega por recibir y, para pagos, cuántos movimientos faltan');
+  const cobrada = { id: '7001', fecha: '2026-11-14', nombre: 'Martín', email: '', telefono: '', menu: '', personas: 3, monto: 94000,
+    tipoPago: '' as const, estadoPago: 'paid', creada: '', asistencia: '', notaPago: '', eventoCRM: '', anotadaPor: '', fila: 9,
+    cobroLocal: 'Efectivo 15000|Tarjeta 3000', cobroCerrado: '2026-11-14 18:40 · Tomás · antes paid/', pagoAnotado: '2026-11-14 18:40 · Tomás' };
+  const pp = A.pendientesDePago([cobrada]);
+  ok(pp.length === 1 && pp[0].cobrado === 18000 && pp[0].pide === 'Tomás' && /Efectivo \$15\.000/.test(pp[0].cobro ?? ''),
+     'la bandeja de pagos dice lo cobrado en la mesa y cómo, no el total de la reserva');
   ok(A.pendientesDeCaja(movs, { usuario: 'fernanda' }, { recibe: false, revisa: false }).length === 0,
      'quien no recibe ni revisa no ve nada de la caja en la bandeja');
 }
