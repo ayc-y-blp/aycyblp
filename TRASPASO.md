@@ -302,6 +302,17 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   para todos los proyectos, se anota también en el skill o en `cultura/`.** Es
   solo documentación: no toca el sitio ni el panel, sin lecturas de Google ni
   permisos. PR #325 y el siguiente. Ver `cultura/README.md`.
+- **La caja chica, el cobro en la mesa y la jornada de preparación**
+  (23-11-2026, PR abierto, en preview): la encargada de turno cobra lo que
+  falta de una mesa —efectivo, transferencia con su foto o tarjeta— y la deja
+  pagada (a Shopify no se le toca nada); el efectivo entra a la **caja chica**
+  (menú *Caja*), que se entrega a operaciones con *✓ Recibí*, se deposita o se
+  gasta con su foto, y pagos revisa. **Al estrenarla se anota el saldo
+  inicial: $7.000** (lo dijo el cliente). Y un segundo monto de jornada para
+  los días de preparación. Dos permisos nuevos (`caja`, `recibirCaja`), la
+  pestaña `Caja chica`, tres columnas al final de `Reservas` y una de
+  `Trabajadores`. Ver `panel/CLAUDE.md`, "El cobro en la mesa y la caja chica"
+  y "La jornada de preparación".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -453,7 +464,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 
 | Pestaña | Una fila es | Columnas clave | Se relaciona con |
 |---|---|---|---|
-| `Reservas` | una reserva | `ID Orden` (id de Shopify, `MANUAL-…` a mano), `Fecha Reserva`, `Nombre`, `Email`, `Teléfono`, `Menú`, `Personas`, `Monto`, `Tipo Pago` (solo Shopify: *Pago directo / Solo reserva*), `Estado Pago Shopify` (`paid`, `pending`, `partially_paid`, `cancelled`, `refunded`, `voided`), `Asistencia`, `Nota de pago`, `Abonado`, `Se cayó por cupo`, `Anotada por`, `Pago anotado`, `Pago revisado`, `Agregados`, `Valor final`, `Mesa cerrada`… | `Fechas Hábiles` por fecha; `Presupuestos.ID Reserva` |
+| `Reservas` | una reserva | `ID Orden` (id de Shopify, `MANUAL-…` a mano), `Fecha Reserva`, `Nombre`, `Email`, `Teléfono`, `Menú`, `Personas`, `Monto`, `Tipo Pago` (solo Shopify: *Pago directo / Solo reserva*), `Estado Pago Shopify` (`paid`, `pending`, `partially_paid`, `cancelled`, `refunded`, `voided`), `Asistencia`, `Nota de pago`, `Abonado`, `Se cayó por cupo`, `Anotada por`, `Pago anotado`, `Pago revisado`, `Agregados`, `Valor final`, `Mesa cerrada`, `Cobrado en el local`, `Comprobante del cobro`, `Cobro cerrado`… | `Fechas Hábiles` por fecha; `Presupuestos.ID Reserva` |
 | `Fechas Hábiles` | un día del calendario | `Fecha`, `Capacidad Máx`, `Hora Apertura`, `Estado` (*Abierta / Privada / Privada exclusiva / Cerrada*), `Notas`, `Cupo pedido` | `Reservas`, `Turnos`, `Actividades` por fecha |
 | `Config` | un parámetro | `Clave` · `Valor` (días que se abre, cupo, vigencia, descuentos, anticipo, mínimo del show, datos de la empresa, carpeta de Drive…) | todo |
 | `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor` | Reservas (por nombre), líneas de cotización |
@@ -462,7 +473,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF` | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |
-| `Trabajadores` | una ficha | `Nombre` (es la identidad), `Puesto habitual`, `Activo`, `Token de acceso`, `Modalidad` (*por turno / contratado*), `Pago por jornada`, `Valor hora extra`, `Participa en propina` (en blanco = sí), `Nota de pago` (datos bancarios), `Por confirmar` | `Turnos.Trabajador` por nombre |
+| `Trabajadores` | una ficha | `Nombre` (es la identidad), `Puesto habitual`, `Activo`, `Token de acceso`, `Modalidad` (*por turno / contratado*), `Pago por jornada`, `Valor hora extra`, `Participa en propina` (en blanco = sí), `Nota de pago` (datos bancarios), `Por confirmar`, `Pago jornada preparación` | `Turnos.Trabajador` por nombre |
 | `Turnos` | una persona un día | `Fecha`, `Trabajador`, `Puesto`, `Asistencia` (*Sí / No* / en blanco = sin marcar), `Modalidad`, `Propina` (su parte), `Pago jornada`, `Horas extra`, `Valor hora`, `Ajuste` (varios con `\|`: `-20000\|5000`), `Motivo del ajuste` (`Adelanto · Transferencia\|Feriado`) | `Trabajadores`, `Cierres` |
 | `Ajustes sueltos` | un ajuste fuera de turno | `ID`, `Fecha`, `Trabajador`, `Monto`, `Motivo`, `Anotado por`, `Cuándo` | se suma al informe como un turno sin día |
 | `Cierres` | un día cerrado | `Fecha`, `Cerrado por`, `Cuándo` | un día cerrado no se edita: se corrige, y la lista de lo que cambió queda en la bitácora |
@@ -473,6 +484,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
+| `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |
 

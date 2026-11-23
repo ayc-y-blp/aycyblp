@@ -97,6 +97,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'o a la carta— y el valor final de la cuenta en Fudo. Se anota desde la '
       + 'hora de apertura. Arriba, Las mesas suma los valores finales del día y '
       + 'dice cuántas mesas faltan, para compararlo con Fudo.',
+      'Con el valor final, la mesa dice Ya pagado y Falta por cobrar: quien '
+      + 'cobra elige cómo pagó el resto y aprieta ✓ Pagó todo. Las mesas suma '
+      + 'además el Efectivo del día, que entró a la caja chica.',
       'Equipo y cuentas del día abre la ventana donde se escriben los montos '
       + 'y la propina.'
     ],
@@ -285,6 +288,24 @@ export const AYUDAS: Record<string, Ayuda> = {
        + 'alternativa”: cuando una gana, las otras pasan solas a “No elegida”.'
   },
 
+  caja: {
+    titulo: 'La caja chica',
+    cuerpo: [
+      'Es la plata en efectivo del local. Entra sola cuando una mesa paga en efectivo (✓ Pagó todo, en la mesa), '
+      + 'y sale con un gasto o cuando se entrega a alguien.',
+      'Arriba, lo que hay: en la caja, lo entregado que nadie ha confirmado, y lo que tiene en la mano cada '
+      + 'persona que recibió.'
+    ],
+    pasos: [
+      'La primera vez, 🏁 Saldo inicial: con cuánto parte la caja.',
+      '🧾 Anotar un gasto: el monto, en qué y la foto de la boleta.',
+      '📤 Entregar…: a quién (de partida, el encargado de operaciones) y cuánto. Queda por recibir hasta que esa '
+      + 'persona apriete ✓ Recibí, acá o en su bandeja. Si recibió otro monto, lo escribe y queda marcado para pagos.',
+      'Quien recibió anota qué hizo con la plata: 🏦 Depósito, con la foto del comprobante, o 🛒 Compra, con la boleta.',
+      'Pagos revisa cada movimiento con ✓ Revisado (Por revisar deja solo esos). No frena a nadie.',
+      'Algo anotado por error se borra mientras pagos no lo haya revisado. Queda en la bitácora.'
+    ]
+  },
   informe: {
     titulo: 'El informe para pagar',
     cuerpo: [
@@ -499,7 +520,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Para el jefe de turno: una reserva de una cotización con precios '
       + 'negociados lleva ≠ Acordado, y su caja de Fudo trae lo acordado línea '
       + 'por línea, con el valor a ingresar en Fudo con IVA. Esa mesa la cierra '
-      + 'él, con esos precios.'
+      + 'él, con esos precios.',
+      'Y la cobra él: con el valor final anotado, la mesa dice Ya pagado y '
+      + 'Falta por cobrar. Eliges cómo pagó el resto —efectivo, transferencia '
+      + 'con la foto del comprobante o tarjeta, o varios— y ✓ Pagó todo la deja '
+      + 'pagada. El efectivo entra a la caja chica (Caja, en el menú).'
     ],
     pasos: [
       'Busca la reserva por nombre.',
@@ -652,6 +677,22 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   valorFinal: {
     titulo: 'El valor final',
     texto: ['Es el total de la cuenta de esta mesa en Fudo, con lo ya pagado incluido.']
+  },
+  cajaAnotar: {
+    titulo: 'Qué se anota en la caja',
+    texto: [
+      'Gasto y Entregar: quien lleva la caja. Depósito y Compra: quien recibió la plata, de lo que tiene en la mano.',
+      'El efectivo de las mesas no se anota acá: entra solo al cobrar la mesa.'
+    ]
+  },
+  cobroMesa: {
+    titulo: 'Cobrar la mesa',
+    texto: [
+      'Ya pagado es lo que entró antes: en línea, un abono o los cobros de su cotización. Falta por cobrar es el valor final menos eso.',
+      'Elige cómo pagó el resto. Si pagó con dos medios, aprieta + Otro medio y reparte el monto. Una transferencia va con la foto del comprobante.',
+      '✓ Pagó todo deja la reserva pagada. A Shopify no se le cambia nada. El efectivo entra a la caja chica, y pagos lo revisa en su bandeja.',
+      'Si te equivocaste, Deshacer lo borra mientras pagos no lo haya revisado.'
+    ]
   },
   // ---------- Turnos ----------
   diasPorCerrar: {
@@ -1256,6 +1297,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Por turno: se le paga la jornada de cada día que viene.',
       'Contratado: su sueldo va por liquidación, fuera del panel. Acá solo se le suman horas extra y ajustes del día.',
       'Esto es lo que gana de costumbre. Lo de un día —cuántas horas extra hizo, un atraso, un adelanto, un feriado— se anota en ese día, con su motivo.'
+    ]
+  },
+  jornadaPreparacion: {
+    titulo: 'La jornada de preparación',
+    texto: [
+      'Lo que gana en un día de preparación: un día con equipo, sin público y sin reservas (montaje, limpieza, preparar un evento).',
+      'Al sumarlo a ese día se propone este monto; en un día público o con evento, la jornada de siempre. En blanco, también la de siempre.',
+      'Lo de un día se puede cambiar en su turno.'
     ]
   },
   propinaFicha: {

@@ -479,6 +479,21 @@ export const PERMISOS = {
    */
   pagar: [ROL.admin, ROL.pagos, ROL.gerencia],
   /**
+   * **Cobrar en la mesa y llevar la caja chica** (2026-11-23, lo pidió el
+   * cliente para la encargada de turno: `lib/cobroLocal.ts` y `lib/caja.ts`).
+   * Cobrar lo que falta de una mesa, anotar un gasto con su boleta y
+   * entregar la plata de la caja a alguien. Lo **confirma** pagos (`pagar`),
+   * que revisa cada cobro y cada movimiento.
+   */
+  caja: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia],
+  /**
+   * **Recibir la plata de la caja chica** (2026-11-23): confirmar *✓ Recibí*
+   * lo que entregó la encargada, y anotar qué se hizo con ella —un depósito
+   * o una compra, con su comprobante—. *"Él lo recoge y él lo lleva al banco
+   * o decide si se hacen compras con este efectivo"*.
+   */
+  recibirCaja: [ROL.admin, ROL.operaciones, ROL.pagos, ROL.gerencia],
+  /**
    * **Cerrar el día** (2026-11-05).
    *
    * Lo cierra también el encargado, que es quien lo vivió. El cliente lo

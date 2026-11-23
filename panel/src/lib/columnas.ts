@@ -126,7 +126,18 @@ export const COL_RESERVAS = {
    */
   agregados: 'Agregados',
   valorFinal: 'Valor final',
-  mesaCerrada: 'Mesa cerrada'
+  mesaCerrada: 'Mesa cerrada',
+  /**
+   * **El cobro en el local, al cerrar la mesa** (2026-11-23,
+   * `lib/cobroLocal.ts`): cómo pagó el resto (*"Efectivo 50000|Tarjeta
+   * 26500"*), el comprobante de la transferencia en Drive, y quién lo cobró,
+   * cuándo y cómo estaba el pago antes. Shopify no las toca
+   * (`camposDeShopify()`), y mientras haya cobro no devuelve la reserva a
+   * *por pagar* (`estadoConCobroLocal()`). Se agregan solas.
+   */
+  cobroLocal: 'Cobrado en el local',
+  comprobanteCobro: 'Comprobante del cobro',
+  cobroCerrado: 'Cobro cerrado'
 } as const;
 
 export const COL_FECHAS = {

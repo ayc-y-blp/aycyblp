@@ -33,6 +33,8 @@ export const PALABRAS: Record<Accion, string> = {
   estadisticas: 'Ver las estadísticas de reservas: cuántas, no-shows, plata, de dónde vienen',
   pagar: 'Registrar pagos y confirmar la plata: comprobantes, pagos anotados, descuentos, cuentas y devoluciones',
   sueldos: 'Ver y editar sueldos y cuentas bancarias',
+  caja: 'Cobrar lo que falta de una mesa (efectivo, transferencia o tarjeta) y llevar la caja chica: gastos con su boleta y entregar la plata',
+  recibirCaja: 'Recibir la plata de la caja chica y anotar qué se hizo con ella: un depósito o una compra, con su comprobante',
   links: 'Quitar los links personales, y los links de vendedores y socios',
   enviarLink: 'Mandar su link personal a un trabajador o un colaborador: crearlo, copiarlo y renovarlo',
   puestos: 'Editar los puestos del equipo',
@@ -71,8 +73,8 @@ export const NOMBRE_ROL: Record<string, string> = {
 export const RESUMEN_ROL: Record<string, string> = {
   [ROL.admin]: 'Puede todo, incluidas las cuentas del panel.',
   [ROL.gerencia]: 'Por ahora, lo mismo que el encargado de pagos. Sus derechos propios se definen después.',
-  [ROL.operaciones]: 'Lo del encargado de turno, más abrir días, cotizar, aprobar descuentos, subir cupos, decidir los eventos exclusivos y ver el informe. Sin pagos ni configuración.',
-  [ROL.encargado]: 'El día a día: reservas, equipo y extras —con la ficha completa, sueldos, cuenta y su link personal—, y cerrar y corregir el día. No agrega ni edita fechas. Sin cotizaciones, el informe, pagos ni configuración.',
+  [ROL.operaciones]: 'Lo del encargado de turno, más abrir días, cotizar, aprobar descuentos, subir cupos, decidir los eventos exclusivos, ver el informe y recibir la caja chica. Sin pagos ni configuración.',
+  [ROL.encargado]: 'El día a día: reservas, equipo y extras —con la ficha completa, sueldos, cuenta y su link personal—, cobrar las mesas con la caja chica, y cerrar y corregir el día. No agrega ni edita fechas. Sin cotizaciones, el informe, pagos ni configuración.',
   [ROL.pagos]: 'Lo del encargado de turno, más la plata y la configuración. No toca cuentas.',
   [ROL.vendedor]: 'Ve todo el calendario y cotiza; sus reservas nacen de una cotización ganada, y solo toca lo suyo.',
   [ROL.anfitrion]: 'Recibe a los clientes: ve las reservas del día y marca si vinieron.'

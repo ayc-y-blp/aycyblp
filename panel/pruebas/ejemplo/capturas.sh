@@ -54,6 +54,30 @@ cambiar("export function sheets(): sheets_v4.Sheets {\n",
         "export function sheets(): sheets_v4.Sheets {\n  return sheetsFalso as unknown as sheets_v4.Sheets;\n")
 open(p, 'w').write(s)
 PY
+# **Drive de mentira** (2026-11-23): los comprobantes de la copia se guardan
+# al lado de la planilla de ejemplo, para probar las fotos de la caja chica y
+# de los cobros sin tocar el Drive de nadie.
+python3 - "$W/panel/src/lib/drive.ts" <<'PY'
+import sys
+p = sys.argv[1]; s = open(p).read()
+def cambiar(a, b):
+    global s
+    assert s.count(a) == 1, 'capturas.sh: no encontré en drive.ts: ' + a.strip()[:60]
+    s = s.replace(a, b)
+cambiar("}): Promise<string> {\n",
+        "}): Promise<string> {\n"
+        "  { const fs = await import('node:fs'); const id = 'ejemplo-' + Date.now().toString(36);\n"
+        "    fs.writeFileSync(process.env.PLANILLA_EJEMPLO + '.' + id, o.datos);\n"
+        "    fs.writeFileSync(process.env.PLANILLA_EJEMPLO + '.' + id + '.tipo', o.tipo + '\\n' + o.nombre); return id; }\n")
+cambiar("export async function leerComprobante(id: string): Promise<{ tipo: string; nombre: string; datos: Buffer }> {\n",
+        "export async function leerComprobante(id: string): Promise<{ tipo: string; nombre: string; datos: Buffer }> {\n"
+        "  { const fs = await import('node:fs'); const base = process.env.PLANILLA_EJEMPLO + '.' + id;\n"
+        "    if (!fs.existsSync(base)) return { tipo: 'image/png', nombre: 'ejemplo.png', datos: Buffer.from("
+        "'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') };\n"
+        "    const [tipo, nombre] = fs.readFileSync(base + '.tipo', 'utf8').split('\\n');\n"
+        "    return { tipo, nombre, datos: fs.readFileSync(base) }; }\n")
+open(p, 'w').write(s)
+PY
 # Sin StrictMode: el doble montaje de desarrollo dispara autoguardados al
 # abrir una ventana y mueve los datos (en producción no pasa).
 echo "export default { reactStrictMode: false };" > "$W/panel/next.config.mjs"

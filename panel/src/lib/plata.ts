@@ -42,8 +42,11 @@ export function partesMarca(marca: string | undefined): { cuando: string; quien:
 const deShopify = (id: string) => /^\d+$/.test(String(id ?? '').trim());
 
 /** Lo que se revisa de un pago: si cambia, la revisión deja de valer. */
-export const firmaPago = (r: Pick<Reserva, 'estadoPago' | 'abonado' | 'monto' | 'notaPago'>) =>
-  [r.estadoPago, r.abonado ?? '', r.monto ?? '', String(r.notaPago ?? '').trim()].join('|');
+export const firmaPago = (r: Pick<Reserva, 'estadoPago' | 'abonado' | 'monto' | 'notaPago'> & { cobroLocal?: string }) =>
+  [r.estadoPago, r.abonado ?? '', r.monto ?? '', String(r.notaPago ?? '').trim()].join('|')
+  // **El cobro en la mesa también se revisa** (2026-11-23, `cobroLocal.ts`).
+  // Va al final y solo si lo hay: así las firmas de antes siguen calzando.
+  + (String(r.cobroLocal ?? '').trim() ? '|' + String(r.cobroLocal).trim() : '');
 
 /**
  * **Un pago de reserva que pagos todavía no revisó.** Solo las anotadas en
@@ -53,7 +56,10 @@ export const firmaPago = (r: Pick<Reserva, 'estadoPago' | 'abonado' | 'monto' | 
  * llenan la bandeja de golpe.
  */
 export function pagoPorRevisar(r: Reserva, deCotizacion: boolean): boolean {
-  if (deShopify(r.id) || deCotizacion || !ocupaLugar(r)) return false;
+  // **Una de Shopify cobrada en la mesa sí** (2026-11-23): esa plata no la
+  // cobró la tienda, la cobró alguien en el local.
+  const cobradaEnLaMesa = !!String(r.cobroLocal ?? '').trim();
+  if ((deShopify(r.id) && !cobradaEnLaMesa) || deCotizacion || !ocupaLugar(r)) return false;
   if (r.estadoPago !== ESTADO_PAGO.pagado && r.estadoPago !== ESTADO_PAGO.abonado) return false;
   if (!partesMarca(r.pagoAnotado)) return false;
   return partesMarca(r.pagoRevisado)?.firma !== firmaPago(r);
@@ -79,14 +85,15 @@ const bancoIgual = (a: Banco, b: Banco) =>
  * jornada*… Vacío si no cambió nada de plata.
  */
 export function cambiosDePlata(
-  antes: { banco: Banco; pagoJornada?: number; valorHora?: number; modalidad?: string; monto?: number } | null,
-  despues: { banco: Banco; pagoJornada?: number; valorHora?: number; modalidad?: string; monto?: number }
+  antes: { banco: Banco; pagoJornada?: number; pagoPreparacion?: number; valorHora?: number; modalidad?: string; monto?: number } | null,
+  despues: { banco: Banco; pagoJornada?: number; pagoPreparacion?: number; valorHora?: number; modalidad?: string; monto?: number }
 ): string[] {
   const vacio = { titular: '', rut: '', banco: '', tipo: '', numero: '', correo: '', nota: '' };
   const a = antes ?? { banco: vacio, pagoJornada: 0, valorHora: 0, modalidad: despues.modalidad, monto: 0 };
   const que: string[] = [];
   if (!bancoIgual(a.banco ?? vacio, despues.banco ?? vacio)) que.push('cuenta bancaria');
   if ((a.pagoJornada ?? 0) !== (despues.pagoJornada ?? 0)) que.push('pago por jornada');
+  if ((a.pagoPreparacion ?? 0) !== (despues.pagoPreparacion ?? 0)) que.push('jornada de preparación');
   if ((a.valorHora ?? 0) !== (despues.valorHora ?? 0)) que.push('valor hora extra');
   if ((a.modalidad ?? '') !== (despues.modalidad ?? '')) que.push('modalidad');
   if ((a.monto ?? 0) !== (despues.monto ?? 0)) que.push('monto habitual');

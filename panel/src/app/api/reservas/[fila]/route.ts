@@ -130,6 +130,12 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
         cambios.llegaron = llegaronDespues(antes.llegaron, antes.agregados, limpio);
       }
     }
+    if (cambios.valorFinal !== undefined && String(antes?.cobroCerrado ?? '').trim()) {
+      // **Cobrada, el valor final queda fijo** (2026-11-23, `cobroLocal.ts`):
+      // cambiarlo descuadraría lo que se cobró en la mesa.
+      return NextResponse.json({ error: 'Esa mesa ya está cobrada: para cambiar el valor final, deshaz el cobro primero.' },
+        { status: 409 });
+    }
     if (cambios.valorFinal !== undefined) {
       const v = limpiarValorFinal(cambios.valorFinal);
       if (v === undefined) {

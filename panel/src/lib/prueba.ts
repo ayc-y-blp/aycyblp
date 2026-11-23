@@ -108,7 +108,7 @@ import { leerPuestosDe, aFilasPuestos, leerTrabajadoresDe, aFilasTrabajadores,
          totalAjustes, motivosDe, leerAjustes, escribirAjustes,
          partesDeMotivo, motivoDePartes, tipoDeAjuste, montoConSigno, ajusteDelCuerpo, diasParaAjustar,
          comoTurno, pagoDelTurno, leerAjustesSueltosDe, filaAjusteSuelto, ENCABEZADO_AJUSTES_SUELTOS,
-         POR_DEFECTO_PUESTOS, esPreparacion,
+         POR_DEFECTO_PUESTOS, esPreparacion, jornadaPropuesta,
          type Puesto, type Trabajador, type Turno } from './equipo.ts';
 import { leerColaboradoresDe, aFilasColaboradores, actividadesConocidas,
          leerExtrasDe, filaExtra, normalizarExtras, extrasDelDia,
@@ -250,7 +250,8 @@ const bueno = ['ID Orden','Fecha Reserva','Nombre','Email','Teléfono','Menú',
                'Asistencia','Nota de pago','ID Evento CRM','Anotada por',
                'Llegaron','Aviso recepción','Abonado','Se cayó por cupo',
                'Personas reales','Menú real','Descuento','Rectificación','Aprobación','Evento exclusivo',
-               'Pago anotado','Pago revisado','Descuento revisado','Agregados','Valor final','Mesa cerrada'];
+               'Pago anotado','Pago revisado','Descuento revisado','Agregados','Valor final','Mesa cerrada',
+               'Cobrado en el local','Comprobante del cobro','Cobro cerrado'];
 ok(faltantes(bueno, COL_RESERVAS).length === 0, 'el encabezado del encargo calza entero');
 ok(indices(bueno, COL_RESERVAS).tipoPago === 8, 'y cada campo sabe su columna');
 
@@ -1730,6 +1731,26 @@ ok(esSi('') && esSi('sí') && !esSi('NO') && !esSi('inactivo'),
 ok(JSON.stringify(leerTrabajadoresDe(aFilasTrabajadores(gente))) === JSON.stringify(gente),
    'los trabajadores sobreviven la ida y vuelta a filas');
 
+// **La jornada de preparación** (2026-11-23, lo pidió el cliente): un segundo
+// monto en la ficha, que se propone en un día sin público ni reservas.
+{
+  const conPrep = [{ ...gente[0], pagoJornada: 35000, pagoPreparacion: 25000 }];
+  const vuelta = leerTrabajadoresDe(aFilasTrabajadores(conPrep));
+  ok(vuelta[0].pagoPreparacion === 25000 && vuelta[0].pagoJornada === 35000,
+     'la jornada de preparación sobrevive la ida y vuelta, al final de la fila');
+  ok(aFilasTrabajadores(conPrep)[0].at(-1) === 'Pago jornada preparación',
+     'y su columna va al final: una planilla vieja se lee igual');
+  ok(leerTrabajadoresDe(aFilasTrabajadores(gente))[0].pagoPreparacion === 0,
+     'sin ese monto se lee en cero, que es la jornada de siempre');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 25000 }, true) === 25000,
+     'en un día de preparación se propone la jornada de preparación');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 25000 }, false) === 35000,
+     'en un día público, la de siempre');
+  ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 0 }, true) === 35000,
+     'sin jornada de preparación, también en preparación va la de siempre');
+  ok(jornadaPropuesta(null, true) === 0, 'sin ficha no se inventa un monto');
+}
+
 /* ---------- el equipo: turnos ---------- */
 const ENC_T = [COL_TURNOS.fecha, COL_TURNOS.trabajador, COL_TURNOS.puesto];
 const turnos = leerTurnosDe([
@@ -1813,9 +1834,9 @@ ok(resumenEquipo(turnos, conRazon, '2026-12-25', 44).total === 0,
 /* ---------- quién quedó sin ficha ---------- */
 const equipo: Trabajador[] = [
   { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: '',
-    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
+    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
   { nombre: 'luis soto', telefono: '', puesto: 'Cocina', activo: true, token: '',
-    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' }
+    modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 }
 ];
 const huerfanos = sinFicha(turnos, equipo);
 ok(huerfanos.length === 1 && huerfanos[0] === 'Pedro Díaz',
@@ -1912,9 +1933,9 @@ ok(t1.length >= 32, 'y son largos: 24 bytes en base64');
 ok(/^[A-Za-z0-9_-]+$/.test(t1), 'solo caracteres que sobreviven a una URL');
 
 const conAcceso: Trabajador[] = [
-  { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: 'token-de-ana', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
-  { nombre: 'Luis Soto', telefono: '', puesto: 'Cocina', activo: true, token: '', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' },
-  { nombre: 'Pedro Díaz', telefono: '', puesto: 'Runner', activo: false, token: 'token-de-pedro', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '' }
+  { nombre: 'Ana Pérez', telefono: '', puesto: 'Garzón', activo: true, token: 'token-de-ana', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
+  { nombre: 'Luis Soto', telefono: '', puesto: 'Cocina', activo: true, token: '', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 },
+  { nombre: 'Pedro Díaz', telefono: '', puesto: 'Runner', activo: false, token: 'token-de-pedro', modalidad: MODALIDAD.porTurno, pagoJornada: 0, valorHora: 0, propina: true, banco: bancoVacio(), porConfirmar: '', pagoPreparacion: 0 }
 ];
 ok(trabajadorPorToken(conAcceso, 'token-de-ana')?.nombre === 'Ana Pérez',
    'el token encuentra a su dueño');
@@ -5668,6 +5689,9 @@ console.log('\nLa plata la confirma pagos');
      && !descuentoPorVer({ ...conDesc, aprobacion: 'Por aprobar' } as Reserva)
      && pendientesDeDescuentoVisto([conDesc]).length === 1,
      'un descuento ya aplicado queda por ver hasta que pagos lo ve; uno por aprobar todavía no');
+  ok(cambiosDePlata({ banco: bv(), pagoJornada: 40000, pagoPreparacion: 0 },
+       { banco: bv(), pagoJornada: 40000, pagoPreparacion: 30000 }).join() === 'jornada de preparación',
+     'cambiar la jornada de preparación también es plata: queda por confirmar');
   ok(cambiosDePlata(null, { banco: bv(), pagoJornada: 0 }).length === 0
      && cambiosDePlata({ banco: bv(), pagoJornada: 40000 }, { banco: { ...bv(), numero: '123' }, pagoJornada: 45000 }).join() === 'cuenta bancaria,pago por jornada',
      'qué cambió de la plata, en palabras');
@@ -6992,6 +7016,130 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(N.sePuedeCorregir(notas[1], 'Jorge', HOY) && !N.sePuedeCorregir(notas[0], 'Jorge', HOY)
      && !N.sePuedeCorregir(notas[1], 'Daniela', HOY),
      'una nota la corrige su autor el mismo día; después es historia');
+}
+
+// ---------- El cobro en el local (2026-11-23, `cobroLocal.ts`) ----------
+{
+  const C = await import('./cobroLocal.ts');
+  const lista = C.leerCobroLocal('Tarjeta 26500|efectivo 50000|Efectivo 1000|Cheque 3|Transferencia 0');
+  ok(lista.map((p) => `${p.medio}:${p.monto}`).join() === 'Efectivo:51000,Tarjeta:26500',
+     'el cobro se lee en su orden, junta un medio repetido y salta lo que no se entiende');
+  ok(C.escribirCobroLocal([{ medio: 'Tarjeta', monto: 10 }, { medio: 'Efectivo', monto: 20.4 }]) === 'Efectivo 20|Tarjeta 10',
+     'se guarda un medio una vez, en su orden y en pesos enteros');
+  ok(C.yaPagado({ estadoPago: 'paid', monto: 176000 }) === 176000
+     && C.yaPagado({ estadoPago: 'partially_paid', monto: 300000, abonado: 90000 }) === 90000
+     && C.yaPagado({ estadoPago: 'pending', monto: 200000 }) === 0,
+     'ya pagado: todo si está pagada, lo abonado si está abonada, nada si está por pagar');
+  ok(C.faltaPorCobrar({ estadoPago: 'paid', monto: 176000, valorFinal: 200000 }) === 24000
+     && C.faltaPorCobrar({ estadoPago: 'paid', monto: 176000, valorFinal: 150000 }) === 0
+     && C.faltaPorCobrar({ estadoPago: 'pending', monto: 98000, valorFinal: null }) === 98000
+     && C.faltaPorCobrar({ estadoPago: 'pending', monto: 98000, valorFinal: 120000, cobroCerrado: 'x · y' }) === 0,
+     'falta: el valor final menos lo pagado (sin valor final, el monto), nunca negativo, y nada si ya se cobró');
+  const bien = C.limpiarCobro([{ medio: 'efectivo', monto: 20000 }, { medio: 'Tarjeta', monto: '4000' }], 24000);
+  ok('lista' in bien && C.escribirCobroLocal(bien.lista) === 'Efectivo 20000|Tarjeta 4000', 'un cobro que suma justo lo que falta pasa');
+  const corto = C.limpiarCobro([{ medio: 'Efectivo', monto: 20000 }], 24000);
+  const largo = C.limpiarCobro([{ medio: 'Efectivo', monto: 30000 }], 24000);
+  ok('error' in corto && /faltan \$4\.000/.test(corto.error) && 'error' in largo && /propina/.test(largo.error),
+     'lo cobrado tiene que sumar justo: si falta lo dice, y si sobra manda a la propina');
+  ok('error' in C.limpiarCobro([{ medio: 'Cheque', monto: 24000 }], 24000) && 'error' in C.limpiarCobro([], 24000)
+     && 'error' in C.limpiarCobro([{ medio: 'Efectivo', monto: 10 }], 0),
+     'un medio que no es de la lista, nada elegido o nada que cobrar se rechazan');
+  ok(C.efectivoDe(C.leerCobroLocal('Efectivo 20000|Tarjeta 4000')) === 20000
+     && C.llevaTransferencia(C.leerCobroLocal('Transferencia 1')) && !C.llevaTransferencia(C.leerCobroLocal('Tarjeta 1')),
+     'el efectivo es lo que va a la caja; una transferencia pide comprobante');
+  const m = C.marcaCobro('2026-11-14 18:40', 'Fernanda', { estadoPago: 'partially_paid', abonado: 90000 });
+  const p = C.partesMarcaCobro(m);
+  ok(p?.quien === 'Fernanda' && p.estadoAntes === 'partially_paid' && p.abonadoAntes === 90000
+     && C.partesMarcaCobro(C.marcaCobro('c', 'q', { estadoPago: 'pending' }))?.abonadoAntes === null,
+     'la marca del cobro guarda cómo estaba el pago, para deshacerlo');
+  ok(C.estadoConCobroLocal('pending', m) === 'paid' && C.estadoConCobroLocal('partially_paid', m) === 'paid'
+     && C.estadoConCobroLocal('refunded', m) === 'refunded' && C.estadoConCobroLocal('pending', '') === 'pending',
+     'Shopify no devuelve a por pagar lo cobrado en la mesa, pero una devolución de allá manda');
+  const SH = await import('./shopify.ts');
+  const campos = SH.camposDeShopify({ id: '1', fecha: '2026-11-14', nombre: 'A', email: '', telefono: '', menu: '', personas: 2,
+    monto: 1, tipoPago: '', estadoPago: 'pending', creada: '', asistencia: '', notaPago: '', eventoCRM: '', anotadaPor: '',
+    cobroLocal: 'Efectivo 1', comprobanteCobro: 'x', cobroCerrado: 'y' });
+  ok(!('cobroLocal' in campos) && !('comprobanteCobro' in campos) && !('cobroCerrado' in campos),
+     'la sincronización con Shopify no pisa el cobro de la mesa');
+  const PL = await import('./plata.ts');
+  const base = { id: '7001', fecha: '2026-11-14', nombre: 'A', email: '', telefono: '', menu: '', personas: 2, monto: 98000,
+    tipoPago: 'Solo reserva' as const, estadoPago: 'paid', creada: '', asistencia: '', notaPago: '', eventoCRM: '', anotadaPor: '', fila: 5 };
+  ok(!PL.pagoPorRevisar({ ...base, pagoAnotado: '2026-11-14 18:40 · Fernanda' }, false)
+     && PL.pagoPorRevisar({ ...base, cobroLocal: 'Efectivo 98000', pagoAnotado: '2026-11-14 18:40 · Fernanda' }, false),
+     'una de Shopify cobrada en la mesa le llega a pagos; una pagada en la tienda no');
+  ok(PL.firmaPago(base) === PL.firmaPago({ ...base, cobroLocal: '' })
+     && PL.firmaPago(base) !== PL.firmaPago({ ...base, cobroLocal: 'Efectivo 98000' }),
+     'la firma de un pago de antes no cambia; con cobro en la mesa, sí');
+}
+
+// ---------- La caja chica (2026-11-23, `caja.ts`) ----------
+{
+  const K = await import('./caja.ts');
+  const filas = [
+    ['ID', 'Fecha', 'Cuándo', 'Tipo', 'Monto', 'Detalle', 'Quién', 'Para', 'Recibido', 'Comprobante', 'Reserva', 'Revisado'],
+    ['K-1', '2026-11-14', '2026-11-14 12:00', 'Saldo inicial', '7000', '', 'fernanda', '', '', '', '', ''],
+    ['K-2', '2026-11-14', '2026-11-14 18:40', 'cobro', '50.000', 'Mesa de Toro', 'fernanda', '', '', '', '7001', ''],
+    ['K-3', '2026-11-14', '2026-11-14 19:00', 'Gasto', '3000', 'Hielo', 'fernanda', '', '', 'f1', '', ''],
+    ['K-4', '2026-11-14', '2026-11-14 20:00', 'Entrega', '40000', '', 'fernanda', 'cristobal', '2026-11-14 20:10 · cristobal · 39000', '', '', ''],
+    ['K-5', '2026-11-15', '2026-11-15 10:00', 'Depósito', '30000', '', 'cristobal', '', '', 'f2', '', ''],
+    ['K-6', '2026-11-15', '2026-11-15 18:00', 'Entrega', '5000', '', 'fernanda', 'cristobal', '', '', '', ''],
+    ['', '2026-11-15', '', 'Gasto', '1', '', '', '', '', '', '', ''],
+    ['K-8', '2026-11-15', '', 'Regalo', '1', '', '', '', '', '', '', '']
+  ];
+  const movs = K.leerCajaDe(filas);
+  ok(movs.length === 6 && movs[1].tipo === 'Cobro' && movs[1].monto === 50000, 'la caja se lee: sin id o con un tipo raro, no cuenta');
+  const s = K.saldosDeCaja(movs);
+  ok(s.enCaja === 7000 + 50000 - 3000 - 40000 - 5000 && s.porRecibir === 5000,
+     'en la caja: lo que entró menos los gastos y las entregas; lo entregado sin confirmar, por recibir');
+  ok(s.enManos.length === 1 && s.enManos[0].persona === 'cristobal' && s.enManos[0].monto === 39000 - 30000,
+     'en la mano: lo recibido menos lo depositado');
+  ok(s.diferencias.length === 1 && s.diferencias[0].recibido === 39000 && s.diferencias[0].entregado === 40000,
+     'una entrega recibida con otro monto se marca');
+  ok(K.porRecibirDe(movs, { usuario: 'Cristobal' }).map((m) => m.id).join() === 'K-6'
+     && K.porRecibirDe(movs, { usuario: 'fernanda' }).length === 0,
+     'por recibir: las entregas a esa persona que no confirmó');
+  ok(K.porRevisarCaja(movs).map((m) => m.id).join() === 'K-1,K-3,K-4,K-5',
+     'pagos revisa todo menos los cobros y lo que va en camino');
+  const yoF = { usuario: 'fernanda' };
+  const op = { movs, cuenta: yoF, puedeRecibir: false, tieneComprobante: true, destinos: ['cristobal', 'veronica'] };
+  ok('error' in K.limpiarMovimiento({ tipo: 'Saldo inicial', monto: 7000 }, op), 'el saldo inicial va una sola vez');
+  const g = K.limpiarMovimiento({ tipo: 'gasto', monto: '$2.500', detalle: ' Gas  ' }, op);
+  ok('nuevo' in g && g.nuevo.monto === 2500 && g.nuevo.detalle === 'Gas', 'un gasto con su boleta y en qué, pasa');
+  ok('error' in K.limpiarMovimiento({ tipo: 'Gasto', monto: 2500, detalle: 'Gas' }, { ...op, tieneComprobante: false })
+     && 'error' in K.limpiarMovimiento({ tipo: 'Gasto', monto: 2500 }, op)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Gasto', monto: 99999, detalle: 'x' }, op),
+     'un gasto sin boleta, sin decir en qué o por más de lo que hay, no');
+  ok('nuevo' in K.limpiarMovimiento({ tipo: 'Entrega', monto: 9000, para: 'Cristobal' }, op)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Entrega', monto: 9000, para: 'fernanda' }, { ...op, destinos: ['fernanda'] })
+     && 'error' in K.limpiarMovimiento({ tipo: 'Entrega', monto: 9000, para: 'pedro' }, op),
+     'se entrega a alguien que recibe la caja, no a una misma ni a cualquiera');
+  const yoC = { ...op, cuenta: { usuario: 'cristobal' }, puedeRecibir: true };
+  ok('nuevo' in K.limpiarMovimiento({ tipo: 'Depósito', monto: 9000 }, yoC)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Depósito', monto: 9001 }, yoC)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Compra', monto: 100 }, yoC)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Depósito', monto: 100 }, op)
+     && 'error' in K.limpiarMovimiento({ tipo: 'Cobro', monto: 100 }, op),
+     'depósito o compra: quien recibió, hasta lo que tiene en la mano; un cobro no se anota a mano');
+  ok(K.sePuedeBorrar(movs[2], yoF, false) === '' && K.sePuedeBorrar(movs[1], yoF, true) !== ''
+     && K.sePuedeBorrar(movs[3], yoF, false) !== '' && K.sePuedeBorrar(movs[2], { usuario: 'otra' }, false) !== ''
+     && K.sePuedeBorrar({ ...movs[2], revisado: 'x · v' }, yoF, false) !== '' && K.sePuedeBorrar({ ...movs[2], revisado: 'x · v' }, yoF, true) === '',
+     'borra su autor mientras nadie lo revise ni lo reciba; pagos, siempre; un cobro, nunca desde acá');
+  const fila = K.filaCaja(filas[0], { ...movs[1] });
+  ok(fila[3] === 'Cobro' && fila[4] === 50000 && fila[10] === '7001', 'un movimiento se escribe en sus columnas');
+  ok(K.efectivoDelDia(movs, '2026-11-14') === 50000, 'el efectivo de las mesas de un día');
+  const A = await import('./aprobaciones.ts');
+  const deCaja = A.pendientesDeCaja(movs, { usuario: 'cristobal' }, { recibe: true, revisa: true });
+  ok(deCaja.length === 2 && deCaja[0].que === 'recibir' && deCaja[0].monto === 5000 && deCaja[0].pide === 'fernanda'
+     && deCaja[1].que === 'revisar' && deCaja[1].cuantos === 4 && deCaja[1].diferencias === 1,
+     'la bandeja: la entrega por recibir y, para pagos, cuántos movimientos faltan');
+  const cobrada = { id: '7001', fecha: '2026-11-14', nombre: 'Martín', email: '', telefono: '', menu: '', personas: 3, monto: 94000,
+    tipoPago: '' as const, estadoPago: 'paid', creada: '', asistencia: '', notaPago: '', eventoCRM: '', anotadaPor: '', fila: 9,
+    cobroLocal: 'Efectivo 15000|Tarjeta 3000', cobroCerrado: '2026-11-14 18:40 · Tomás · antes paid/', pagoAnotado: '2026-11-14 18:40 · Tomás' };
+  const pp = A.pendientesDePago([cobrada]);
+  ok(pp.length === 1 && pp[0].cobrado === 18000 && pp[0].pide === 'Tomás' && /Efectivo \$15\.000/.test(pp[0].cobro ?? ''),
+     'la bandeja de pagos dice lo cobrado en la mesa y cómo, no el total de la reserva');
+  ok(A.pendientesDeCaja(movs, { usuario: 'fernanda' }, { recibe: false, revisa: false }).length === 0,
+     'quien no recibe ni revisa no ve nada de la caja en la bandeja');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

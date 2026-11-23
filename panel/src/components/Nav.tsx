@@ -39,7 +39,9 @@ export default function Nav({ rol, gerencia = false }: { rol: string; gerencia?:
   // queda cada cosa. Envolver ocupa más alto y no esconde nada.
 
   return (
-    <nav className="flex flex-wrap gap-2">
+    // **En el computador, 6px entre botones y 10px adentro** (2026-11-23): con
+    // *Caja* el menú del administrador ya no cabía en una fila a 1280px.
+    <nav className="flex flex-wrap gap-2 lg:gap-1.5">
       {/* Con vista gerencia aparecen también las que solo se miran. */}
       {PAGINAS.filter((p) => !p.fueraDelMenu && puedeVer(rol as Rol, p.accion, gerencia))
               .map(({ href, texto: rotulo }) => {
@@ -51,7 +53,7 @@ export default function Nav({ rol, gerencia = false }: { rol: string; gerencia?:
         return (
           <a key={href} href={href}
              aria-current={aqui ? 'page' : undefined}
-             className={`tecla boton rounded-full ${aqui ? 'boton-relleno' : ''}`}>
+             className={`tecla boton rounded-full lg:!px-2.5 ${aqui ? 'boton-relleno' : ''}`}>
             {texto}
           </a>
         );

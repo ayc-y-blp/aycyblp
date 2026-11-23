@@ -37,6 +37,8 @@ import { BotonMias } from './BotonMias';
 import BandejaAprobaciones from './BandejaAprobaciones';
 import { pendientesDeAprobar, pendientesDePago, pendientesDeDescuentoVisto, juntarPendientes } from '@/lib/aprobaciones';
 import { personasEnLaMesa, cuantosAgregados, opcionesParaAgregar, mesasDelDia, partesMarcaMesa, resumenAgregados, pesosCL } from '@/lib/mesa';
+import { partesMarca, firmaPago } from '@/lib/plata';
+import { leerCobroLocal, fraseCobro } from '@/lib/cobroLocal';
 import MesaReserva from './MesaReserva';
 import { avisar } from './AvisoFlotante';
 import { estaRectificada, personasEfectivas, menuEfectivo, porAprobar, rechazado,
@@ -52,7 +54,7 @@ import BloqueLiberar from './BloqueLiberar';
 import { esExclusivo, exclusividadDe } from '@/lib/exclusivo';
 import ExtrasDialogo from './ExtrasDialogo';
 import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
-import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO,
+import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO, esPreparacion,
          faltantesDe, textoFaltantes, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { extrasDelDia, costoExtrasDelDia, costoDeExtra,
          type Colaborador, type Extra } from '@/lib/extras';
@@ -690,6 +692,19 @@ export default function DayView(
               <Azulejo n={pesosCL(m.total)} titulo="Valor final de las mesas"
                 nota={`${m.conValor} ${m.conValor === 1 ? 'mesa anotada' : 'mesas anotadas'}${m.sinValor ? ` · faltan ${m.sinValor}` : ''}`}
                 color="text-hueso" borde={m.sinValor ? 'border-ambar/40' : undefined} />
+              {/* **Lo cobrado en el local** (2026-11-23, `cobroLocal.ts`): el
+                  efectivo, que entró a la caja chica, y lo demás en la nota. */}
+              {(() => {
+                const cobrado = delDiaQueOcupan.flatMap((r) => leerCobroLocal(r.cobroLocal));
+                if (!cobrado.length) return null;
+                const de = (medio: string) => cobrado.filter((p) => p.medio === medio).reduce((s, p) => s + p.monto, 0);
+                const otros = [['Transferencia', de('Transferencia')], ['Tarjeta', de('Tarjeta')]]
+                  .filter(([, n]) => Number(n) > 0).map(([t, n]) => `${String(t).toLowerCase()} ${pesosCL(Number(n))}`);
+                return (
+                  <Azulejo n={pesosCL(de('Efectivo'))} titulo="Efectivo del día"
+                    nota={['a la caja chica', ...otros].join(' · ')} color="text-verde-texto" borde="border-verde/40" />
+                );
+              })()}
               {m.agregadas > 0 && (
                 <Azulejo n={m.agregadas} titulo="Se sumaron a las mesas"
                   nota={m.aLaCarta ? `${m.aLaCarta} a la carta` : 'todos con menú'}
@@ -711,6 +726,7 @@ export default function DayView(
                       <span className={`font-bold tabular-nums ${r.valorFinal != null ? '' : 'text-ambar-texto'}`}>
                         {r.valorFinal != null ? `🧾 ${pesosCL(r.valorFinal)}` : 'sin valor final'}
                       </span>
+                      {r.cobroLocal && <span className="font-semibold text-verde-texto">✓ {fraseCobro(leerCobroLocal(r.cobroLocal))}</span>}
                       {marca && <span className="basis-full text-[13px] text-hueso/60">lo anotó {marca.quien} · {marca.cuando}</span>}
                     </li>
                   );
@@ -1041,6 +1057,9 @@ export default function DayView(
         <EquipoDialogo
           fecha={fecha}
           personas={personasDelDia}
+          // Sin el día en el calendario, o cerrado, y sin gente: preparación.
+          preparacion={esPreparacion({ conEquipo: true,
+            abierto: !!cupoDia && !cupoDia.bloqueada, personas: personasDelDia })}
           puestos={equipo.puestos}
           trabajadores={equipo.trabajadores}
           turnos={equipo.turnos}
@@ -1273,7 +1292,8 @@ export default function DayView(
                         final. La misma pieza de la recepción. */}
                     {ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
                       && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0) && (
-                      <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado} />
+                      <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
+                        cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
                     )}
 
                     {/* **La rectificación del día** (2026-11-12): qué cambió,

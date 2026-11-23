@@ -51,6 +51,8 @@ export const PODER: Record<Accion, { icono: string; corto: string }> = {
   informe: { icono: '📊', corto: 'Ver el informe' },
   estadisticas: { icono: '📊', corto: 'Estadísticas de reservas (y del equipo, con el informe)' },
   pagar: { icono: '💸', corto: 'Registrar pagos' },
+  caja: { icono: '💵', corto: 'Cobrar en la mesa y la caja chica' },
+  recibirCaja: { icono: '🤲', corto: 'Recibir la caja chica' },
   boleta: { icono: '🧾', corto: 'Marcar boletas' },
   configurar: { icono: '⚙️', corto: 'Precios y Configuración' },
   bitacora: { icono: '📜', corto: 'Ver la bitácora' },
@@ -67,7 +69,7 @@ export const MUNDOS: { id: string; icono: string; nombre: string; poderes: Accio
   { id: 'ventas', icono: '💼', nombre: 'Ventas',
     poderes: ['presupuestos', 'showBajoMinimo', 'clientes', 'aprobar', 'vendedores', 'agregarVendedores', 'agregarSocios', 'asignarVendedor', 'costos'] },
   { id: 'plata', icono: '💰', nombre: 'La plata',
-    poderes: ['informe', 'pagar', 'boleta'] },
+    poderes: ['informe', 'pagar', 'boleta', 'caja', 'recibirCaja'] },
   { id: 'sistema', icono: '⚙️', nombre: 'El sistema',
     poderes: ['configurar', 'bitacora', 'usuarios', 'mantencion'] }
 ];

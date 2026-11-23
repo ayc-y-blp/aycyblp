@@ -23,7 +23,7 @@ import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
 import { POR_DEFECTO, type Config } from '@/lib/config';
 import { menusConocidos } from '@/lib/shopify';
 import { POR_DEFECTO_MENUS, paraReservar, type Menu } from '@/lib/menus';
-import { resumenEquipo, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
+import { resumenEquipo, esPreparacion, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { lineaDeSemana, type Tono } from '@/lib/semana';
 import { puede, puedeVer, type Rol } from '@/lib/auth';
 import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy } from '@/lib/fechas';
@@ -31,7 +31,7 @@ import { copiarConAviso } from './AvisoFlotante';
 import AvisoSobrecupo from './AvisoSobrecupo';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
 import { pendientesDeAprobar, pendientesDeCupo, pendientesDeSobrecupo, juntarPendientes, pendientesDePago,
-  pendientesDeDescuentoVisto, type PendienteExclusivo, type PendienteCuenta, type PendienteCondiciones, type PendienteAcuerdos } from '@/lib/aprobaciones';
+  pendientesDeDescuentoVisto, type PendienteExclusivo, type PendienteCuenta, type PendienteCondiciones, type PendienteAcuerdos, type PendienteCaja } from '@/lib/aprobaciones';
 import AvisosRecepcion from './AvisosRecepcion';
 import { MarcaAhora } from './FechaDia';
 import BandejaAprobaciones from './BandejaAprobaciones';
@@ -89,7 +89,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   // equipo sin que exista en el calendario, así que no hay ocupación que
   // pasarle. Ver "Agregar fecha" y la opción de preparación.
   const [planificando, setPlanificando] =
-    useState<{ fecha: string; personas: number } | null>(null);
+    useState<{ fecha: string; personas: number; preparacion?: boolean } | null>(null);
   const [avisoPlanilla, setAvisoPlanilla] = useState('');
   /**
    * Las semanas de más adelante que alguien abrió. Las dos primeras van
@@ -162,6 +162,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [condiciones, setCondiciones] = useState<PendienteCondiciones[]>([]);
   /** Los acuerdos adicionales que pagos no ha visto (2026-11-23): solo para quien paga. */
   const [acuerdos, setAcuerdos] = useState<PendienteAcuerdos[]>([]);
+  /** La caja chica (2026-11-23): lo que esta cuenta tiene que recibir y, para pagos, lo que falta revisar. */
+  const [caja, setCaja] = useState<PendienteCaja[]>([]);
   /** Las cuentas y tarifas que pagos tiene que confirmar: vienen solo para `pagar`. */
   const [cuentas, setCuentas] = useState<PendienteCuenta[]>([]);
   /** Qué reservas salieron de una cotización: su pago se revisa por sus cobros. */
@@ -203,6 +205,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         setExclusivos(d.exclusivos ?? []);
         setCondiciones(d.condiciones ?? []);
         setAcuerdos(d.acuerdos ?? []);
+        setCaja(d.caja ?? []);
         setCuentas(d.cuentas ?? []);
       })
       .catch((e) => setError(String(e)));
@@ -285,7 +288,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     const dePagos = puede(rol as Rol, 'pagar')
       ? juntarPendientes(pendientesDePago(reservas, deCotizacion), pendientesDeDescuentoVisto(reservas), cuentas, acuerdos) : [];
     const descuentos = juntarPendientes(puede(rol as Rol, 'aprobar') ? pendientesDeAprobar(reservas) : [], exclusivos, dePagos,
-      condiciones);
+      condiciones, caja);
     if (!conCupo) return descuentos;
     // **Subir el cupo es del gerente o más arriba** (2026-11-12): los
     // pedidos del encargado y los días sobre su cupo llegan acá.
@@ -293,7 +296,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     const pedidos = pendientesDeCupo(fechasHoja, tomadas);
     const conPedido = new Set(pedidos.map((p) => p.fecha));
     return juntarPendientes(descuentos, pedidos, pendientesDeSobrecupo(dias ?? [], cfg.capacidadMaxima, conPedido));
-  }, [reservas, rol, conCupo, fechasHoja, dias, cfg.capacidadMaxima, exclusivos, cuentas, deCotizacion, condiciones, acuerdos]);
+  }, [reservas, rol, conCupo, fechasHoja, dias, cfg.capacidadMaxima, exclusivos, cuentas, deCotizacion, condiciones, acuerdos, caja]);
 
   /** Los avisos de la recepción sin resolver, de hoy y de antes (2026-11-13). */
   const conAvisos = puede(rol as Rol, 'asistencia');
@@ -432,7 +435,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
              en `Fechas Hábiles`, así que el sitio sigue sin ofrecer ese día. */
           onPreparacion={(fecha) => {
             setAgregandoFecha(false);
-            setPlanificando({ fecha, personas: 0 });
+            setPlanificando({ fecha, personas: 0, preparacion: true });
           }}
         />
       )}
@@ -441,6 +444,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         <EquipoDialogo
           fecha={planificando.fecha}
           personas={planificando.personas}
+          preparacion={!!planificando.preparacion}
           puestos={equipo.puestos}
           trabajadores={equipo.trabajadores}
           turnos={equipo.turnos}
@@ -573,7 +577,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
                   ? resumenEquipo(equipo.turnos, equipo.puestos, d.fecha, d.tomadas)
                   : null}
                 onEditar={() => setEditando(d)}
-                onPlanificar={() => setPlanificando({ fecha: d.fecha, personas: d.tomadas })} />
+                onPlanificar={() => setPlanificando({ fecha: d.fecha, personas: d.tomadas,
+                  preparacion: esPreparacion({ conEquipo: true, abierto: !d.bloqueada, personas: d.tomadas }) })} />
             ))}
             </div>
             )}

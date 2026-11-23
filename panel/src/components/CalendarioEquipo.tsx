@@ -396,6 +396,9 @@ export default function CalendarioEquipo({ dia }: { dia?: string } = {}) {
         <EquipoDialogo
           fecha={planificando}
           personas={personasDe(planificando)}
+          preparacion={esPreparacion({ conEquipo: true,
+            abierto: !!porFecha.get(planificando) && !porFecha.get(planificando)!.bloqueada,
+            personas: personasDe(planificando) })}
           puestos={equipo.puestos}
           trabajadores={equipo.trabajadores}
           turnos={equipo.turnos}

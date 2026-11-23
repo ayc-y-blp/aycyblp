@@ -80,6 +80,7 @@ export const POST = conLecturas([], async function POST(req: Request) {
       // Participa salvo que se diga lo contrario: es la regla del negocio.
       propina: b?.propina === undefined ? true : esSi(b.propina),
       valorHora: esAdmin ? aEntero(b?.valorHora) : 0,
+      pagoPreparacion: esAdmin ? aEntero(b?.pagoPreparacion) : 0,
       porConfirmar: ''
     };
     // **La plata la confirma pagos** (2026-11-13): una ficha nueva con cuenta
@@ -175,6 +176,8 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
         ? aEntero(b.pagoJornada) : antes.pagoJornada,
       valorHora: esAdmin && b?.valorHora !== undefined
         ? aEntero(b.valorHora) : antes.valorHora,
+      pagoPreparacion: esAdmin && b?.pagoPreparacion !== undefined
+        ? aEntero(b.pagoPreparacion) : (antes.pagoPreparacion ?? 0),
       propina: esAdmin
         ? (b?.propina === undefined ? antes.propina : esSi(b.propina))
         : antes.propina,

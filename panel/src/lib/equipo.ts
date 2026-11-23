@@ -47,7 +47,15 @@ export const COL_TRABAJADORES = {
    * o la tarifa que cambió alguien que no es pagos, con quién y cuándo. Va
    * al final: una planilla vieja se lee igual, sin nada por confirmar.
    */
-  porConfirmar: 'Por confirmar'
+  porConfirmar: 'Por confirmar',
+  /**
+   * **La jornada de un día de preparación** (2026-11-23, lo pidió el cliente:
+   * *"un segundo campo de monto para días de preparación… y cuando un día de
+   * preparación, con el monto por preparación. Público, entrará con el monto
+   * estándar"*). En blanco, la jornada de siempre. Va al final: una planilla
+   * vieja se lee igual.
+   */
+  pagoPreparacion: 'Pago jornada preparación'
 } as const;
 
 /**
@@ -131,6 +139,12 @@ export interface Trabajador {
    */
   pagoJornada: number;
   valorHora: number;
+  /**
+   * Lo que gana en un **día de preparación** (`esPreparacion()`). Cero o sin
+   * poner es la jornada de siempre: ver `jornadaPropuesta()`. Como la
+   * jornada, es el valor de hoy: lo de un día queda en su turno.
+   */
+  pagoPreparacion?: number;
   /** `Por turno` o `Contratado`. Ver MODALIDAD. */
   modalidad: string;
   /**
@@ -751,7 +765,8 @@ export function leerTrabajadoresDe(filas: string[][]): Trabajador[] {
       // en blanco, sin romper una planilla escrita antes de que esto
       // existiera. La nota es la 9, que era la cuenta en texto libre.
       banco: leerBanco(filas[i] ?? [], 10, 9),
-      porConfirmar: String(filas[i]?.[16] ?? '').trim()
+      porConfirmar: String(filas[i]?.[16] ?? '').trim(),
+      pagoPreparacion: aEntero(filas[i]?.[17])
     });
   }
   return salida;
@@ -764,7 +779,8 @@ export function aFilasTrabajadores(gente: Trabajador[]): string[][] {
      COL_TRABAJADORES.modalidad,
      COL_TRABAJADORES.pagoJornada, COL_TRABAJADORES.valorHora,
      COL_TRABAJADORES.propina, COL_TRABAJADORES.nota,
-     ...Object.values(COL_BANCO), COL_TRABAJADORES.porConfirmar],
+     ...Object.values(COL_BANCO), COL_TRABAJADORES.porConfirmar,
+     COL_TRABAJADORES.pagoPreparacion],
     // Un monto en cero se escribe en blanco: en la planilla un "0" se lee
     // como "gana cero" y lo que queremos decir es "sin poner".
     ...gente.map((t) => [t.nombre, t.telefono, t.puesto,
@@ -772,7 +788,8 @@ export function aFilasTrabajadores(gente: Trabajador[]): string[][] {
                          t.pagoJornada > 0 ? String(t.pagoJornada) : '',
                          t.valorHora > 0 ? String(t.valorHora) : '',
                          t.propina ? 'Sí' : 'No', t.banco.nota,
-                         ...filaBanco(t.banco), t.porConfirmar ?? ''])
+                         ...filaBanco(t.banco), t.porConfirmar ?? '',
+                         (t.pagoPreparacion ?? 0) > 0 ? String(t.pagoPreparacion) : ''])
   ];
 }
 
@@ -1015,6 +1032,21 @@ export function textoFaltantes(f: { puesto: string; cuantos: number }[]): string
  * calendario del equipo, la planilla semanal y el link personal— y tres
  * copias de la misma condición es justo lo que se desalinea cuando cambie.
  */
+/**
+ * **La jornada que se propone al sumar a alguien a un día** (2026-11-23): en
+ * un día de preparación, la de preparación si la tiene; en cualquier otro, o
+ * sin ese monto, la de siempre. Se propone y se puede cambiar en el turno; lo
+ * que ya está escrito en un turno no se pisa.
+ */
+export function jornadaPropuesta(
+  ficha: { pagoJornada?: number; pagoPreparacion?: number } | null | undefined,
+  preparacion: boolean
+): number {
+  if (!ficha) return 0;
+  if (preparacion && (ficha.pagoPreparacion ?? 0) > 0) return ficha.pagoPreparacion!;
+  return ficha.pagoJornada ?? 0;
+}
+
 export function esPreparacion(
   { conEquipo, abierto, personas }:
   { conEquipo: boolean; abierto: boolean; personas: number }

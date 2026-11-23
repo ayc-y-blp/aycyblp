@@ -56,6 +56,10 @@ function respuesta(p: Pendiente, aprobar: boolean, motivo = ''): { url: string; 
     return { url: '/api/equipo/confirmar', cuerpo: { de: p.de, nombre: p.nombre, id: p.id },
       aviso: `Confirmado: ${p.que} de ${p.nombre}` };
   }
+  if (p.tipo === 'caja') {
+    return { url: '/api/caja/recibir', cuerpo: { id: p.id },
+      aviso: `Recibido: ${pesos(p.monto)} de ${p.pide}. Queda a tu nombre en la caja chica.` };
+  }
   if (p.tipo === 'acuerdos') {
     return { url: '/api/presupuestos/acuerdos', cuerpo: { id: p.id, huella: p.huella },
       aviso: `Visto: los acuerdos de la cotización N° ${p.folio} quedan a tu nombre` };
@@ -134,12 +138,17 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
   const frase = (p: Pendiente) => {
     // **Condiciones especiales** (2026-11-23): una cotización, no un día.
     if (p.tipo === 'condiciones') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">condiciones especiales</b> · {p.cliente} · N° {p.folio}</>;
+    // **La caja chica** (2026-11-23, `caja.ts`).
+    if (p.tipo === 'caja' && p.que === 'recibir') return <><b>{p.pide}</b> te entregó <b className="text-verde-texto">{pesos(p.monto)}</b> de la caja chica{p.comentario ? <> · {p.comentario}</> : null}</>;
+    if (p.tipo === 'caja') return <>💵 <b>Caja chica</b>: <b className="text-ambar-texto">{p.cuantos} {p.cuantos === 1 ? 'movimiento' : 'movimientos'}</b> por revisar{p.diferencias ? <> · <b className="text-rojo-texto">⚠ {p.diferencias} {p.diferencias === 1 ? 'entrega recibida' : 'entregas recibidas'} con otro monto</b></> : null}</>;
     // **Acuerdos adicionales** (2026-11-23): ya rigen; pagos los mira.
     if (p.tipo === 'acuerdos') return <><b>{p.pide}</b> escribió <b className="text-ambar-texto">acuerdos adicionales</b> · {p.cliente} · N° {p.folio}</>;
     const dia = <span className="first-letter:uppercase">{enPalabras(p.fecha)}</span>;
     if (p.tipo === 'descuento') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}</>;
     if (p.tipo === 'cupo') return <><b>{p.pide}</b> pide subir el cupo a <b className="text-ambar-texto">{p.cupoPedido}</b> · {dia}</>;
     if (p.tipo === 'sobrecupo') return <>{dia}: <b className="text-rojo-texto">{p.exceso} {p.exceso === 1 ? 'persona' : 'personas'} sobre el cupo</b> ({p.tomadas} de {p.cupoActual})</>;
+    // **Cobrado en la mesa** (2026-11-23): lo que se revisa es lo cobrado ahí, no el total de la reserva.
+    if (p.tipo === 'pago' && p.cobro) return <><b>{p.pide}</b> cobró en la mesa a <b>{p.nombre}</b> · {pesos(p.cobrado ?? 0)} · {dia}</>;
     if (p.tipo === 'pago') return <><b>{p.pide}</b> anotó el pago de <b>{p.nombre}</b>{p.monto ? <> · {pesos(p.monto)}</> : null} · {dia}</>;
     if (p.tipo === 'descuentoVisto') return <><b>{p.pide}</b> aplicó <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}{p.aprobo && <> · lo aprobó {p.aprobo}</>}</>;
     if (p.tipo === 'cuenta' && p.de === 'socio') return <><b>{p.pide}</b> agregó el socio comercial <b>{p.nombre}</b>: <b className="text-ambar-texto">confirma su trato</b></>;
@@ -181,7 +190,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
         {visibles.map((p) => {
           const ocupado = guardando === p.clave;
           const abierto = detalle === p.clave || rechazando === p.clave || aprobando === p.clave;
-          const principal = p.tipo === 'exclusivo' ? null : (p.tipo !== 'sobrecupo' || p.ampliarA > p.cupoActual) ? (
+          const principal = p.tipo === 'exclusivo' ? null : p.tipo === 'caja' && p.que === 'revisar' ? (
+            <a href="/caja" className="tecla boton !min-h-[44px] !border-verde-fuerte !text-[15px] !font-bold text-verde-texto">Revisar en la caja →</a>
+          ) : (p.tipo !== 'sobrecupo' || p.ampliarA > p.cupoActual) ? (
             <button type="button" disabled={ocupado}
               className="boton !min-h-[44px] !border-verde-fuerte bg-verde-fuerte !text-[15px] !font-bold text-tinta"
               onClick={() => void responder(p, true)}>
@@ -193,6 +204,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                 : p.tipo === 'cuenta' ? '✓ Confirmar'
                 : p.tipo === 'condiciones' ? '✓ Aprobar'
                 : p.tipo === 'acuerdos' ? '✓ Visto'
+                : p.tipo === 'caja' ? `✓ Recibí ${pesos(p.monto)}`
                 : `✓ Ampliar a ${p.ampliarA}`}
             </button>
           ) : null;
@@ -226,7 +238,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   ✕ Rechazar
                 </button>
               )}
-              {p.tipo === 'condiciones' || p.tipo === 'acuerdos'
+              {p.tipo === 'caja'
+                ? <a href="/caja" className="tecla boton min-h-[44px]">Ver la caja →</a>
+                : p.tipo === 'condiciones' || p.tipo === 'acuerdos'
                 ? <a href={`/presupuestos?abrir=${encodeURIComponent(p.id)}`} className="tecla boton min-h-[44px]">Ver la cotización →</a>
                 : p.tipo === 'cuenta'
                 ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
@@ -256,7 +270,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                           dobla debajo en vez de bajar entera. */}
                       <EstadoDelPago className="mr-2 align-middle" r={{ id: 'MANUAL', tipoPago: '', notaPago: '',
                         estadoPago: p.estado === 'Abonada' ? 'partially_paid' : 'paid', abonado: p.abonado }} />
-                      {p.nota && <span className="align-middle">{p.nota}</span>}
+                      {(p.cobro || p.nota) && <span className="align-middle">{p.cobro || p.nota}</span>}
                     </p>
                   )}
                 </div>
@@ -287,15 +301,19 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   <p className="text-[14px] text-hueso/80 lg:flex-1">
                     {p.tipo === 'descuento' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'}</>}
                     {p.tipo === 'cupo' && <>Hoy es <b>{p.cupoActual}</b> · ya reservaron <b>{p.tomadas}</b></>}
-                    {p.tipo === 'pago' && <>Ya rige: la reserva cuenta como {p.estado.toLowerCase()}. Revísalo contra el banco o la caja; si algo no calza, corrígelo en la reserva</>}
+                    {p.tipo === 'pago' && (p.cobro
+                      ? <>Ya rige: la reserva cuenta como pagada. Revisa el efectivo contra la caja chica, la transferencia contra el banco (su comprobante está en la mesa) y la tarjeta contra el cierre del POS</>
+                      : <>Ya rige: la reserva cuenta como {p.estado.toLowerCase()}. Revísalo contra el banco o la caja; si algo no calza, corrígelo en la reserva</>)}
                     {p.tipo === 'descuentoVisto' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'} · ya rige en lo que se cobra</>}
                     {p.tipo === 'cuenta' && p.de === 'socio' && <>Ya se puede cotizar con él. Nació con el trato de partida —5% desde 22, 10% desde 55, 15% desde 77—: míralo en su tarjeta, <a className="text-oro underline" href={`/vendedores?usuario=${encodeURIComponent(p.id ?? '')}`}>Vendedores →</a>, y confírmalo</>}
                     {p.tipo === 'cuenta' && p.de !== 'socio' && <>Ya rige. Antes de transferir, mira la ficha y confirma que los datos están bien</>}
+                    {p.tipo === 'caja' && p.que === 'recibir' && <>Al confirmar, queda a tu nombre: desde la caja anotas si la depositaste o compraste algo. Si recibiste otro monto, confírmalo en la caja</>}
+                    {p.tipo === 'caja' && p.que === 'revisar' && <>Ya rigen: revisa en la caja las boletas, los depósitos y lo recibido</>}
                     {p.tipo === 'acuerdos' && <>Ya rige: va al contrato como la última cláusula. Si algo no corresponde, corrígelo en la cotización y avísale a {p.pide}{p.fecha ? <> · evento el {enPalabras(p.fecha)}</> : null}</>}
                     {p.tipo === 'condiciones' && <>Si lo apruebas, pasa a ser el tope de esa cotización y el vendedor ya lo puede ofrecer{p.fecha ? <> · evento el {enPalabras(p.fecha)}</> : null}</>}
                     {p.tipo === 'exclusivo' && <>Cotización N° {p.folio}{p.invitados > 0 && <> · {p.invitados} invitados</>} · ese día hay que mover{' '}
                       <b>{p.reservas} {p.reservas === 1 ? 'reserva' : 'reservas'}</b> · <b>{p.personas}</b> {p.personas === 1 ? 'persona' : 'personas'}</>}
-                    {p.cuando && <> · {DE_PAGOS.has(p.tipo) ? 'lo anotó' : 'lo pidió'} {p.tipo === 'cuenta' ? `el ${enPalabras(p.cuando.slice(0, 10))} a las` : 'a las'} {p.cuando.slice(11) || p.cuando}</>}
+                    {p.cuando && <> · {p.tipo === 'caja' ? 'la entregó' : DE_PAGOS.has(p.tipo) ? 'lo anotó' : 'lo pidió'} {p.tipo === 'cuenta' || p.tipo === 'caja' ? `el ${enPalabras(p.cuando.slice(0, 10))} a las` : 'a las'} {p.cuando.slice(11) || p.cuando}</>}
                     {p.fecha === hoy() && p.tipo !== 'cuenta' && p.tipo !== 'condiciones' && p.tipo !== 'acuerdos' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
                   </p>
                   {enFila && acciones}

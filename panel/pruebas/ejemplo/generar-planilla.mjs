@@ -24,6 +24,8 @@ const ven = await import(L + 'vendedores.ts');
 const usu = await import(L + 'usuarios.ts');
 const fil = await import(L + 'filas.ts');
 const not = await import(L + 'notas.ts');
+const caj = await import(L + 'caja.ts');
+const pla = await import(L + 'plata.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -61,6 +63,8 @@ H['Config'] = cfg.aFilasConfig({
   tokenPlanilla: '',
   // El simulador de evento: números inventados, solo para el panel de ejemplo.
   margenMinimo: 30, gastosEvento: 'Hielo: 20000; Leña y carbón: 600 pp',
+  // La carpeta de los comprobantes: en el ejemplo, Drive es de mentira (`capturas.sh`).
+  driveComprobantes: 'unidad-de-ejemplo',
   empresa: { ...cfg.EMPRESA_VACIA, nombre: 'Brasas de Lo Pirque' }
 });
 
@@ -235,8 +239,15 @@ deShopify({ fecha: '2026-11-01', nombre: 'Familia Ibáñez', email: 'ibanez@ejem
 // Sábado 7 y domingo 8.
 deShopify({ fecha: '2026-11-07', nombre: 'Mónica Lillo', email: 'mlillo@ejemplo.cl', telefono: '+56 9 9111 2204', menu: '6 × Tradiciones',
   personas: 6, monto: 264000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-02 12:05', asistencia: 'Sí', llegaron: 6 });
-deShopify({ fecha: '2026-11-07', nombre: 'Ricardo Godoy', email: 'rgodoy@ejemplo.cl', telefono: '+56 9 9111 2205', menu: '2 × Tradiciones + 1 × Niños',
-  personas: 3, monto: 122000, tipoPago: 'Solo reserva', estadoPago: 'pending', creada: '2026-11-03 21:30', asistencia: 'Sí', llegaron: 3 });
+// **Cobrada en la mesa** (2026-11-23, `cobroLocal.ts`): pagó todo en efectivo,
+// y pagos ya lo revisó. Su efectivo es el cobro de la caja chica.
+{
+  const r = { id: '6512345670207', fecha: '2026-11-07', nombre: 'Ricardo Godoy', email: 'rgodoy@ejemplo.cl', telefono: '+56 9 9111 2205',
+    menu: '2 × Tradiciones + 1 × Niños', personas: 3, monto: 122000, tipoPago: 'Solo reserva', estadoPago: 'paid', creada: '2026-11-03 21:30',
+    asistencia: 'Sí', llegaron: 3, notaPago: '', abonado: null, valorFinal: 131000, mesaCerrada: '2026-11-07 17:25 · Tomás Herrera',
+    cobroLocal: 'Efectivo 131000', cobroCerrado: '2026-11-07 17:30 · Tomás Herrera · antes pending/', pagoAnotado: '2026-11-07 17:30 · Tomás Herrera' };
+  deShopify({ ...r, pagoRevisado: pla.marcaPlata('2026-11-08 10:00', 'Verónica Lagos', pla.firmaPago(r)) });
+}
 aMano({ fecha: '2026-11-07', nombre: 'Familia Toro', telefono: '+56 9 9111 2206', menu: '8 × Tradiciones + 3 × Niños',
   personas: 11, monto: 464000, estadoPago: 'paid', creada: '2026-11-04 10:12', asistencia: 'Sí', llegaron: 11, anotadaPor: 'Tomás Herrera',
   notaPago: 'Pagó por transferencia' });
@@ -275,8 +286,11 @@ deShopify({ fecha: '2026-11-13', nombre: 'Ignacio Fernández', email: 'ifernande
   personas: 2, monto: 150000, tipoPago: 'Solo reserva', estadoPago: 'pending', creada: '2026-11-12 13:12' });
 deShopify({ fecha: '2026-11-13', nombre: 'Valentina Castro', email: 'vcastro@ejemplo.cl', telefono: '+56 9 7345 1105', menu: '6 × Tradiciones',
   personas: 6, monto: 264000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-07 17:25', asistencia: 'Sí', llegaron: 6 });
+// Con su valor final: le faltan $18.000 por cobrar en la mesa (2026-11-23).
+// No es Valentina Castro: la foto de la misión de la anfitriona la muestra sin valor final.
 deShopify({ fecha: '2026-11-13', nombre: 'Martín Araya', email: 'maraya@ejemplo.cl', telefono: '+56 9 7345 1106', menu: '2 × Tradiciones + 1 × Pequeños',
-  personas: 3, monto: 94000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-10 09:58', asistencia: 'Sí', llegaron: 3 });
+  personas: 3, monto: 94000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-10 09:58', asistencia: 'Sí', llegaron: 3,
+  valorFinal: 112000, mesaCerrada: '2026-11-13 14:15 · Tomás Herrera' });
 
 // Sábado 14 y domingo 15 (lo que viene).
 const futuro = [
@@ -306,6 +320,16 @@ reserva({ id: 'MANUAL-1761670000001', fecha: '2026-11-21', nombre: 'Patricia Vid
 reserva({ id: 'MANUAL-1762200000002', fecha: '2026-12-05', nombre: 'Rocío Fuenzalida', email: 'rocio@ejemplo.cl',
   telefono: '+56 9 6345 6789', menu: '45 × A Brasas abiertas', personas: 45, monto: 3375000, estadoPago: 'partially_paid', abonado: 1012500,
   creada: '2026-11-03 12:00', notaPago: `De la cotización N° ${pre.folioDe({ id: peumo })}`, anotadaPor: 'Jorge' });
+
+/* ---------- La caja chica (2026-11-23) ---------- */
+// Parte con $7.000 (lo dijo el cliente). Todo revisado: la bandeja de ejemplo no cambia.
+H['Caja chica'] = [caj.ENCABEZADO_CAJA, ...[
+  { id: 'K-EJ1', fecha: '2026-11-07', cuando: '2026-11-07 12:00', tipo: 'Saldo inicial', monto: 7000, detalle: 'Con lo que partió la caja', quien: 'Tomás Herrera', revisado: '2026-11-08 10:00 · Verónica Lagos' },
+  { id: 'K-EJ2', fecha: '2026-11-07', cuando: '2026-11-07 17:30', tipo: 'Cobro', monto: 131000, detalle: 'Mesa de Ricardo Godoy', quien: 'Tomás Herrera', reserva: '6512345670207' },
+  { id: 'K-EJ3', fecha: '2026-11-07', cuando: '2026-11-07 18:05', tipo: 'Gasto', monto: 4500, detalle: 'Hielo', quien: 'Tomás Herrera', comprobante: 'ejemplo-boleta', revisado: '2026-11-08 10:00 · Verónica Lagos' },
+  { id: 'K-EJ4', fecha: '2026-11-08', cuando: '2026-11-08 19:00', tipo: 'Entrega', monto: 130000, detalle: '', quien: 'Tomás Herrera', para: 'Marcela Díaz', recibido: '2026-11-09 09:40 · Marcela Díaz · 130000', revisado: '2026-11-10 11:00 · Verónica Lagos' },
+  { id: 'K-EJ5', fecha: '2026-11-10', cuando: '2026-11-10 10:30', tipo: 'Depósito', monto: 130000, detalle: 'Cuenta corriente', quien: 'Marcela Díaz', comprobante: 'ejemplo-deposito', revisado: '2026-11-10 11:00 · Verónica Lagos' }
+].map((m) => caj.filaCaja(caj.ENCABEZADO_CAJA, { para: '', recibido: '', comprobante: '', reserva: '', revisado: '', ...m }))];
 
 const encR = Object.values(col.COL_RESERVAS);
 H['Reservas'] = [encR, ...RES.map((r) => fil.filaReserva(encR, r).map((c) => (c == null ? '' : String(c))))];
@@ -470,7 +494,7 @@ H['Importar reservas'] = [
 
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

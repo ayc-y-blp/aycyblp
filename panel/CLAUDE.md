@@ -172,6 +172,8 @@ revisan antes de cada cambio en esta carpeta.
   | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*) y `HistorialNotas` (la misma lista en la ficha del cliente) |
   | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
+  | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
+  | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -218,6 +220,188 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El cobro en la mesa y la caja chica (2026-11-23)
+
+Lo pidió el cliente, por la encargada de turno: *"al cerrar la reserva, pone
+el monto total de Fudo. Ahí hay que agregar también monto en efectivo y ese
+efectivo tiene que entrar a la caja chica que la encargada de turno la
+administra… entregar este dinero a Cristóbal, al encargado de operaciones. Él
+lo recoge y él lo lleva al banco o decide si se hacen compras… ellos necesitan
+este registro también dentro de sus roles"*. Y del cobro: *"él me hizo una
+transferencia con el resto y paga… si tiene el comprobante de transferencia. O
+si el cliente pagó en efectivo… o también si pagó la diferencia con tarjeta. Y
+ahí solo una opción de tarjeta"*. Aprobó la propuesta (*"sí, con el resto de
+las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
+
+### Cobrar la mesa (`lib/cobroLocal.ts`)
+
+- **Con el valor final anotado**, la mesa (`MesaReserva`, en la Recepción y la
+  página del día) dice ***Ya pagado*** —todo si está pagada, lo abonado si está
+  abonada, nada si está por pagar (`yaPagado()`)— y ***Falta por cobrar***: el
+  valor final menos eso (`faltaPorCobrar()`). Sin valor final, contra el monto
+  de la reserva.
+- **Un toque elige el medio con todo lo que falta**: 💵 Efectivo, 🏦
+  Transferencia o 💳 Tarjeta (una sola tarjeta, lo pidió el cliente). Si pagó
+  con dos, *+ 💳 Tarjeta* (o el que falte) agrega el otro con el resto, y los
+  montos se corrigen a mano. **Una transferencia pide la foto del comprobante**,
+  que va a la carpeta de comprobantes de Drive (`Cobros en el local AAAA-MM`).
+- ***✓ Pagó todo · $26.000*** solo se enciende si la suma da justo lo que
+  falta: lo que sobra es propina y va en la propina del día (`limpiarCobro()`,
+  también en el servidor).
+- **Qué hace** (`POST /api/reservas/[fila]/cobro`, permiso `caja`, desde la
+  hora de apertura del día):
+  - **A mano o de Shopify**: la reserva queda *Pagada* en el panel. **A
+    Shopify no se le cambia nada**: allá el pedido sigue *por pagar*, y la
+    sincronización ya no la devuelve a *por pagar* mientras tenga su cobro
+    (`estadoConCobroLocal()` en `guardarPedido()`; una devolución o una
+    anulación de allá sí mandan).
+  - **De una cotización**: el saldo entra **como cobros de su cotización**, uno
+    por medio (*Saldo*, con su medio, nota *Cobrado en la mesa* y el
+    comprobante en la transferencia). De ahí sale el estado de la reserva y se
+    congela la comisión del vendedor, como con cualquier cobro.
+  - **El efectivo entra a la caja chica** en el mismo acto (un movimiento
+    *Cobro*).
+  - **Le llega a pagos** como un pago anotado (`Pago anotado`, la bandeja de
+    siempre): `pagoPorRevisar()` ahora incluye una de Shopify cobrada en la
+    mesa, y la firma del pago (`firmaPago()`) suma el cobro al final —las
+    firmas de antes siguen calzando—. **El aviso dice lo cobrado en la mesa,
+    no el total de la reserva**: *Tomás Herrera cobró en la mesa a Martín
+    Araya · $18.000*, con los medios debajo, y su detalle dice contra qué
+    revisarlo (la caja, el banco, el cierre del POS). Los de una cotización, en
+    sus cobros. Si cobra pagos, queda revisado.
+- **Cobrada, se lee** *✓ Pagó todo en el local* con los medios, el comprobante
+  y quién la cobró. **El valor final queda fijo** (el servidor responde 409):
+  para cambiarlo, *Deshacer* primero.
+- ***Deshacer*** (`DELETE`) vuelve el pago a como estaba —lo guarda la marca
+  `Cobro cerrado`, *"… · antes pending/"*—, borra los cobros de la cotización y
+  saca el efectivo de la caja. **Revisado, solo lo deshace pagos.**
+- **Un día cerrado se corrige**: cobra quien tiene `corregir` (también el
+  encargado de turno), y la bitácora dice *en un día cerrado*. En pantalla, la
+  mesa de un día cerrado no se edita, como antes.
+- **Tres columnas nuevas al final de `Reservas`**: `Cobrado en el local`
+  (*"Efectivo 20000|Tarjeta 6000"*), `Comprobante del cobro` (el id en Drive) y
+  `Cobro cerrado` (quién, cuándo y cómo estaba antes). Shopify no las toca
+  (`camposDeShopify()`).
+- **La anfitriona no cobra** y no recibe el pago en la Recepción: solo quien
+  tiene `caja`.
+- **En la página del día**, *Las mesas* suma el ***Efectivo del día*** (lo que
+  entró a la caja, y la transferencia y la tarjeta en su nota), y *mesa por
+  mesa* dice cómo pagó cada una.
+- **Para que la ficha de la Recepción quepa en 1280×650** (637px con dos
+  medios y una caja de Fudo de dos menús): mientras se elige cómo pagó, la mesa
+  esconde *Agregar a la mesa*, *Cambiar el valor final* y *Nadie agregado*, y no
+  hay una pregunta encima de los medios (ya lo dice *Falta por cobrar*). En el celular, el nombre del medio cede ancho y el
+  `$` se esconde: el monto es lo que se escribe.
+
+### La caja chica (`lib/caja.ts`, pantalla `/caja`)
+
+**Una sola caja**, pestaña nueva `Caja chica`, un movimiento por fila: `ID`,
+`Fecha`, `Cuándo`, `Tipo`, `Monto` (siempre positivo), `Detalle`, `Quién`,
+`Para`, `Recibido`, `Comprobante`, `Reserva`, `Revisado`.
+
+| Tipo | Lo anota | Qué hace |
+|---|---|---|
+| 🏁 Saldo inicial | quien lleva la caja, una vez | con cuánto parte (**hoy, $7.000**: se anota al estrenarla) |
+| 💵 Cobro | solo, al cobrar una mesa en efectivo | entra a la caja |
+| 🧾 Gasto | quien lleva la caja, con la foto de la boleta y en qué | sale de la caja |
+| 📤 Entrega | quien lleva la caja, a alguien que recibe | sale de la caja y queda **por recibir** |
+| 🏦 Depósito · 🛒 Compra | quien recibió, con la foto del comprobante o la boleta | sale de lo que tiene en la mano |
+
+- **Arriba, lo que hay** (`saldosDeCaja()`): *En la caja*, *Por recibir* y *En
+  manos de* cada persona que recibió (lo recibido menos lo depositado o
+  comprado). No se puede gastar ni entregar más de lo que hay, ni depositar más
+  de lo que se tiene.
+- **Entregar** propone al encargado de operaciones (el habitual: *"entregar
+  este dinero a Cristóbal"*) y los demás con el buscador (`BuscarEnLista`), y
+  el monto de partida es todo lo de la caja. Queda **por recibir** hasta que
+  esa persona aprieta ***✓ Recibí $X*** —en *Te entregaron* de la caja o en su
+  bandeja—; si recibió otro monto, *Recibí otro monto…* lo escribe y queda
+  marcado para pagos (*⚠ recibió $X*, y *Recibidas con otro monto* arriba).
+  Solo la persona a la que se le entregó la confirma.
+- **Pagos revisa** cada movimiento con ***✓ Revisado*** (*Por revisar (N)*
+  deja solo esos), sin frenar a nadie: la regla *la plata la cierra el
+  encargado de pagos*. No se revisan los cobros —van con el pago de su
+  reserva— ni una entrega en camino. Lo que anota pagos queda revisado.
+- **Nada se edita**: lo anotado por error se borra (*Borrar*) mientras pagos no
+  lo haya revisado y, si es una entrega, nadie la haya recibido. Pagos borra
+  siempre. Un cobro se deshace desde su mesa.
+- **La bandeja** (`pendientesDeCaja()`, desde `/api/ocupacion`): a quien
+  recibe, *Tomás Herrera te entregó $20.000 de la caja chica* con ***✓ Recibí
+  $20.000***; a pagos, *Caja chica: N movimientos por revisar* (y cuántas
+  entregas con otro monto) con *Revisar en la caja →*. No se rechaza nada.
+- **Quién y Para llevan el nombre de la cuenta**, que es lo que trae la sesión
+  (`/api/sesion`), igual que *Creado por*.
+- **Las fotos** van a la carpeta de comprobantes de Drive (`Caja chica
+  AAAA-MM`) y se ven solo a través del panel (`/api/caja/comprobante`).
+- **Dejar la base en cero vacía `Caja chica`** (`SE_VACIAN`): sus movimientos
+  son de las reservas y los días que se borran. Después hay que volver a anotar
+  el saldo inicial.
+
+### Lo de siempre
+
+- **Permisos nuevos**: `caja` —cobrar la mesa, ver la caja, anotar gastos y
+  entregas— para el encargado de turno, operaciones, pagos, la gerencia y el
+  administrador; y `recibirCaja` —recibir y anotar depósitos y compras— para
+  operaciones, pagos, la gerencia y el administrador. **Confirmar es de
+  `pagar`**, como siempre. Ningún permiso de antes cambió. *Caja* entra al
+  menú, después de *Extras*.
+- **Lecturas de Google**: `/api/ocupacion` suma `Caja chica` a su tanda
+  (ninguna lectura más; si la pestaña no está, se crea con su encabezado la
+  primera vez, como `Notas`). La Recepción y la página del día no leen nada
+  nuevo: el cobro viaja en la reserva. Cobrar lee una tanda y escribe la
+  reserva (y los cobros de la cotización, y la caja). `/api/caja` lee una tanda
+  (`Caja chica` y `Usuarios`).
+- **El menú del computador, un poco más junto** (`Nav`, solo `lg:`): con
+  *Caja*, el del administrador ya no cabía en una fila a 1280px; ahora va con
+  6px entre botones y 10px adentro. Los botones siguen en 36px.
+- **Ayuda**: el `?` de la pantalla (`caja`), los `?` chicos `cobroMesa` y
+  `cajaAnotar`, el de la Recepción y el de la página del día, y la misión del
+  encargado *La recepción y qué cobrar*. Lo que puede cada rol sale solo de
+  `PERMISOS` (`roles.ts`, `poderes.ts`: los dos poderes nuevos van en *La
+  plata*).
+- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` y
+  `ficha-caja-entregar` (262px); la pantalla `caja` entra en la prueba de
+  espacio. *Dejar la base en cero* suma la fila *Caja chica* y no cabía (676px):
+  sus dos listas van con 2px entre filas en el computador, y mide 627px.
+- **El panel de ejemplo**: la caja con su historia (saldo inicial de $7.000,
+  el cobro en efectivo de Ricardo Godoy el sábado 7, un gasto, una entrega
+  recibida por Marcela y su depósito, todo revisado), y Martín Araya hoy con
+  valor final $112.000: le faltan $18.000 (no Valentina Castro: la foto de la
+  misión de la anfitriona la muestra sin valor final). **Drive es de mentira** en la
+  copia (`capturas.sh`), así que las fotos se suben y se ven; y la Configuración
+  de ejemplo trae una carpeta de comprobantes.
+- **Probado en el panel de ejemplo**, como encargado (en una primera versión
+  del ejemplo, con Valentina Castro y $26.000 por cobrar): cobrar sin que sume justo
+  o una transferencia sin foto se rechaza; con $20.000 en efectivo y $6.000 en
+  transferencia, la reserva queda pagada, con su comprobante, a la bandeja de
+  pagos, y los $20.000 en la caja; cobrar de nuevo responde 409; deshacer la
+  devuelve a como estaba. Una de cotización (Rocío Fuenzalida, movida a hoy):
+  el saldo entra como cobro de la cotización y deshacerlo la deja abonada. En
+  la caja, un gasto sin boleta o una entrega de más se rechazan; la entrega a
+  Marcela le llega a su bandeja, pagos no la puede recibir por ella, recibir
+  $20.000 de $20.500 queda marcado, y lo revisado ya no se borra. La anfitriona
+  y el vendedor reciben 403.
+
+## La jornada de preparación (2026-11-23)
+
+Lo pidió el cliente: *"en los trabajadores un segundo campo de monto para días
+de preparación, porque regularmente se hacen días de preparación… cuando un día
+de preparación, con el monto… Público, entrará con el monto estándar. Después
+se puede editar igual dentro del turno"*.
+
+- **Columna nueva al final de `Trabajadores`: `Pago jornada preparación`**, y
+  el campo *Preparación* en la ficha (`/equipo` y la que se abre desde el día),
+  con su `?` (`jornadaPreparacion`). En blanco, *la de siempre*. Un contratado
+  no lo tiene.
+- **Al agregar a alguien a un día de preparación** —con equipo, sin público y
+  sin reservas (`esPreparacion()`)— se le propone ese monto
+  (`jornadaPropuesta()` en `lib/equipo.ts`); en un día público o de evento, la
+  jornada de siempre. En el turno se sigue pudiendo cambiar.
+- Lo ve y lo edita quien ve los sueldos (`sueldos`), como la jornada; si lo
+  cambia quien no es pagos, queda *por confirmar* (`cambiosDePlata()`:
+  *jornada de preparación*).
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.**
 
 ## El arriendo mínimo en las cotizaciones (2026-11-23)
 

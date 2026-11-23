@@ -30,6 +30,7 @@ import { yaAbrio, estaCerrado as diaCerrado } from '@/lib/cierres';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { paraReservar } from '@/lib/menus';
 import { opcionesParaAgregar } from '@/lib/mesa';
+import { partesMarca, firmaPago } from '@/lib/plata';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CI
                             await leerLineasPresupuesto().catch(() => []), menus)
       : new Map<string, Acordado>();
     const apertura = fechas.find((f) => f.fecha === fecha)?.apertura || cfg.horaApertura;
+    const cobrar = puede(quien.rol, 'caja');
     // Los menús que se pueden agregar a una mesa (2026-11-17, `mesa.ts`).
     const delSitio = paraReservar(menus).map((m) => m.nombre);
     return NextResponse.json({
@@ -67,8 +69,16 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CI
         // se puede sumar. El valor final lo anota ella misma: no es un dato
         // que se le esconda.
         agregados: r.agregados ?? '', valorFinal: r.valorFinal ?? null, mesaCerrada: r.mesaCerrada ?? '',
-        opciones: opcionesParaAgregar(r.menu, delSitio)
-      }))
+        opciones: opcionesParaAgregar(r.menu, delSitio),
+        // **El pago, para cobrar la mesa** (2026-11-23, `cobroLocal.ts`): solo
+        // a quien cobra (`caja`). La anfitriona no lo recibe.
+        ...(cobrar ? {
+          estadoPago: r.estadoPago, monto: r.monto, abonado: r.abonado ?? null, cobroLocal: r.cobroLocal ?? '',
+          comprobanteCobro: r.comprobanteCobro ? 'sí' : '', cobroCerrado: r.cobroCerrado ?? '',
+          cobroRevisado: !!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)
+        } : {})
+      })),
+      cobrar
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
