@@ -39,6 +39,7 @@ import { pendientesDeAprobar, pendientesDePago, pendientesDeDescuentoVisto, junt
 import { personasEnLaMesa, cuantosAgregados, opcionesParaAgregar, mesasDelDia, partesMarcaMesa, resumenAgregados, pesosCL } from '@/lib/mesa';
 import { partesMarca, firmaPago } from '@/lib/plata';
 import { leerCobroLocal, fraseCobro } from '@/lib/cobroLocal';
+import { QUE_RESERVAS, origenDeReserva, type Tipo } from '@/lib/estadisticas';
 import MesaReserva from './MesaReserva';
 import { avisar } from './AvisoFlotante';
 import { estaRectificada, personasEfectivas, menuEfectivo, porAprobar, rechazado,
@@ -194,7 +195,7 @@ export default function DayView(
   const [destello, setDestello] = useState(0);
   const yaFueAlAncla = useRef(false);
   function irAReserva(r: Reserva) {
-    setFiltro('todas'); setSoloMias(false); setReservaAbierta(r.id); setDestello(r.fila);
+    setFiltro('todas'); setSoloMias(false); setDeDonde(''); setReservaAbierta(r.id); setDestello(r.fila);
     setTimeout(() => document.getElementById(`reserva-${r.fila}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
     setTimeout(() => setDestello(0), 2200);
@@ -211,6 +212,11 @@ export default function DayView(
     { vendedor: {}, folio: {} });
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todas');
+  /**
+   * **De dónde viene** (2026-11-23, lo pidió el cliente): Shopify, a mano o
+   * una cotización. Se suma al filtro del pago y a *Mías*; vacío, todas.
+   */
+  const [deDonde, setDeDonde] = useState<Exclude<Tipo, 'todo'> | ''>('');
   const [editando, setEditando] = useState<Reserva | null>(null);
   /** La reserva de un día cerrado que se está por borrar, con su casilla. */
   const [borrando, setBorrando] = useState<Reserva | null>(null);
@@ -375,13 +381,17 @@ export default function DayView(
 
   /** Si la anotó o la vendió esta cuenta. */
   const esMia = (r: Reserva) => esSuya(usuario, r.anotadaPor) || esSuya(usuario, origen.vendedor[r.id] ?? '');
+  /** De dónde viene esta reserva: de una cotización, de Shopify o a mano (`origenDeReserva()`). */
+  const dondeViene = (r: Reserva) => origenDeReserva(r,
+    !!deCotizacionIds[r.id] || !!cotizado?.presupuestos.some((p) => p.idReserva === r.id));
   const visibles = useMemo(() => delDia.filter((r) => {
     if (soloMias && !esMia(r)) return false;
+    if (deDonde && dondeViene(r) !== deDonde) return false;
     if (filtro === 'abonadas') return estaAbonada(r);
     if (filtro === 'sinPagar') return faltaCobrar(r) && !estaAbonada(r);
     if (filtro === 'pagadas') return ocupaLugar(r) && !faltaCobrar(r);
     return true;
-  }), [delDia, filtro, soloMias, origen, usuario]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [delDia, filtro, soloMias, deDonde, deCotizacionIds, cotizado, origen, usuario]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const personas = visibles.filter(ocupaLugar)
     .reduce((s, r) => s + personasEnLaMesa(r), 0);
@@ -1100,7 +1110,7 @@ export default function DayView(
             pendientes={juntarPendientes(puedeAprobarDescuentos ? pendientesDeAprobar(porAprobarHoy) : [],
               puede(rol as Rol, 'pagar') ? pendientesDePago(delDia, deCotizacionIds) : [],
               puede(rol as Rol, 'pagar') ? pendientesDeDescuentoVisto(delDia) : [])}
-            verReserva={(p) => { setFiltro('todas'); setSoloMias(false);
+            verReserva={(p) => { setFiltro('todas'); setSoloMias(false); setDeDonde('');
               const r = 'fila' in p && delDia.find((x) => x.fila === p.fila); if (r) setReservaAbierta(r.id); }} />
         </div>
       )}
@@ -1121,6 +1131,22 @@ export default function DayView(
         {/* **Mías** (2026-11-12, lo pidió el cliente): de un toque, solo las
             que anotó o vendió esta cuenta. Se suma al filtro del pago. */}
         <BotonMias cuantas={cuantasMias} elegido={soloMias} onClick={() => setSoloMias((v) => !v)} />
+        {/* **De dónde viene** (2026-11-23): los mismos nombres de Estadísticas
+            (`QUE_RESERVAS`). Como *Mías*, se aprieta para filtrar y otra vez
+            para soltar, con cuántas hay; el que no tiene ninguna, apagado. */}
+        <span role="group" aria-label="De dónde viene" className="flex flex-wrap items-center gap-2 lg:border-l-2 lg:border-hueso/15 lg:pl-2">
+          {QUE_RESERVAS.filter(([k]) => k !== 'todo').map(([k, t]) => {
+            const n = delDia.filter((r) => dondeViene(r) === k).length;
+            const elegido = deDonde === k;
+            return (
+              <button key={k} type="button" aria-pressed={elegido} disabled={!n && !elegido}
+                onClick={() => setDeDonde(elegido ? '' : k as Exclude<Tipo, 'todo'>)}
+                className={`boton rounded-full disabled:opacity-40 ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
+                {t} <span className="tabular-nums text-hueso/65">{n}</span>
+              </button>
+            );
+          })}
+        </span>
         <span className="flex-1" />
         <button onClick={exportar} className="boton">Exportar CSV</button>
         {conAnotar ? (

@@ -86,6 +86,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'quien la anotó.'
     ],
     pasos: [
+      'Arriba de la lista, los filtros se suman: cómo va el pago (Todas · '
+      + 'Pagadas · Abonadas · Sin pagar), Mías, y de dónde viene la reserva '
+      + '(🛒 Shopify · ✍ A mano · 🤝 Cotización), que se aprieta otra vez para '
+      + 'soltar. Exportar CSV baja lo que se ve.',
       'La columna Asistencia dice quién vino; se marca en Turnos.',
       'Editar abre la reserva para corregir un teléfono, un menú o el estado '
       + 'del pago. Marcarla Pagada o Abonada le avisa al encargado de pagos, '
@@ -462,8 +466,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'también desde el informe, con 📊 Estadísticas del equipo.',
       'En el marco dorado de arriba eliges el periodo —un mes, una semana, un '
       + 'día o dos fechas—, te mueves con ◀ ▶ y eliges por qué fecha se cuenta: '
-      + 'la de la visita o la de reserva. Todo · Visitas · Eventos separa las reservas de Shopify y '
-      + 'las anotadas a mano de los eventos que vienen de una cotización, que '
+      + 'la de la visita o la de reserva. Todo · Shopify · A mano · Cotización '
+      + 'deja solo las reservas que vienen de ahí: los eventos de una cotización '
       + 'son grandes y mueven los promedios.',
       'Cada número se compara con el periodo anterior: un mes con el mes '
       + 'anterior, una semana con la semana anterior. Las tasas se comparan en '
