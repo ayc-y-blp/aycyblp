@@ -1,4 +1,4 @@
-# Traspaso: Brasas de Lo Pirque (estado al 22-11-2026)
+# Traspaso: Brasas de Lo Pirque (estado al 23-11-2026)
 
 Para quien retoma el proyecto en una sesión nueva, sin haber visto las
 anteriores. **Este archivo es el mapa**; el detalle de cada decisión vive en
@@ -192,6 +192,24 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   el resumen de la fecha, *Ahorras $…* en *Pagar ahora* y una barra fija en
   el celular; *Reservar* relleno en los cierres del sitio, y todo
   *Reservar* —menú, pie y portada— llega directo al formulario. Ver `CLAUDE.md`, "La reserva en tres pasos".
+- **El sitio público, el 23-11-2026, todo mergeado con el *"mergea"* del
+  cliente** (sesión de Lo Pirque, solo sitio y landings, sin tocar el panel):
+  - **#316 y #317, la reserva**: los nombres de los menús en Fraunces, y
+    cada paso en su tarjeta, los tres lado a lado en el computador, con un
+    tic en el paso listo, el borde dorado en el que sigue y el detalle del
+    pedido como una boleta en el paso 3.
+  - **#320, cada sección cabe en una pantalla de cualquier tamaño**: regla
+    nueva en `CLAUDE.md`. Los altos salen de `--alto-util` (la ventana menos
+    la barra y 24px), y en el celular las listas de tarjetas se deslizan en
+    carrusel. **El notebook del cliente mide 1262×573** (Chrome con
+    favoritos): se prueba con esa medida, no solo con 1280×650.
+  - **#320 y #321, el desayuno y la once**: fuera de Experiencias y
+    Promociones; quedan en Eventos, Socios y Dossier.
+  - **#322, la foto del show** en Actividades, encuadrada con el jinete,
+    la bailarina y la bandera enteros.
+  - **#323, el título de los bloques foto + texto** (`.split-titulo`), más
+    grande en el computador, en la portada, Actividades y Eventos.
+  - El detalle de cada uno, en `CLAUDE.md`, sección "Sitio público".
 - **La Fase 5 partió el 22-11-2026** (el panel para Calicanto / Asados y
   Corderos): sin rama larga, en PR chicos que se mergean apagados. El plan,
   lo que el cliente tiene que decidir y los pasos están en
