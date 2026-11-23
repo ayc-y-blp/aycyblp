@@ -454,7 +454,7 @@ muy entendible"*:
 | Sección | Qué tiene |
 |---|---|
 | Reservas del sitio · Calendario del panel | sin cambios |
-| **Cotizaciones** | cómo se trabaja: vigencia, seguimiento y la carpeta de comprobantes |
+| **Cotizaciones** | en grupos: *La cotización* (vigencia, seguimiento y la carpeta de comprobantes) y *Simulador de evento* (el margen y los gastos, que llegaron con la otra sesión el mismo día) |
 | **Condiciones para el cliente** (nueva) | en grupos: *El pago* (anticipo, saldo), *Descuentos*, *Cambios de fecha y cancelación* (cambios, aviso para cambiar, cancelación, devolución). Su `?` dice que son el tope del vendedor |
 | **Extras y arriendo** | en grupos: *Show ecuestre*, *Arriendo mínimo*, *Eventos exclusivos* (liberar un día con reservas, días sin exclusivo) |
 | **La empresa** | ganó *Ciudad de firma*, que estaba en *Contrato* |
@@ -476,7 +476,7 @@ muy entendible"*:
   pago*, *Cambios de fecha*, *Cancela hasta*, *Devuelve*, los dos descuentos y
   uno nuevo, *Condiciones especiales*. Ninguna foto de las misiones cambia: el
   administrador no tiene tope y la del vendedor no toca esos campos.
-- **Ventanas**: escena nueva `v-pedir-condiciones` (como vendedor). Son 51.
+- **Ventanas**: tres escenas nuevas, como vendedor —que es quien ve el botón—: `v-pedir-condiciones` (618px), `v-cotizar-4-envio-vendedor` y `v-cotizar-5-contrato-vendedor` (612 y 631px). Con las de la otra sesión, son 54. **El botón *✋ Pedir condiciones especiales…* va al pie de la ventana en el computador**: en la caja, los pasos 4 y 5 del vendedor medían 640 y 670px. En el celular sigue en su caja. Y la escena de *Cancelar evento* ahora espera a que termine *Revisando el contrato…*: a veces medía 195px.
 - **Probado en el panel de ejemplo**: el vendedor escribe 100% de devolución y
   queda en 20; pide 40% y cancelar hasta 30 días antes, le llega a la gerencia y
   a pagos, la gerencia aprueba y la cotización queda con 40% y 30 días; después
@@ -787,6 +787,29 @@ entra en el ancho de su contenedor con 32px de aire.
   después a 393px.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
   describe dónde van estas filas, y las fotos se sacan a 400px.
+
+## El simulador de evento (2026-11-23)
+
+Lo pidió el cliente al hablar de la Fase 5: *"crear un simulador, me tinca…
+piensa en la lógica primero, después se rellena"*. Dice, antes de mandar una
+cotización, **cuánto cuesta el evento y cuánto deja**. El detalle, lo que
+falta y los pasos están en **`panel/FASE5.md`**, "El simulador de evento".
+
+- **Dónde**: *🧮 Simular*, en el pie del paso de productos de la
+  cotización, al lado de *✕ Se cayó…* y del dorado (`SimularEvento.tsx`).
+  No guarda nada. **En pausa desde el mismo día**: el cliente pidió seguir
+  primero con las dos empresas.
+- **La cuenta** (`lib/simulador.ts`): lo cobrado sin IVA menos lo que se
+  sirve, el equipo que piden las reglas de cada puesto y los gastos del
+  evento. Si falta un costo, lo nombra y no opina.
+- **Quién ve qué** (lo decidió el cliente): con el permiso nuevo `costos`
+  —gerencia, pagos y administrador—, los números; los demás, solo la señal.
+  El costo no viaja a quien no lo ve.
+- **Datos nuevos**: la columna `Costo` de `Menús` y las claves
+  `margen_minimo` y `gastos_evento` de `Config`.
+- **Lecturas de Google**: una tanda al simular; ninguna más en las pantallas.
+- **Ayuda**: el `?` de la ventana (`simulador`) y el de los dos campos nuevos
+  de Configuración.
 
 ## Importar del CRM y del sitio viejo (2026-11-21)
 
@@ -2683,7 +2706,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 51 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 54 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de

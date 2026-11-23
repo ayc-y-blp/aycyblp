@@ -58,19 +58,21 @@ H['Config'] = cfg.aFilasConfig({
   diasAbiertos: [6, 0],
   diasAFuturo: 60,
   tokenPlanilla: '',
+  // El simulador de evento: números inventados, solo para el panel de ejemplo.
+  margenMinimo: 30, gastosEvento: 'Hielo: 20000; Leña y carbón: 600 pp',
   empresa: { ...cfg.EMPRESA_VACIA, nombre: 'Brasas de Lo Pirque' }
 });
 
 /* ---------- Menús y productos ---------- */
 const P = men.nuevoProducto;
 H['Menús'] = men.aFilasMenus([
-  P({ nombre: 'Tradiciones', precioEnLinea: 44000, precioEnLocal: 49000, cotizacion: true, precioCotizacion: 49000 }),
-  P({ nombre: 'Lo Pirque', precioEnLinea: 50000, precioEnLocal: 55000, sitioPublico: false, cotizacion: true, precioCotizacion: 55000 }),
-  P({ nombre: 'A Brasas abiertas', precioEnLinea: 70000, precioEnLocal: 75000, cotizacion: true, precioCotizacion: 75000, bonoVendedor: true }),
-  P({ nombre: 'Sommelier', precioEnLinea: 90000, precioEnLocal: 95000, sitioPublico: false, cotizacion: true, precioCotizacion: 95000, bonoVendedor: true }),
-  P({ nombre: 'Niños', precioEnLinea: 19000, precioEnLocal: 24000, cotizacion: true, precioCotizacion: 24000 }),
-  P({ nombre: 'Pequeños', precioEnLinea: 6000, precioEnLocal: 9000, cotizacion: true, precioCotizacion: 9000 }),
-  P({ nombre: 'Show ecuestre', tipo: 'Show', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 450000 }),
+  P({ nombre: 'Tradiciones', precioEnLinea: 44000, precioEnLocal: 49000, cotizacion: true, precioCotizacion: 49000, costo: 16000 }),
+  P({ nombre: 'Lo Pirque', precioEnLinea: 50000, precioEnLocal: 55000, sitioPublico: false, cotizacion: true, precioCotizacion: 55000, costo: 18000 }),
+  P({ nombre: 'A Brasas abiertas', precioEnLinea: 70000, precioEnLocal: 75000, cotizacion: true, precioCotizacion: 75000, bonoVendedor: true, costo: 26000 }),
+  P({ nombre: 'Sommelier', precioEnLinea: 90000, precioEnLocal: 95000, sitioPublico: false, cotizacion: true, precioCotizacion: 95000, bonoVendedor: true, costo: 34000 }),
+  P({ nombre: 'Niños', precioEnLinea: 19000, precioEnLocal: 24000, cotizacion: true, precioCotizacion: 24000, costo: 8000 }),
+  P({ nombre: 'Pequeños', precioEnLinea: 6000, precioEnLocal: 9000, cotizacion: true, precioCotizacion: 9000, costo: 3000 }),
+  P({ nombre: 'Show ecuestre', tipo: 'Show', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 450000, costo: 250000 }),
   P({ nombre: 'Arriendo del recinto', tipo: 'Arriendo', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 2500000 }),
   P({ nombre: 'Desayuno de campo', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 8000, iva: '+ IVA' })
 ]);

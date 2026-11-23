@@ -196,6 +196,13 @@ export const ESCENAS = {
   },
   'v-cotizar-2-evento': () => cotizacion(/Evento/),
   'v-cotizar-3-productos': () => cotizacion(/Productos/),
+  // El simulador de evento (2026-11-23): solo calcula, no guarda nada.
+  'v-simulador': async () => {
+    await cotizacion(/Productos/);
+    await clic(p.locator('button:visible', { hasText: 'Simular' }));
+    // El resumen se dibuja dos veces (celular y computador): se espera el que se ve.
+    await p.getByText('Cuesta').locator('visible=true').first().waitFor();
+  },
   'v-cotizar-4-envio': () => cotizacion(/Envío/),
   'v-cotizar-4-factura': async () => {
     await cotizacion(/Envío/);

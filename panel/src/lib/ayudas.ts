@@ -760,6 +760,16 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Los menús se reparten este número; la once y el desayuno nacen con todos y se ajustan con − y +.'
     ]
   },
+  simulador: {
+    titulo: 'El simulador del evento',
+    texto: [
+      'Dice cuánto cuesta el evento con lo que hay cargado en la cotización, y cuánto deja. No guarda ni cambia nada.',
+      'Suma tres cosas: lo que cuesta cada producto (se carga en Productos), el equipo que piden las reglas de cada puesto por lo que se le paga la jornada, y los gastos del evento que están en Configuración.',
+      'Lo cobrado va sin IVA. La señal compara lo que queda con el margen que se busca, que también está en Configuración.',
+      'Si falta el costo de algo, lo nombra y no opina: un margen calculado con un costo en blanco se vería mejor de lo que es.',
+      'Con − y + se prueba con más o menos invitados. Los costos y el margen los ven la gerencia, pagos y el administrador; los demás ven solo si conviene.'
+    ]
+  },
   cambiarVendedor: {
     titulo: 'Cambiar el vendedor',
     texto: [

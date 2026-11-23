@@ -102,13 +102,13 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 | # | Paso | Estado |
 |---|---|---|
 | 1 | **La empresa como una pieza** (`lib/empresa.ts`): todo lo que es de la empresa —planilla, cuenta de servicio, calendario, tienda, CRM— se pregunta en un solo lugar. Sin cambio de comportamiento | PR abierto el 2026-11-22 |
-| 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | — |
+| 2 | Lo que el panel recuerda por instancia (pestañas, credencial, token de Shopify), guardado por empresa | Hecho el 2026-11-23, en el PR abierto del simulador (#313). Ver "Paso 2" |
 | 3 | Las cuentas compartidas y el rol por empresa | — |
 | 4 | Una dirección por empresa y el paso de una a la otra | — |
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
 | 6 | El contrato de matrimonio | — |
 | 7 | El tablero de la gerencia | — |
-| 8 | El simulador de evento (costos y margen) | Lógica propuesta al cliente el 2026-11-23 |
+| 8 | El simulador de evento (costos y margen) | Primera parte en un PR abierto el 2026-11-23: dentro de la cotización. Falta el simulador suelto, la comisión, los extras contratados y el gasto real |
 
 **Recordatorio, fuera de esta fase**: la caja (flujo de caja por empresa,
 pendientes con vencimiento y pagos solicitados con aprobación). El cliente
@@ -127,3 +127,83 @@ la quiere, pero hay otro trabajo antes.
   Vercel.
 - **Ninguna lectura de Google más, ningún permiso, ninguna columna, nada que
   se vea.**
+
+### El simulador de evento, primera parte (2026-11-23)
+
+El cliente aprobó la lógica (*"sí a los dos, dale con el simulador"*): los
+números los ven la gerencia, pagos y el administrador, el vendedor ve solo la
+señal, y sirve también para Lo Pirque.
+
+- **`lib/simulador.ts`** (pura, con pruebas): lo cobrado sin IVA menos lo que
+  se sirve (el `Costo` de cada producto por su cantidad), el equipo (la regla
+  *uno cada N personas* de cada puesto por el promedio de la jornada de
+  quienes lo tienen de puesto habitual) y los gastos del evento. Da el margen,
+  la señal —conviene, justo, no conviene, faltan datos— y cuánto habría que
+  cobrar para llegar al mínimo.
+- **No inventa**: un producto sin costo o un puesto sin jornada se nombran y
+  la señal queda en *faltan datos*. El arriendo del recinto propio va en cero
+  sin pedirlo.
+- **Columna nueva `Costo` en `Menús`**, al final. Se carga en *Productos*,
+  dentro de *En una cotización*.
+- **Dos claves nuevas en `Config`**: `margen_minimo` (parte en 0) y
+  `gastos_evento` (texto: *Hielo: 15000; Transporte: 800 pp*). En
+  Configuración → Cotizaciones.
+- **Permiso nuevo `costos`**: gerencia, pagos y administrador. El costo no
+  viaja a quien no lo tiene (`sinCostos()` en `/api/presupuestos`,
+  `/api/reservas` y `/api/menus`), y esa cuenta no lo puede borrar al guardar
+  productos.
+- **`/api/simulador`** (`POST`, con `presupuestos`): no escribe nada. Una
+  tanda de lecturas (Menús, Puestos, Trabajadores y Config). A quien no tiene
+  `costos` le responde solo `{senal}`.
+- **`SimularEvento.tsx`**: el botón *🧮 Simular* en el pie del paso de
+  productos de la cotización, con *¿Y si vienen…?* (− y + de a diez).
+- **Ventanas**: escena `v-simulador` (524px a 1280×650).
+
+**En pausa desde el 2026-11-23** (lo decidió el cliente: *"dejémoslo el
+simulador ahora corto en standby y mejor concentrarse en seguir con la fase
+5… dos empresas, roles"*). Antes pidió mover el botón: *"ahí donde está, no
+tiene nada que ver. Mejor que esté en la última fila y un poco más
+visible"*. *🧮 Simular* va ahora en el pie del paso de productos, al lado de
+*✕ Se cayó…* y del dorado, con borde dorado y del mismo alto; en el celular
+comparte una fila con *Se cayó…*, mitad y mitad.
+
+**Lo que falta del simulador**, para cuando se retome: usarlo suelto, antes de cotizar; restar la
+comisión del vendedor y del socio; sumar los extras contratados (show,
+pintacaritas) por su monto habitual; anotar el gasto real después del evento;
+y un editor de los gastos del evento mejor que un renglón de texto.
+
+## Paso 2: la memoria de cada instancia, por empresa (2026-11-23)
+
+**No cambia nada de lo que el panel hace hoy**: sigue habiendo una sola
+empresa. Deja listo que, cuando haya dos, lo recordado de una no salga como
+respuesta de la otra.
+
+- **`porEmpresa(crear)`** en `lib/empresa.ts`: la memoria de la empresa en
+  curso. La llave es su id, su planilla y su cuenta de servicio.
+- **`conEmpresa(empresa, fn)`**: fija la empresa de una petición; todo lo que
+  pregunte `empresaActual()` adentro —también después de esperar— recibe
+  ésa. **Hoy solo lo usan las pruebas**; el paso 4 (*una dirección por
+  empresa*) lo va a llamar al entrar a cada ruta.
+- **Qué pasó a ir por empresa**: en `sheets.ts`, el cliente, la credencial,
+  la lista de pestañas con sus ids, el nombre del libro y las lecturas en
+  vuelo con su tanda; en `drive.ts`, el cliente; en `datos.ts`, si la
+  bitácora ya tiene encabezado; en `admin.ts`, el token de Shopify, uno por
+  tienda y por app.
+- **Lo que queda para el paso 7** (el tablero de la gerencia con *Las dos*):
+  lo leído dentro de una petición (`conLecturas()`) se guarda por nombre de
+  pestaña, pensando en una empresa por petición. Una petición que lea las dos
+  planillas tiene que abrir un ámbito por empresa.
+- **Pruebas** (`npm run prueba`, *Lo que el panel recuerda va por empresa*):
+  dos peticiones cruzadas no se mezclan, cada empresa tiene su memoria, y
+  alternar entre dos tiendas no cruza ni vuelve a pedir el token.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** Ninguna
+  variable nueva en Vercel.
+
+## Decidido el 2026-11-23
+
+- **La dirección del panel de Asados y Corderos: `panel.asadosycorderos.cl`.**
+  Es la que usa el paso 4 para saber de qué empresa es cada petición.
+- **La recepción de un matrimonio: con la posibilidad de la lista de
+  invitados uno por uno.** Opcional: un evento puede seguir con solo el
+  total. Va con el paso 5 (los módulos de Calicanto).
+

@@ -238,6 +238,7 @@ export default function ConfigEditor() {
             'pregunta cómo va, y dónde se guardan los comprobantes. Lo que se le ofrece al ' +
             'cliente está en Condiciones para el cliente.',
       cuerpo: <>
+        {grupo('La cotización', <>
         {campo('vigencia', 'Vigencia',
           'Cuántos días vale una cotización desde que se manda al cliente. Nunca pasa del día ' +
           'antes del evento. En 0 no vence.',
@@ -258,6 +259,18 @@ export default function ConfigEditor() {
             placeholder="https://drive.google.com/drive/folders/…"
             onBlur={(e) => e.target.value.trim() !== config.driveComprobantes &&
               guardar({ driveComprobantes: idDeDrive(e.target.value) }, 'driveComprobantes')} />)}
+        </>)}
+        {/* **El simulador de evento** (Fase 5, la otra sesión): en su grupo,
+            con el orden de Configuración del 2026-11-23. */}
+        {grupo('Simulador de evento', <>
+        {campo('margen', 'Margen que se busca',
+          'El % de lo cobrado (sin IVA) que tiene que quedar en un evento. Bajo eso el simulador dice justo o no conviene. En 0 basta con no perder.',
+          numerico('margen', config.margenMinimo, (n) => ({ margenMinimo: n }), { min: 0, max: 95, unidad: '%' }))}
+        {campo('gastosEvento', 'Gastos del evento',
+          'Lo que cuesta un evento aparte de los productos y del equipo. Uno por punto y coma: el nombre, dos puntos y el monto; con pp al final si es por persona.',
+          textoLibre('gastosEvento', config.gastosEvento,
+            (t) => ({ gastosEvento: t }), 'Hielo: 15000; Transporte: 800 pp'))}
+        </>)}
       </>
     },
     {

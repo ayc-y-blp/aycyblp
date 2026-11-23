@@ -1,7 +1,6 @@
 {
   "_nota": "Traducción al inglés. La llave es el texto en español tal como aparece en los archivos de la raíz. Una llave con el formato 'archivo.html|texto' le gana a la llave suelta solo en ese archivo. No editar en/ a mano: se regenera con python3 tools/traducir.py",
   "_precios": "Los precios llevan coma de miles y la sigla CLP. En formato chileno, $44.000 se lee como cuarenta y cuatro dólares en inglés.",
-  "Pagando tu reserva ahora": "Paying for your booking now",
   "_navegacion": "Menú, pie de página y elementos compartidos",
   "Abrir menú": "Open menu",
   "Reserva": "Book",
@@ -254,7 +253,6 @@
   "Mientras antes nos escribas, más fechas disponibles vas a encontrar.": "The sooner you write to us, the more dates you'll find open.",
   "Hola, quiero cotizar un evento en Brasas de Lo Pirque": "Hello, I would like a quote for an event at Brasas de Lo Pirque",
   "Cotizar mi evento": "Get a quote for my event",
-  "Ver contacto": "See contact",
   "_reservas": "Página de reserva",
   "Reserva y paga en línea tu día de campo: elige la fecha, la cantidad de adultos y niños, y confirma tu cupo en pocos pasos.": "Book and pay for your day in the country online: choose the date, the number of adults and children, and confirm your places in a few steps.",
   "Asegúrate ahora": "Secure your place",
@@ -265,8 +263,6 @@
   "Por adulto": "Per adult",
   "Pagar ahora": "Pay now",
   "Solo reservar": "Book only",
-  "Con «Solo reservar» tomas tu cupo y pagas al llegar. Cuesta un poco más que pagar en línea, y tu lugar queda sujeto a disponibilidad hasta que pagues: si el día se llena con reservas pagadas, te avisamos.": "With “Book only” you take your places and pay when you arrive. It costs a little more than paying online, and your places are subject to availability until you pay: if the day fills up with paid bookings, we will let you know.",
-  "Elegir fecha": "Choose a date",
   "Elige la fecha correcta antes de continuar.": "Choose the right date before continuing.",
   "Menú de niños": "Children's menu",
   "Menú de pequeños": "Little ones' menu",
@@ -425,7 +421,6 @@
   "Por qué acá": "Why here",
   "Los tres momentos, lo que resuelve y cómo funciona": "The three moments, what it solves and how it works",
   "Subir todos los menús a A Brasas abiertas": "Upgrade every menu to A Brasas abiertas",
-  "Todos los adultos pasan a A Brasas abiertas, con bar abierto para todos: bebidas, cervezas, pisco sour, vino reserva y más, a libre elección.": "Every adult moves to A Brasas abiertas, with an open bar for everyone: soft drinks, beers, pisco sour, reserva wine and more, all you like.",
   "_reserva_js": "el nombre de la fila de adultos lo escribe assets/js/reserva.js, no el HTML, porque cambia con la casilla de upgrade. Si se toca, TEXTOS del JS tiene que decir lo mismo: menuBase = \"Tradiciones menu\", menuAlto = \"A Brasas abiertas menu\"",
   "+ IVA por persona": "+ VAT per person",
   "4 a 12 años ·": "Ages 4 to 12 ·",
@@ -455,5 +450,13 @@
   "Cultura chilena, vinos del Valle del Maipo y gastronomía criolla en un entorno campestre, para el paseo, la celebración o la jornada de tu equipo.": "Chilean culture, Maipo Valley wines and traditional cooking in a countryside setting, for your team's outing, celebration or offsite.",
   "La forma más rápida de coordinar fechas, disponibilidad y tu cotización.": "The quickest way to sort out dates, availability and your quote.",
   "Hola, estoy revisando el dossier de Brasas de Lo Pirque y quiero cotizar un evento para mi empresa": "Hi, I'm looking at the Brasas de Lo Pirque dossier and would like a quote for a company event",
-  "Descargar PDF": "Download PDF"
+  "Descargar PDF": "Download PDF",
+  "Elige la fecha": "Choose the date",
+  "¿Cuántos van?": "How many are coming?",
+  "Bar abierto: bebidas, cervezas, pisco sour, vino reserva y más.": "Open bar: soft drinks, beers, pisco sour, reserva wine and more.",
+  "Paga y asegura tu lugar": "Pay and secure your place",
+  "Fecha por elegir": "Date to be chosen",
+  "Con «Solo reservar» pagas al llegar, y tu lugar queda sujeto a disponibilidad hasta que pagues: si el día se llena con reservas pagadas, te avisamos.": "With “Book only” you pay when you arrive, and your places are subject to availability until you pay: if the day fills up with paid bookings, we will let you know.",
+  "Reservar una visita": "Book a visit",
+  "Reservar pagando ahora": "Book and pay now"
 }

@@ -9,6 +9,7 @@
  * continuo— pero es real. Por eso las reservas creadas acá llevan un id
  * MANUAL-<timestamp>: no pueden chocar con los ids numéricos de Shopify.
  */
+import { porEmpresa } from './empresa.ts';
 import { leerHoja, agregarFila, agregarFilas, escribirFila, borrarFila, borrarFilas,
          escribirBloque, asegurarEncabezado, asegurarColumna, asegurarHoja, leerEncabezado,
          esPestanaQueNoExiste } from './sheets.ts';
@@ -641,8 +642,8 @@ export async function guardarUsuarios(lista: Usuario[]): Promise<void> {
 
 /* ---------- La bitácora ---------- */
 
-/** Si esta instancia ya comprobó que la bitácora tiene encabezado. */
-let bitacoraLista = false;
+/** Si esta instancia ya comprobó que la bitácora de esa empresa tiene encabezado. */
+const bitacora = porEmpresa(() => ({ lista: false }));
 
 /**
  * Anota una acción.
@@ -665,11 +666,11 @@ export async function anotar(a: {
     // panel traía la pestaña completa —la más larga de todas— solo para mirar
     // su primera fila, y eso gastaba una lectura del límite de Google por
     // cada clic. Ahora se mira solo el encabezado, una vez por instancia.
-    if (!bitacoraLista) {
+    if (!bitacora().lista) {
       await asegurarHoja(HOJA_BITACORA);
       const enc = await leerEncabezado(HOJA_BITACORA);
       if (!enc.some((c) => c.trim() !== '')) await escribirFila(HOJA_BITACORA, 1, ENCABEZADO_BITACORA);
-      bitacoraLista = true;
+      bitacora().lista = true;
     }
     await agregarFila(HOJA_BITACORA, filaBitacora({
       cuando: ahoraEnChile(),

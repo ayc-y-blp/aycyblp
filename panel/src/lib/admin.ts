@@ -69,7 +69,7 @@ export function configurado(): boolean {
  * instancia del servidor: cada instancia pide el suyo la primera vez, y una
  * pedida cuesta una llamada a Shopify, no a Google.
  */
-let pedido: { tienda: string; id: string; token: string; vence: number } | null = null;
+const pedidos = new Map<string, { token: string; vence: number }>();
 
 /** Se pide uno nuevo cinco minutos antes de que venza, no al vencer. */
 const MARGEN_MS = 5 * 60 * 1000;
@@ -91,7 +91,11 @@ export async function tokenDeAcceso(ahora = Date.now(), pedir: typeof fetch = fe
   const c = credenciales();
   if (!c) return token();
   const tienda = dominio();
-  if (pedido && pedido.tienda === tienda && pedido.id === c.id && pedido.vence > ahora) return pedido.token;
+  // Uno por tienda y por app (2026-11-23): con dos empresas, el token de una
+  // no puede salir como el de la otra, ni pisarse en cada llamada.
+  const llave = `${tienda}\n${c.id}`;
+  const pedido = pedidos.get(llave);
+  if (pedido && pedido.vence > ahora) return pedido.token;
 
   const r = await pedir(`https://${tienda}/admin/oauth/access_token`, {
     method: 'POST',
@@ -114,13 +118,13 @@ export async function tokenDeAcceso(ahora = Date.now(), pedir: typeof fetch = fe
   const nuevo = String(d.access_token ?? '').trim();
   if (!nuevo) throw new Error(`Shopify respondió sin token de acceso para ${tienda}.`);
   const dura = Number(d.expires_in) > 0 ? Number(d.expires_in) * 1000 : 24 * 60 * 60 * 1000;
-  pedido = { tienda, id: c.id, token: nuevo, vence: ahora + Math.max(dura - MARGEN_MS, 60 * 1000) };
+  pedidos.set(llave, { token: nuevo, vence: ahora + Math.max(dura - MARGEN_MS, 60 * 1000) });
   return nuevo;
 }
 
 /** Para las pruebas: olvida el token pedido. */
 export function olvidarToken(): void {
-  pedido = null;
+  pedidos.clear();
 }
 
 /**

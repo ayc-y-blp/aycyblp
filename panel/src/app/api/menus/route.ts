@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import { leerMenus, guardarMenus, anotar, leerReservas, leerLineasPresupuesto } from '@/lib/datos';
-import { limpiarProducto, usados, quitadosUsados, type Menu } from '@/lib/menus';
+import { limpiarProducto, usados, quitadosUsados, sinCostos, type Menu } from '@/lib/menus';
+import { puede, type Rol } from '@/lib/auth';
 import { menusConocidos } from '@/lib/shopify';
 import { normalizar } from '@/lib/columnas';
 
@@ -29,8 +30,9 @@ export const GET = conLecturas([], async function GET(req: Request) {
     // Si las reservas no se pueden leer, se dan todos por usados: de más
     // nunca borra nada, de menos sí.
     const vistos = await nombresVistos().catch(() => null);
+    const veCostos = puede((await quienEs(req)).rol as Rol, 'costos');
     return NextResponse.json({
-      menus,
+      menus: veCostos ? menus : sinCostos(menus), veCostos,
       usados: vistos ? usados(menus, vistos) : menus.map((m) => m.nombre)
     });
   } catch (e) {
@@ -67,6 +69,12 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
       limpia.push(p);
     }
     const antes = await leerMenus();
+    // **Quien no ve los costos no los puede borrar** (2026-11-23): recibió el
+    // catálogo sin ellos, así que lo que manda vuelve con el costo guardado.
+    if (!puede((await quienEs(req)).rol as Rol, 'costos')) {
+      const guardado = new Map(antes.map((m) => [normalizar(m.nombre), m.costo]));
+      for (const m of limpia) m.costo = guardado.get(normalizar(m.nombre)) ?? 0;
+    }
     const enUso = usados(antes, await nombresVistos());
     const bloqueados = quitadosUsados(antes, limpia, enUso);
     if (bloqueados.length) {

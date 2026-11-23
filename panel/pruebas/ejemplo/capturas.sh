@@ -46,10 +46,10 @@ def cambiar(a, b):
     s = s.replace(a, b)
 cambiar("import { celdas } from './celdas.ts';\n",
         "import { celdas } from './celdas.ts';\nimport { sheetsFalso } from './sheets-falso.ts';\n")
-cambiar("  if (credencial) return credencial;\n",
-        "  if (credencial) return credencial;\n"
-        "  credencial = new google.auth.JWT({ email: 'ejemplo@ejemplo.invalid', key: 'x', scopes: ALCANCE });\n"
-        "  return credencial;\n")
+cambiar("  if (m.credencial) return m.credencial;\n",
+        "  if (m.credencial) return m.credencial;\n"
+        "  m.credencial = new google.auth.JWT({ email: 'ejemplo@ejemplo.invalid', key: 'x', scopes: ALCANCE });\n"
+        "  return m.credencial;\n")
 cambiar("export function sheets(): sheets_v4.Sheets {\n",
         "export function sheets(): sheets_v4.Sheets {\n  return sheetsFalso as unknown as sheets_v4.Sheets;\n")
 open(p, 'w').write(s)

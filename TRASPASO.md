@@ -186,11 +186,26 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   un marco dorado (`ElegirPeriodo`); la Lista parte en el mes en curso, se fue
   la frase *Mostrando: …* y las tarjetas de números son más compactas. Ver
   `panel/CLAUDE.md`, "El periodo en un marco".
+- **La reserva en tres pasos, PR #314, mergeado el 23-11-2026** con el
+  *"mergea"* del cliente: el formulario de `reservas.html` en pasos
+  numerados, entero en una pantalla de computador (510px en 1280×650), con
+  el resumen de la fecha, *Ahorras $…* en *Pagar ahora* y una barra fija en
+  el celular; *Reservar* relleno en los cierres del sitio, y todo
+  *Reservar* —menú, pie y portada— llega directo al formulario. Ver `CLAUDE.md`, "La reserva en tres pasos".
 - **La Fase 5 partió el 22-11-2026** (el panel para Calicanto / Asados y
   Corderos): sin rama larga, en PR chicos que se mergean apagados. El plan,
   lo que el cliente tiene que decidir y los pasos están en
   **`panel/FASE5.md`**. Paso 1, *la empresa como una pieza*
-  (`lib/empresa.ts`), sin cambio de comportamiento.
+  (`lib/empresa.ts`), mergeado el 23-11-2026 (PR #311). El cliente decidió:
+  una dirección por empresa con una sola cuenta, Calicanto sin Shopify, y la
+  caja para después. **El simulador de evento**, primera parte (permiso nuevo
+  `costos`, columna `Costo` en `Menús`, *🧮 Simular* en el pie del paso de
+  productos), y **el paso 2, la memoria de cada instancia por empresa**
+  (`porEmpresa()`, `conEmpresa()`): PR #313, el cliente dijo *"mergea"* el
+  23-11-2026. **El simulador queda en pausa**: primero las dos empresas.
+  Decidido ese día: el panel de Asados y Corderos va en
+  **`panel.asadosycorderos.cl`**, y en un matrimonio la recepción **puede**
+  llevar la lista de invitados uno por uno (opcional).
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1191,7 +1206,7 @@ PR, documentación—, con tuteo y sin voseo.
   chica, comentarios, webhook, ajuste **y las ventanas**. **Antes de cada
   PR.** Tarda unos minutos más desde el 21-11-2026, porque levanta el panel
   de ejemplo.
-- **`npm run ventanas`**: abre las 51 fichas y ventanas del panel de ejemplo
+- **`npm run ventanas`**: abre las 54 fichas y ventanas del panel de ejemplo
   a 1280×650 y falla si una no cabe o tiene un campo corrido. **Una ventana
   o una ficha nueva se agrega a `ESCENAS` de `pruebas/ventanas.mjs` en el
   mismo PR.** Con el panel de ejemplo ya andando, se corre directo y más

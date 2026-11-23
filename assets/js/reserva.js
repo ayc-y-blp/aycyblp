@@ -161,7 +161,11 @@
       sinPago: 'El sistema de pago todavia no esta conectado. Escribenos por WhatsApp y tomamos tu reserva.',
       falla: 'No pudimos crear tu reserva. Vuelve a intentarlo o escribenos por WhatsApp y la tomamos nosotros.',
       vistaPrevia: 'Vista previa: el pago se conecta cuando la tienda entregue el token.',
-      tiendaPrueba: 'Tienda de prueba: aquí no se cobra nada.'
+      tiendaPrueba: 'Tienda de prueba: aquí no se cobra nada.',
+      // Los dos de abajo calzan con el diccionario: "Fecha por elegir" es
+      // el texto que el HTML trae escrito para cuando no corre el JS.
+      fechaPorElegir: 'Fecha por elegir',
+      ahorras: 'Ahorras {m}'
     },
     en: {
       mesAnterior: 'Previous month',
@@ -184,7 +188,9 @@
       sinPago: 'The payment system is not connected yet. Message us on WhatsApp and we will take your booking.',
       falla: 'We could not create your booking. Please try again, or message us on WhatsApp and we will take it.',
       vistaPrevia: 'Preview: payment connects once the store provides the token.',
-      tiendaPrueba: 'Test store: nothing is charged here.'
+      tiendaPrueba: 'Test store: nothing is charged here.',
+      fechaPorElegir: 'Date to be chosen',
+      ahorras: 'You save {m}'
     },
     pt: {
       mesAnterior: 'Mês anterior',
@@ -207,7 +213,9 @@
       sinPago: 'O sistema de pagamento ainda nao esta conectado. Fale com a gente no WhatsApp e registramos a sua reserva.',
       falla: 'Nao conseguimos criar a sua reserva. Tente de novo ou fale com a gente no WhatsApp que registramos.',
       vistaPrevia: 'Previa: o pagamento se conecta quando a loja entregar o token.',
-      tiendaPrueba: 'Loja de teste: aqui nada é cobrado.'
+      tiendaPrueba: 'Loja de teste: aqui nada é cobrado.',
+      fechaPorElegir: 'Data a escolher',
+      ahorras: 'Você economiza {m}'
     }
   };
 
@@ -255,20 +263,35 @@
 
   var selFecha = caja.querySelector('#r-fecha');
   var salPersonas = caja.querySelector('[data-total-personas]');
+  var salFecha = caja.querySelector('[data-resumen-fecha]');
+  var salLineas = caja.querySelector('[data-resumen-lineas]');
   var zonaAviso = caja.querySelector('[data-mensaje]');
 
   // Dos botones, uno por modalidad. Cada uno muestra su propio total y
   // manda su propia variante al carrito; el checkout de Shopify oculta
   // los medios de pago que no corresponden según el SKU.
   var botones = [];
-  var nodosBtn = caja.querySelectorAll('[data-pagar]');
-  for (var b = 0; b < nodosBtn.length; b++) {
+  function sumarBoton(nodo) {
     botones.push({
-      nodo: nodosBtn[b],
-      modo: nodosBtn[b].getAttribute('data-pagar'),
-      salida: nodosBtn[b].querySelector('[data-total-de]'),
-      etiqueta: nodosBtn[b].querySelector('span')
+      nodo: nodo,
+      modo: nodo.getAttribute('data-pagar'),
+      salida: nodo.querySelector('[data-total-de]'),
+      ahorro: nodo.querySelector('[data-ahorro]'),
+      etiqueta: nodo.querySelector('span')
     });
+  }
+  var nodosBtn = caja.querySelectorAll('[data-pagar]');
+  for (var b = 0; b < nodosBtn.length; b++) sumarBoton(nodosBtn[b]);
+
+  // La barra fija del celular (2026-11-23) lleva un tercer boton, el mismo
+  // Pagar ahora. Entra en la misma lista que los otros dos, asi que se
+  // apaga, muestra su total y crea el carrito exactamente igual: no hay
+  // una segunda logica que mantener.
+  var barra = document.querySelector('[data-barra]');
+  var filaBotones = caja.querySelector('.btn-row.dos');
+  if (barra) {
+    var nodoBarra = barra.querySelector('[data-pagar]');
+    if (nodoBarra) sumarBoton(nodoBarra);
   }
 
   // Las tres opciones conviven: cada fila es un menú con su propio
@@ -310,6 +333,9 @@
       varianteAltaLocal: varianteDelMenu(menuAlto, 'local'),
       precioAltaLocal: parseInt(nodo.getAttribute('data-precio-alta-local'), 10) || 0,
       nombre: nodo.querySelector('[data-nombre-menu]'),
+      // El nombre tal como se ve en la fila, sin la edad: para el detalle
+      // del pedido en el paso 3.
+      titulo: nodo.querySelector('.quien'),
       input: nodo.querySelector('input[type="number"]'),
       menos: nodo.querySelector('[data-menos]'),
       mas: nodo.querySelector('[data-mas]'),
@@ -706,6 +732,12 @@
     }
 
     if (salPersonas) salPersonas.textContent = personas();
+    if (salFecha) salFecha.textContent = fechaLeible(selFecha.value) || T.fechaPorElegir;
+    pintarLineas();
+
+    // Cuanto se ahorra pagando ahora: la resta de los dos totales, que es
+    // como el sitio supo siempre el recargo del local (no esta escrito).
+    var ahorro = personas() ? totalDe('local') - totalDe('directo') : 0;
 
     // Cada botón lleva su propio total. Así la diferencia entre pagar
     // ahora y pagar en el local se ve sin tener que cambiar nada
@@ -714,6 +746,9 @@
       if (botones[k].salida) {
         botones[k].salida.textContent = personas() ? pesos(totalDe(botones[k].modo)) : '';
       }
+      if (botones[k].ahorro) {
+        botones[k].ahorro.textContent = ahorro > 0 ? T.ahorras.replace('{m}', pesos(ahorro)) : '';
+      }
       // Sin fecha elegida, con el pedido vacío, o pidiendo más lugares
       // de los que quedan, los dos se apagan. Vale más que dejen apretar
       // y fallen en el checkout.
@@ -721,6 +756,80 @@
     }
 
     avisarSobreFecha();
+    mostrarBarra();
+    marcarPasos();
+  }
+
+  /* Los tres pasos (2026-11-23): el que ya esta listo lleva un tic en su
+     numero, y el que sigue, el borde dorado. Es solo dibujo: lo que habilita
+     los botones sigue siendo pedidoUsable(). */
+  var cajasPaso = caja.querySelectorAll('[data-paso]');
+  function marcarPasos() {
+    var listo = { '1': !!disponibles[selFecha.value], '2': personas() > 0, '3': false };
+    var actualPuesto = false;
+    for (var i = 0; i < cajasPaso.length; i++) {
+      var c = cajasPaso[i], n = c.getAttribute('data-paso');
+      c.classList.toggle('hecho', listo[n]);
+      var esActual = !listo[n] && !actualPuesto;
+      if (esActual) actualPuesto = true;
+      c.classList.toggle('actual', esActual);
+    }
+  }
+
+  /** El detalle del pedido: "2 × Menú Tradiciones   $88.000". */
+  function nombreDe(op) {
+    if (op.nombre) return op.nombre.textContent;
+    var t = op.titulo ? op.titulo.firstChild : null;
+    return t && t.nodeType === 3 ? t.textContent.trim() : '';
+  }
+  function pintarLineas() {
+    if (!salLineas) return;
+    salLineas.innerHTML = '';
+    for (var i = 0; i < opciones.length; i++) {
+      var n = cuantos(opciones[i]);
+      if (n < 1) continue;
+      var li = document.createElement('li');
+      var q = document.createElement('span');
+      q.textContent = n + ' \u00d7 ' + nombreDe(opciones[i]);
+      var m = document.createElement('b');
+      m.textContent = pesos(n * precioDe(opciones[i], 'directo'));
+      li.appendChild(q); li.appendChild(m);
+      salLineas.appendChild(li);
+    }
+  }
+
+  /** La fecha elegida en palabras: "Sábado 28 de noviembre". */
+  function fechaLeible(fecha) {
+    if (!fecha) return '';
+    try {
+      var p = partes(fecha);
+      var t = new Date(p[0], p[1] - 1, p[2])
+        .toLocaleDateString(idioma, { weekday: 'long', day: 'numeric', month: 'long' });
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    } catch (e) { return fecha; }
+  }
+
+  /* ---------- la barra fija del celular ----------
+
+     Aparece solo bajo 900px, cuando ya se puede pagar (fecha y gente) y la
+     fila de botones de verdad no se ve. Al llegar a esa fila se va: dos
+     "Pagar ahora" a la vista serian ruido. */
+  var filaALaVista = true;
+  var esCelular = window.matchMedia ? window.matchMedia('(max-width: 899px)') : null;
+
+  function mostrarBarra() {
+    if (!barra) return;
+    var ver = !!(esCelular && esCelular.matches) && !filaALaVista && pedidoUsable('directo');
+    barra.hidden = !ver;
+    document.body.classList.toggle('con-barra', ver);
+  }
+
+  if (barra && filaBotones && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (e) {
+      filaALaVista = e[0].isIntersecting;
+      mostrarBarra();
+    }).observe(filaBotones);
+    if (esCelular && esCelular.addEventListener) esCelular.addEventListener('change', mostrarBarra);
   }
 
   function mensaje(texto, tipo) {
@@ -831,6 +940,11 @@
       .catch(function (e) {
         devolverBotones();
         mensaje(T.falla, 'error');
+        // Si se apreto en la barra del celular, el aviso queda en el
+        // formulario, fuera de la vista: se lleva a la persona hasta ahi.
+        if (barra && barra.contains(boton.nodo) && zonaAviso && zonaAviso.scrollIntoView) {
+          zonaAviso.scrollIntoView({ block: 'center' });
+        }
         if (window.console) console.error('[reserva]', e);
       });
   }

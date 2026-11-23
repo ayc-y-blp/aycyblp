@@ -8,7 +8,7 @@ import { HOJA_FECHAS, HOJA_RESERVAS } from '@/lib/columnas';
 import { ocupacionDeTodos } from '@/lib/ocupacion';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
 import { HOJA_CONFIG } from '@/lib/config';
-import { HOJA_MENUS } from '@/lib/menus';
+import { HOJA_MENUS, sinCostos } from '@/lib/menus';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { vendedoresParaAsignar } from '@/lib/asignar';
@@ -81,7 +81,9 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       recortarCliente(c, alcance, clientePropio(c, quien.usuario, presupuestos)));
     return NextResponse.json({
       presupuestos: presupuestos.map((p) => recortarContactoDeCotizacion(conCliente(p, clientes), alcance, quien.usuario)),
-      lineas, menus, clientes: clientesVisibles,
+      lineas, menus: puede(quien.rol as Rol, 'costos') ? menus : sinCostos(menus), clientes: clientesVisibles,
+      // El simulador de evento (2026-11-23): quién ve los números y quién solo la señal.
+      veCostos: puede(quien.rol as Rol, 'costos'),
       // **A quién se le puede pasar una cotización** (2026-11-22, `asignar.ts`):
       // solo para quien puede cambiar el vendedor. `Usuarios` ya venía en la tanda.
       vendedores: puede(quien.rol as Rol, 'asignarVendedor') ? vendedoresParaAsignar(cuentas) : undefined,

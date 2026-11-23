@@ -195,8 +195,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible,
 .idiomas{ position:relative; margin:0 0 0 auto; }
 .idiomas > summary{
   display:inline-flex; align-items:center; gap:6px;
-  padding:5px 9px; border:1px solid var(--line); border-radius:999px;
-  font-size:0.78rem; font-weight:600; letter-spacing:0.06em;
+  padding:5px 11px; min-height:36px; border:1px solid var(--line); border-radius:999px;
+  font-size:0.82rem; font-weight:600; letter-spacing:0.06em;
   color: var(--ink-dim); cursor:pointer; user-select:none;
   background: rgba(255,255,255,0.03);
   transition: color .15s ease, border-color .15s ease;
@@ -316,6 +316,12 @@ a:focus-visible, button:focus-visible, summary:focus-visible,
 }
 .hero h1{ font-size: clamp(2rem, 5.2vw, 3.5rem); max-width: 15ch; }
 .hero .lede{ margin-top:16px; color: rgba(244,240,230,0.95); }
+/* La portada en un notebook (2026-11-23): con 660px fijos, en una pantalla
+   de 1280x650 el boton Reservar quedaba cortado al borde. El heroe mide lo
+   que deja la pantalla bajo la barra, entre 500 y 660px. */
+@media (min-width: 701px){
+  .hero-lg{ min-height: clamp(500px, calc(100vh - 76px), 660px); }
+}
 @media (max-width: 700px){
   .hero{ min-height: 420px; }
   .hero-lg{ min-height: 540px; }
@@ -422,12 +428,16 @@ a.card .mas{
 /* Va DENTRO del <label> que gira la tarjeta. No la gira al apretarla porque
    el spec dice que el label no activa nada cuando el clic cae en contenido
    interactivo descendiente — un <a> lo es. Comprobado en el navegador. */
+/* Desde el 2026-11-23 es un boton dorado y no un enlace subrayado: es la
+   accion de la pagina de precios, y antes el unico boton relleno de
+   Experiencias era el de WhatsApp. */
 .tier-cap .pay{
-  align-self:flex-start; margin-top:6px; text-decoration:none;
-  font-size:0.88rem; font-weight:600; color: var(--ink);
-  border-bottom:2px solid var(--gold); padding:8px 0 2px;
+  align-self:flex-start; margin-top:8px; text-decoration:none;
+  display:inline-flex; align-items:center; min-height:40px; padding:8px 16px;
+  background: var(--gold); color:#1A1400; border-radius:2px;
+  font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
 }
-.tier-cap .pay:hover, .tier-cap .pay:focus-visible{ color: var(--gold); border-bottom-color: var(--gold); }
+.tier-cap .pay:hover, .tier-cap .pay:focus-visible{ background:#DAB02C; }
 .flip-back{
   transform: rotateY(180deg); background: var(--bg-raise); border-color: var(--gold-soft);
   padding: 18px 16px; display:flex; flex-direction:column; justify-content:center; gap:2px;
@@ -531,6 +541,12 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 
 .incluye-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:22px; margin-top:16px; }
 @media (max-width: 560px){ .incluye-grid{ grid-template-columns:1fr; } }
+/* Con el formulario a todo el ancho (2026-11-23), lo que incluye tambien:
+   tres fotos por fila en vez de dos, y la seccion mide la mitad. */
+@media (min-width: 900px){
+  .incluye{ max-width:none; margin-top:56px; }
+  .incluye-grid{ grid-template-columns:repeat(3,1fr); }
+}
 .incluye-item{ margin:0; }
 /* la razon va en la <img>, no en el contenedor: adentro de un contenedor
    con aspect-ratio la referencia se vuelve circular y gana el alto de la foto */
@@ -683,7 +699,7 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 /* En un telefono cada casilla mide lo que deje el ancho entre siete
    columnas: el aire que se le quita al marco va a las casillas. */
 @media (max-width: 480px){
-  .reserva-widget{ padding:20px 16px; }
+  .reserva-caja{ padding:12px 12px 14px; }
   .calendario{ padding:10px 8px; }
   .cal-grilla{ gap:4px; }
   .cal-dia{ font-size:1rem; border-radius:6px; }
@@ -700,6 +716,16 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 }
 .reserva-fila .quien{ font-size:0.95rem; }
 .reserva-fila .quien small{ display:block; color: var(--ink-dim); font-size:0.88rem; margin-top:3px; }
+/* El nombre del menu en Fraunces recta y seminegrita (2026-11-23, lo pidio
+   el cliente: "los titulos de los menu deberian ser un poco mas grande o
+   grueso, o una fuente elegante distinta, bien legible"). Es la serif que
+   el sitio ya usa en los precios, asi que la fila se lee como una carta:
+   el plato en serif, su precio en serif italica. La edad sigue en Work Sans. */
+.reserva-fila .quien{
+  font-family:var(--serif); font-weight:600; font-size:1.14rem;
+  letter-spacing:0.005em; line-height:1.2; color: var(--ink);
+}
+.reserva-fila .quien small{ font-family:var(--sans); font-weight:400; letter-spacing:0; line-height:1.35; }
 .reserva-fila .valor{ text-align:right; font-family:var(--serif); font-style:italic; font-size:1.15rem;
   color: var(--ink-faint); }
 .reserva-fila.activa .valor{ color: var(--gold); }
@@ -790,14 +816,8 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 .contador input[type="number"]::-webkit-inner-spin-button{
   -webkit-appearance:none; margin:0;
 }
-@media (max-width: 560px){
-  /* En celular el contador se queda igual de grande: es donde mas importa.
-     Lo que cede es el ancho del numero, y la fila deja que el nombre del
-     menu use dos lineas si las necesita. */
-  .reserva-fila{ grid-template-columns: 1fr 146px; gap:12px; }
-  .reserva-widget .contador input[type="number"]{ width:46px; }
-  .reserva-fila .valor{ grid-column:1 / -1; text-align:left; margin-top:4px; font-size:1.05rem; }
-}
+/* En celular el contador se queda igual de grande: es donde mas importa.
+   Lo que cede es el ancho del numero (ver "la reserva en tres pasos"). */
 .reserva-total{
   display:flex; flex-wrap:wrap; gap:12px 30px; justify-content:space-between;
   padding: 18px 0 4px; border-top:1px solid var(--gold-soft);
@@ -813,6 +833,246 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 .reserva-total b{ font-family:var(--serif); font-style:italic; font-size:1.2rem;
   text-transform:none; letter-spacing:0; color: var(--ink); font-weight:400; margin-left:8px; }
 button.btn{ font-family: var(--sans); cursor:pointer; }
+
+/* ---------- la reserva en tres pasos (2026-11-23) ----------
+   Lo pidio el cliente: "rediseñar esta sección de reservas con mucho
+   enfoque, que de verdad los pasos son muy fácil, muy bien visible en una
+   pantalla, tanto en el celular como en el computador, para liderar que al
+   final el cliente vaya a pagar ahora".
+
+   Lo medido antes del cambio: en el computador el formulario partia a los
+   628px —nada a la vista al llegar—, el calendario solo media 578px y
+   "Pagar ahora" quedaba en la tercera pantalla; en el celular, a dos
+   pantallas y media. Ahora: el heroe es una franja, los pasos van
+   numerados, en el computador en dos columnas que caben en 1280x650, y en
+   el celular cada fila del pedido usa un renglon menos. */
+.hero-corto{ min-height: 190px; }
+.hero-corto .hero-in{ padding-top:28px; padding-bottom:24px; }
+/* Mas chico que el de las otras paginas (2026-11-23, lo pidio el cliente:
+   "achicaria mas la portada en reservas"): aca el protagonista es el
+   formulario. */
+.hero-corto h1{ font-size: clamp(1.8rem, 3.6vw, 2.6rem); max-width:none; }
+.hero-corto .lede{ margin-top:10px; font-size:0.98rem; max-width:62ch; }
+.reserva-seccion{ padding-top:40px; }
+/* Los botones Reservar del sitio llevan a #reserva-en-linea. Sin esto la
+   seccion quedaba bajo la barra fija de arriba y tapaba el paso 1. */
+#reserva-en-linea{ scroll-margin-top:40px; }
+@media (max-width: 700px){ #reserva-en-linea{ scroll-margin-top:64px; } }
+@media (max-width: 700px){
+  .hero-corto{ min-height:0; }
+  .hero-corto .hero-in{ padding-top:44px; padding-bottom:22px; }
+  .hero-corto .lede{ font-size:0.92rem; }
+  .reserva-seccion{ padding-top:24px; }
+}
+
+/* El numero del paso va delineado y no relleno: asi se lee igual de dia y
+   de noche, y el unico relleno dorado del formulario sigue siendo Pagar
+   ahora. */
+.reserva-widget .reserva-paso{
+  display:flex; align-items:center; gap:10px;
+  color: var(--ink); font-size:0.9rem; font-weight:700;
+}
+.reserva-paso .num{
+  flex:none; width:28px; height:28px; border-radius:50%;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:1.5px solid var(--gold); color: var(--gold);
+  font-family:var(--serif); font-style:italic; font-weight:600; font-size:1rem;
+  letter-spacing:0;
+}
+/* Cada paso en su tarjeta (2026-11-23, lo pidio el cliente: "separar paso
+   1, 2, 3 de forma mas ludica, decente, elegante, pero que se vea un poco
+   mas los distintos pasos, secciones"). Es la regla del marco del panel
+   llevada al tono del sitio: la tarjeta es el marco que manda, el titulo
+   del paso va arriba con su linea fina, y lo de adentro —el calendario, la
+   casilla, el resumen— lleva un borde mas suave.
+
+   Lo ludico es el avance: el paso que sigue lleva el borde dorado y el que
+   ya esta listo cambia su numero por un tic dorado relleno. Lo marca
+   reserva.js (marcarPasos); sin JS las tres tarjetas se ven iguales. */
+.reserva-widget{ border:0; background:none; padding:0; }
+.reserva-caja{
+  position:relative; padding:14px 18px 18px;
+  border:1px solid var(--line); border-radius:10px; background: var(--bg-panel);
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.reserva-caja.actual{ border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-soft); }
+.reserva-col-pedido{ margin-top:14px; }
+.reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:14px; }
+.reserva-caja > .reserva-paso,
+.reserva-caja > .campo > .reserva-paso{
+  margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line);
+}
+.reserva-caja > .reserva-paso + .reserva-fila{ border-top:0; padding-top:2px; }
+.reserva-caja.hecho .num{
+  background: var(--gold); border-color: var(--gold); color:#1A1400;
+  font-size:0;
+}
+.reserva-caja.hecho .num::before{
+  content:"\2713"; font-family:var(--sans); font-style:normal; font-weight:700; font-size:0.9rem;
+}
+.reserva-caja.actual .num{ box-shadow: 0 0 0 3px var(--gold-wash); }
+.reserva-caja .reserva-mensaje:empty{ display:none; }
+/* El detalle del pedido en el paso 3, como una boleta: cantidad y menu a la
+   izquierda, el monto pagando ahora a la derecha, en la serif de los precios. */
+.resumen-lineas{ list-style:none; margin:0 0 12px; padding:0 2px; }
+.resumen-lineas:empty{ display:none; }
+.resumen-lineas li{
+  display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  padding:5px 0; border-bottom:1px dashed var(--line); font-size:0.9rem; color: var(--ink-dim);
+}
+.resumen-lineas b{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:1.02rem; color: var(--ink); white-space:nowrap; }
+
+/* El resumen de lo elegido: la fecha en palabras y cuantos van. Es lo que
+   da seguridad antes de pagar. */
+.reserva-widget .reserva-total{
+  align-items:baseline; gap:6px 18px; margin:0 0 12px; padding:12px 14px;
+  border:1px solid var(--line); border-radius:6px; background: var(--bg);
+}
+.resumen-fecha{
+  font-size:0.95rem; font-weight:700; text-transform:none; letter-spacing:0; color: var(--ink);
+}
+.reserva-total b{ margin-left:6px; }
+
+/* Pagar ahora: ancho entero, mas alto, y el ahorro como pastilla. Solo
+   reservar va debajo, delineado y mas bajo: sigue a la vista, pero no
+   compite. */
+.btn-row.dos{ flex-direction:column; gap:10px; margin-top:0; }
+.btn-row.dos .btn{ flex:none; width:100%; }
+.btn-row.dos .btn-pagar{
+  min-height:58px; flex-wrap:wrap; align-items:center; row-gap:4px;
+  font-size:0.95rem;
+}
+.btn-row.dos .btn-pagar b{ font-size:1.2rem; }
+.btn-pagar .ahorro{
+  display:inline-block; padding:3px 10px; border-radius:999px;
+  background: rgba(26,20,0,0.16); border:1px solid rgba(26,20,0,0.28);
+  font-size:0.82rem; font-weight:700; text-transform:none; letter-spacing:0.01em;
+}
+.btn-pagar .ahorro:empty{ display:none; }
+.btn-pagar:disabled{ opacity:0.45; cursor:not-allowed; }
+.btn-row.dos .btn-solo{ min-height:44px; padding-top:10px; padding-bottom:10px; font-size:0.82rem; }
+.btn-row.dos .btn-solo:disabled{ opacity:0.45; cursor:not-allowed; }
+.reserva-condicion{ margin-top:10px; font-size:0.85rem; }
+
+/* En el celular, el precio de cada fila va bajo el nombre, en la misma
+   columna, y no en un renglon propio: la fila baja de 130 a unos 70px. */
+@media (max-width: 899px){
+  .reserva-fila{
+    grid-template-columns: 1fr 134px; grid-template-areas: "quien contador" "valor contador";
+    gap:2px 10px; padding:12px 0;
+  }
+  /* El nombre del menu en una linea: el contador cede 12px (los botones
+     quedan en 44, lo que se acierta con el pulgar) y la letra baja un poco. */
+  .reserva-fila .quien{ font-size:1.06rem; }
+  .contador .paso{ width:44px; height:44px; }
+  .reserva-fila .quien{ grid-area:quien; }
+  .reserva-fila .contador{ grid-area:contador; }
+  .reserva-fila .valor{ grid-area:valor; grid-column:auto; text-align:left; margin-top:0; font-size:1.05rem; }
+  .reserva-widget .contador input[type="number"]{ width:46px; }
+}
+
+/* En el computador, dos columnas: la fecha a la izquierda, el pedido y el
+   pago a la derecha. El calendario deja de ser de casillas cuadradas —a
+   ese ancho median 70px de alto— y pasa a 44px, con la misma letra. */
+@media (min-width: 900px){
+  .reserva-widget{ max-width:none; padding:0; }
+  /* El titulo se deja para los lectores de pantalla: en el computador los
+     tres pasos numerados ya dicen que esto es la reserva, y esos 50px son
+     los que faltaban para que el formulario entero quepa en 1280x650. */
+  .reserva-titulo{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0 0 0 0); white-space:nowrap; margin:0;
+  }
+  .reserva-widget{ position:relative; }
+  .reserva-widget .reserva-prueba{ margin:0 0 6px; font-size:0.88rem; }
+  /* Los tres pasos lado a lado, 1 → 2 → 3, en tarjetas de igual alto (el
+     cliente: "con el calendario tienes un poco de espacio a jugar… en la
+     horizontal"). El calendario cede ancho, y la columna del pedido se
+     disuelve (display:contents) para que el paso 2 y el 3 sean columnas
+     propias. Las tres cierran parejas abajo, y en la tercera los botones
+     quedan al pie, a la altura del final del mes. */
+  .reserva-cols{
+    display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.08fr) minmax(0,1fr);
+    gap:0 16px; align-items:stretch;
+  }
+  .reserva-col-pedido{ display:contents; }
+  .reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:0; }
+  .reserva-caja-pago{ display:flex; flex-direction:column; }
+  .reserva-caja-pago .btn-row.dos{ margin-top:auto; }
+  /* En una columna angosta el precio va bajo el nombre, como en el
+     celular: el nombre del menu no se dobla. */
+  .reserva-fila{
+    grid-template-columns: 1fr 128px; grid-template-areas: "quien contador" "valor contador";
+    gap:0 10px;
+  }
+  .reserva-fila .valor{ text-align:left; min-width:0; }
+  .reserva-caja-pago .reserva-total{ flex-wrap:wrap; }
+  .reserva-caja{ padding:12px 18px 14px; }
+  .reserva-caja > .reserva-paso,
+  .reserva-caja > .campo > .reserva-paso{ margin-bottom:8px; padding-bottom:8px; }
+  /* Segunda pasada (2026-11-23, el cliente: "compactar otra vez un poco…
+     tener todo en una vista en la pantalla, con los botones… juega un poco
+     con los tamaños de la tipografía también, pero sin perder elegancia").
+     Se quita aire y se bajan un punto los textos de apoyo; los numeros del
+     calendario, los precios y Pagar ahora siguen siendo lo que mas pesa. */
+  .calendario{ padding:8px 12px 10px; }
+  .cal-cab{ margin-bottom:4px; }
+  .cal-nav{ width:38px; height:38px; font-size:1.25rem; }
+  .cal-mes{ font-size:0.95rem; }
+  .cal-wd{ padding:0 0 4px; font-size:0.8rem; }
+  .cal-grilla{ gap:4px; }
+  .cal-dia{ aspect-ratio:auto; height:40px; font-size:1rem; }
+  .cal-leyenda{ margin-top:8px; }
+  .cal-etapa{ padding:3px 10px; font-size:0.82rem; }
+  .reserva-widget .aviso{ margin:8px 0 0; font-size:0.9rem; }
+  .reserva-widget .reserva-paso{ font-size:0.85rem; }
+  .reserva-paso .num{ width:26px; height:26px; font-size:0.95rem; }
+  .reserva-fila{ padding:6px 0; }
+  .reserva-fila + .reserva-upgrade{ margin-top:2px; }
+  .reserva-fila .quien{ font-size:1.08rem; }
+  .reserva-fila .quien small{ font-size:0.82rem; margin-top:1px; }
+  .reserva-fila .valor{ white-space:nowrap; min-width:86px; font-size:1.05rem; }
+  .contador .paso{ width:38px; height:38px; font-size:1.6rem; }
+  .reserva-widget .contador input[type="number"]{ width:50px; padding:7px 0; font-size:1rem; }
+  .reserva-upgrade{ padding:7px 12px; gap:10px; }
+  .reserva-upgrade b{ font-size:0.9rem; }
+  .reserva-upgrade small{ margin-top:1px; }
+  .reserva-upgrade input[type="checkbox"]{ width:18px; height:18px; }
+  .reserva-widget .reserva-total{ padding:7px 14px; margin-bottom:8px; }
+  .resumen-fecha{ font-size:0.9rem; }
+  .reserva-total b{ font-size:1.1rem; }
+  .btn-row.dos{ gap:8px; }
+  .btn-row.dos .btn-pagar{ min-height:48px; padding-top:8px; padding-bottom:8px; font-size:0.9rem; }
+  .btn-row.dos .btn-pagar b{ font-size:1.15rem; }
+  .btn-row.dos .btn-solo{ min-height:40px; padding-top:7px; padding-bottom:7px; }
+  .reserva-condicion{ margin-top:6px; font-size:0.82rem; line-height:1.45; }
+}
+
+/* La barra fija del celular: Pagar ahora siempre a mano una vez que hay
+   fecha y gente. El boton flotante de WhatsApp sube para no quedar tapado. */
+.reserva-barra{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  padding:10px 14px; background: var(--bg-panel);
+  border-top:1px solid var(--line); box-shadow: 0 -6px 18px rgba(0,0,0,0.18);
+}
+.reserva-barra[hidden]{ display:none; }
+.reserva-barra .btn{ width:100%; justify-content:center; align-items:center; flex-wrap:wrap; gap:4px 10px; min-height:52px; }
+.reserva-barra .btn b{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:1.15rem; text-transform:none; letter-spacing:0; }
+@supports (padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px))){
+  .reserva-barra{ padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+}
+/* En el celular el boton va en una sola linea —texto, total y ahorro—
+   quitandole aire a los costados: doblado media 100px de alto, y en una
+   barra fija cada pixel tapa la pagina. */
+@media (max-width: 899px){
+  .btn-row.dos .btn-pagar, .reserva-barra .btn{ padding-left:10px; padding-right:10px; gap:4px 8px; }
+  .btn-pagar .ahorro{ padding:2px 8px; }
+  .reserva-barra .btn{ font-size:0.86rem; letter-spacing:0.03em; }
+  .reserva-barra .btn b{ font-size:1.08rem; }
+}
+body.con-barra .wa-float{ bottom:84px; }
+body.con-barra .sugerencia-idioma{ display:none; }
+@media (min-width: 900px){ .reserva-barra{ display:none !important; } }
 
 /* ---------- cómo llegar ---------- */
 .mapa-grid{ display:grid; grid-template-columns: 1.5fr 1fr; gap: 34px; align-items:start; }
