@@ -97,6 +97,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'o a la carta— y el valor final de la cuenta en Fudo. Se anota desde la '
       + 'hora de apertura. Arriba, Las mesas suma los valores finales del día y '
       + 'dice cuántas mesas faltan, para compararlo con Fudo.',
+      'Con el valor final, la mesa dice Ya pagado y Falta por cobrar: quien '
+      + 'cobra elige cómo pagó el resto y aprieta ✓ Pagó todo. Las mesas suma '
+      + 'además el Efectivo del día, que entró a la caja chica.',
       'Equipo y cuentas del día abre la ventana donde se escriben los montos '
       + 'y la propina.'
     ],
@@ -517,7 +520,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Para el jefe de turno: una reserva de una cotización con precios '
       + 'negociados lleva ≠ Acordado, y su caja de Fudo trae lo acordado línea '
       + 'por línea, con el valor a ingresar en Fudo con IVA. Esa mesa la cierra '
-      + 'él, con esos precios.'
+      + 'él, con esos precios.',
+      'Y la cobra él: con el valor final anotado, la mesa dice Ya pagado y '
+      + 'Falta por cobrar. Eliges cómo pagó el resto —efectivo, transferencia '
+      + 'con la foto del comprobante o tarjeta, o varios— y ✓ Pagó todo la deja '
+      + 'pagada. El efectivo entra a la caja chica (Caja, en el menú).'
     ],
     pasos: [
       'Busca la reserva por nombre.',

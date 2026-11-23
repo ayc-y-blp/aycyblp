@@ -168,7 +168,7 @@ const ENCARGADO: Mision[] = [
   },
   {
     id: 'recepcion', emoji: '🚪', titulo: 'La recepción y qué cobrar', escena: 'enc-recepcion',
-    intro: 'La misma pantalla de la entrada. Los avisos que manda la anfitriona te llegan a ti, y también anotas la mesa: quién se sumó y el valor final. Una reserva de una cotización con precios negociados lleva ≠ Acordado, y su caja de Fudo trae lo acordado línea por línea, con el valor a ingresar en Fudo con IVA.',
+    intro: 'La misma pantalla de la entrada. Los avisos que manda la anfitriona te llegan a ti, y también anotas la mesa: quién se sumó, el valor final y, si falta algo, cómo pagó el resto (✓ Pagó todo; el efectivo va a la caja chica). Una reserva de una cotización con precios negociados lleva ≠ Acordado, y su caja de Fudo trae lo acordado línea por línea, con el valor a ingresar en Fudo con IVA.',
     puntos: [
       'Qué cobrar al abrir la mesa en Fudo.',
       'Marca quién llegó.',
