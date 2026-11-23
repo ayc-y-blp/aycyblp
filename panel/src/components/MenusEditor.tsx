@@ -121,6 +121,8 @@ export default function MenusEditor() {
    * servidor, que además rechaza quitarlos.
    */
   const [usados, setUsados] = useState<Set<string>>(new Set());
+  /** Si esta cuenta ve los costos (`costos`): lo dice el servidor. */
+  const [veCostos, setVeCostos] = useState(false);
   const [verInactivos, setVerInactivos] = useState(false);
   /** Vista gerencia sin `configurar`: el catálogo se mira y no se toca. */
   const soloMira = usarSoloMira('configurar');
@@ -130,6 +132,7 @@ export default function MenusEditor() {
       .then((d) => {
         if (d.error) { setSinPermiso(!!d.permiso); return setError(d.error); }
         setMenus(d.menus);
+        setVeCostos(d.veCostos === true);
         setUsados(new Set((d.usados ?? []).map((n: string) => normalizar(n))));
       })
       .catch((e) => setError(String(e)));
@@ -406,6 +409,16 @@ export default function MenusEditor() {
                         <Elegir etiqueta="IVA del precio" valores={Object.values(IVA_PRECIO)}
                           valor={m.iva} onElegir={(v) => cambiar(i, { iva: v })} />
                       </div>
+                      {/* **Lo que cuesta** (2026-11-23, el simulador de evento).
+                          Solo para quien ve los costos: a los demás ni les llega. */}
+                      {veCostos && (
+                        <Campo etiqueta={`Costo${m.cobro === COBRO.porPersona ? ' (por persona)' : ''}`} ancho="w-full sm:w-[12rem]">
+                          <input type="text" inputMode="numeric" className={ENTRADA}
+                            defaultValue={m.costo ? String(m.costo) : ''} placeholder="sin IVA"
+                            aria-label="Costo del producto"
+                            onBlur={(e) => cambiar(i, { costo: Math.max(0, Math.round(Number(e.target.value.replace(/[^\d]/g, '')) || 0)) })} />
+                        </Campo>
+                      )}
                     </div>
                     </div>
                   </div>

@@ -4,7 +4,7 @@ import { HOJA_RESERVAS, HOJA_FECHAS } from '@/lib/columnas';
 import { HOJA_CONFIG } from '@/lib/config';
 import { ocupacionDe } from '@/lib/ocupacion';
 import { esFecha, hoy } from '@/lib/fechas';
-import { HOJA_MENUS } from '@/lib/menus';
+import { HOJA_MENUS, sinCostos } from '@/lib/menus';
 import { HOJA_PRESUPUESTOS, HOJA_LINEAS, folioDe } from '@/lib/presupuestos';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import { marcasDePago } from '@/lib/plata';
@@ -88,7 +88,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HO
     return NextResponse.json({
       reservas: reservas.map((r) => recortarReserva({ ...r, ingreso: comoIngresar(r, menus, deCot.has(r.id), acordados.get(r.id)) },
         alcance, { hoy: h, propia: esSuya(quien.usuario, r.anotadaPor) || esSuya(quien.usuario, vendedorDe[r.id] ?? '') })),
-      menus, dia, capacidadMaxima, firma: firmaDe(reservas, fechas), apertura, abierto, descuentos,
+      menus: sinCostos(menus), dia, capacidadMaxima, firma: firmaDe(reservas, fechas), apertura, abierto, descuentos,
       // Qué reservas vienen de una cotización: esas no se sueltan acá, se
       // cancelan desde su cotización.
       deCotizacion: Object.fromEntries(deCot),

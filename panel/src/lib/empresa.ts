@@ -27,6 +27,8 @@
  * variables por su cuenta: una lectura suelta sería una empresa que se
  * escapa de la pieza. El plan completo está en `panel/FASE5.md`.
  */
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 export interface Empresa {
   /** Su nombre corto, fijo. No es el nombre comercial, que vive en `Config`. */
   id: string;
@@ -54,8 +56,14 @@ export const VARIABLES_DE_LA_EMPRESA = [
   'SHOPIFY_VERSION', 'SHOPIFY_WEBHOOK_SECRET', 'CRM_API_KEY'
 ] as const;
 
-/** La empresa que atiende este panel. Hoy, una sola. */
-export function empresaActual(): Empresa {
+/**
+ * La empresa de la petición en curso, cuando alguien la fijó con
+ * `conEmpresa()`. Fuera de eso no hay ninguna y rige la del entorno.
+ */
+const ambiente = new AsyncLocalStorage<Empresa>();
+
+/** La empresa armada con las variables de siempre: Brasas de Lo Pirque. */
+function delEntorno(): Empresa {
   return {
     id: 'lo-pirque',
     planilla: v('GOOGLE_SHEET_ID'),
@@ -67,5 +75,50 @@ export function empresaActual(): Empresa {
       version: v('SHOPIFY_VERSION'), secretoWebhook: v('SHOPIFY_WEBHOOK_SECRET')
     },
     claveCrm: v('CRM_API_KEY')
+  };
+}
+
+/**
+ * La empresa que atiende esta petición: la que fijó `conEmpresa()`, y si
+ * nadie fijó ninguna, la del entorno. **Hoy nadie la fija fuera de las
+ * pruebas**, así que el panel se comporta igual que antes.
+ */
+export function empresaActual(): Empresa {
+  return ambiente.getStore() ?? delEntorno();
+}
+
+/**
+ * Corre `fn` con esa empresa: todo lo que pregunte `empresaActual()` adentro
+ * —también después de un `await`— recibe ésa. Es lo que va a usar el paso de
+ * *una dirección por empresa* para decir de quién es cada petición.
+ */
+export function conEmpresa<R>(empresa: Empresa, fn: () => R): R {
+  return ambiente.run(empresa, fn);
+}
+
+/**
+ * **Lo que el panel recuerda mientras vive una instancia, guardado por
+ * empresa** (2026-11-23, segundo paso de la Fase 5).
+ *
+ * El panel recuerda cosas entre una petición y la siguiente: la lista de
+ * pestañas de la planilla, la credencial de Google, el token de Shopify, si
+ * la bitácora ya tiene encabezado. Con una sola empresa bastaba una
+ * variable suelta por archivo. Con dos, esa variable sería **la pestaña de
+ * una empresa respondida con la lista de la otra**, o una escritura con la
+ * credencial equivocada: justo la mezcla que no puede pasar.
+ *
+ * `porEmpresa(crear)` devuelve una función que entrega la memoria de la
+ * empresa en curso, creándola la primera vez. La llave es su id, su
+ * planilla y su cuenta: si cambia cualquiera de las tres —las pruebas lo
+ * hacen—, es otra memoria.
+ */
+export function porEmpresa<T>(crear: () => T): () => T {
+  const memorias = new Map<string, T>();
+  return () => {
+    const e = empresaActual();
+    const llave = `${e.id}\n${e.planilla}\n${e.cuenta.correo}`;
+    let m = memorias.get(llave);
+    if (m === undefined) { m = crear(); memorias.set(llave, m); }
+    return m;
   };
 }

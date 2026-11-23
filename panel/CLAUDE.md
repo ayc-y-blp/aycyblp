@@ -649,6 +649,29 @@ entra en el ancho de su contenedor con 32px de aire.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
   describe dónde van estas filas, y las fotos se sacan a 400px.
 
+## El simulador de evento (2026-11-23)
+
+Lo pidió el cliente al hablar de la Fase 5: *"crear un simulador, me tinca…
+piensa en la lógica primero, después se rellena"*. Dice, antes de mandar una
+cotización, **cuánto cuesta el evento y cuánto deja**. El detalle, lo que
+falta y los pasos están en **`panel/FASE5.md`**, "El simulador de evento".
+
+- **Dónde**: *🧮 Simular*, en el pie del paso de productos de la
+  cotización, al lado de *✕ Se cayó…* y del dorado (`SimularEvento.tsx`).
+  No guarda nada. **En pausa desde el mismo día**: el cliente pidió seguir
+  primero con las dos empresas.
+- **La cuenta** (`lib/simulador.ts`): lo cobrado sin IVA menos lo que se
+  sirve, el equipo que piden las reglas de cada puesto y los gastos del
+  evento. Si falta un costo, lo nombra y no opina.
+- **Quién ve qué** (lo decidió el cliente): con el permiso nuevo `costos`
+  —gerencia, pagos y administrador—, los números; los demás, solo la señal.
+  El costo no viaja a quien no lo ve.
+- **Datos nuevos**: la columna `Costo` de `Menús` y las claves
+  `margen_minimo` y `gastos_evento` de `Config`.
+- **Lecturas de Google**: una tanda al simular; ninguna más en las pantallas.
+- **Ayuda**: el `?` de la ventana (`simulador`) y el de los dos campos nuevos
+  de Configuración.
+
 ## Importar del CRM y del sitio viejo (2026-11-21)
 
 Lo pidió el cliente al pasar a producción, en tres mensajes del mismo día.

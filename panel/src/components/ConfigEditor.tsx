@@ -227,6 +227,13 @@ export default function ConfigEditor() {
         {campo('vigencia', 'Vigencia',
           'Cuántos días vale una cotización desde que se manda al cliente. En 0 no vence.',
           numerico('vigencia', config.vigenciaPresupuesto, (n) => ({ vigenciaPresupuesto: n }), { min: 0, max: 365, unidad: 'días' }))}
+        {campo('margen', 'Simulador: margen que se busca',
+          'El % de lo cobrado (sin IVA) que tiene que quedar en un evento. Bajo eso el simulador dice justo o no conviene. En 0 basta con no perder.',
+          numerico('margen', config.margenMinimo, (n) => ({ margenMinimo: n }), { min: 0, max: 95, unidad: '%' }))}
+        {campo('gastosEvento', 'Simulador: gastos del evento',
+          'Lo que cuesta un evento aparte de los productos y del equipo. Uno por punto y coma: el nombre, dos puntos y el monto; con pp al final si es por persona.',
+          textoLibre('gastosEvento', config.gastosEvento,
+            (t) => ({ gastosEvento: t }), 'Hielo: 15000; Transporte: 800 pp'))}
         {campo('descuentos', 'Descuentos con botón',
           'Los que se ofrecen con un toque, por línea y sobre el total. Separados por coma.',
           textoLibre('descuentos', config.descuentos.join(', '),
