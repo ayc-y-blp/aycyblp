@@ -1,7 +1,6 @@
 {
   "_nota": "Traducción al portugués (variante de Brasil, que es el mercado emisor grande). La llave es el texto en español tal como aparece en los archivos de la raíz. Una llave 'archivo.html|texto' le gana a la llave suelta solo en ese archivo. No editar pt/ a mano: se regenera con python3 tools/traducir.py",
   "_precios": "El separador de miles con punto ya es el correcto en portugués de Brasil. Se agrega la sigla CLP porque el signo $ se confunde con el real.",
-  "Pagando tu reserva ahora": "Pagando sua reserva agora",
   "_navegacion": "Menú, pie de página y elementos compartidos",
   "Abrir menú": "Abrir menu",
   "Reserva": "Reservar",
@@ -254,7 +253,6 @@
   "Mientras antes nos escribas, más fechas disponibles vas a encontrar.": "Quanto antes você escrever, mais datas livres vai encontrar.",
   "Hola, quiero cotizar un evento en Brasas de Lo Pirque": "Olá, gostaria de um orçamento para um evento no Brasas de Lo Pirque",
   "Cotizar mi evento": "Orçar meu evento",
-  "Ver contacto": "Ver contato",
   "_reservas": "Página de reserva",
   "Reserva y paga en línea tu día de campo: elige la fecha, la cantidad de adultos y niños, y confirma tu cupo en pocos pasos.": "Reserve e pague online o seu dia de campo: escolha a data, a quantidade de adultos e crianças, e confirme as suas vagas em poucos passos.",
   "Asegúrate ahora": "Garanta já",
@@ -265,8 +263,6 @@
   "Por adulto": "Por adulto",
   "Pagar ahora": "Pagar agora",
   "Solo reservar": "Só reservar",
-  "Con «Solo reservar» tomas tu cupo y pagas al llegar. Cuesta un poco más que pagar en línea, y tu lugar queda sujeto a disponibilidad hasta que pagues: si el día se llena con reservas pagadas, te avisamos.": "Com “Só reservar” você garante os seus lugares e paga ao chegar. Custa um pouco mais do que pagar online, e os seus lugares ficam sujeitos à disponibilidade até você pagar: se o dia lotar com reservas pagas, a gente avisa.",
-  "Elegir fecha": "Escolher data",
   "Elige la fecha correcta antes de continuar.": "Escolha a data certa antes de continuar.",
   "Menú de niños": "Menu infantil",
   "Menú de pequeños": "Menu para os pequenos",
@@ -425,7 +421,6 @@
   "Por qué acá": "Por que aqui",
   "Los tres momentos, lo que resuelve y cómo funciona": "Os três momentos, o que resolve e como funciona",
   "Subir todos los menús a A Brasas abiertas": "Subir todos os menus para A Brasas abiertas",
-  "Todos los adultos pasan a A Brasas abiertas, con bar abierto para todos: bebidas, cervezas, pisco sour, vino reserva y más, a libre elección.": "Todos os adultos passam para A Brasas abiertas, com bar aberto para todos: bebidas, cervejas, pisco sour, vinho reserva e mais, à vontade.",
   "_reserva_js": "el nombre de la fila de adultos lo escribe assets/js/reserva.js, no el HTML, porque cambia con la casilla de upgrade. Si se toca, TEXTOS del JS tiene que decir lo mismo: menuBase = \"Menu Tradiciones\", menuAlto = \"Menu A Brasas abiertas\"",
   "+ IVA por persona": "+ IVA por pessoa",
   "4 a 12 años ·": "4 a 12 anos ·",
@@ -455,5 +450,13 @@
   "Cultura chilena, vinos del Valle del Maipo y gastronomía criolla en un entorno campestre, para el paseo, la celebración o la jornada de tu equipo.": "Cultura chilena, vinhos do Vale do Maipo e gastronomia típica em um ambiente de campo, para o passeio, a celebração ou o dia de integração da sua equipe.",
   "La forma más rápida de coordinar fechas, disponibilidad y tu cotización.": "A forma mais rápida de acertar datas, disponibilidade e o seu orçamento.",
   "Hola, estoy revisando el dossier de Brasas de Lo Pirque y quiero cotizar un evento para mi empresa": "Olá, estou vendo o dossiê da Brasas de Lo Pirque e quero um orçamento para um evento da minha empresa",
-  "Descargar PDF": "Baixar PDF"
+  "Descargar PDF": "Baixar PDF",
+  "Elige la fecha": "Escolha a data",
+  "¿Cuántos van?": "Quantas pessoas vão?",
+  "Bar abierto: bebidas, cervezas, pisco sour, vino reserva y más.": "Bar aberto: bebidas, cervejas, pisco sour, vinho reserva e mais.",
+  "Paga y asegura tu lugar": "Pague e garanta o seu lugar",
+  "Fecha por elegir": "Data a escolher",
+  "Con «Solo reservar» pagas al llegar, y tu lugar queda sujeto a disponibilidad hasta que pagues: si el día se llena con reservas pagadas, te avisamos.": "Com “Só reservar” você paga ao chegar, e o seu lugar fica sujeito à disponibilidade até o pagamento: se o dia lotar com reservas pagas, avisamos você.",
+  "Reservar una visita": "Reservar uma visita",
+  "Reservar pagando ahora": "Reservar pagando agora"
 }
