@@ -6421,5 +6421,38 @@ console.log('\nCambiar el vendedor');
      'cambiar el vendedor es de la gerencia, pagos y el administrador');
 }
 
+// --- La empresa, como una pieza (Fase 5, paso 1) ---
+console.log('\nLa empresa es una pieza');
+{
+  const E = await import('./empresa.ts');
+  const fs = await import('node:fs'); const ruta = await import('node:path');
+  const antes = { ...process.env };
+  process.env.GOOGLE_SHEET_ID = 'planilla-x'; process.env.SHOPIFY_DOMINIO = 'tienda-x.myshopify.com';
+  process.env.GOOGLE_CALENDAR_ID = ''; process.env.SHOPIFY_WEBHOOK_SECRET = 'firma-x';
+  const e = E.empresaActual();
+  ok(e.planilla === 'planilla-x' && e.tienda.dominio === 'tienda-x.myshopify.com' && e.tienda.secretoWebhook === 'firma-x'
+    && e.calendario === '', 'lee la planilla, la tienda y el calendario del entorno, en cada llamada');
+  process.env.GOOGLE_SHEET_ID = 'planilla-y';
+  ok(E.empresaActual().planilla === 'planilla-y', 'no guarda nada: un cambio del entorno se ve en la llamada siguiente');
+  for (const k of Object.keys(process.env)) if (!(k in antes)) delete process.env[k];
+  Object.assign(process.env, antes);
+  // Ningún otro archivo lee por su cuenta una variable de la empresa.
+  const raiz = ruta.resolve(import.meta.dirname, '..');
+  const sueltas: string[] = [];
+  const mirar = (carpeta: string) => {
+    for (const x of fs.readdirSync(carpeta, { withFileTypes: true })) {
+      const p = ruta.join(carpeta, x.name);
+      if (x.isDirectory()) { mirar(p); continue; }
+      if (!/\.tsx?$/.test(x.name) || /(^|\/)(empresa|prueba)\.ts$/.test(p)) continue;
+      const texto = fs.readFileSync(p, 'utf8');
+      for (const nombre of E.VARIABLES_DE_LA_EMPRESA) {
+        if (new RegExp(`process\\.env(\\.|\\[['"])${nombre}\\b`).test(texto)) sueltas.push(`${ruta.relative(raiz, p)}: ${nombre}`);
+      }
+    }
+  };
+  mirar(raiz);
+  ok(sueltas.length === 0, `solo empresa.ts lee las variables de la empresa${sueltas.length ? ' — sueltas: ' + sueltas.join(', ') : ''}`);
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

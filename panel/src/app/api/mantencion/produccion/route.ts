@@ -25,6 +25,7 @@ import {
   SE_VACIAN, SE_CONSERVAN, PALABRA_PARA_BORRAR, confirmado, filasConDatos,
   tiendaDe, detalleDeLaLimpieza, idsConEvento, entornoDe
 } from '@/lib/produccion';
+import { empresaActual } from '@/lib/empresa';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -70,7 +71,7 @@ export const GET = conLecturas(TODAS, async function GET(req: Request) {
       seConservan: SE_CONSERVAN.map((p) => ({ ...p, filas: cuantas[p.hoja] })),
       eventos: hayCalendario() ? idsConEvento(idsDeReservas(reservas)).length : 0,
       calendario: hayCalendario(),
-      tienda: tiendaDe(process.env.SHOPIFY_DOMINIO),
+      tienda: tiendaDe(empresaActual().tienda.dominio),
       palabra: PALABRA_PARA_BORRAR,
       // Lo que se vuelve a abrir solo después de borrar.
       regla: { dias: deDiasSemana(cfg.diasAbiertos).replace(/,\s*/g, ', '), hasta: cfg.diasAFuturo, cupo: cfg.cupoNormal },
