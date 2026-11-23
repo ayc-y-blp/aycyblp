@@ -217,7 +217,17 @@ export const COL_PRESUPUESTOS = {
    * (`minimoDeArriendo()` en `cotizar.ts`). Mientras esté, la regla no lo
    * vuelve a subir ni frena al ganar. Lo escribe solo el servidor.
    */
-  arriendoBajoMinimo: 'Arriendo bajo el mínimo'
+  arriendoBajoMinimo: 'Arriendo bajo el mínimo',
+  /**
+   * **Condiciones especiales** (2026-11-23, `condiciones.ts`): lo que un
+   * vendedor pidió por sobre los topes de Configuración —*"reembolso=40|
+   * cancelacionDias=30"*— y su marca —*"Pedida · Jorge · cuándo · motivo"*,
+   * *"Aprobada · …"*, *"Rechazada · …"*—. Aprobado, lo pedido pasa a ser el
+   * tope de esa cotización. Las escriben solo el servidor y
+   * `/api/presupuestos/condiciones`.
+   */
+  condicionesPedidas: 'Condiciones pedidas',
+  condicionesEspeciales: 'Condiciones especiales'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -376,6 +386,9 @@ export interface Presupuesto {
   showBajoMinimo?: string;
   /** *"quién · cuándo"* autorizó el arriendo bajo el mínimo: ver `COL_PRESUPUESTOS.arriendoBajoMinimo`. */
   arriendoBajoMinimo?: string;
+  /** Lo pedido por sobre los topes y su marca: ver `COL_PRESUPUESTOS.condicionesPedidas`. */
+  condicionesPedidas?: string;
+  condicionesEspeciales?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -983,6 +996,8 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       socio: en(f, i.socio).trim(),
       showBajoMinimo: en(f, i.showBajoMinimo).trim(),
       arriendoBajoMinimo: en(f, i.arriendoBajoMinimo).trim(),
+      condicionesPedidas: en(f, i.condicionesPedidas).trim(),
+      condicionesEspeciales: en(f, i.condicionesEspeciales).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1059,6 +1074,8 @@ export function filaPresupuesto(
   poner(i.socio, p.socio ?? '');
   poner(i.showBajoMinimo, p.showBajoMinimo ?? '');
   poner(i.arriendoBajoMinimo, p.arriendoBajoMinimo ?? '');
+  poner(i.condicionesPedidas, p.condicionesPedidas ?? '');
+  poner(i.condicionesEspeciales, p.condicionesEspeciales ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

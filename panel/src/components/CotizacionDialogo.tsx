@@ -55,6 +55,12 @@ import CampoRut from './CampoRut';
 import { frasesCancelacion } from '@/lib/cancelacion';
 import CancelarEvento from './CancelarEvento';
 import SeCayo from './SeCayo';
+import PedirCondiciones from './PedirCondiciones';
+import {
+  topesDe, topesConAprobadas, aprobadasDe, alTope, condicionesEspecialesDe, leerPedido, frasePedido,
+  fraseCondiciones, valorCondicion, NOMBRE_CONDICION, plazosVencidos, fechaDelContrato, sobreElTope,
+  type CampoCondicion, type Topes
+} from '@/lib/condiciones';
 import CorregirGanada from './CorregirGanada';
 import BloqueCancelada from './BloqueCancelada';
 import { enPesos } from '@/lib/ocupacion';
@@ -104,7 +110,14 @@ export interface DatosCotizar {
   horaApertura?: string;
   /** Para el contrato: el horario de siempre y qué le falta a la empresa. */
   contrato?: { horario: string; faltaEmpresa: string[];
-    tranquilidad?: { cambiosFecha: number; cancelacionDias: number; reembolsoPct: number } };
+    tranquilidad?: { cambiosFecha: number; cancelacionDias: number; reembolsoPct: number; avisoCambio?: number } };
+  /**
+   * **Los topes de Configuración** (2026-11-23, `condiciones.ts`): lo más
+   * generoso que un vendedor puede ofrecer sin pedirlo, y con cuántos días de
+   * aviso se cambia la fecha.
+   */
+  topes?: Topes;
+  cambiosFechaDias?: number;
   hoy: string;
   usuario: string;
   rol: string;
@@ -296,6 +309,16 @@ export default function CotizacionDialogo({
   const [cambiosTxt, setCambiosTxt] = useState(p?.cambiosFecha == null ? '' : String(p.cambiosFecha));
   const [cancelTxt, setCancelTxt] = useState(p?.cancelacionDias == null ? '' : String(p.cancelacionDias));
   const [reembolsoTxt, setReembolsoTxt] = useState(p?.reembolso == null ? '' : String(p.reembolso));
+  /**
+   * **Las condiciones especiales** (2026-11-23, `condiciones.ts`): lo pedido
+   * por sobre los topes de Configuración y su marca (*pedida*, *aprobada*,
+   * *rechazada*). Las escribe `/api/presupuestos/condiciones`.
+   */
+  const [condPedidas, setCondPedidas] = useState(p?.condicionesPedidas ?? '');
+  const [condMarca, setCondMarca] = useState(p?.condicionesEspeciales ?? '');
+  const [pidiendoCond, setPidiendoCond] = useState(false);
+  /** Lo último que quedó en su tope, para decirlo al lado del campo. */
+  const [recorteCond, setRecorteCond] = useState('');
   /** Los plazos del seguimiento de esta cotización; en blanco rige Configuración. */
   const [segTxt, setSegTxt] = useState(p?.seguimientoDias == null ? '' : String(p.seguimientoDias));
   const [avisoTxt, setAvisoTxt] = useState(p?.avisoEvento == null ? '' : String(p.avisoEvento));
@@ -421,6 +444,115 @@ export default function CotizacionDialogo({
     { anticipo: numeroONulo(anticipoTxt, 100), anticipoMonto: montoONulo(anticipoMontoTxt),
       saldoDias: numeroONulo(saldoTxt, 365), fecha: fechaReal },
     cuentas.total, datos.condiciones ?? { anticipoPct: 30, saldoDias: 3 });
+  /**
+   * **Los topes** (regla A, 2026-11-23, `condiciones.ts`): lo más generoso que
+   * puede ofrecer el vendedor —Configuración, o lo aprobado para esta
+   * cotización—. Quien aprueba (gerencia, pagos, administrador) no tiene
+   * tope: lo que deje por encima queda como aprobado por él al guardar. Es la
+   * misma cuenta del servidor (`conTopes()` en `/api/presupuestos`).
+   */
+  const topesBase: Topes = datos.topes ?? topesDe({
+    anticipoPct: datos.condiciones?.anticipoPct ?? 30, saldoDias: datos.condiciones?.saldoDias ?? 3,
+    cambiosFecha: datos.contrato?.tranquilidad?.cambiosFecha ?? 2,
+    cancelacionDias: datos.contrato?.tranquilidad?.cancelacionDias ?? 60,
+    reembolsoPct: datos.contrato?.tranquilidad?.reembolsoPct ?? 20, descuentos: datos.descuentos });
+  const topes = topesConAprobadas(topesBase, aprobadasDe({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas }));
+  const marcaCond = condicionesEspecialesDe(condMarca);
+  /** Los botones de descuento: los de Configuración, y el aprobado si es más. */
+  const botonesDescuento = topes.descuento > Math.max(0, ...datos.descuentos)
+    ? [0, ...datos.descuentos, topes.descuento] : [0, ...datos.descuentos];
+  /** Al salir de un campo: si se pasa del tope, queda en él y se dice. El servidor hace lo mismo. */
+  const toparCampo = (campo: CampoCondicion, txt: string, poner: (t: string) => void) => {
+    if (pasaPorEncima || !txt.trim()) return;
+    const n = Math.round(Number(txt));
+    if (!Number.isFinite(n)) return;
+    const t = alTope(campo, n, topes);
+    if (t === n) return;
+    poner(String(t));
+    setRecorteCond(`${NOMBRE_CONDICION[campo]}: ${valorCondicion(campo, n)} no cabe en lo que permite Configuración; `
+      + `queda en ${valorCondicion(campo, t)}. Si el cliente lo necesita, pide condiciones especiales.`);
+  };
+  /** Un anticipo en pesos no baja del % del tope sobre el total. */
+  const toparMonto = () => {
+    const m = Number(anticipoMontoTxt);
+    const minimo = Math.round((cuentas.total * topes.anticipo) / 100);
+    if (pasaPorEncima || !(m > 0) || !(cuentas.total > 0) || m >= minimo) return;
+    setAnticipoMontoTxt(String(minimo));
+    setRecorteCond(`Anticipo: ${enPesos(m)} no cabe en lo que permite Configuración (${topes.anticipo}%); `
+      + `queda en ${enPesos(minimo)}. Si el cliente lo necesita, pide condiciones especiales.`);
+  };
+  /** Las condiciones de cancelación que rigen: las de la cotización o, en blanco, las de Configuración. */
+  const tranqEfectiva = {
+    cambiosFecha: numeroONulo(cambiosTxt, 10) ?? datos.contrato?.tranquilidad?.cambiosFecha ?? 2,
+    cancelacionDias: numeroONulo(cancelTxt, 365) ?? datos.contrato?.tranquilidad?.cancelacionDias ?? 60,
+    reembolsoPct: numeroONulo(reembolsoTxt, 100) ?? datos.contrato?.tranquilidad?.reembolsoPct ?? 20
+  };
+  /**
+   * **Lo que el calendario ya no permite** (regla B): con la fecha del
+   * contrato —la de la firma, o hoy—, un saldo vencido se paga al firmar y una
+   * cancelación o un cambio de fecha fuera de plazo no se ofrecen. Es lo que
+   * imprime el contrato.
+   */
+  const plazos = plazosVencidos(fechaReal, fechaDelContrato({ contratoSubido: firmado?.cuando }, datos.hoy),
+    { cambiosFecha: tranqEfectiva.cambiosFecha, cancelacionDias: tranqEfectiva.cancelacionDias,
+      avisoCambio: datos.cambiosFechaDias ?? 0 }, cond.saldoHasta);
+  /** Lo que quien aprueba deja por encima de Configuración: al guardar queda como aprobado por él. */
+  const sobreTope = pasaPorEncima ? sobreElTope({
+    anticipo: numeroONulo(anticipoTxt, 100), anticipoMonto: montoONulo(anticipoMontoTxt),
+    saldoDias: numeroONulo(saldoTxt, 365), cambiosFecha: numeroONulo(cambiosTxt, 10),
+    cancelacionDias: numeroONulo(cancelTxt, 365), reembolso: numeroONulo(reembolsoTxt, 100), descuento
+  }, vistas, topesBase) : {};
+  const haySobreTope = Object.keys(sobreTope).length > 0;
+  const puedePedirCond = !!p && !pasaPorEncima && puedeEditar && !cancelada && marcaCond.estado !== 'pedida';
+  const botonPedirCond = (
+    <span className="flex items-center gap-1">
+      <button type="button" className="boton min-h-[40px] lg:min-h-[44px]" onClick={() => setPidiendoCond(true)}>
+        ✋ Pedir condiciones especiales…
+      </button>
+      <AyudaCorta tema="condicionesEspeciales" />
+    </span>
+  );
+  /**
+   * **La línea de las condiciones especiales** (2026-11-23): lo que quedó en
+   * su tope, cómo va lo pedido y el botón para pedir. Es la misma en el pago
+   * (paso 4) y en *Cambios de fecha y cancelación* (paso 5); en el 5 va
+   * `corta`, porque lo aprobado ya se lee en la frase de arriba. **En el
+   * computador el botón va al pie de la ventana** (`pedirEnElPie`), donde
+   * sobra ancho: en la caja alargaba los pasos 4 y 5 más allá de 650px.
+   */
+  const lineaCondiciones = (corta: boolean) => (
+    <>
+      {recorteCond && (
+        <p role="status" className="mt-1 text-[14px] font-semibold text-ambar-texto">{recorteCond}</p>
+      )}
+      {marcaCond.estado === 'pedida' && (
+        <p className="mt-2 text-[14px] font-semibold text-ambar-texto lg:mt-1">
+          ⏳ {corta ? 'Condiciones especiales pedidas'
+            : `${pasaPorEncima ? `${marcaCond.quien} pidió` : 'Pediste'} ${fraseCondiciones(leerPedido(condPedidas)).toLowerCase()}`}
+          {' · '}esperan respuesta{pasaPorEncima ? ' en la bandeja del calendario' : ''}
+        </p>
+      )}
+      {marcaCond.estado === 'aprobada' && (
+        <p className="mt-2 text-[14px] font-semibold text-verde-texto lg:mt-1">
+          ✓ {corta ? `Condiciones especiales aprobadas por ${marcaCond.quien}`
+            : `Aprobadas por ${marcaCond.quien}: ${fraseCondiciones(leerPedido(condPedidas))}`}
+        </p>
+      )}
+      {marcaCond.estado === 'rechazada' && (
+        <p className="mt-2 text-[14px] font-semibold text-rojo-texto lg:mt-1">
+          ✕ {marcaCond.quien} no aprobó las condiciones especiales{marcaCond.nota ? `: ${marcaCond.nota}` : ''}
+        </p>
+      )}
+      {haySobreTope && marcaCond.estado !== 'aprobada' && (
+        <p className="mt-2 text-[14px] text-hueso/80 lg:mt-1">
+          Por sobre Configuración: {fraseCondiciones(sobreTope)}. Al guardar queda aprobado por ti.
+        </p>
+      )}
+      {puedePedirCond && (
+        <div className="mt-2 flex items-center gap-2 lg:hidden">{botonPedirCond}</div>
+      )}
+    </>
+  );
   /**
    * **Lo pagado es del evento** (2026-11-12, lo reclamó el cliente: pagó
    * $299.000 anotados en la A y la C le pedía el anticipo entero). Mientras
@@ -639,6 +771,9 @@ export default function CotizacionDialogo({
       });
       const d = await r.json();
       if (d.error) { setError(d.error); ultimoError.current = d.error; return ''; }
+      if (Array.isArray(d.recortes) && d.recortes.length) {
+        setRecorteCond(`Quedó en lo que permite Configuración: ${d.recortes.join(' · ')}. Si el cliente lo necesita, pide condiciones especiales.`);
+      }
       if (!solo) {
         avisar(p ? 'Cotización guardada' : (cuerpo.estado === ESTADO_PRESUPUESTO.candidato
           ? 'Candidato anotado' : 'Cotización creada'));
@@ -2096,7 +2231,7 @@ export default function CotizacionDialogo({
                               Descuento <AyudaCorta tema="descuentoLinea" />
                             </p>
                             <div className="flex gap-1.5">
-                              {[0, ...datos.descuentos].map((d) => (
+                              {botonesDescuento.map((d) => (
                                 <button key={d} type="button" onClick={() => cambiarLinea(i, { descuento: d })}
                                   className={`boton boton-angosto min-h-[40px] ${l.descuento === d
                                     ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
@@ -2185,7 +2320,7 @@ export default function CotizacionDialogo({
                   Descuento sobre el total
                 </span>
                 <AyudaCorta tema="descuentoTotal" />
-                {[0, ...datos.descuentos].map((d) => (
+                {botonesDescuento.map((d) => (
                   <button key={d} type="button" onClick={() => setDescuento(d)}
                     className={`boton boton-angosto min-h-[40px] ${descuento === d
                       ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
@@ -2427,7 +2562,8 @@ export default function CotizacionDialogo({
                   <span className="mb-1 block text-[13px] text-hueso/70">Anticipo %</span>
                   <input type="number" min={0} max={100} value={anticipoTxt} className={`${ENTRADA} w-24 lg:w-20`}
                     placeholder={String(datos.condiciones?.anticipoPct ?? 30)} disabled={cond.fijo}
-                    onChange={(e) => setAnticipoTxt(e.target.value)} />
+                    onChange={(e) => setAnticipoTxt(e.target.value)}
+                    onBlur={(e) => toparCampo('anticipo', e.target.value, setAnticipoTxt)} />
                 </label>
                 {/* **O un monto acordado** (2026-11-12, lo pidió el cliente:
                     *"págame 500 más"*). Si se escribe, manda sobre el %. */}
@@ -2437,7 +2573,8 @@ export default function CotizacionDialogo({
                     <span className="text-[15px] text-hueso/70">$</span>
                     <input inputMode="numeric" value={anticipoMontoTxt ? Number(anticipoMontoTxt).toLocaleString('es-CL') : ''}
                       className={`${ENTRADA} w-36 lg:w-32`} placeholder="ej. 500.000"
-                      onChange={(e) => setAnticipoMontoTxt(e.target.value.replace(/[^\d]/g, ''))} />
+                      onChange={(e) => setAnticipoMontoTxt(e.target.value.replace(/[^\d]/g, ''))}
+                      onBlur={toparMonto} />
                     {cond.fijo && (
                       <button type="button" className="boton min-h-[44px]" onClick={() => setAnticipoMontoTxt('')}>
                         Volver al %
@@ -2446,6 +2583,8 @@ export default function CotizacionDialogo({
                   </span>
                 </label>
                 <button type="button" aria-pressed={cond.pct === 0}
+                  disabled={!pasaPorEncima && topes.anticipo > 0 && cond.pct !== 0}
+                  title={!pasaPorEncima && topes.anticipo > 0 ? 'Sin anticipo se pide como condición especial' : undefined}
                   onClick={() => { setAnticipoMontoTxt(''); setAnticipoTxt(cond.pct === 0 ? '' : '0'); }}
                   className={`boton min-h-[44px] ${cond.pct === 0 ? '!border-oro bg-oro/15 font-semibold' : ''}`}>
                   Sin anticipo
@@ -2454,17 +2593,21 @@ export default function CotizacionDialogo({
                   <span className="mb-1 block text-[13px] text-hueso/70">Saldo, días antes</span>
                   <input type="number" min={0} max={365} value={saldoTxt} className={`${ENTRADA} w-24 lg:w-20`}
                     placeholder={String(datos.condiciones?.saldoDias ?? 3)}
-                    onChange={(e) => setSaldoTxt(e.target.value)} />
+                    onChange={(e) => setSaldoTxt(e.target.value)}
+                    onBlur={(e) => toparCampo('saldoDias', e.target.value, setSaldoTxt)} />
                 </label>
               </div>
               <p className="mt-2 text-[15px] lg:mt-1 lg:text-[14px]">
                 {cond.pct > 0
                   ? <>Anticipo {cond.fijo ? 'acordado' : `${cond.pct}%`}: <strong>{enPesos(cond.anticipo)}</strong> para reservar la fecha · Saldo <strong>{enPesos(cond.saldo)}</strong></>
                   : <>Sin anticipo · Todo <strong>{enPesos(cond.saldo)}</strong></>}
-                {cond.saldoHasta
+                {plazos.saldoAlFirmar
+                  ? <> <b className="text-ambar-texto">al firmar</b>: el evento es antes del plazo de {cond.dias} días.</>
+                  : cond.saldoHasta
                   ? <> hasta el {enPalabras(cond.saldoHasta)}.</>
                   : <>, {cond.dias} días antes del evento.</>}
               </p>
+              {lineaCondiciones(false)}
             </div>
 
             </fieldset>
@@ -2901,25 +3044,32 @@ export default function CotizacionDialogo({
                     </p>
                     <div className={`flex flex-wrap items-end gap-3 ${cancelAbierto ? '' : 'lg:hidden'}`}>
                       {([
-                        ['Cambios de fecha', cambiosTxt, setCambiosTxt, 10, datos.contrato?.tranquilidad?.cambiosFecha ?? 2, 'cambiosFecha'],
-                        ['Cancela hasta, días antes', cancelTxt, setCancelTxt, 365, datos.contrato?.tranquilidad?.cancelacionDias ?? 60, 'cancelacionDias'],
-                        ['Devuelve, % de lo pagado', reembolsoTxt, setReembolsoTxt, 100, datos.contrato?.tranquilidad?.reembolsoPct ?? 20, 'reembolso']
-                      ] as const).map(([etiqueta, valor, poner, max, defecto, ayuda]) => (
+                        ['Cambios de fecha', cambiosTxt, setCambiosTxt, 10, datos.contrato?.tranquilidad?.cambiosFecha ?? 2, 'cambiosFecha', 'cambiosFecha'],
+                        ['Cancela hasta, días antes', cancelTxt, setCancelTxt, 365, datos.contrato?.tranquilidad?.cancelacionDias ?? 60, 'cancelacionDias', 'cancelacionDias'],
+                        ['Devuelve, % de lo pagado', reembolsoTxt, setReembolsoTxt, 100, datos.contrato?.tranquilidad?.reembolsoPct ?? 20, 'reembolso', 'reembolso']
+                      ] as const).map(([etiqueta, valor, poner, max, defecto, ayuda, campo]) => (
                         <label key={etiqueta} className="block">
                           <span className="mb-1 block text-[13px] text-hueso/70">{etiqueta}<AyudaCorta tema={ayuda} /></span>
                           <input type="number" min={0} max={max} value={valor} className={`${ENTRADA} w-24`}
-                            placeholder={String(defecto)} onChange={(e) => poner(e.target.value)} />
+                            placeholder={String(defecto)} onChange={(e) => poner(e.target.value)}
+                            onBlur={(e) => toparCampo(campo, e.target.value, poner)} />
                         </label>
                       ))}
                     </div>
                     <p className="mt-2 text-[14px] text-hueso/75">
-                      {frasesCancelacion({
-                        cambiosFecha: numeroONulo(cambiosTxt, 10) ?? datos.contrato?.tranquilidad?.cambiosFecha ?? 2,
-                        cancelacionDias: numeroONulo(cancelTxt, 365) ?? datos.contrato?.tranquilidad?.cancelacionDias ?? 60,
-                        reembolsoPct: numeroONulo(reembolsoTxt, 100) ?? datos.contrato?.tranquilidad?.reembolsoPct ?? 20
-                      })}
-                      {' '}En blanco rige Configuración. Va al contrato.
+                      {/* *En blanco rige Configuración* está en el `?` de cada campo. */}
+                      {frasesCancelacion(tranqEfectiva)}
                     </p>
+                    {/* **Lo que el calendario ya no permite** (regla B): el
+                        contrato no lo ofrece, y acá se dice antes de mandarlo. */}
+                    {(plazos.sinCambios || plazos.sinCancelacion) && (
+                      <p className="mt-1 text-[14px] font-semibold text-ambar-texto">
+                        ⚠ Faltan {Math.max(0, plazos.dias ?? 0)} días: el contrato ya no ofrece{' '}
+                        {plazos.sinCambios && plazos.sinCancelacion ? 'cambiar la fecha ni cancelar'
+                          : plazos.sinCambios ? 'cambiar la fecha' : 'cancelar con devolución'}.
+                      </p>
+                    )}
+                    {lineaCondiciones(true)}
                   </div>
 
                   {(faltaDelCliente(facturacion).length > 0
@@ -3006,6 +3156,7 @@ export default function CotizacionDialogo({
             : paso === 4 ? <>
                 {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
                 {secundarios}
+                {puedePedirCond && botonPedirCond}
               </> : null}
           // **El simulador de evento** (2026-11-23), en el pie del paso de
           // productos, al lado de *Se cayó…* y del dorado. Estaba junto al
@@ -3028,6 +3179,7 @@ export default function CotizacionDialogo({
           <div className="hidden min-w-0 flex-wrap items-center gap-2 lg:ml-2 lg:flex">
             {!cancelada && !autoActivo && <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => pedirGuardar()} />}
             {secundariosContrato}
+            {puedePedirCond && botonPedirCond}
           </div>
           {botonSeCayo && <><span className="flex-1" />{botonSeCayo}</>}
         </div>
@@ -3216,6 +3368,13 @@ export default function CotizacionDialogo({
           antes={async () => { if (autoActivo) await auto.forzar(); }}
           onCerrar={() => setCayendo(false)}
           onListo={() => { setCayendo(false); onCambio(); onCerrar(); }} />
+      )}
+      {pidiendoCond && p && (
+        <PedirCondiciones id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''} topes={topes}
+          antes={async () => { if (autoActivo) await auto.forzar(); }}
+          onCerrar={() => setPidiendoCond(false)}
+          onListo={(m) => { setCondPedidas(m.condicionesPedidas); setCondMarca(m.condicionesEspeciales);
+            setRecorteCond(''); setPidiendoCond(false); }} />
       )}
       {cancelando && p && (
         <CancelarEvento p={p} onCerrar={() => setCancelando(false)}

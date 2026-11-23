@@ -262,7 +262,13 @@ export const AYUDAS: Record<string, Ayuda> = {
        + 'al público con poca gente, o en un evento exclusivo en un día público, '
        + 'la línea de arriendo va siempre y no baja de lo que dice Configuración. '
        + 'La gerencia, el encargado de pagos y el administrador pueden pasar por '
-       + 'encima de los dos. Para ofrecer otra opción al mismo cliente usa “Hacer una '
+       + 'encima de los dos. Las condiciones para el cliente —anticipo, saldo, '
+       + 'descuentos, cambios de fecha, cancelación y devolución— tienen su tope '
+       + 'en Configuración: algo más generoso se pide con “✋ Pedir condiciones '
+       + 'especiales…” y lo aprueban ellos mismos. Con el evento encima, el '
+       + 'contrato no ofrece lo que ya no se alcanza a usar: el saldo se paga al '
+       + 'firmar y una cancelación o un cambio de fecha fuera de plazo no van. '
+       + 'Para ofrecer otra opción al mismo cliente usa “Hacer una '
        + 'alternativa”: cuando una gana, las otras pasan solas a “No elegida”.'
   },
 
@@ -371,20 +377,28 @@ export const AYUDAS: Record<string, Ayuda> = {
     cuerpo: [
       'Está ordenada por secciones, con un botón arriba para saltar a cada '
       + 'una: las reservas del sitio, el calendario del panel, las '
-      + 'cotizaciones, los extras y el arriendo, el contrato, los datos de la '
-      + 'empresa y la mantención.',
+      + 'cotizaciones, las condiciones para el cliente, los extras y el arriendo, '
+      + 'los datos de la empresa y la mantención. Las secciones largas van en '
+      + 'grupos, cada uno con su subtítulo.',
+      'Condiciones para el cliente: el anticipo, el saldo, los descuentos, los '
+      + 'cambios de fecha —cuántos y con cuántos días de aviso— y la cancelación '
+      + 'con su devolución. Son lo más generoso que un vendedor puede ofrecer: '
+      + 'cada cotización parte con esto y se puede endurecer, no ablandar. Algo '
+      + 'más generoso se pide en la cotización como condición especial, y lo '
+      + 'aprueba la gerencia general, el encargado de pagos o el administrador.',
       'Extras y arriendo: desde cuántas personas el show ecuestre puede ir sin '
       + 'costo en un día privado, y cuánto se cobra como mínimo, más IVA, cuando '
-      + 'son menos. Y el arriendo mínimo: dos tramos para un día que no está '
-      + 'abierto al público, dos para un evento exclusivo en un día público, y '
-      + 'los días en que no se arrienda en exclusiva. La gerencia general, el '
+      + 'son menos. El arriendo mínimo: dos tramos para un día que no está '
+      + 'abierto al público y dos para un evento exclusivo en un día público. Y '
+      + 'los eventos exclusivos: hasta cuándo se pide liberar un día con reservas, '
+      + 'y los días en que no se arrienda en exclusiva. La gerencia general, el '
       + 'encargado de pagos y el administrador pueden pasar por encima.',
       'Reservas del sitio es lo que ven los clientes: qué días se abre, '
       + 'cuánta gente cabe y hasta cuándo se puede reservar. Esos días se '
       + 'abren solos cada mañana, públicos y con el cupo normal; uno que ya '
-      + 'está en el calendario, cerrado o con otro cupo, no se toca. Cotizaciones y '
-      + 'Contrato son lo que propone cada cotización nueva y lo que dice el '
-      + 'contrato que se imprime.',
+      + 'está en el calendario, cerrado o con otro cupo, no se toca. Cotizaciones es '
+      + 'cómo se trabaja una cotización: su vigencia, el seguimiento y la carpeta '
+      + 'de los comprobantes.',
       'En Mantención, el administrador tiene además «Dejar la base en cero»: '
       + 'borra lo que fueron pruebas —reservas, cotizaciones, clientes, pagos, '
       + 'turnos, ajustes y la bitácora— y conserva el equipo, las cuentas, los productos '
@@ -668,7 +682,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Descuento de la línea',
     texto: [
       'Rebaja solo esta línea. Se puede usar junto con el descuento sobre el total: primero se aplica el de la línea y después el del total.',
-      'Los porcentajes de los botones se cambian en Configuración.'
+      'Los porcentajes de los botones se cambian en Configuración. El más alto es el tope: uno mayor se pide como condición especial, y si se aprueba aparece su botón.'
     ]
   },
   ufCotizacion: {
@@ -682,7 +696,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Descuento sobre el total',
     texto: [
       'Rebaja la cotización completa, encima de los descuentos de cada línea.',
-      'Sale en la hoja del cliente, en el contrato y en el monto de la reserva al ganarla.'
+      'Sale en la hoja del cliente, en el contrato y en el monto de la reserva al ganarla.',
+      'El botón más alto es el tope de Configuración; uno mayor se pide como condición especial.'
     ]
   },
   vistaGerencia: {
@@ -711,7 +726,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   condicionesPago: {
     titulo: 'Condiciones de pago',
     texto: [
-      'En blanco vale lo de Configuración; lo que escribas acá vale solo para esta cotización. Un 0 en el anticipo es "sin anticipo".',
+      'En blanco vale lo de Configuración; lo que escribas acá vale solo para esta cotización. Se puede pedir más anticipo o el saldo antes, no menos: lo de Configuración es el tope, y algo más generoso se pide como condición especial.',
+      'Si el evento ya está más cerca que el plazo del saldo, el contrato dice que todo se paga al firmar.',
       'Se marca ganada con el anticipo pagado, o con el contrato firmado subido. Son las mismas condiciones que imprime el contrato.'
     ]
   },
@@ -818,21 +834,31 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   cambiosFecha: {
     titulo: 'Cambios de fecha',
     texto: [
-      'Cuántas veces el cliente puede mover la fecha. En blanco vale Configuración; un 0 saca la frase del contrato.'
+      'Cuántas veces el cliente puede mover la fecha. En blanco vale Configuración; un 0 saca la frase del contrato. Más que Configuración se pide como condición especial.',
+      'Si Configuración pide un aviso mínimo para cambiar la fecha y el evento ya está más cerca, el contrato no ofrece el cambio.'
     ]
   },
   cancelacionDias: {
     titulo: 'Cancela hasta',
     texto: [
-      'Hasta cuántos días antes del evento el cliente puede cancelar con devolución. Un 0 saca la frase del contrato.',
-      'Al apretar "Cancelar evento", el panel mira esto para proponer cuánto devolver.'
+      'Hasta cuántos días antes del evento el cliente puede cancelar con devolución. En blanco vale Configuración; un 0 saca la frase del contrato.',
+      'Al apretar "Cancelar evento", el panel mira esto para proponer cuánto devolver.',
+      'No puede ser menos aviso que Configuración sin pedirlo como condición especial. Si el evento ya está más cerca que esto, el contrato no ofrece cancelar.'
     ]
   },
   reembolso: {
     titulo: 'Devuelve, % de lo pagado',
     texto: [
-      'Qué parte de lo que el cliente ya pagó se le devuelve si cancela a tiempo.',
-      'Es lo que imprime el contrato y lo que propone "Cancelar evento". Se negocia por cotización.'
+      'Qué parte de lo que el cliente ya pagó se le devuelve si cancela a tiempo. En blanco vale Configuración.',
+      'Es lo que imprime el contrato y lo que propone "Cancelar evento". Se negocia por cotización, hasta el tope de Configuración.'
+    ]
+  },
+  condicionesEspeciales: {
+    titulo: 'Condiciones especiales',
+    texto: [
+      'Lo de Configuración es lo más generoso que un vendedor puede ofrecer: el anticipo, el saldo, los descuentos, los cambios de fecha y la cancelación con su devolución. Lo que se escriba más allá queda en el tope al salir del campo.',
+      'Si el cliente pide algo más —más devolución, menos anticipo, más descuento—, se pide acá con el porqué. Le llega a la gerencia general, al encargado de pagos y al administrador; si lo aprueban, pasa a ser el tope de esta cotización y queda escrito en ella.',
+      'Ellos no tienen tope: lo que dejen por encima de Configuración queda como aprobado por ellos, en la bitácora.'
     ]
   },
   pagosCliente: {

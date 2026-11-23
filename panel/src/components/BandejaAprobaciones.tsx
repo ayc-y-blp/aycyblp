@@ -56,6 +56,10 @@ function respuesta(p: Pendiente, aprobar: boolean, motivo = ''): { url: string; 
     return { url: '/api/equipo/confirmar', cuerpo: { de: p.de, nombre: p.nombre, id: p.id },
       aviso: `Confirmado: ${p.que} de ${p.nombre}` };
   }
+  if (p.tipo === 'condiciones') {
+    return { url: '/api/presupuestos/condiciones', cuerpo: { id: p.id, accion: aprobar ? 'aprobar' : 'rechazar', motivo },
+      aviso: aprobar ? `Aprobado: ya rige en la cotización N° ${p.folio}. Avísale a ${p.pide}.` : `Rechazado: avísale a ${p.pide}` };
+  }
   if (p.tipo === 'cupo') {
     return { url: '/api/fechas/cupo', cuerpo: { fecha: p.fecha, accion: aprobar ? 'aprobar' : 'rechazar' },
       aviso: aprobar ? `Cupo subido a ${p.cupoPedido}. Revisa el equipo del día.` : `Rechazado: el cupo queda en ${p.cupoActual}` };
@@ -124,6 +128,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
 
   /** El pedido corto, en una línea: quién pide qué, para cuándo. */
   const frase = (p: Pendiente) => {
+    // **Condiciones especiales** (2026-11-23): una cotización, no un día.
+    if (p.tipo === 'condiciones') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">condiciones especiales</b> · {p.cliente} · N° {p.folio}</>;
     const dia = <span className="first-letter:uppercase">{enPalabras(p.fecha)}</span>;
     if (p.tipo === 'descuento') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}</>;
     if (p.tipo === 'cupo') return <><b>{p.pide}</b> pide subir el cupo a <b className="text-ambar-texto">{p.cupoPedido}</b> · {dia}</>;
@@ -179,6 +185,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                 : p.tipo === 'pago' ? '✓ Revisado'
                 : p.tipo === 'descuentoVisto' ? '✓ Visto'
                 : p.tipo === 'cuenta' ? '✓ Confirmar'
+                : p.tipo === 'condiciones' ? '✓ Aprobar'
                 : `✓ Ampliar a ${p.ampliarA}`}
             </button>
           ) : null;
@@ -212,7 +219,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   ✕ Rechazar
                 </button>
               )}
-              {p.tipo === 'cuenta'
+              {p.tipo === 'condiciones'
+                ? <a href={`/presupuestos?abrir=${encodeURIComponent(p.id)}`} className="tecla boton min-h-[44px]">Ver la cotización →</a>
+                : p.tipo === 'cuenta'
                 ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
                 : (p.tipo === 'descuento' || p.tipo === 'pago' || p.tipo === 'descuentoVisto') && verReserva
                 ? <button type="button" className="boton min-h-[44px]" onClick={() => verReserva(p)}>Ver la reserva →</button>
@@ -227,6 +236,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   {/* El pago con la misma pastilla de la reserva (`EstadoDelPago`
                       de `PastillaPago`) y su nota al lado, en un renglón: la
                       pastilla parte en la misma vertical en todos los avisos. */}
+                  {p.tipo === 'condiciones' && (
+                    <p className="mt-1 text-[14px] leading-snug text-hueso/80">{p.pedido}</p>
+                  )}
                   {p.tipo === 'pago' && (
                     <p className="mt-1 text-[13px] leading-snug text-hueso/65">
                       {/* En la línea del texto, no en una fila flexible: así la
@@ -269,10 +281,11 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                     {p.tipo === 'descuentoVisto' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'} · ya rige en lo que se cobra</>}
                     {p.tipo === 'cuenta' && p.de === 'socio' && <>Ya se puede cotizar con él. Nació con el trato de partida —5% desde 22, 10% desde 55, 15% desde 77—: míralo en su tarjeta, <a className="text-oro underline" href={`/vendedores?usuario=${encodeURIComponent(p.id ?? '')}`}>Vendedores →</a>, y confírmalo</>}
                     {p.tipo === 'cuenta' && p.de !== 'socio' && <>Ya rige. Antes de transferir, mira la ficha y confirma que los datos están bien</>}
+                    {p.tipo === 'condiciones' && <>Si lo apruebas, pasa a ser el tope de esa cotización y el vendedor ya lo puede ofrecer{p.fecha ? <> · evento el {enPalabras(p.fecha)}</> : null}</>}
                     {p.tipo === 'exclusivo' && <>Cotización N° {p.folio}{p.invitados > 0 && <> · {p.invitados} invitados</>} · ese día hay que mover{' '}
                       <b>{p.reservas} {p.reservas === 1 ? 'reserva' : 'reservas'}</b> · <b>{p.personas}</b> {p.personas === 1 ? 'persona' : 'personas'}</>}
                     {p.cuando && <> · {DE_PAGOS.has(p.tipo) ? 'lo anotó' : 'lo pidió'} {p.tipo === 'cuenta' ? `el ${enPalabras(p.cuando.slice(0, 10))} a las` : 'a las'} {p.cuando.slice(11) || p.cuando}</>}
-                    {p.fecha === hoy() && p.tipo !== 'cuenta' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
+                    {p.fecha === hoy() && p.tipo !== 'cuenta' && p.tipo !== 'condiciones' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
                   </p>
                   {enFila && acciones}
                   </div>
@@ -319,9 +332,11 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                           ? `¿Rechazar? La cotización no se puede ganar como exclusiva${p.pausado ? ' y el día vuelve a venderse' : ''}. ${p.pide} ve el motivo.`
                           : p.tipo === 'descuento'
                           ? `¿Rechazar el ${p.porcentaje}%? Se cobra sin descuento, y avísale a ${p.pide}.`
+                          : p.tipo === 'condiciones'
+                          ? `¿Rechazar? La cotización sigue con los topes de Configuración. ${p.pide} ve el motivo.`
                           : `¿Rechazar? El cupo queda en ${p.tipo === 'cupo' ? p.cupoActual : ''}, y avísale a ${p.pide}.`}
                       </p>
-                      {p.tipo === 'exclusivo' && (
+                      {(p.tipo === 'exclusivo' || p.tipo === 'condiciones') && (
                         <label className="mt-2 block text-[14px]">
                           Motivo
                           <input type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)}
@@ -329,7 +344,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                         </label>
                       )}
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <button type="button" disabled={ocupado || (p.tipo === 'exclusivo' && motivo.trim().length < 3)}
+                        <button type="button" disabled={ocupado || ((p.tipo === 'exclusivo' || p.tipo === 'condiciones') && motivo.trim().length < 3)}
                           className="boton min-h-[44px] !border-rojo-fuerte bg-rojo-fuerte !text-[15px] !font-bold text-tinta disabled:opacity-50"
                           onClick={() => void responder(p, false)}>
                           {ocupado ? 'Guardando…' : 'Sí, rechazar'}

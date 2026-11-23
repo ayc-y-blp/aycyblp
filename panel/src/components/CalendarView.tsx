@@ -31,7 +31,7 @@ import { copiarConAviso } from './AvisoFlotante';
 import AvisoSobrecupo from './AvisoSobrecupo';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
 import { pendientesDeAprobar, pendientesDeCupo, pendientesDeSobrecupo, juntarPendientes, pendientesDePago,
-  pendientesDeDescuentoVisto, type PendienteExclusivo, type PendienteCuenta } from '@/lib/aprobaciones';
+  pendientesDeDescuentoVisto, type PendienteExclusivo, type PendienteCuenta, type PendienteCondiciones } from '@/lib/aprobaciones';
 import AvisosRecepcion from './AvisosRecepcion';
 import { MarcaAhora } from './FechaDia';
 import BandejaAprobaciones from './BandejaAprobaciones';
@@ -158,6 +158,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [firma, setFirma] = useState('');
   /** Los pedidos de liberar un día para un evento exclusivo (`exclusividad`). */
   const [exclusivos, setExclusivos] = useState<PendienteExclusivo[]>([]);
+  /** Las condiciones especiales pedidas (2026-11-23): solo para quien las aprueba. */
+  const [condiciones, setCondiciones] = useState<PendienteCondiciones[]>([]);
   /** Las cuentas y tarifas que pagos tiene que confirmar: vienen solo para `pagar`. */
   const [cuentas, setCuentas] = useState<PendienteCuenta[]>([]);
   /** Qué reservas salieron de una cotización: su pago se revisa por sus cobros. */
@@ -197,6 +199,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         if (d.firma) setFirma(d.firma);
         // Los pedidos de liberar un día: vienen solo para quien decide.
         setExclusivos(d.exclusivos ?? []);
+        setCondiciones(d.condiciones ?? []);
         setCuentas(d.cuentas ?? []);
       })
       .catch((e) => setError(String(e)));
@@ -278,7 +281,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     // le llegan solo a quien tiene `pagar`, en esta misma bandeja.
     const dePagos = puede(rol as Rol, 'pagar')
       ? juntarPendientes(pendientesDePago(reservas, deCotizacion), pendientesDeDescuentoVisto(reservas), cuentas) : [];
-    const descuentos = juntarPendientes(puede(rol as Rol, 'aprobar') ? pendientesDeAprobar(reservas) : [], exclusivos, dePagos);
+    const descuentos = juntarPendientes(puede(rol as Rol, 'aprobar') ? pendientesDeAprobar(reservas) : [], exclusivos, dePagos,
+      condiciones);
     if (!conCupo) return descuentos;
     // **Subir el cupo es del gerente o más arriba** (2026-11-12): los
     // pedidos del encargado y los días sobre su cupo llegan acá.
@@ -286,7 +290,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     const pedidos = pendientesDeCupo(fechasHoja, tomadas);
     const conPedido = new Set(pedidos.map((p) => p.fecha));
     return juntarPendientes(descuentos, pedidos, pendientesDeSobrecupo(dias ?? [], cfg.capacidadMaxima, conPedido));
-  }, [reservas, rol, conCupo, fechasHoja, dias, cfg.capacidadMaxima, exclusivos, cuentas, deCotizacion]);
+  }, [reservas, rol, conCupo, fechasHoja, dias, cfg.capacidadMaxima, exclusivos, cuentas, deCotizacion, condiciones]);
 
   /** Los avisos de la recepción sin resolver, de hoy y de antes (2026-11-13). */
   const conAvisos = puede(rol as Rol, 'asistencia');
