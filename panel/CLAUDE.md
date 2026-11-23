@@ -462,8 +462,11 @@ muy entendible"*:
 - **La sección *Contrato* se fue**: sus tres números son condiciones para el
   cliente, y la ciudad es de la empresa.
 - **Un grupo** (`grupo()` en `ConfigEditor`) es un subtítulo con su raya y sus
-  campos en las mismas dos columnas; lleva `data-grupo` para que la regla de la
-  segunda columna no le quite la raya.
+  campos en las mismas dos columnas. **En el computador el subtítulo va a la
+  izquierda**, en su columna de 9rem: encima, solo en su fila, lo marcaba
+  `revisarEspacio()`. Lleva `data-grupo` para que la regla de la segunda
+  columna no le quite la raya. Dentro de *Show ecuestre* los campos se llaman
+  *Sin costo desde* y *Mínimo bajo ese número*: el grupo ya dice de qué son.
 
 ### Lo de siempre
 

@@ -167,9 +167,14 @@ export default function ConfigEditor() {
    * organizarlo de forma muy buena y muy entendible"*). Un subtítulo con su
    * raya y sus campos debajo, en las mismas dos columnas de la sección.
    */
+  // En el computador el subtítulo va a la izquierda de sus campos, en su
+  // columna (regla *el espacio se usa bien*: solo en su fila dejaba media
+  // pantalla vacía); en el celular, encima.
   const grupo = (titulo: string, cuerpo: React.ReactNode) => (
-    <div key={titulo} data-grupo className="border-t-2 border-hueso/15 pb-1 pt-3 first:border-t-0 lg:col-span-2">
-      <h3 className="text-[15px] font-bold text-hueso/90">{titulo}</h3>
+    <div key={titulo} data-grupo
+      className="border-t-2 border-hueso/15 pb-1 pt-3 first:border-t-0 lg:col-span-2 lg:grid
+                 lg:grid-cols-[9rem_1fr] lg:gap-x-6 lg:pb-0 lg:pt-0">
+      <h3 className="text-[15px] font-bold text-hueso/90 lg:pt-4">{titulo}</h3>
       <div className="lg:grid lg:grid-cols-2 lg:gap-x-10 lg:[&>*:nth-child(2)]:border-t-0">{cuerpo}</div>
     </div>
   );
@@ -338,12 +343,12 @@ export default function ConfigEditor() {
             'el administrador pueden pasar por encima.',
       cuerpo: <>
         {grupo('Show ecuestre', <>
-        {campo('showGratisDesde', 'Show ecuestre sin costo desde',
+        {campo('showGratisDesde', 'Sin costo desde',
           'En un día privado o exclusivo, desde cuántas personas de la cotización se puede ' +
           'dejar el show incluido sin costo. En un día público va siempre incluido. En 0 ' +
           'no hay mínimo.',
           numerico('showGratisDesde', config.showGratisDesde, (n) => ({ showGratisDesde: n }), { min: 0, max: 100000, unidad: 'personas' }))}
-        {campo('showMinimo', 'Show ecuestre: mínimo bajo ese número',
+        {campo('showMinimo', 'Mínimo bajo ese número',
           'Lo menos que se cobra por el show cuando son menos personas, neto: se le suma el ' +
           'IVA. Si el show no va en la cotización, no se cobra. En 0 no hay mínimo.',
           numerico('showMinimo', config.showMinimo, (n) => ({ showMinimo: n }), { min: 0, max: 100000000, unidad: '+ IVA' }))}

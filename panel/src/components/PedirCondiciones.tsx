@@ -92,13 +92,10 @@ export default function PedirCondiciones({ id, cliente, topes, antes, onCerrar, 
               <div key={campo} className="contents">
                 <label htmlFor={`pedir-${campo}`} className="text-[15px] font-semibold">{nombre}</label>
                 <div className="min-w-0">
-                  <span className="flex items-center gap-2">
-                    <input id={`pedir-${campo}`} type="number" min={0} max={max} inputMode="numeric"
-                      value={valores[campo] ?? ''} className={`${CAJA} w-[5.5rem] shrink-0`}
-                      onChange={(e) => setValores((v) => ({ ...v, [campo]: e.target.value }))} />
-                    <span className="text-[14px] text-hueso/70 sm:hidden">{unidad}</span>
-                  </span>
-                  <span className="mt-1 block text-[14px] leading-snug text-hueso/70 sm:hidden">{hoy}</span>
+                  <input id={`pedir-${campo}`} type="number" min={0} max={max} inputMode="numeric"
+                    value={valores[campo] ?? ''} className={`${CAJA} w-[5.5rem]`}
+                    onChange={(e) => setValores((v) => ({ ...v, [campo]: e.target.value }))} />
+                  <span className="mt-1 block text-[14px] leading-snug text-hueso/70 sm:hidden">{unidad} · {hoy}</span>
                 </div>
                 <span className="hidden text-[14px] leading-snug text-hueso/70 sm:block">{unidad} · {hoy}</span>
               </div>
