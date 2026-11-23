@@ -219,6 +219,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
     la bailarina y la bandera enteros.
   - **La foto del karting**, con los dos karts enteros, en Actividades
     y en los tres landings (#329).
+  - **Promociones con seis ofertas que se eligen en la cabecera** (fin de
+    año y los cinco productos de empresa): PR abierto, **con precios y
+    mínimos de ejemplo**, que no se mergea hasta que el cliente los confirme
+    y defina la condición especial de cada uno. Ver `CLAUDE.md`, "Seis
+    promociones que se eligen en la cabecera".
   - **#323, el título de los bloques foto + texto** (`.split-titulo`), más
     grande en el computador, en la portada, Actividades y Eventos.
   - El detalle de cada uno, en `CLAUDE.md`, sección "Sitio público".
