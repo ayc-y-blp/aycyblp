@@ -242,7 +242,24 @@ export const COL_PRESUPUESTOS = {
    * pedidas`), y al aprobarla se renueva en el acto. La escriben solo el
    * servidor (`/api/presupuestos` y `/api/presupuestos/condiciones`).
    */
-  renovaciones: 'Renovaciones'
+  renovaciones: 'Renovaciones',
+  /**
+   * **La agenda del vendedor** (2026-11-23, lo pidió el cliente: *"poder
+   * elegir en qué fecha recontactar al cliente… y que muestra las
+   * cotizaciones que se deberían redactar y su fecha límite"*). Ver
+   * `lib/agenda.ts`.
+   *
+   * `Recontactar el`: el día en que el vendedor quedó en volver a hablarle.
+   * Lo escribe solo `/api/presupuestos/notas` (al anotar), en todas las
+   * alternativas vivas del grupo. En blanco, una cotización mandada se
+   * recuerda sola a los días de Configuración (`seguimientoDe()`).
+   *
+   * `Redactar antes del`: para cuándo se le prometió la cotización a un
+   * candidato o un borrador. Lo elige el vendedor en el paso Evento; se
+   * cumple al mandarla.
+   */
+  recontactar: 'Recontactar el',
+  redactarAntes: 'Redactar antes del'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -408,6 +425,9 @@ export interface Presupuesto {
   acuerdosRevisados?: string;
   /** Cuántas veces se renovó la vigencia: ver `COL_PRESUPUESTOS.renovaciones`. */
   renovaciones?: number;
+  /** La agenda: ver `COL_PRESUPUESTOS.recontactar` y `redactarAntes`. `AAAA-MM-DD` o vacío. */
+  recontactar?: string;
+  redactarAntes?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -1019,6 +1039,8 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       condicionesEspeciales: en(f, i.condicionesEspeciales).trim(),
       acuerdosRevisados: en(f, i.acuerdosRevisados).trim(),
       renovaciones: Math.max(0, aEntero(en(f, i.renovaciones))),
+      recontactar: esFecha(en(f, i.recontactar).slice(0, 10)) ? en(f, i.recontactar).slice(0, 10) : '',
+      redactarAntes: esFecha(en(f, i.redactarAntes).slice(0, 10)) ? en(f, i.redactarAntes).slice(0, 10) : '',
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1099,6 +1121,8 @@ export function filaPresupuesto(
   poner(i.condicionesEspeciales, p.condicionesEspeciales ?? '');
   poner(i.acuerdosRevisados, p.acuerdosRevisados ?? '');
   poner(i.renovaciones, p.renovaciones ? String(p.renovaciones) : '');
+  poner(i.recontactar, p.recontactar ?? '');
+  poner(i.redactarAntes, p.redactarAntes ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

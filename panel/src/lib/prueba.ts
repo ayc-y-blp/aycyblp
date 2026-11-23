@@ -1867,14 +1867,28 @@ ok(puede(ROL.encargado, 'reservas') && !puede(ROL.encargado, 'dias') && puede(RO
    'el encargado hace el día a día y anota reservas, pero no agrega ni edita fechas (2026-11-12)');
 ok(!puede(ROL.encargado, 'configurar') && !puede(ROL.encargado, 'puestos') &&
    !puede(ROL.encargado, 'links') && !puede(ROL.encargado, 'mantencion'),
-   'pero no toca precios, puestos, links ni mantención');
+   'pero no toca precios, puestos ni mantención, ni apaga un link');
 
 // **La planilla semanal es del encargado** (2026-10-29): mandarla, crear su
 // link y renovarlo cuando alguien deja el equipo. Lo que no tiene es
 // `links`, que es lo que apaga la planilla del todo y administra los links
 // personales de cada trabajador. Las dos cosas juntas son la prueba.
 ok(puede(ROL.encargado, 'planilla') && !puede(ROL.encargado, 'links'),
-   'el encargado manda y renueva la planilla, pero no toca los links personales');
+   'el encargado manda y renueva la planilla, pero no la apaga');
+// **Y desde el 2026-11-23, lo mismo con el link personal** (lo pidió el
+// cliente: *"agregar enviar link personal a encargado de turno"*): lo crea,
+// lo copia y lo renueva (`enviarLink`), y quitarlo sigue en `links`.
+ok(puede(ROL.encargado, 'enviarLink') && puede(ROL.operaciones, 'enviarLink')
+   && puede(ROL.pagos, 'enviarLink') && puede(ROL.gerencia, 'enviarLink') && puede(ROL.admin, 'enviarLink'),
+   'los dos encargados, pagos, la gerencia y el administrador le mandan su link personal a alguien del equipo');
+ok(!puede(ROL.vendedor, 'enviarLink') && !puede(ROL.anfitrion, 'enviarLink'),
+   'el vendedor y la anfitriona no: no ven al equipo');
+ok(NO_SE_LEE_CON_GERENCIA.includes('enviarLink'),
+   'la vista gerencia no da links: es acceso, no información');
+// El de operaciones tiene todo lo del de turno, más lo suyo: así lo
+// describe su rol (`roles.ts`). Darle algo solo al de turno lo dejaba al revés.
+ok((Object.keys(PERMISOS) as Accion[]).every((a) => !puede(ROL.encargado, a) || puede(ROL.operaciones, a)),
+   'el encargado de operaciones puede todo lo del encargado de turno');
 ok(puede(ROL.admin, 'planilla'), 'y el administrador también la manda');
 // Quien paga TAMBIÉN la manda, desde el 2026-11-01: tiene todo lo del
 // encargado. El trabajador no — su acceso no pasa por la tabla de permisos.
@@ -2280,7 +2294,7 @@ ok(puede(ROL.pagos, 'links') && puede(ROL.pagos, 'puestos')
 // **Y desde el 2026-11-12 la costura sirvió**: el encargado de turno llena
 // la ficha completa (`sueldos`) y sigue sin los links.
 ok(puede(ROL.encargado, 'sueldos') && !puede(ROL.encargado, 'links'),
-   'el encargado de turno llena la ficha completa, sueldos y cuenta, pero no maneja links');
+   'el encargado de turno llena la ficha completa, sueldos y cuenta, y manda el link sin poder apagarlo');
 ok(puede(ROL.pagos, 'pagar'), 'quien paga puede registrar que pagó');
 ok(!puede(ROL.encargado, 'pagar'),
    'el encargado NO: ve el informe, pero declarar que una plata salió es otra cosa');
@@ -2405,7 +2419,7 @@ ok(!puede(ROL.vendedor, 'equipo') && !puede(ROL.vendedor, 'extras'),
 ok(puede(ROL.vendedor, 'presupuestos'),
    'cotiza desde el 2026-11-10: es su trabajo (ve todas, edita solo las suyas)');
 ok(!puede(ROL.vendedor, 'informe') && !puede(ROL.vendedor, 'pagar')
-   && !puede(ROL.vendedor, 'sueldos') && !puede(ROL.vendedor, 'links'),
+   && !puede(ROL.vendedor, 'sueldos') && !puede(ROL.vendedor, 'links') && !puede(ROL.vendedor, 'enviarLink'),
    'nada de plata, y ningún link personal de nadie');
 
 // **Las cuatro rutas que se contentaban con `ver` y no devuelven reservas.**
@@ -4092,7 +4106,8 @@ console.log('\nEventos del CRM');
   // —con una advertencia—, pero corregirlo después ya no es suyo.
   ok(puede(ROL.admin, 'corregir') && puede(ROL.pagos, 'corregir'),
      'corrigen el administrador y quien paga');
-  ok(!puede(ROL.encargado, 'corregir'), 'el encargado no corrige un día cerrado');
+  // **Desde el 2026-11-23 el encargado de turno también corrige** (lo pidió el cliente).
+  ok(puede(ROL.encargado, 'corregir'), 'el encargado de turno corrige un día cerrado');
   ok(puede(ROL.admin, 'cerrar') && puede(ROL.encargado, 'cerrar') && puede(ROL.pagos, 'cerrar'),
      'cierran el día los tres roles del panel, el encargado incluido');
 }
@@ -5188,7 +5203,9 @@ console.log('\nVista gerencia');
   ok(puedeVer(ROL.encargado, 'configurar', true) && !puede(ROL.encargado, 'configurar'),
      'el encargado con vista gerencia ve la configuración; guardarla sigue pidiendo el rol');
   ok(!puedeVer(ROL.vendedor, 'informe', false), 'sin la vista gerencia, el vendedor no ve el informe');
-  ok(NO_SE_LEE_CON_GERENCIA.every((a) => !puedeVer(ROL.encargado, a, true)),
+  // Con el vendedor, que no tiene ninguno de los cuatro: el encargado manda
+  // links desde el 2026-11-23, por su rol y no por la vista.
+  ok(NO_SE_LEE_CON_GERENCIA.every((a) => !puedeVer(ROL.vendedor, a, true)),
      'ni con vista gerencia se ven las cuentas, la mantención ni los links personales');
   ok(!puedeVer(ROL.ninguno, 'ver', true), 'sin sesión, la gerencia no abre nada');
   const conG = await firmarSesion({ usuario: 'Felipe', rol: ROL.pagos, gerencia: true }, SECRETO_SESION, AHORA);
@@ -5751,8 +5768,8 @@ console.log('\nLa Lista de cotizaciones');
   ok(base.length === 5 && r.enCarrera.n === 2 && r.enCarrera.gente === 20
      && r.cotizado.monto === 100000 && r.cotizado.n === 1 && r.cotizado.borradores === 1 && r.cotizado.montoBorradores === 50000
      && r.ganado.monto === 300000 && r.ganado.n === 1 && r.tasa.pct === 50
-     && r.porCobrar.monto === 200000 && r.porCobrar.n === 1 && r.porSeguir === 1,
-     'las tarjetas: en carrera, cotizado (solo lo mandado), ganado, tasa de cierre, por seguir y por cobrar; las alternativas una vez');
+     && r.porCobrar.monto === 200000 && r.porCobrar.n === 1,
+     'las tarjetas: en carrera, cotizado (solo lo mandado), ganado, tasa de cierre y por cobrar; las alternativas una vez');
   const paso = L.proximosPasos(ps[0], ctx)[0];
   ok(paso?.texto === 'sin respuesta hace 10 días' && paso.tono === 'rojo'
      && L.proximosPasos(ps[3], ctx).map((x) => x.texto).join() === 'falta cobrar $200.000'
@@ -6880,6 +6897,101 @@ console.log('\nDos empresas: la dirección, las cuentas y el pase');
     'la empresa de una petición sale de su dirección');
   if (antes === undefined) delete process.env.AYC_GOOGLE_SHEET_ID; else process.env.AYC_GOOGLE_SHEET_ID = antes;
   ok(E.empresaPorId(M.AYC).id === M.CASA, 'apagada, pedirla por su id entrega la casa');
+}
+
+console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
+{
+  const A = await import('./agenda.ts');
+  const N = await import('./notas.ts');
+  const L = await import('./listaCotizaciones.ts');
+  const HOY = '2026-11-13';
+  const cfg = { seguimientoDias: 5, avisoEvento: 14 };
+  const cot = (x: Record<string, unknown>) => ({ id: 'P', grupo: '', estado: 'Borrador', fecha: '2026-12-20', periodo: '',
+    creado: '2026-11-01 10:00', creadoPor: 'Jorge', socio: '', idReserva: '', invitados: 0, validoHasta: '', enviada: '',
+    ultimoSeguimiento: '', descuento: 0, tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', cliente: 'X',
+    recontactar: '', redactarAntes: '', seguimientoDias: null, avisoEvento: null, ...x } as unknown as Presupuesto);
+
+  // El próximo contacto: lo elegido manda; si no, el recordatorio de siempre.
+  const mandada = cot({ id: 'M', estado: 'Enviada', enviada: '2026-11-03', validoHasta: '2026-11-30' });
+  const auto = A.proximoContacto(mandada, HOY, cfg);
+  ok(auto?.motivo === 'sinRespuesta' && auto.fecha === HOY && auto.dias === 10,
+     'una mandada sin respuesta hace 10 días se contacta hoy, como decía Esperando respuesta');
+  const elegida = A.proximoContacto({ ...mandada, recontactar: '2026-11-17' } as Presupuesto, HOY, cfg);
+  ok(elegida?.motivo === 'elegida' && elegida.fecha === '2026-11-17',
+     'si el vendedor eligió el día, ese día manda sobre el recordatorio de siempre');
+  const prox = A.proximoContacto(cot({ id: 'R', estado: 'Enviada', enviada: '2026-11-10', validoHasta: '2026-11-30' }), HOY, cfg);
+  ok(prox?.fecha === '2026-11-15' && prox.motivo === 'sinRespuesta',
+     'una mandada hace 3 días se recuerda sola en 2 días más (los 5 de Configuración)');
+  ok(A.proximoContacto(cot({ estado: 'Perdida', recontactar: '2026-11-14' }), HOY, cfg) === null
+     && A.proximoContacto(cot({ estado: 'Cancelada', recontactar: '2026-11-14' }), HOY, cfg) === null,
+     'una perdida o cancelada no se contacta, aunque tenga día');
+  ok(A.proximoContacto(cot({ estado: 'Ganada', idReserva: 'R1', fecha: '2026-11-10', recontactar: '2026-11-14' }), HOY, cfg) === null,
+     'una ganada cuyo evento ya pasó no se recuerda');
+
+  // La agenda: una fila por grupo, lo atrasado primero, por redactar con su plazo.
+  const lista = [
+    mandada,
+    cot({ id: 'E2', grupo: 'M', estado: 'Enviada', enviada: '2026-11-03', validoHasta: '2026-11-30', recontactar: '2026-11-12' }),
+    cot({ id: 'C1', estado: 'Candidato', redactarAntes: '2026-11-12', cliente: 'Beta' }),
+    cot({ id: 'C2', estado: 'Borrador', redactarAntes: '2026-11-15', cliente: 'Alfa' }),
+    cot({ id: 'C3', estado: 'Borrador', cliente: 'Gamma' }),
+    cot({ id: 'C4', estado: 'Candidato', recontactar: '2026-11-13', cliente: 'Delta' }),
+    cot({ id: 'L', estado: 'Enviada', enviada: '2026-11-12', validoHasta: '2026-11-30', recontactar: '2026-12-01' })
+  ];
+  const ag = A.agendaDe(lista, HOY, cfg);
+  ok(ag.contactar.length === 2 && ag.contactar[0].p.id === 'E2' && ag.contactar[0].cuando === 'atrasado'
+     && ag.contactar[1].p.id === 'C4' && ag.contactar[1].cuando === 'hoy',
+     'contactar: una fila por grupo (la A y la B juntas, con el día más próximo), lo atrasado primero, y nada más allá de 7 días');
+  ok(ag.redactar.map((x) => x.p.id).join() === 'C1,C2,C4,C3'
+     && ag.redactar[0].cuando === 'atrasado' && ag.redactar[1].cuando === 'proximo' && ag.redactar[2].cuando === 'sinPlazo',
+     'por redactar: los candidatos y borradores por su plazo prometido, los sin plazo al final');
+  const cuentas = A.cuentasDeHoy(ag);
+  ok(cuentas.hoy === 3 && cuentas.atrasadas === 2 && cuentas.semana === 1,
+     'para hoy cuenta lo atrasado y lo de hoy, de las dos listas');
+  ok(A.fraseDe(ag.contactar[0], HOY).texto === 'Quedaste en contactarlo el jue 12 nov (hace 1 día)'
+     && A.fraseDe(ag.redactar[1], HOY).texto === 'Mandarla antes del dom 15 nov'
+     && A.fraseDe({ p: mandada, tipo: 'contactar', fecha: HOY, cuando: 'hoy', motivo: 'sinRespuesta', dias: 10 }, HOY).texto
+        === 'Mandada hace 10 días sin respuesta',
+     'cada fila dice qué toca y desde cuándo, y el recordatorio de siempre dice lo mismo de antes');
+  ok(A.fechaDeAgenda('2026-11-12', HOY) === null && A.fechaDeAgenda('', HOY) === '' && A.fechaDeAgenda('2026-11-20', HOY) === '2026-11-20',
+     'una fecha de la agenda es de hoy en adelante, o ninguna');
+
+  // La Lista: el próximo paso y la tarjeta de la agenda.
+  const ctx = { hoy: HOY, todas: lista, cobros: [], lineas: [], ganadaEl: {}, seguimiento: cfg };
+  ok(L.proximosPasos(lista[5], ctx)[0]?.texto === 'contactar hoy' && L.proximosPasos(lista[2], ctx).some((x) => x.texto === 'mandarla: prometida el jue 12 nov')
+     && L.proximosPasos(lista[4], ctx).some((x) => x.texto === 'sin mandar'),
+     'la fila de la lista dice a quién contactar hoy y qué cotización prometida falta mandar');
+  ok(L.tocaHoy(lista[2], ctx) && L.tocaHoy(lista[5], ctx) && !L.tocaHoy(lista[3], ctx) && !L.tocaHoy(lista[6], ctx),
+     'el filtro de la agenda es lo que toca hoy');
+
+  // Las notas: quién las lee, por día, y quién las corrige.
+  const filas = [
+    ['ID', 'ID Presupuesto', 'ID Cliente', 'Cuándo', 'Quién', 'Medio', 'Nota'],
+    ['N-1', 'M', 'C-0001', '2026-11-12 10:00', 'Jorge', 'llamada', 'Lo está pensando'],
+    ['N-2', 'M', 'C-0001', '2026-11-13 09:30', 'Jorge', 'WhatsApp', 'Pidió cambiar el menú'],
+    ['N-3', 'Z', 'C-0002', '2026-11-13 11:00', 'Daniela', '', 'Otra'],
+    ['N-4', 'M', 'C-0001', '2026-11-13 12:00', 'Jorge', '', '']
+  ];
+  const notas = N.leerNotasDe(filas);
+  ok(notas.length === 3 && notas[0].medio === 'Llamada' && notas[2].medio === '',
+     'una nota sin texto no cuenta, y el medio se lee sin importar mayúsculas');
+  ok(N.filaNota(filas[0], { ...notas[0] }).join('|') === 'N-1|M|C-0001|2026-11-12 10:00|Jorge|Llamada|Lo está pensando',
+     'una nota se escribe en sus columnas');
+  const cots = [{ id: 'M', grupo: '', creadoPor: 'Jorge' }, { id: 'Z', grupo: '', creadoPor: 'Daniela' }];
+  ok(N.notasVisibles(notas, cots, 'vendedor', 'Jorge').map((n) => n.id).join() === 'N-1,N-2'
+     && N.notasVisibles(notas, cots, 'gerencia', 'Rodrigo').length === 3
+     && N.notasVisibles(notas, cots, 'pagos', 'Verónica').length === 0
+     && N.notasVisibles(notas, cots, 'gerente', 'Marcela').length === 0,
+     'las notas las leen su vendedor y la gerencia: pagos y operaciones no');
+  ok(N.puedeVerNotas('admin', 'Paula', 'Jorge') && N.puedeVerNotas('vendedor', 'Jorge', 'Jorge')
+     && !N.puedeVerNotas('vendedor', 'Daniela', 'Jorge'),
+     'el administrador también las lee; otro vendedor no');
+  const dias = N.notasPorDia(N.notasDelGrupo(notas, 'M'));
+  ok(dias.length === 2 && dias[0][0] === '2026-11-13' && dias[1][0] === '2026-11-12',
+     'el historial va por día, el más nuevo primero');
+  ok(N.sePuedeCorregir(notas[1], 'Jorge', HOY) && !N.sePuedeCorregir(notas[0], 'Jorge', HOY)
+     && !N.sePuedeCorregir(notas[1], 'Daniela', HOY),
+     'una nota la corrige su autor el mismo día; después es historia');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

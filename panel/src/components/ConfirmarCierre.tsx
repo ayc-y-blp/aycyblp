@@ -6,7 +6,8 @@
  * Cierra el encargado —es quien vivió el día y quien sabe si está todo—,
  * pero *"tiene que advertir muy bien: ¿está seguro? Ahora está cerrando el
  * día… ¿controlaste que todos los detalles están ingresados?"*. Después de
- * cerrar, cualquier problema pasa por quien hace los pagos.
+ * cerrar, cambiar algo es corregirlo: la lista de lo que cambió queda en la
+ * bitácora. Desde el 2026-11-23 eso también lo puede el encargado.
  *
  * Por eso no es un `confirm()` de una línea, que se acepta sin leer: es una
  * ventana con **la lista de lo que se está declarando**, cada cosa con su
@@ -67,10 +68,9 @@ export default function ConfirmarCierre({ fecha, puntos, cerrando, onCerrar, onV
       </ul>
 
       <p className="mt-4 rounded-xl border-2 border-rojo/40 bg-rojo/5 px-3 py-2.5 text-[15px]">
-        <strong>Después de cerrar ya no se puede cambiar nada.</strong> Si algo
-        quedó mal, solo el encargado de operaciones, quien hace los pagos o la
-        gerencia lo puede corregir. Queda anotado
-        que lo cerraste tú, con la hora.
+        <strong>Después de cerrar, cambiar algo es corregir el día:</strong> se
+        ve la lista de lo que cambia, se confirma con una casilla y queda en la
+        bitácora. Queda anotado que lo cerraste tú, con la hora.
       </p>
 
       <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

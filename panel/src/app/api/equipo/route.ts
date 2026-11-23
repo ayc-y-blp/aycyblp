@@ -81,7 +81,10 @@ export const GET = conLecturas([HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HO
     // Los sueldos se VEN también con vista gerencia; guardarlos sigue
     // pidiendo el rol (el `PUT` de abajo descarta lo que no puede pisar).
     const verSueldos = puedeVer(rol, 'sueldos', gerencia);
-    const verLinks = puede(rol, 'links');
+    // El link personal lo recibe quien lo manda (`enviarLink`, también el
+    // encargado de turno desde el 2026-11-23); quitarlo es de `links`.
+    const verLinks = puede(rol, 'enviarLink');
+    const quitarLinks = puede(rol, 'links');
     const editarPuestos = puede(rol, 'puestos');
     // Si puede corregir un día cerrado. Solo decide qué botón se dibuja: la
     // regla de verdad la vuelve a comprobar cada ruta que escribe un día.
@@ -90,7 +93,7 @@ export const GET = conLecturas([HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HO
     return NextResponse.json({
       puestos,
       trabajadores: recortada(trabajadores, verLinks, verSueldos),
-      turnos, cierres, extras, verSueldos, verLinks, editarPuestos, puedeCorregir, puedeCerrar,
+      turnos, cierres, extras, verSueldos, verLinks, quitarLinks, editarPuestos, puedeCorregir, puedeCerrar,
       // Quién tiene turnos y no está en la lista. Pasa al renombrar a
       // alguien que ya estaba asignado; el panel lo muestra en vez de que
       // se descubra cuando el conteo del día no cuadre.
@@ -117,7 +120,12 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
   // tampoco los escribe, y lo que mande el navegador se descarta a favor de
   // lo que ya había. Ver `recortada()`.
   const verSueldos = puede(rol, 'sueldos');
-  const verLinks = puede(rol, 'links');
+  // **El token del navegador se acepta solo de quien tiene `links`**: con él
+  // se puede apagar un link (dejarlo en blanco), y eso no es de quien solo
+  // los manda. Los demás arrastran el guardado. La respuesta sí lo lleva
+  // para quien lo manda (`enviarLink`), para que no se pierda en pantalla.
+  const aceptaToken = puede(rol, 'links');
+  const verLinks = puede(rol, 'enviarLink');
   try {
     const cuerpo = await req.json();
     const salida: { puestos?: Puesto[]; trabajadores?: Trabajador[] } = {};
@@ -142,8 +150,9 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
     }
 
     if (Array.isArray(cuerpo?.trabajadores)) {
-      // Los tokens que vengan del navegador se IGNORAN salvo que escriba el
-      // administrador. Para los demás se arrastra el que ya estaba, buscado
+      // Los tokens que vengan del navegador se IGNORAN salvo que escriba
+      // quien tiene `links` (el administrador, pagos y la gerencia; no el
+      // encargado, que solo los manda). Para los demás se arrastra el que ya estaba, buscado
       // por nombre: así guardar la lista no le borra el acceso a nadie.
       // Se arrastra la ficha entera anterior, no solo el token: los sueldos
       // también son del administrador, y un encargado guardando la lista no
@@ -165,7 +174,7 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
           // blanco de la planilla, y por el mismo motivo: existe la fila
           // porque alguien agregó a esa persona al equipo.
           activo: t?.activo === undefined ? true : esSi(t.activo),
-          token: verLinks
+          token: aceptaToken
             ? String(t?.token ?? '').trim()
             : (previos.get(normalizar(nombre))?.token ?? ''),
           // La modalidad la fija el administrador, igual que los montos:

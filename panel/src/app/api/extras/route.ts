@@ -46,12 +46,13 @@ export const GET = conLecturas([HOJA_COLABORADORES, HOJA_ACTIVIDADES, HOJA_CIERR
     ]);
     const { rol, gerencia } = await quienEs(req);
     const verSueldos = puedeVer(rol, 'sueldos', gerencia);
-    // **El token lo recibe solo quien administra los links**, igual que en Equipo.
-    const verLinks = puede(rol, 'links');
+    // **El token lo recibe solo quien manda los links** (`enviarLink`),
+    // igual que en Equipo. Quitarlos, solo quien tiene `links`.
+    const verLinks = puede(rol, 'enviarLink');
     const conLink = (lista: typeof colaboradores) => lista.map((c) => ({ ...c, token: verLinks ? c.token : '' }));
     return NextResponse.json({
       colaboradores: conLink(verSueldos ? colaboradores : sinPlata(colaboradores)),
-      verLinks,
+      verLinks, quitarLinks: puede(rol, 'links'),
       extras, cierres,
       verSueldos,
       puedeCorregir: puede(rol, 'corregir')
@@ -121,7 +122,7 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
                `${limpia.filter((c) => c.activo).length} activos` });
     return NextResponse.json({
       colaboradores: (verSueldos ? limpia : sinPlata(limpia))
-        .map((c) => ({ ...c, token: puede((quien).rol as Rol, 'links') ? c.token : '' }))
+        .map((c) => ({ ...c, token: puede((quien).rol as Rol, 'enviarLink') ? c.token : '' }))
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

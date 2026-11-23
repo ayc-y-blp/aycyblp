@@ -26,7 +26,7 @@ import { Aviso } from './CalendarView';
 import CotizacionDialogo, { type DatosCotizar } from './CotizacionDialogo';
 import {
   estadoVisible, folioDe, lineasDe, totalDe, gentePosible, cuentaComoPosible, cuentaEnElCalendario,
-  porVencer, vencidoSinCerrar, diasParaVencer, ESTADO_PRESUPUESTO, seguimientoDe,
+  porVencer, vencidoSinCerrar, diasParaVencer, ESTADO_PRESUPUESTO,
   type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import { estaCerrado, esPrivada, esExclusiva } from '@/lib/columnas';
@@ -37,7 +37,10 @@ import SeCayo from './SeCayo';
 import { avisosDeCobro, porRevisar } from '@/lib/cobros';
 import { faltaDevolver } from '@/lib/cancelacion';
 import { puede, puedeTocarPresupuesto, esSuya, ROL, type Rol } from '@/lib/auth';
-import EsperandoRespuesta, { type PorSeguir } from './EsperandoRespuesta';
+import Agenda from './Agenda';
+import NotasCotizacion from './NotasCotizacion';
+import { agendaDe, paraHoy, type ItemAgenda } from '@/lib/agenda';
+import { puedeVerNotas } from '@/lib/notas';
 import type { Ocupacion } from '@/lib/tipos';
 import PuntoDia, { PuntoYPalabra } from './PuntoDia';
 import FechaDia, { MarcaAhora, MARCO_HOY } from './FechaDia';
@@ -129,6 +132,8 @@ export default function CotizacionesVista() {
   /** La ventana: una cotización existente, o una nueva (con fecha opcional). */
   /** La cotización a la que se le está diciendo *Se cayó* desde la lista. */
   const [cayendo, setCayendo] = useState<Presupuesto | null>(null);
+  /** Las notas abiertas desde una fila de la agenda (2026-11-23). */
+  const [anotando, setAnotando] = useState<Presupuesto | null>(null);
   const [abierta, setAbierta] = useState<
     { p: Presupuesto | null; fecha?: string; cliente?: string; paso?: number } | null>(null);
   /**
@@ -260,23 +265,30 @@ export default function CotizacionesVista() {
    */
   const propias = mias;
   const pronto = propias.filter((p) => porVencer(p, hoy));
-  // **El seguimiento** (2026-11-11): lo mandado que espera respuesta. De
-  // cada grupo de alternativas, una sola tarjeta.
+  // **La agenda** (2026-11-23, `lib/agenda.ts`): reemplaza a *Esperando
+  // respuesta*, que se fusionó acá. Lo de hoy de la cuenta va en *Tus
+  // pendientes*; la agenda entera, en la Lista → *🗓 Agenda*.
   const cfgSeg = { seguimientoDias: datos.seguimiento?.dias ?? 5, avisoEvento: datos.seguimiento?.antesEvento ?? 14 };
-  const seguimientoDeLista = (lista: Presupuesto[]) => {
-    const salida: PorSeguir[] = [];
-    const gruposVistos = new Set<string>();
-    for (const p of lista) {
-      const s = seguimientoDe(p, hoy, cfgSeg);
-      if (!s || gruposVistos.has(grupoDe(p))) continue;
-      gruposVistos.add(grupoDe(p));
-      salida.push({ p, ...s, puedeTocar: puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor) });
-    }
-    return salida.sort((a, b) => (a.motivo === b.motivo ? 0 : a.motivo === 'eventoCerca' ? -1 : 1));
-  };
-  const porSeguir = seguimientoDeLista(propias);
-  // La marca de la tarjeta del día sigue a lo que se está mirando.
-  const seguirIds = new Set(seguimientoDeLista(visibles).map((x) => grupoDe(x.p)));
+  const agendaMia = agendaDe(propias, hoy, cfgSeg);
+  const deHoyMia = [...agendaMia.contactar, ...agendaMia.redactar].filter(paraHoy);
+  // La marca de la tarjeta del día sigue a lo que se está mirando: a quién
+  // hay que contactar hoy por una cotización de ese día.
+  const seguirIds = new Set(agendaDe(visibles, hoy, cfgSeg).contactar.filter(paraHoy).map((x) => grupoDe(x.p)));
+  const notasVisibles = datos.notas ?? [];
+  const notasPorGrupo = new Map<string, number>();
+  for (const n of notasVisibles) notasPorGrupo.set(n.presupuesto, (notasPorGrupo.get(n.presupuesto) ?? 0) + 1);
+  const anotadasHoy = new Set(notasVisibles.filter((n) => n.quien === datos.usuario && n.cuando.slice(0, 10) === hoy)
+    .map((n) => n.presupuesto)).size;
+  /** La agenda dibujada, con los botones de cada fila: la misma en la Lista y en *Tus pendientes*. */
+  const verAgenda = (agenda: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }, soloHoy = false) => (
+    <Agenda agenda={agenda} hoy={hoy} todas={datos.presupuestos} notasPorGrupo={notasPorGrupo}
+      soloHoy={soloHoy} anotadasHoy={anotadasHoy}
+      puedeTocar={(p) => puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor)}
+      puedeAnotar={(p) => alternativasDe(p, datos.presupuestos).some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor))}
+      onAbrir={(p, paso) => setAbierta({ p, paso: paso ?? 4 })}
+      onNotas={(p) => setAnotando(p)}
+      onCambio={() => void cargar()} />
+  );
   const vencidas = propias.filter((p) => vencidoSinCerrar(p, hoy));
   // **Los avisos de plata** (2026-11-10): anticipo pagado sin ganar, y el
   // saldo de una ganada que vence pronto o ya venció. Ver `avisosDeCobro()`.
@@ -473,7 +485,7 @@ export default function CotizacionesVista() {
           <span className="flex flex-wrap gap-1.5">
             <PastillaCotizado cotizaciones={mandadas.length} posibles={posibles} />
             {ganadas > 0 && <Pastilla tipo="ganada">✓ {ganadas} ganada{ganadas === 1 ? '' : 's'}</Pastilla>}
-            {porSeguirDia > 0 && <Pastilla tipo="alerta">! esperando respuesta</Pastilla>}
+            {porSeguirDia > 0 && <Pastilla tipo="alerta">! contactar hoy</Pastilla>}
             {sinMandarMias > 0 && (
               <Pastilla tipo="propio" title="Solo tú lo ves: candidatos y borradores tuyos para este día, todavía sin mandar">
                 ✎ {sinMandarMias} tuya{sinMandarMias === 1 ? '' : 's'} sin mandar
@@ -625,12 +637,17 @@ export default function CotizacionesVista() {
               onAbrir={() => setAbierta({ p, paso: 4 })} />;
           })}</div>
         }] : []),
-        ...(porSeguir.length ? [{
-          clave: 'seguir', icono: '📨', tono: 'rosa' as const,
-          texto: porSeguir.length === 1 ? '1 esperando respuesta' : `${porSeguir.length} esperando respuesta`,
-          lista: <EsperandoRespuesta embebida lista={porSeguir} todas={datos.presupuestos} onCambio={() => void cargar()}
-            onAbrir={(p, paso) => setAbierta({ p, paso: paso ?? 4 })} />
-        }] : []),
+        // **Lo de hoy en tu agenda** (2026-11-23): reemplaza a *Esperando
+        // respuesta*. A quién contactar y qué cotización prometida mandar.
+        ...(deHoyMia.length ? (() => {
+          const atrasadas = deHoyMia.filter((x) => x.cuando === 'atrasado').length;
+          return [{
+            clave: 'agenda', icono: '🗓', tono: 'rosa' as const,
+            texto: deHoyMia.length === 1 ? '1 para hoy en tu agenda' : `${deHoyMia.length} para hoy en tu agenda`,
+            urgente: atrasadas ? (atrasadas === 1 ? '1 atrasada' : `${atrasadas} atrasadas`) : undefined,
+            lista: verAgenda(agendaMia, true)
+          }];
+        })() : []),
         ...(pronto.length ? [{
           clave: 'pronto', icono: '⌛', tono: 'ambar' as const,
           texto: pronto.length === 1 ? '1 vence pronto' : `${pronto.length} vencen pronto`,
@@ -710,10 +727,15 @@ export default function CotizacionesVista() {
         return (
           <ListaCotizaciones ctx={ctx} rol={datos.rol} visibles={visibles} mias={mias} soloMias={soloMias}
             socios={(datos.socios ?? []).map((s) => ({ id: s.id, nombre: s.nombre, activo: s.activo }))}
-            fila={(p, detalle) => fila(p, true, detalle)} onDeTodos={() => elegirDe('todos')} />
+            fila={(p, detalle) => fila(p, true, detalle)} onDeTodos={() => elegirDe('todos')}
+            verAgenda={(a) => verAgenda(a)} />
         );
       })()}
 
+      {anotando && (
+        <NotasCotizacion p={anotando} grupo={grupoDe(anotando)} notas={notasVisibles} hoy={hoy} usuario={datos.usuario}
+          onCambio={() => void cargar()} onCerrar={() => setAnotando(null)} />
+      )}
       {cayendo && (
         <SeCayo id={cayendo.id} cliente={cayendo.cliente}
           alternativas={alternativasDe(cayendo, datos.presupuestos).filter((a) => a.id === cayendo.id || enCarrera(a)).length}

@@ -168,6 +168,9 @@ revisan antes de cada cambio en esta carpeta.
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
+  | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
+  | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*) y `HistorialNotas` (la misma lista en la ficha del cliente) |
+  | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -1233,6 +1236,148 @@ puñado a más de cien fichas.
   6 en *Todos*; pagos y el administrador, que ahí no crearon ninguno, ven
   *Míos (0)* y parten en *Todos*.
 
+## La agenda del vendedor: notas, próximo contacto y lo prometido (2026-11-23)
+
+Lo pidió el cliente: *"pensar ese sistema para el vendedor, cómo dejar sus
+notas y cómo organiza sus recontactos para un posible cliente. Diariamente
+las notas se ingresan en un formulario intuitivo y luego se ordena
+automáticamente por fecha… y luego poder elegir en qué fecha recontactar al
+cliente y… que muestra las cotizaciones que se deberían redactar y su fecha
+límite"*. Se le propuso y decidió tres cosas: *"las notas solo ve el
+vendedor y la gerencia. Fusionamos esperando respuesta… y que el vendedor
+elige nomás"* (el plazo para redactar, sin un valor por defecto).
+
+**Las notas** (`lib/notas.ts`, pestaña nueva `Notas`):
+
+- **Una fila por nota**: `ID`, `ID Presupuesto` (el grupo de alternativas:
+  la A y la B son la misma conversación), `ID Cliente`, `Cuándo` (lo pone el
+  servidor), `Quién`, `Medio` (*Llamada · WhatsApp · Correo · Reunión*, o en
+  blanco) y `Nota`. **La pestaña se crea sola la primera vez que se abre
+  Cotizaciones** (`leerNotasOCrear()`): una tanda que pregunta por una
+  pestaña que no existe gasta una lectura más mirando el libro, y mientras
+  nadie anotara, abrir Cotizaciones habría costado dos lecturas en vez de
+  una.
+- **No se borran**: son la historia con ese cliente. Su autor la corrige el
+  mismo día (`sePuedeCorregir()`).
+- **Las leen el vendedor de la cotización y la gerencia**
+  (`puedeVerNotas()`, `notasVisibles()`): el servidor solo manda esas. **El
+  administrador también**, porque es la cuenta que lo puede todo. Pagos,
+  operaciones y los demás vendedores no ven el texto, y anotar les responde
+  403. El texto no va a la bitácora: ahí lo leen otros roles.
+- **Dónde**: *🗒 Notas · N* en la ventana de cotizar, en la fila de los
+  pasos, con el próximo contacto al lado (*📞 lun 16 nov*). Abre
+  `NotasCotizacion`: en el computador, a la izquierda **Anotar** —medio, qué
+  conversaron y *Volver a contactarlo* (`ElegirFecha`)— y a la derecha lo ya
+  conversado (`HistorialNotas`), por día y la más nueva primero. Se anota con
+  *Anotar*, como un mensaje: una nota es algo que pasó, no un campo que se va
+  editando (por eso no se autoguarda). Lo escrito sin anotar queda en el
+  navegador (`localStorage`) y vuelve al abrir.
+- **En *Clientes***, la ficha abierta trae *🗒 Notas · N*, plegado, con el
+  historial de todas sus cotizaciones (solo las que esa cuenta lee).
+
+**El próximo contacto** (`Recontactar el`, columna nueva al final de
+`Presupuestos`): lo escribe solo `/api/presupuestos/notas`, en todas las
+alternativas vivas del grupo. Anotar una conversación pone además `Último
+seguimiento` en hoy, que posterga el recordatorio de siempre. Si ese día ya
+llegó y la cotización cambia de etapa (se manda, pasa a negociación), ese
+cambio fue el contacto: se borra y vuelve el recordatorio de siempre. Se
+elige de hoy en adelante y, si hay evento, antes de él.
+
+**Lo prometido** (`Redactar antes del`, la otra columna nueva): en el paso
+Evento, mientras la cotización es candidato o borrador, *✍ Prometiste
+mandarla antes del* con la misma pieza. Sin valor por defecto: lo elige el
+vendedor. Se cumple al mandarla.
+
+**La agenda** (`lib/agenda.ts`, pieza `Agenda`), una fila por grupo:
+
+- **📞 Contactar**: el día elegido (`proximoContacto()`) o, si no hay, **el
+  recordatorio de siempre de *Esperando respuesta***, que se fusionó acá
+  (`seguimientoDe()`: sin respuesta a los días de Configuración, el evento
+  cerca sin ganar, el contrato que no vuelve firmado). Mira hasta 7 días
+  adelante.
+- **✍ Por redactar**: los candidatos y borradores, por su plazo; los sin
+  plazo al final, plegados.
+- **Cada fila tiene sus botones**: *📝 Anotar*, *✍ Redactarla* (abre el paso
+  Productos), *Está negociando*, *✓ Se ganó*, *📎 Sí: subir el firmado* y
+  *✕ Se cayó…*. *Sigue esperando* pasó a ser *Anotar*; queda solo para quien
+  toca la cotización pero no lee sus notas.
+- **Dónde**: en *Tus pendientes*, la pastilla *🗓 N para hoy en tu agenda*
+  (lo de hoy y lo atrasado, de las cotizaciones propias), y en *📋 Lista* la
+  tarjeta **🗓 Agenda** —antes *Por seguir*— que muestra la agenda entera de
+  lo que se mira (no sigue al mes de arriba). Arriba, el avance: *Hoy te
+  quedan N* y *✓ N conversaciones anotadas hoy*.
+- **El próximo paso de cada fila de la Lista** lo dice: *contactar hoy*,
+  *contactar: atrasado 2 días*, *📞 contactar el lun 16 nov*, *mandarla hoy*,
+  *✍ mandarla antes del …*. La tarjeta del día en el calendario dice
+  *! contactar hoy* (antes *! esperando respuesta*).
+- `EsperandoRespuesta.tsx` se borró.
+
+**Lo de siempre**:
+
+- **Lecturas de Google**: ninguna más en las pantallas. `Notas` entra en la
+  tanda de `/api/presupuestos` y de `/api/clientes`. Anotar lee una tanda y
+  escribe la nota y las filas del grupo que cambian.
+- **Ningún permiso nuevo**: anotar pide `presupuestos` y ser el vendedor de
+  esa cotización o la gerencia.
+- **Dejar la base en cero vacía `Notas`** (`SE_VACIAN`): son de las
+  cotizaciones y los clientes que se borran.
+- **Ayuda**: el `?` de Cotizaciones (paso Cliente y la agenda) y los nuevos
+  `agenda`, `notas`, `redactarAntes` y `listaAgenda` (reemplazan a
+  `esperandoRespuesta` y `listaPorSeguir`); `seguimiento` y
+  `seguimientoDias` ya no dicen *Sigue esperando*. Fotos rehechas:
+  `ven-envio` y `ger-cobros` (llevan *🗒 Notas*) y `ven-cotizar`.
+- **Ventanas**: `v-notas` (478px a 1280×650, con dos notas) y
+  `v-cotizar-2-evento-candidato` (530px, con el plazo; son 57); la pantalla
+  `cotizaciones-agenda` entra en la prueba de espacio. La prueba de
+  alineación ya no cuenta un campo transparente (el calendario detrás de
+  *📅 Elegir…*).
+- **El panel de ejemplo** trae dos notas de Jorge con Andrés Pino, un
+  próximo contacto el lunes 16 y dos plazos prometidos (Felipe Ortúzar hoy,
+  Inmobiliaria Cordillera ayer).
+- **Probado en el panel de ejemplo**, como vendedor: desde la agenda se anota
+  una llamada a Felipe Ortúzar con *Mañana* —queda la nota, el próximo
+  contacto y el último seguimiento de hoy, y la agenda suma *✓ 1
+  conversación anotada hoy*—; la gerencia ve las tres notas y pagos y
+  operaciones ninguna; pagos recibe 403 al anotar y una fecha pasada, 400.
+
+### La última nota, en *Seguimiento y envío* (2026-11-23)
+
+Lo pidió el cliente con una foto del paso Envío, donde la caja rosada tenía
+espacio abajo: *"podías dejar… la última nota que escribió el vendedor. No
+todas las notas, sino solo la última. Y en ese lugar también mostrar cuándo
+debería recontactar de nuevo y cuántos recontactos hubo"*.
+
+- **Al pie de *Seguimiento y envío*** (`LoConversado` en
+  `CotizacionDialogo`): *CONTACTOS · 3* con su `?` y **📝 Anotar** (abre la
+  ventana de notas), el próximo contacto con **la misma frase y el mismo
+  color de la agenda** (`agendaDe()` + `fraseDe()`: *📞 Contactar el lun 16
+  nov*, *Quedaste en contactarlo hoy*…), y la **última nota** —día, medio,
+  quién y el texto, en dos renglones en el computador y tres en el celular—.
+  Las demás siguen en *🗒 Notas*. Sin día ni recordatorio: *Sin próximo
+  contacto: elígelo al anotar*.
+- **Quién ve qué**: la nota y la cuenta, quien lee las notas (su vendedor y
+  la gerencia); el próximo contacto, todos los que abren la cotización —el
+  rótulo dice *PRÓXIMO CONTACTO*—. Es el mismo reparto de siempre.
+- **Para que la ventana siguiera cabiendo** (con una cotización mandada
+  medía 736px a 1280×650), solo en el computador: ***Mandarla de nuevo* se
+  pliega tras *📤 Mandar…***, como *Recordarme* (ya se mandó: es lo
+  secundario); *Enviada el lun 9 nov · vigente hasta el mar 24 nov* va con
+  el día corto y en un renglón (también en el celular); y el resumen de
+  *Recordarme* dice *5 días sin respuesta · 14 antes del evento*, en un
+  renglón. Mide **615px** (era 612 antes de la caja).
+- **De paso, el `?` que salía solo** bajo el título *Seguimiento y envío*
+  (en un borrador, la fila de *Están negociando* quedaba sin botones y con
+  su `?` solo): ese `?` (*En qué va*) explica el camino de arriba, así que
+  va pegado a su último paso (`Camino`, en los pasos 4 y 5), y la fila se
+  dibuja solo cuando tiene botones.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**:
+  `notas` y `estadoCotizacion`; fotos rehechas: `ven-envio`, `pag-cobros` y
+  `ger-cobros`.
+- **Probado en el panel de ejemplo**, como vendedor: Andrés Pino dice
+  *CONTACTOS · 2*, *Contactar el lun 16 nov* y la nota de Jorge; *📝 Anotar*
+  desde la caja suma una por WhatsApp y la caja queda en *CONTACTOS · 3* con
+  la nueva. Pagos ve solo *PRÓXIMO CONTACTO*.
+
 ## *✎ Editar cliente*, desde la cotización (2026-11-23)
 
 Lo pidió el cliente: *"agregar botón editar cliente en cotización"*. Para
@@ -1280,6 +1425,52 @@ cerrar la cotización, ir a *Clientes*, buscarlo y abrir su ficha.
   pide confirmación y la caja verde queda con el nuevo; la ficha en el
   servidor queda con los dos cambios. El botón se ve para el administrador,
   pagos, la gerencia, operaciones y el vendedor.
+
+## Los encargados mandan el link personal (2026-11-23)
+
+Lo pidió el cliente: *"agregar enviar link personal a encargado de turno"*.
+El encargado de turno es quien está con la gente el día del servicio, y a
+quien le dicen *"no me llegó el link"* o *"perdí el teléfono"*; hasta ese
+día tenía que pedírselo a pagos.
+
+- **Permiso nuevo, `enviarLink`**: crear el link si no tiene, copiarlo y
+  renovarlo, en la ficha de un trabajador (*Equipo*) y de un colaborador
+  (*Extras*). Lo tienen el encargado de turno, el de operaciones, pagos, la
+  gerencia y el administrador.
+- **Quitarlo sigue en `links`** (el administrador, pagos y la gerencia), y
+  también los links de vendedores y socios. Es el mismo reparto de la
+  planilla semanal, que el encargado crea y renueva pero no apaga. A quien
+  no tiene `links` no se le dibuja *Quitar link* (`quitarLinks`, que mandan
+  `/api/equipo` y `/api/extras`), y la ruta le responde 403.
+- **El de operaciones también**, sin que el cliente lo nombrara: su rol dice
+  *"lo del encargado de turno, más…"*, y darle algo solo al de turno lo
+  dejaba al revés. Una prueba fija ahora que operaciones puede todo lo del de
+  turno. Se le dijo al cliente.
+- **No le abre nada que no vea**: la página del link muestra los turnos de
+  esa persona y lo que se le pagó, y los encargados ya llenan la ficha
+  completa (`sueldos`) desde el 2026-11-12.
+- **Crear no pisa un link que ya existe** (`/api/equipo/link` y
+  `/api/extras/link`): devuelve el mismo. Así nadie deja inservible el de
+  otro por apretar dos veces o con la pantalla vieja; cambiarlo es
+  *Renovar*. Vale para todos.
+- **Guardar la lista no escribe tokens de quien solo los manda**: el `PUT`
+  de `/api/equipo` acepta el token del navegador solo con `links` (con él se
+  podía dejar en blanco, o sea apagarlo); los demás arrastran el guardado.
+  En Extras ya no se aceptaba de nadie.
+- **La vista gerencia no da `enviarLink`** (`NO_SE_LEE_CON_GERENCIA`): es
+  acceso, no información.
+- **Ayuda**: el `?` del link en Equipo (*Crear link personal* ya no existía
+  como botón: es *Copiar link personal*) y el de Extras dicen quién lo
+  quita; la lista de lo que puede cada rol sale sola de `PERMISOS`, y se
+  corrigió la frase de los dos encargados (`roles.ts`: el de turno no cotiza,
+  y corregir un día ya no es solo del de operaciones). Ninguna foto cambia:
+  las misiones del encargado no muestran la ficha.
+- **Lecturas de Google**: ninguna más. **Ninguna columna nueva.**
+- **Probado en el panel de ejemplo**, como encargado: recibe los tokens, ve
+  *Copiar link personal* y *Renovar* sin *Quitar link* (a 1280 y a 393, en
+  Equipo y Extras); crear sobre uno existente devuelve el mismo, renovar da
+  uno nuevo, quitar responde 403, y guardar la lista con el token en blanco
+  no se lo borra a nadie. Pagos sigue viendo y usando *Quitar link*.
 
 ## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
 
@@ -2901,7 +3092,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 55 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 57 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de
@@ -7820,7 +8011,7 @@ una **corrección**:
 | | Qué pasa |
 |---|---|
 | Día abierto | Como siempre: se escribe y se guarda solo |
-| Día cerrado, encargado | **Solo lectura.** La ventana dice quién lo cerró y que, si hay que cambiar algo, se lo pida al administrador o a quien paga |
+| Día cerrado, encargado | **Solo lectura.** La ventana dice quién lo cerró y que, si hay que cambiar algo, se lo pida al administrador o a quien paga. **Desde el 2026-11-23 el encargado también corrige**: ve lo de la fila de abajo (ver el punto *Corrigen…*) |
 | Día cerrado, administrador o pagos | Solo lectura, con un botón **Corregir este día** |
 | Corrigiendo | Se edita, **nada se guarda solo**, y abajo hay un motivo obligatorio y *Guardar corrección*. **Desde el 2026-11-21 no se escribe el motivo**: abajo va la lista de lo que cambió, una casilla para confirmarla y *Guardar corrección* (ver "Corregir un día cerrado: la lista de cambios y una casilla") |
 
@@ -7833,6 +8024,18 @@ una **corrección**:
 - **Corrigen el administrador y quien paga** (permiso `corregir`). El
   encargado cierra el día, que es quien lo vive; corregirlo después, cuando
   ya es lo que se paga, le toca a alguien de arriba. Lo decidió el cliente.
+  **Cambió el 2026-11-23: el encargado de turno también corrige** (lo pidió
+  el cliente: *"encargado de turno debe poder corregir el día también"*).
+  Lo que lo hace posible es la lista de cambios del 2026-11-21: cada
+  corrección dice qué cambió, se confirma con una casilla y queda en la
+  bitácora a su nombre, así que pagos ve qué se tocó antes de pagar. Es solo
+  sumarlo al permiso `corregir` (`lib/auth.ts`): el botón *Corregir este
+  día* y las rutas ya miran ese permiso. **Sigue sin ver cotizaciones**, así
+  que una cotización ganada de un día cerrado la sigue corrigiendo quien
+  cotiza. En la ayuda: el `?` de *Un día cerrado* y de *Días por cerrar*, la
+  ventana *¿Cerrar el día?* y la misión *Marcar quién vino y cerrar el día*
+  (su texto; la foto no cambia). Las misiones siguen siendo cuatro por rol.
+  Ningún otro permiso cambió y ninguna lectura de Google más.
 - **El motivo es obligatorio** y queda en la bitácora con el nombre —
   *"Corrigió el equipo de un día cerrado · motivo: faltó la propina"*—. Es lo
   que se va a preguntar un mes después, sobre todo si ese día ya se pagó.
@@ -8551,6 +8754,10 @@ Por eso se partió en dos:
 |---|---|---|
 | **`sueldos`** | modalidad, jornada, valor hora, propina y cuenta bancaria de la ficha | administrador y quien paga |
 | **`links`** | crear, copiar, renovar y quitar el link personal | administrador y quien paga |
+
+> **Desde el 2026-11-23, crear, copiar y renovar van en `enviarLink`**, que
+> tienen también los dos encargados; `links` quedó para quitarlo y para los
+> links de vendedores y socios. Ver "Los encargados mandan el link personal".
 
 **Hoy los tiene el mismo par de roles, así que no discriminan entre ellos
 —el cliente terminó dando los dos— y se dejan separados igual.** Son cosas
@@ -9346,7 +9553,9 @@ Una pestaña `Bitácora` con cuándo, quién, rol, acción y detalle. Se lee en
 administra desde `/equipo`, columna **Link personal**: crear, copiar, renovar
 y quitar — **el administrador y quien paga** (permiso `links`), aunque el
 encargado sí edite la lista. Un encargado ni siquiera recibe los tokens: la
-ruta se los borra de la respuesta.
+ruta se los borra de la respuesta. **Cambió el 2026-11-23**: los encargados
+lo crean, lo copian y lo renuevan (`enviarLink`); quitarlo sigue siendo de
+`links`. Ver "Los encargados mandan el link personal".
 
 **Si alguien de pagos no ve el botón *Crear link personal*, casi seguro su
 sesión dice encargado** (pasó con la cuenta de Felipe el 2026-11-03). El rol

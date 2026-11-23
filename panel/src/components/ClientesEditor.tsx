@@ -22,6 +22,8 @@ import { Aviso } from './CalendarView';
 import { BotonMias, BotonTodos } from './BotonMias';
 import CambiarVendedor from './CambiarVendedor';
 import EditarCliente, { CLIENTE_VACIO, CamposCliente } from './EditarCliente';
+import { HistorialNotas } from './NotasCotizacion';
+import type { Nota } from '@/lib/notas';
 import { avisar } from './AvisoFlotante';
 import {
   buscarClientes, porNombreCliente, type Cliente, type DatosCliente
@@ -44,6 +46,10 @@ export default function ClientesEditor() {
   const [clientes, setClientes] = useState<Cliente[] | null>(null);
   const [cotizaciones, setCotizaciones] = useState<Record<string, number>>({});
   const [historial, setHistorial] = useState<Record<string, EnHistorial[]>>({});
+  /** Las notas de sus cotizaciones que esta cuenta lee (2026-11-23), por cliente. */
+  const [notas, setNotas] = useState<Record<string, Nota[]>>({});
+  /** Si las notas de la ficha abierta están a la vista: parten plegadas. */
+  const [verNotas, setVerNotas] = useState(false);
   const [sinFicha, setSinFicha] = useState(0);
   /** Para cambiar el vendedor (2026-11-22): solo llega a quien puede. */
   const [vendedores, setVendedores] = useState<{ usuario: string; nombre: string }[] | null>(null);
@@ -86,6 +92,7 @@ export default function ClientesEditor() {
     setClientes(d.clientes);
     setCotizaciones(d.cotizaciones ?? {});
     setHistorial(d.historial ?? {});
+    setNotas(d.notas ?? {});
     setSinFicha(d.sinFicha ?? 0);
     setMios(d.mios ?? []);
     setVendedores(d.vendedores ?? null);
@@ -290,11 +297,25 @@ export default function ClientesEditor() {
                           Cotizaciones
                         </p>
                         <span className="flex-1" />
+                        {/* **Las notas de sus cotizaciones** (2026-11-23): plegadas,
+                            para que la ficha siga cabiendo en la pantalla. Solo
+                            llegan las que esta cuenta lee. */}
+                        {(notas[c.id] ?? []).length > 0 && (
+                          <button type="button" aria-expanded={verNotas} onClick={() => setVerNotas(!verNotas)}
+                            className={`boton ${verNotas ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
+                            🗒 Notas · {(notas[c.id] ?? []).length} <span aria-hidden className="ml-1">{verNotas ? '▴' : '▾'}</span>
+                          </button>
+                        )}
                         {!soloMiraCotizar && (
                           <a href={`/presupuestos?cliente=${encodeURIComponent(c.id)}`}
                             className="tecla boton">+ Cotizarle</a>
                         )}
                       </div>
+                      {verNotas && (notas[c.id] ?? []).length > 0 && (
+                        <div className="mb-3 rounded-lg border border-hueso/15 p-2.5">
+                          <HistorialNotas notas={notas[c.id] ?? []} hoy="" usuario="" onCambio={() => void cargar()} />
+                        </div>
+                      )}
                       {(historial[c.id] ?? []).length === 0 ? (
                         <p className="text-[14px] text-hueso/60">Todavía ninguna.</p>
                       ) : (

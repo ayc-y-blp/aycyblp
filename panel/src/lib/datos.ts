@@ -51,9 +51,10 @@ import {
   COL_PRESUPUESTOS, leerPresupuestosDe, filaPresupuesto, leerLineasDe, filaLinea,
   normalizarLineas, posiblesPorDia, lineasDe, reservaDesdePresupuesto, totalDe,
   type Presupuesto, type LineaPresupuesto, type Posibles, type LineaEntrante,
-  ESTADO_PRESUPUESTO
+  ESTADO_PRESUPUESTO, estadoNormal
 } from './presupuestos.ts';
 import { conCliente } from './cotizar.ts';
+import { HOJA_NOTAS, ENCABEZADO_NOTAS, leerNotasDe, filaNota, nuevoIdNota, type Nota } from './notas.ts';
 import { HOJA_VENDEDORES, ENCABEZADO_VENDEDORES, leerVendedoresDe, filaVendedor, fichaDe, baseDeVenta,
          comisionDe, marcaComision, confirmadaEl, type FichaVendedor } from './vendedores.ts';
 import { HOJA_COBROS, ENCABEZADO_COBROS, leerCobrosDe, filaCobro, cobrosDe, estadoCobros,
@@ -1052,6 +1053,85 @@ export async function borrarPresupuesto(id: string): Promise<void> {
   // un presupuesto que ya no existe y que nadie va a ir a buscar.
   await guardarLineas(id, []);
   if (suya) await borrarFilas(HOJA_PRESUPUESTOS, [suya.fila]);
+}
+
+/* ---------- Las notas del vendedor y su agenda (2026-11-23) ---------- */
+
+/**
+ * Las notas de todas las cotizaciones. Lista vacía si la pestaña no existe:
+ * nace con la primera nota. Quién lee cuáles lo decide `notasVisibles()`.
+ */
+export async function leerNotas(): Promise<Nota[]> {
+  try {
+    return leerNotasDe(await leerHoja(HOJA_NOTAS));
+  } catch (e) {
+    if (esPestanaQueNoExiste(e)) return [];
+    throw e;
+  }
+}
+
+/**
+ * **Las notas, y si la pestaña no está, se crea** (2026-11-23). Una tanda que
+ * pregunta por una pestaña que no existe gasta una lectura más mirando el
+ * libro, y Cotizaciones se abre todo el día: mientras nadie anotara, cada vez
+ * costaba dos lecturas en vez de una. Se crea con su encabezado una sola vez,
+ * la primera vez que se abre Cotizaciones; desde ahí, una lectura.
+ */
+export async function leerNotasOCrear(): Promise<Nota[]> {
+  try {
+    return leerNotasDe(await leerHoja(HOJA_NOTAS));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** Anota una; la pestaña nace con la primera. */
+export async function agregarNota(n: Omit<Nota, 'id' | 'fila'>): Promise<Nota> {
+  const filas = await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS);
+  const nueva = { ...n, id: nuevoIdNota() };
+  await agregarFila(HOJA_NOTAS, filaNota(filas[0] ?? ENCABEZADO_NOTAS, nueva));
+  return { ...nueva, fila: filas.length + 1 };
+}
+
+/** Corrige el texto de una, leyendo la pestaña fresca. Devuelve la de antes, o `null`. */
+export async function corregirNota(id: string, texto: string): Promise<Nota | null> {
+  let filas: string[][];
+  try { filas = await leerHoja(HOJA_NOTAS, true); } catch (e) {
+    if (esPestanaQueNoExiste(e)) return null;
+    throw e;
+  }
+  const n = leerNotasDe(filas).find((x) => x.id === id);
+  if (!n) return null;
+  const { fila: _f, ...sinFila } = n;
+  await escribirFila(HOJA_NOTAS, n.fila, filaNota(filas[0] ?? ENCABEZADO_NOTAS, { ...sinFila, nota: texto }));
+  return n;
+}
+
+/**
+ * **El próximo contacto de un grupo de alternativas**: escribe `Recontactar
+ * el` —y, si se habló con el cliente, `Último seguimiento` de hoy, que
+ * posterga los recordatorios de siempre— en todas las alternativas del grupo
+ * que siguen vivas. Una sola lectura de la pestaña, una escritura por fila
+ * que cambia.
+ */
+export async function guardarRecontacto(
+  grupo: string, recontactar: string, ultimoSeguimiento: string | null
+): Promise<number> {
+  const filas = await asegurarEncabezado(HOJA_PRESUPUESTOS, ENCABEZADO_PRESUPUESTOS);
+  const enc = await asegurarColumnas(HOJA_PRESUPUESTOS, filas[0] ?? ENCABEZADO_PRESUPUESTOS, ENCABEZADO_PRESUPUESTOS);
+  const muertos: string[] = [ESTADO_PRESUPUESTO.rechazado, ESTADO_PRESUPUESTO.noElegida, ESTADO_PRESUPUESTO.cancelada];
+  let n = 0;
+  for (const p of leerPresupuestosDe(filas)) {
+    if ((p.grupo || p.id) !== grupo || muertos.includes(estadoNormal(p.estado))) continue;
+    const nuevo = { ...p, recontactar, ultimoSeguimiento: ultimoSeguimiento ?? p.ultimoSeguimiento };
+    if (nuevo.recontactar === (p.recontactar ?? '') && nuevo.ultimoSeguimiento === p.ultimoSeguimiento) continue;
+    const { fila, ...sinFila } = nuevo;
+    await escribirFila(HOJA_PRESUPUESTOS, fila, filaPresupuesto(enc, sinFila));
+    n++;
+  }
+  return n;
 }
 
 /* ---------- Clientes ---------- */

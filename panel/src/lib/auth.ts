@@ -303,11 +303,31 @@ export const PERMISOS = {
   /** Cambiar los puestos y su regla de "uno cada N personas". */
   puestos: [ROL.admin, ROL.pagos, ROL.gerencia],
   /**
-   * Crear, copiar, renovar y quitar los links personales de los
-   * trabajadores. **Lo tiene quien paga** además del administrador: es quien
-   * gestiona al equipo, y a quien le van a pedir el link.
+   * Todo lo de los links personales: **quitarlos** —apagar el acceso de
+   * alguien— y los de los vendedores y socios. **Lo tiene quien paga** además
+   * del administrador: es quien gestiona al equipo. Crear, copiar y renovar
+   * el de un trabajador o un colaborador va también en `enviarLink`.
    */
   links: [ROL.admin, ROL.pagos, ROL.gerencia],
+  /**
+   * **Mandarle a alguien del equipo su link personal**: crearlo si no tiene,
+   * copiarlo y renovarlo, en la ficha de un trabajador (Equipo) o de un
+   * colaborador (Extras).
+   *
+   * **El encargado de turno lo tiene desde el 2026-11-23** (lo pidió el
+   * cliente: *"agregar enviar link personal a encargado de turno"*): es
+   * quien está con la gente el día del servicio, y a quien le dicen *"no me
+   * llegó el link"* o *"perdí el teléfono"*. No le abre nada que no vea: la
+   * página del link muestra los turnos y lo que se le pagó a esa persona, y
+   * el encargado ya llena la ficha completa (`sueldos`).
+   *
+   * **El de operaciones también**, el mismo día: tiene todo lo del de turno
+   * (así lo describe su rol), y quedaba al revés.
+   *
+   * **Quitarlo no va acá**: sigue en `links`. Es el mismo reparto de la
+   * planilla semanal, que el encargado crea y renueva pero no apaga.
+   */
+  enviarLink: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /**
    * La planilla semanal: mandarla al grupo, crear su link y **renovarlo**.
    *
@@ -470,23 +490,25 @@ export const PERMISOS = {
    * por un `confirm()` que se acepta sin leer.
    *
    * Es un permiso propio y no `equipo` para que el día que cambie de
-   * manos sea tocar esta línea. Lo que viene después de cerrar —corregir
-   * con motivo— es de alguien de arriba: ver `corregir`.
+   * manos sea tocar esta línea. Corregirlo después también lo puede él
+   * desde el 2026-11-23: ver `corregir`.
    */
   cerrar: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /**
    * **Corregir un día ya cerrado**: el equipo, las reservas o las
    * actividades extras de ese día (2026-11-03, lo decidió el cliente).
    *
-   * El encargado cierra el día (ver `cerrar`); corregirlo después **no**:
-   * desde ahí cualquier problema pasa por alguien de arriba —el encargado de
-   * operaciones, quien paga, la gerencia o el administrador—. Un día cerrado
-   * es lo que se paga, y cambiarlo cuando ya se revisó es justamente lo que
-   * tiene que pasar por ellos. Si el encargado se equivocó, le pide la
-   * corrección al de operaciones o a quien paga. Cada corrección lleva
-   * motivo: ver `corregirDiaCerrado()`.
+   * **El encargado de turno también corrige** (2026-11-23, lo pidió el
+   * cliente: *"encargado de turno debe poder corregir el día también"*).
+   * Hasta ese día cerrar era suyo y corregir era de alguien de arriba —el
+   * encargado de operaciones, quien paga, la gerencia o el administrador—,
+   * y el encargado le tenía que pedir la corrección a ellos. Lo que lo
+   * sostiene ahora es la lista: cada corrección muestra lo que cambió, se
+   * confirma con una casilla y queda en la bitácora a nombre de quien la
+   * hizo (`corregirDiaCerrado()`), así que pagos ve qué se tocó antes de
+   * pagar.
    */
-  corregir: [ROL.admin, ROL.operaciones, ROL.pagos, ROL.gerencia],
+  corregir: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /** Precios, menús y configuración del negocio. */
   configurar: [ROL.admin, ROL.pagos, ROL.gerencia],
   /**
@@ -524,7 +546,7 @@ export function puede(rol: Rol, accion: Accion): boolean {
  * contraseñas, la mantención técnica y los links personales. No es
  * información: es acceso. Todo lo demás se puede **mirar** con ella.
  */
-export const NO_SE_LEE_CON_GERENCIA: readonly Accion[] = ['usuarios', 'mantencion', 'links'];
+export const NO_SE_LEE_CON_GERENCIA: readonly Accion[] = ['usuarios', 'mantencion', 'links', 'enviarLink'];
 
 /**
  * **Si una cuenta puede VER algo** (2026-11-11, idea del cliente). Con su rol,

@@ -62,8 +62,10 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
   const [colaboradores, setColaboradores] = useState<Colaborador[] | null>(null);
   const [extras, setExtras] = useState<Extra[]>([]);
   const [verSueldos, setVerSueldos] = useState(false);
-  /** Si esta cuenta administra los links personales (`links`), como en Equipo. */
+  /** Si esta cuenta manda los links personales (`enviarLink`), como en Equipo. */
   const [verLinks, setVerLinks] = useState(false);
+  /** Si además los quita (`links`): el encargado de turno no (2026-11-23). */
+  const [quitarLinks, setQuitarLinks] = useState(false);
   // **Vista gerencia** (2026-11-11): las fichas se miran y no se tocan si el
   // rol no tiene las extras; los montos y la cuenta, si no tiene `sueldos`.
   const soloMira = usarSoloMira('extras');
@@ -101,6 +103,7 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
         setExtras(d.extras ?? []);
         setVerSueldos(!!d.verSueldos);
         setVerLinks(!!d.verLinks);
+        setQuitarLinks(!!d.quitarLinks);
         setCierres(d.cierres ?? []);
         setPuedeCorregir(!!d.puedeCorregir);
       })
@@ -645,8 +648,10 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
                           <>
                             <button onClick={() => void link(c.nombre, 'renovar')} className="boton"
                               title="Crea uno nuevo; el anterior deja de servir">Renovar</button>
-                            <button onClick={() => void link(c.nombre, 'quitar')}
-                              className="boton hover:border-rojo-fuerte hover:text-rojo-texto">Quitar link</button>
+                            {quitarLinks && (
+                              <button onClick={() => void link(c.nombre, 'quitar')}
+                                className="boton hover:border-rojo-fuerte hover:text-rojo-texto">Quitar link</button>
+                            )}
                           </>
                         )}
                       </>

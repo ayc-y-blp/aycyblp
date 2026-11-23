@@ -181,10 +181,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ni lo que gana nadie más.'
     ],
     pasos: [
-      'Crear link personal se lo genera y te lo copia. Pégalo en su WhatsApp.',
-      'Copiar link personal vuelve a copiar el mismo, por si lo perdió.',
+      'Copiar link personal te lo copia; la primera vez, además, se lo crea. '
+      + 'Pégalo en su WhatsApp.',
       'Renovar crea uno nuevo y deja el anterior inservible al instante: es '
-      + 'lo que hay que hacer si alguien pierde el teléfono.'
+      + 'lo que hay que hacer si alguien pierde el teléfono.',
+      'Quitar link lo apaga del todo. Lo hacen el administrador, el encargado '
+      + 'de pagos y la gerencia; los encargados lo mandan y lo renuevan.'
     ],
     ojo: 'Quien tenga el link ve esa página, así que es de una sola persona '
        + 'y no se manda al grupo. Desactivarla también se lo cierra.'
@@ -231,6 +233,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Si el cliente dice que no va, "✕ Se cayó…" la da por perdida con su motivo: '
       + 'está en cada paso de la cotización y al lado de cada fila de la lista. '
       + 'Una ganada no se cae: se cancela, con su devolución.',
+      'Tu agenda: en Tus pendientes, "🗓 N para hoy en tu agenda" son los clientes que toca contactar '
+      + 'hoy y las cotizaciones prometidas que falta mandar. La agenda entera está en 📋 Lista → 🗓 Agenda. '
+      + 'Cada cotización tiene sus 🗒 Notas: qué conversaron y cuándo volver a contactarlo (las ven solo su '
+      + 'vendedor y la gerencia).',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
@@ -248,7 +254,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Cliente: búscalo o créalo. Para corregir su teléfono, correo o RUT sin '
       + 'salir de la cotización, “✎ Editar cliente”: se guarda solo en su ficha, '
       + 'y el nombre se confirma con su botón. Evento: fecha —o “todavía no hay '
-      + 'día”—, invitados y tipo.',
+      + 'día”—, invitados, tipo y para cuándo le prometiste la cotización.',
       'Productos: agrégalos con los botones. Cada línea tiene su precio y su '
       + 'descuento; abajo va el descuento sobre el total y el IVA.',
       'Envío: en qué va, documento, condiciones de pago y los pagos; desde ahí '
@@ -597,7 +603,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'El link personal',
     texto: [
       'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Se la mandas por WhatsApp.',
-      'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga.'
+      'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga: eso lo hacen el administrador, el encargado de pagos y la gerencia.'
     ]
   },
   // ---------- El día y la recepción ----------
@@ -653,7 +659,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Un día cerrado es uno donde alguien ya confirmó quién vino, anotó la propina y revisó los montos.',
       'Mientras no se cierre, el informe de ese periodo está incompleto.',
-      'Después de cerrarlo, solo el encargado de operaciones, quien hace los pagos o la gerencia lo puede corregir.'
+      'Después de cerrarlo se puede corregir —el encargado de turno, el de operaciones, quien hace los pagos o la gerencia—: el panel muestra la lista de lo que cambia, se confirma con una casilla y queda en la bitácora.'
     ]
   },
   // ---------- La ventana de cotizar ----------
@@ -723,7 +729,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   estadoCotizacion: {
     titulo: 'En qué va',
     texto: [
-      'El camino de arriba dice en qué va. Avanza con lo que haces: "Sí, la mandé" la deja Enviada, "Marcar ganada" crea la reserva.',
+      'Este camino dice en qué va. Avanza con lo que haces: "Sí, la mandé" la deja Enviada, "Marcar ganada" crea la reserva.',
       '"Están negociando" es para ordenarte y para los avisos. Si el cliente dice que no va, "✕ Se cayó…" —arriba, en cualquier paso, y al lado de cada fila de la lista— pide el motivo y la pasa a Perdidas. Una perdida se puede volver a abrir.',
       'Con varias alternativas vale para todas: van en un solo link y es una sola conversación.'
     ]
@@ -1073,11 +1079,11 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Las que siguen en carrera, las vencidas y las alternativas no elegidas no cuentan.'
     ]
   },
-  listaPorSeguir: {
-    titulo: 'Por seguir',
+  listaAgenda: {
+    titulo: 'Agenda',
     texto: [
-      'Las que esperan que alguien las mueva: mandadas sin respuesta hace días, con el evento cerca y sin ganar, o con el contrato mandado y sin volver firmado.',
-      'Son las mismas de Esperando respuesta, pero de todo lo que estás mirando.'
+      'Lo que toca hoy de lo que estás mirando: clientes a quienes quedaste en contactar, mandadas sin respuesta, eventos cerca sin ganar, contratos que no vuelven firmados y cotizaciones prometidas que falta mandar.',
+      'Apriétala para ver la agenda entera: lo de hoy y lo de los próximos 7 días. No sigue al mes de arriba.'
     ]
   },
   listaPorCobrar: {
@@ -1173,21 +1179,38 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Seguimiento y envío',
     texto: [
       'WhatsApp y Correo abren el mensaje con el link y tu nombre, listo para mandar: en el celular se abre la aplicación y en el computador WhatsApp Web, directo en el chat. Al volver al panel te pregunta si la mandaste y la pasa a Enviada. Desde ahí corre la vigencia y aparece como posible en el calendario de reservas.',
-      'Después te recuerda preguntarle al cliente: arriba de Cotizaciones, en "Esperando respuesta".',
+      'Después te recuerda preguntarle al cliente: en tu agenda (arriba, en Tus pendientes, y en 📋 Lista → 🗓 Agenda).',
       'Si venció, "↻ Renovar la vigencia" le da los días de Configuración desde hoy, sin pasar del día antes del evento. La primera vez la renueva el vendedor; la segunda se pide con "✋ Pedir condiciones especiales…".'
     ]
   },
-  esperandoRespuesta: {
-    titulo: 'Esperando respuesta',
+  agenda: {
+    titulo: 'Tu agenda',
     texto: [
-      'Las cotizaciones mandadas que llevan días sin moverse, las que tienen el evento cerca sin estar ganadas, y los contratos mandados que no han vuelto firmados.',
-      'Contesta ahí mismo: "Está negociando", "✕ Se cayó…" (pide el motivo) o "Sigue esperando", que te vuelve a preguntar más adelante. Los plazos se cambian en cada cotización o en Configuración.'
+      '📞 Contactar: los clientes a quienes quedaste en hablarles (el día que elegiste al anotar) y los recordatorios de siempre: mandadas sin respuesta hace días, el evento cerca sin ganar y el contrato que no vuelve firmado.',
+      '✍ Por redactar: los candidatos y borradores, por el día para el que prometiste la cotización. Se cumple al mandarla.',
+      'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo.'
+    ]
+  },
+  notas: {
+    titulo: 'Las notas',
+    texto: [
+      'Qué conversaron con el cliente, por qué medio y cuándo volver a contactarlo. Se ordenan solas por día, la más nueva primero, y valen para todas las alternativas de la cotización.',
+      'Las leen solo el vendedor de la cotización y la gerencia. Una nota no se borra: quien la escribió la corrige el mismo día.',
+      'El día que elijas aparece en tu agenda. Si no eliges uno, una cotización mandada te la recuerda sola a los días de Configuración.',
+      'En el paso Envío, al pie de Seguimiento y envío, ves cuántos contactos van anotados (Contactos · N), cuándo toca el próximo y la última nota. Las demás, en 🗒 Notas.'
+    ]
+  },
+  redactarAntes: {
+    titulo: 'Prometiste mandarla antes del',
+    texto: [
+      'El día para el que le dijiste al cliente que le llegaba la cotización. Va a tu agenda, en ✍ Por redactar, y en rojo si se pasa.',
+      'Se cumple al mandarla. Sin plazo, queda al final de la lista.'
     ]
   },
   seguimientoDias: {
     titulo: 'Sin respuesta, a los días',
     texto: [
-      'Cuántos días después de mandarla te pregunto "¿y?", si nada se movió. "Sigue esperando" lo posterga otro tanto.',
+      'Cuántos días después de mandarla te pregunto "¿y?", si nada se movió. Anotar una conversación lo posterga otro tanto, salvo que elijas el día.',
       'En blanco vale Configuración; en 0 no pregunta.'
     ]
   },
@@ -1248,7 +1271,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Un día cerrado',
     texto: [
       'Ya no se edita: lo cerró alguien que revisó quién vino y cuánto se paga.',
-      'Si algo quedó mal, el encargado de operaciones o quien hace los pagos lo corrige —lo que cambió queda en la bitácora, con su nombre—, o lo compensa con un ajuste en la semana siguiente.'
+      'Si algo quedó mal, lo corrige el encargado de turno, el de operaciones o quien hace los pagos —lo que cambió queda en la bitácora, con su nombre—, o se compensa con un ajuste en la semana siguiente.'
     ]
   },
   propinaDia: {

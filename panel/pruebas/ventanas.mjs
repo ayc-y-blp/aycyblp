@@ -87,6 +87,11 @@ export const PANTALLAS = [
     await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }).click(); }],
   ['estadisticas-personalizado', '/estadisticas', async (p) => {
     await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Personalizado' }).click(); }],
+  // **La agenda del vendedor** (2026-11-23): la tarjeta 🗓 Agenda de la Lista.
+  ['cotizaciones-agenda', '/presupuestos', async (p) => {
+    await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
+    await p.locator('p:visible', { hasText: '🗓 Agenda' }).first().locator('xpath=..').locator('button[aria-pressed]').click(); await p.waitForTimeout(300);
+  }],
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
@@ -199,6 +204,19 @@ export const ESCENAS = {
   'v-cotizar-editar-cliente': async () => {
     await cotizacion(/Cliente/);
     await clic(ventana().getByRole('button', { name: /Editar cliente/ }));
+  },
+  // ***🗒 Notas*** (2026-11-23): lo conversado y el próximo contacto, como
+  // vendedor, desde la cotización de Andrés Pino (tiene dos notas). Solo se abre.
+  'v-notas': () => comoVendedor(async () => {
+    await cotizacion(/Cliente/);
+    await clic(ventana().locator('button:visible', { hasText: '🗒 Notas' }));
+  }),
+  // El paso Evento de un candidato, con *✍ Prometiste mandarla antes del*.
+  'v-cotizar-2-evento-candidato': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Felipe Ortúzar' }));
+    await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Evento/ }));
   },
   'v-cotizar-2-evento': () => cotizacion(/Evento/),
   'v-cotizar-3-productos': () => cotizacion(/Productos/),
