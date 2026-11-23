@@ -264,6 +264,7 @@
   var selFecha = caja.querySelector('#r-fecha');
   var salPersonas = caja.querySelector('[data-total-personas]');
   var salFecha = caja.querySelector('[data-resumen-fecha]');
+  var salLineas = caja.querySelector('[data-resumen-lineas]');
   var zonaAviso = caja.querySelector('[data-mensaje]');
 
   // Dos botones, uno por modalidad. Cada uno muestra su propio total y
@@ -332,6 +333,9 @@
       varianteAltaLocal: varianteDelMenu(menuAlto, 'local'),
       precioAltaLocal: parseInt(nodo.getAttribute('data-precio-alta-local'), 10) || 0,
       nombre: nodo.querySelector('[data-nombre-menu]'),
+      // El nombre tal como se ve en la fila, sin la edad: para el detalle
+      // del pedido en el paso 3.
+      titulo: nodo.querySelector('.quien'),
       input: nodo.querySelector('input[type="number"]'),
       menos: nodo.querySelector('[data-menos]'),
       mas: nodo.querySelector('[data-mas]'),
@@ -729,6 +733,7 @@
 
     if (salPersonas) salPersonas.textContent = personas();
     if (salFecha) salFecha.textContent = fechaLeible(selFecha.value) || T.fechaPorElegir;
+    pintarLineas();
 
     // Cuanto se ahorra pagando ahora: la resta de los dos totales, que es
     // como el sitio supo siempre el recargo del local (no esta escrito).
@@ -752,6 +757,45 @@
 
     avisarSobreFecha();
     mostrarBarra();
+    marcarPasos();
+  }
+
+  /* Los tres pasos (2026-11-23): el que ya esta listo lleva un tic en su
+     numero, y el que sigue, el borde dorado. Es solo dibujo: lo que habilita
+     los botones sigue siendo pedidoUsable(). */
+  var cajasPaso = caja.querySelectorAll('[data-paso]');
+  function marcarPasos() {
+    var listo = { '1': !!disponibles[selFecha.value], '2': personas() > 0, '3': false };
+    var actualPuesto = false;
+    for (var i = 0; i < cajasPaso.length; i++) {
+      var c = cajasPaso[i], n = c.getAttribute('data-paso');
+      c.classList.toggle('hecho', listo[n]);
+      var esActual = !listo[n] && !actualPuesto;
+      if (esActual) actualPuesto = true;
+      c.classList.toggle('actual', esActual);
+    }
+  }
+
+  /** El detalle del pedido: "2 × Menú Tradiciones   $88.000". */
+  function nombreDe(op) {
+    if (op.nombre) return op.nombre.textContent;
+    var t = op.titulo ? op.titulo.firstChild : null;
+    return t && t.nodeType === 3 ? t.textContent.trim() : '';
+  }
+  function pintarLineas() {
+    if (!salLineas) return;
+    salLineas.innerHTML = '';
+    for (var i = 0; i < opciones.length; i++) {
+      var n = cuantos(opciones[i]);
+      if (n < 1) continue;
+      var li = document.createElement('li');
+      var q = document.createElement('span');
+      q.textContent = n + ' \u00d7 ' + nombreDe(opciones[i]);
+      var m = document.createElement('b');
+      m.textContent = pesos(n * precioDe(opciones[i], 'directo'));
+      li.appendChild(q); li.appendChild(m);
+      salLineas.appendChild(li);
+    }
   }
 
   /** La fecha elegida en palabras: "Sábado 28 de noviembre". */

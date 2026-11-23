@@ -235,7 +235,17 @@ más abajo; esto es la lista para revisar.
 - Cero JavaScript para interfaz: las tres excepciones están decididas y no
   sientan precedente.
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
-  `precios.json`, los textos en el español de la raíz. `en/` y `pt/` se
+  `precios.json`, los textos en el español de la raíz.
+- **Cada sección cabe en una pantalla, de cualquier tamaño** (regla del
+  cliente, 2026-11-23: *"tienes que hacerlo cuadrar para cualquier tamaño
+  de pantalla, simplemente trabajar con ciertos márgenes seguros"*). El
+  título de una sección y su grupo de tarjetas se ven juntos. **Los altos
+  no son números fijos**: salen de `--alto-util` (el alto de la ventana
+  menos la barra y 24px de margen) y cada foto o tarjeta resta lo que
+  ocupan su título y su texto, entre un mínimo y un máximo. En el celular,
+  una lista de tarjetas se desliza en carrusel en vez de apilarse. Se
+  prueba en varios tamaños, **incluido el notebook del cliente: 1262×573**
+  (Chrome con la barra de favoritos), no solo 1280×650. `en/` y `pt/` se
   generan con `python3 tools/traducir.py` y no se editan a mano.
 
 ## Dónde está cada cosa
@@ -896,6 +906,21 @@ ahorro de pagar ahora había que restarlo a mano.
   vista (516px). En el celular el contador cede 12px —los botones quedan en
   44— para que el nombre quepa en una línea; *Menú A Brasas abiertas*, con
   la casilla marcada, se dobla en dos.
+- **Cada paso en su tarjeta, y en el computador los tres lado a lado**
+  (2026-11-23, el cliente: *"aplica un poco de nuestra regla del panel de
+  separar paso 1, 2, 3 de forma más lúdica, decente, elegante… con el
+  calendario tienes un poco de espacio a jugar en la horizontal"*). Es la
+  regla del marco del panel en el tono del sitio: la tarjeta es el marco que
+  manda, el título del paso va arriba con una línea fina, y lo de adentro
+  lleva un borde más suave. **Lo lúdico es el avance**: `marcarPasos()` en
+  `reserva.js` cambia el número del paso listo por un tic dorado relleno y
+  le pone el borde dorado al que sigue. Es solo dibujo; los botones los
+  sigue habilitando `pedidoUsable()`. En el computador el calendario cede
+  ancho y los tres pasos van en columnas de igual alto (`display:contents`
+  en la columna del pedido), con *Pagar ahora* al pie de la tercera: 482px
+  en 1280×650. **El paso 3 muestra el detalle del pedido como una boleta**
+  (*2 × Menú Tradiciones · $88.000*), con el precio de pagar ahora. La caja
+  blanca del tema diurno pasó de `.reserva-widget` a `.reserva-caja`.
 - **Todo *Reservar* del sitio llega al formulario** (lo pidió el cliente el
   mismo día): el del menú, el del pie y el de la portada apuntan a
   `reservas.html#reserva-en-linea`, como ya lo hacían los de las tarjetas y
@@ -931,6 +956,65 @@ ahorro de pagar ahora había que restarlo a mano.
 - **Los botones de idioma y Diurno/Nocturno** subieron a 13px y 36px de alto
   en el computador, también en los tres landings (por eso se rehicieron los
   PDF; el contenido es el mismo).
+
+### Cada sección cabe en una pantalla (2026-11-23)
+
+Lo pidió el cliente: *"en la página principal… la sección tres cosas que
+pasan por acá, no cae también aún bien aquí en la pantalla del notebook…
+para todas las páginas, tanto los landing pages… para todo el sitio"*. La
+primera versión se midió en 1280×650 y en su notebook no cupo: **su
+ventana real es 1262×573** (Chrome con la barra de favoritos), y pidió
+*"hacerlo cuadrar para cualquier tamaño de pantalla… con ciertos márgenes
+seguros"*.
+
+- **`--alto-util`** (en `site.css` y en el `<style>` de cada landing) es
+  `100svh` menos la barra del sitio (76px; 81 en el celular; 88 y 77 en los
+  landings) y 24px de margen seguro. **Cada pieza que tiene una foto resta
+  del alto útil lo que ocupan su título y su texto** y se queda con el
+  resto, con `clamp()` entre un mínimo que se ve bien y el máximo de antes:
+  las fotos de las tarjetas, las seis actividades, lo que incluye la
+  reserva, las tarjetas que giran, los bloques foto + texto, el mapa, la
+  entrada de la portada (y el tamaño de su título), las casillas del
+  calendario de reserva, y en los landings la galería, el arriendo, el
+  desayuno y la foto del show. En una pantalla alta se ve como antes; en
+  una baja, las fotos se aplanan.
+- **En el computador**, además: menos aire entre secciones, las seis
+  actividades del recinto y lo que incluye la reserva en una fila, las
+  adicionales en cuatro columnas, y las dos experiencias a todo el ancho,
+  apaisadas. En una pantalla baja, la entrada de promociones aprieta su
+  título y los tres datos (`max-height: 720px`).
+- **En el celular, una lista de tarjetas ya no se apila: se desliza** en un
+  carrusel con `scroll-snap`, una a la vista y la siguiente asomando: la
+  portada, las actividades, lo que incluye la reserva, las experiencias,
+  desayuno y once, la 404 y, en los landings, las experiencias, las
+  actividades y las adicionales. CSS puro, como la galería. Los precios del
+  arriendo van lado a lado, los pasos de Eventos con el número al lado del
+  título, la oferta de promociones en filas, y los landings con el margen
+  de 22px del sitio.
+- **Probado en diez tamaños**: 1262×573, 1366×600, 1280×720, 1440×800,
+  1920×950, 1024×600, 393×740, 375×667, 390×844 y 360×640, en los tres
+  idiomas, sin reversos cortados ni desborde lateral. **Lo que no cabe, a
+  propósito**: el formulario de reserva en el celular (va por pasos, con la
+  barra fija), los desplegables del menú (van plegados bajo sus tarjetas),
+  la entrada de promociones en el celular (texto largo) y, en un teléfono
+  de 360×640, el arriendo de Eventos por unos 25px. En la versión de prueba
+  el aviso *Tienda de prueba* le suma 31px al formulario de reserva.
+- Se mide con un script de Playwright que recorre las páginas y lista las
+  secciones cuyo contenido pasa del alto útil; no está en el repo.
+
+### El desayuno y la once, solo en socios y en el dossier (2026-11-23)
+
+Lo pidió el cliente: *"si accedes a experiencias desde el sitio público,
+borra la sección del desayuno y del once campestre. Ahí no hay que
+mostrar. Solo en los socios comerciales… en el dossier sí"*. Se sacó de
+`experiencias.html`, de `eventos.html` y del panel *El recinto y los
+extras* de `promociones.html`, cuya bajada pasó a *Arriendo exclusivo y
+eventos a medida*. **Queda en `landing-afiliados.html` y `dossier.html`**
+(y en sus PDF). El *"y en promociones no"* salió de una frase dictada
+(*"si en la producción no"*), leída junto con el *solo en los socios*: si
+promociones sí lo llevaba, se repone desde el dossier. Los precios siguen
+en `precios.json`; las llaves que ya no usaba nadie salieron de los
+diccionarios.
 
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 

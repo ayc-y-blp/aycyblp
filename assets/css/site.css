@@ -699,7 +699,7 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 /* En un telefono cada casilla mide lo que deje el ancho entre siete
    columnas: el aire que se le quita al marco va a las casillas. */
 @media (max-width: 480px){
-  .reserva-widget{ padding:20px 16px; }
+  .reserva-caja{ padding:12px 12px 14px; }
   .calendario{ padding:10px 8px; }
   .cal-grilla{ gap:4px; }
   .cal-dia{ font-size:1rem; border-radius:6px; }
@@ -879,9 +879,48 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   font-family:var(--serif); font-style:italic; font-weight:600; font-size:1rem;
   letter-spacing:0;
 }
-.reserva-col-pedido{ margin-top:8px; }
-.reserva-col-pedido > .reserva-paso:not(:first-child){ margin-top:24px; }
-.reserva-col-pedido > .reserva-paso + .reserva-fila{ border-top:0; padding-top:4px; }
+/* Cada paso en su tarjeta (2026-11-23, lo pidio el cliente: "separar paso
+   1, 2, 3 de forma mas ludica, decente, elegante, pero que se vea un poco
+   mas los distintos pasos, secciones"). Es la regla del marco del panel
+   llevada al tono del sitio: la tarjeta es el marco que manda, el titulo
+   del paso va arriba con su linea fina, y lo de adentro —el calendario, la
+   casilla, el resumen— lleva un borde mas suave.
+
+   Lo ludico es el avance: el paso que sigue lleva el borde dorado y el que
+   ya esta listo cambia su numero por un tic dorado relleno. Lo marca
+   reserva.js (marcarPasos); sin JS las tres tarjetas se ven iguales. */
+.reserva-widget{ border:0; background:none; padding:0; }
+.reserva-caja{
+  position:relative; padding:14px 18px 18px;
+  border:1px solid var(--line); border-radius:10px; background: var(--bg-panel);
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.reserva-caja.actual{ border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-soft); }
+.reserva-col-pedido{ margin-top:14px; }
+.reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:14px; }
+.reserva-caja > .reserva-paso,
+.reserva-caja > .campo > .reserva-paso{
+  margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line);
+}
+.reserva-caja > .reserva-paso + .reserva-fila{ border-top:0; padding-top:2px; }
+.reserva-caja.hecho .num{
+  background: var(--gold); border-color: var(--gold); color:#1A1400;
+  font-size:0;
+}
+.reserva-caja.hecho .num::before{
+  content:"\2713"; font-family:var(--sans); font-style:normal; font-weight:700; font-size:0.9rem;
+}
+.reserva-caja.actual .num{ box-shadow: 0 0 0 3px var(--gold-wash); }
+.reserva-caja .reserva-mensaje:empty{ display:none; }
+/* El detalle del pedido en el paso 3, como una boleta: cantidad y menu a la
+   izquierda, el monto pagando ahora a la derecha, en la serif de los precios. */
+.resumen-lineas{ list-style:none; margin:0 0 12px; padding:0 2px; }
+.resumen-lineas:empty{ display:none; }
+.resumen-lineas li{
+  display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  padding:5px 0; border-bottom:1px dashed var(--line); font-size:0.9rem; color: var(--ink-dim);
+}
+.resumen-lineas b{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:1.02rem; color: var(--ink); white-space:nowrap; }
 
 /* El resumen de lo elegido: la fecha en palabras y cuantos van. Es lo que
    da seguridad antes de pagar. */
@@ -936,7 +975,7 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
    pago a la derecha. El calendario deja de ser de casillas cuadradas —a
    ese ancho median 70px de alto— y pasa a 44px, con la misma letra. */
 @media (min-width: 900px){
-  .reserva-widget{ max-width:none; padding:16px 30px 16px; }
+  .reserva-widget{ max-width:none; padding:0; }
   /* El titulo se deja para los lectores de pantalla: en el computador los
      tres pasos numerados ya dicen que esto es la reserva, y esos 50px son
      los que faltaban para que el formulario entero quepa en 1280x650. */
@@ -946,11 +985,31 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   }
   .reserva-widget{ position:relative; }
   .reserva-widget .reserva-prueba{ margin:0 0 6px; font-size:0.88rem; }
+  /* Los tres pasos lado a lado, 1 → 2 → 3, en tarjetas de igual alto (el
+     cliente: "con el calendario tienes un poco de espacio a jugar… en la
+     horizontal"). El calendario cede ancho, y la columna del pedido se
+     disuelve (display:contents) para que el paso 2 y el 3 sean columnas
+     propias. Las tres cierran parejas abajo, y en la tercera los botones
+     quedan al pie, a la altura del final del mes. */
   .reserva-cols{
-    display:grid; grid-template-columns: minmax(0,0.85fr) minmax(0,1.15fr);
-    gap:0 44px; align-items:start;
+    display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.08fr) minmax(0,1fr);
+    gap:0 16px; align-items:stretch;
   }
-  .reserva-col-pedido{ margin-top:0; }
+  .reserva-col-pedido{ display:contents; }
+  .reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:0; }
+  .reserva-caja-pago{ display:flex; flex-direction:column; }
+  .reserva-caja-pago .btn-row.dos{ margin-top:auto; }
+  /* En una columna angosta el precio va bajo el nombre, como en el
+     celular: el nombre del menu no se dobla. */
+  .reserva-fila{
+    grid-template-columns: 1fr 128px; grid-template-areas: "quien contador" "valor contador";
+    gap:0 10px;
+  }
+  .reserva-fila .valor{ text-align:left; min-width:0; }
+  .reserva-caja-pago .reserva-total{ flex-wrap:wrap; }
+  .reserva-caja{ padding:12px 18px 14px; }
+  .reserva-caja > .reserva-paso,
+  .reserva-caja > .campo > .reserva-paso{ margin-bottom:8px; padding-bottom:8px; }
   /* Segunda pasada (2026-11-23, el cliente: "compactar otra vez un poco…
      tener todo en una vista en la pantalla, con los botones… juega un poco
      con los tamaños de la tipografía también, pero sin perder elegancia").
@@ -966,9 +1025,9 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   .cal-leyenda{ margin-top:8px; }
   .cal-etapa{ padding:3px 10px; font-size:0.82rem; }
   .reserva-widget .aviso{ margin:8px 0 0; font-size:0.9rem; }
-  .reserva-widget .reserva-paso{ margin-bottom:4px; font-size:0.85rem; }
+  .reserva-widget .reserva-paso{ font-size:0.85rem; }
   .reserva-paso .num{ width:26px; height:26px; font-size:0.95rem; }
-  .reserva-fila{ grid-template-columns: 1fr 128px auto; padding:6px 0; gap:12px; }
+  .reserva-fila{ padding:6px 0; }
   .reserva-fila + .reserva-upgrade{ margin-top:2px; }
   .reserva-fila .quien{ font-size:1.08rem; }
   .reserva-fila .quien small{ font-size:0.82rem; margin-top:1px; }
@@ -979,7 +1038,6 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   .reserva-upgrade b{ font-size:0.9rem; }
   .reserva-upgrade small{ margin-top:1px; }
   .reserva-upgrade input[type="checkbox"]{ width:18px; height:18px; }
-  .reserva-col-pedido > .reserva-paso:not(:first-child){ margin-top:10px; }
   .reserva-widget .reserva-total{ padding:7px 14px; margin-bottom:8px; }
   .resumen-fecha{ font-size:0.9rem; }
   .reserva-total b{ font-size:1.1rem; }
@@ -1084,3 +1142,122 @@ footer a:hover{ color: var(--ink); }
   html{ scroll-behavior: auto; }
   *, *::before, *::after{ transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ---------- una pantalla por sección (2026-11-23) ----------
+   Lo pidió el cliente: "en la sección tres cosas que pasan por acá, no cae
+   aún bien en la pantalla del notebook… compactarla para que todo cae en
+   una pantalla… esa revisión para todas las páginas". Y al ver la primera
+   versión, medida para 1280x650, en su notebook (1262x573 con la barra de
+   favoritos): "tienes que hacerlo cuadrar para cualquier tamaño de
+   pantalla, simplemente trabajar con ciertos márgenes seguros".
+
+   Por eso los altos no son números fijos: salen de --alto-util, el alto de
+   la ventana menos la barra del sitio y un margen seguro de 24px. Cada foto
+   de tarjeta, tarjeta que gira, bloque foto + texto y mapa resta del alto
+   útil lo que ocupan su título y su texto, y se queda con el resto, entre
+   un mínimo que se ve bien y un máximo que no se pasa de grande. En una
+   pantalla alta queda como antes; en una baja, las fotos se aplanan y la
+   sección sigue entrando entera.
+
+   En el celular, una lista de tarjetas ya no se apila —eran hasta 2.600px—:
+   va en un carrusel que se desliza con el dedo, como la galería del sitio.
+   Asoma la tarjeta siguiente, que es lo que avisa que hay más. CSS puro,
+   con scroll-snap: sin una línea de JavaScript. */
+:root{ --barra: 76px; --alto-util: calc(100vh - var(--barra) - 24px); }
+@supports (height: 100svh){ :root{ --alto-util: calc(100svh - var(--barra) - 24px); } }
+@media (max-width: 920px){ :root{ --barra: 81px; } }
+
+@media (min-width: 901px){
+  .pad{ padding: 64px 0; }
+  .section-head{ margin-bottom: 24px; }
+  /* Tarjetas con foto (Tres cosas que pasan acá, las adicionales, la 404):
+     el titulo de la seccion y el texto de la tarjeta ocupan unos 340px. */
+  .card-photo img{ aspect-ratio:auto; height: clamp(120px, calc(var(--alto-util) - 330px), 300px); }
+  .card-body{ padding: 16px 20px 18px; gap:6px; }
+  .grid-4 .card-photo img{ height: clamp(100px, calc(var(--alto-util) - 380px), 240px); }
+  /* Bloques foto + texto: miden la pantalla, entre 380 y 520px. */
+  .split{ min-height: clamp(380px, var(--alto-util), 520px); }
+  .split-text{ padding: clamp(24px, calc((var(--alto-util) - 380px) / 3), 64px) clamp(32px, 5vw, 64px); }
+  /* La portada: la foto de entrada llena lo que deja la barra. */
+  .hero-lg{ min-height: clamp(400px, calc(var(--alto-util) + 24px), 660px); }
+  .hero-lg .hero-in{ padding-top: 28px; padding-bottom: clamp(24px, calc((var(--alto-util) - 400px) / 2), 60px); }
+  .hero-lg h1{ font-size: clamp(2rem, min(5.2vw, calc(var(--alto-util) / 10)), 3.5rem); }
+  /* Las dos experiencias: a todo el ancho y apaisadas; su alto es el que
+     deja el título. El reverso cabe porque la tarjeta es ancha. */
+  .tier-cards{ max-width:none; }
+  .tier-cards .flip-card{ aspect-ratio:auto; height: clamp(300px, calc(var(--alto-util) - 150px), 460px); }
+  .mapa{ aspect-ratio:auto; height: clamp(260px, calc(var(--alto-util) - 100px), 480px); }
+  /* El calendario de la reserva: sus seis semanas también salen del alto. */
+  .reserva-widget .cal-dia{ height: clamp(30px, calc((var(--alto-util) - 230px) / 6.4), 40px); }
+}
+/* Entre 901 y 1099px la columna de texto de un bloque foto + texto es
+   angosta y el texto se alarga: le toca más ancho que a la foto. */
+@media (min-width: 901px) and (max-width: 1099px){
+  .split{ grid-template-columns: 0.8fr 1.2fr; }
+}
+.grid-4{ grid-template-columns: repeat(4,1fr); }
+@media (max-width: 999px){ .grid-4{ grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 1000px){
+  .tiles{ grid-template-columns: repeat(6,1fr); }
+  .tile-cuerpo{ padding: 12px 14px 16px; }
+  .tile-media img, .tile-icono{ aspect-ratio:auto; height: clamp(90px, calc(var(--alto-util) - 360px), 200px); }
+  .incluye-grid{ grid-template-columns: repeat(6,1fr); gap:16px; }
+  .incluye-item img{ aspect-ratio:auto; height: clamp(80px, calc(var(--alto-util) - 380px), 190px); }
+  .incluye-item h4{ font-size:0.88rem; }
+}
+
+@media (max-width: 620px){
+  .grid-3, .grid-4, .grid-2, .tiles, .incluye-grid{
+    display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+    grid-template-columns:none; gap:12px;
+    overflow-x:auto; overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory; scroll-padding-left: var(--pad-x);
+    margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
+    padding: 0 var(--pad-x) 12px;
+    scrollbar-width: thin;
+  }
+  .grid-3 > *, .grid-4 > *, .grid-2 > *, .tiles > *, .incluye-grid > *{ scroll-snap-align:start; }
+  /* Las actividades del recinto se separaban con líneas de 1px sobre un
+     fondo; en el carrusel cada una es su propia tarjeta. */
+  .tiles{ background:none; border:0; }
+  .tile{ border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  /* Las dos experiencias también se deslizan, una a la vista; en 4:5 el
+     reverso alcanza a mostrar su texto entero. */
+  .tier-cards{
+    display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+    grid-template-columns:none; max-width:none; gap:12px;
+    overflow-x:auto; overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory; scroll-padding-left: var(--pad-x);
+    margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
+    padding: 0 var(--pad-x) 12px;
+  }
+  .tier-cards > .flip-card{ scroll-snap-align:start; aspect-ratio:auto; height: clamp(300px, calc(var(--alto-util) - 190px), 420px); }
+  /* En el celular las fotos también salen del alto de la pantalla: en un
+     telefono bajo se aplanan y la tarjeta entra con su titulo. */
+  .card-photo img{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 440px), 240px); }
+  .tile-media img, .tile-icono{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 380px), 240px); }
+  .incluye-item img{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 420px), 240px); }
+  .mapa{ aspect-ratio:auto; height: clamp(160px, calc(var(--alto-util) - 370px), 260px); }
+  /* Los dos precios del arriendo, lado a lado. */
+  .precios{ display:grid; grid-template-columns: 1fr 1fr; }
+  .precio{ padding-left:12px; }
+  .precio .monto{ font-size:1.25rem; }
+  .precio .monto .mas-iva{ display:block; margin-left:0; }
+  /* Los tres pasos de Eventos: el numero al lado del titulo, no encima. */
+  .pasos{ gap:16px; }
+  .paso{ display:grid; grid-template-columns: 34px 1fr; column-gap:10px; }
+  .paso .num{ grid-row: span 2; font-size:1.6rem; line-height:1; }
+  .paso h3{ margin-top:4px; }
+  .split-text{ padding: 24px var(--pad-x); }
+  .hero-lg{ min-height: clamp(440px, calc(var(--alto-util) + 24px), 540px); }
+  .hero-lg .hero-in{ padding-top:24px; padding-bottom:28px; }
+  .section-head{ margin-bottom: 20px; }
+  .split-photo{ min-height: clamp(90px, calc(var(--alto-util) - 520px), 220px); }
+  .split-text .rule{ margin:12px 0; }
+  .precios{ gap:14px 22px; margin-top:18px; }
+  .pasos{ gap:20px; }
+  .incluye-horario{ padding:16px 18px; margin-top:14px; }
+  .incluye-horario .rango{ font-size:1.7rem; }
+  .incluye .etiqueta{ margin-top:18px; }
+}
+
