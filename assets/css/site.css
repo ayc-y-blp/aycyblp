@@ -437,6 +437,9 @@ a.card .mas{
    agarra botellas. Corrida al 93% entra la copa, que es lo que distingue a
    esta experiencia (barra abierta) */
 .flip-front img.foco-copa{ object-position: 93% 50%; }
+/* El karting: los cascos van en el tercio de arriba y el recorte al centro
+   los cortaba (lo marcó el cliente el 2026-11-23). */
+.card-photo img.foco-karting{ object-position: 50% 40%; }
 .flip-card:hover .flip-front img{ filter: grayscale(0) brightness(0.9); }
 .flip-hint{
   position:absolute; top:10px; right:10px; z-index:2;
@@ -1199,7 +1202,7 @@ footer a:hover{ color: var(--ink); }
      el titulo de la seccion y el texto de la tarjeta ocupan unos 340px. */
   .card-photo img{ aspect-ratio:auto; height: clamp(120px, calc(var(--alto-util) - 330px), 300px); }
   .card-body{ padding: 16px 20px 18px; gap:6px; }
-  .grid-4 .card-photo img{ height: clamp(100px, calc(var(--alto-util) - 380px), 240px); }
+  .grid-4 .card-photo img{ height: clamp(115px, calc(var(--alto-util) - 380px), 240px); }
   /* Bloques foto + texto: miden la pantalla, entre 380 y 520px. */
   .split{ min-height: clamp(380px, var(--alto-util), 520px); }
   .split-text{ padding: clamp(24px, calc((var(--alto-util) - 380px) / 3), 64px) clamp(32px, 5vw, 64px); }
