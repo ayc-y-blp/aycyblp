@@ -21,12 +21,15 @@ import type { Tranquilidad } from './contrato.ts';
 /** Las condiciones de la cotización, o las de Configuración donde estén en blanco. */
 export function tranquilidadDeCotizacion(
   p: { cambiosFecha: number | null; cancelacionDias: number | null; reembolso: number | null },
-  cfg: Tranquilidad
+  cfg: Tranquilidad & { cambiosFechaDias?: number }
 ): Tranquilidad {
   return {
     cambiosFecha: p.cambiosFecha ?? cfg.cambiosFecha,
     cancelacionDias: p.cancelacionDias ?? cfg.cancelacionDias,
-    reembolsoPct: p.reembolso ?? cfg.reembolsoPct
+    reembolsoPct: p.reembolso ?? cfg.reembolsoPct,
+    // El aviso para cambiar la fecha (2026-11-23) es de Configuración: cada
+    // cotización no lo cambia.
+    avisoCambio: cfg.cambiosFechaDias ?? cfg.avisoCambio ?? 0
   };
 }
 

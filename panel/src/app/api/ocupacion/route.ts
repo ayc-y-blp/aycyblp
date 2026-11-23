@@ -11,7 +11,8 @@ import { leerReservas, leerFechas, leerConfig, posiblesDeLosDias, leerPresupuest
   leerTrabajadores, leerColaboradores, leerVendedores } from '@/lib/datos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { puede, type Rol } from '@/lib/auth';
-import { pendientesDeExclusivo, pendientesDeCuenta } from '@/lib/aprobaciones';
+import { pendientesDeExclusivo, pendientesDeCuenta, pendientesDeCondiciones } from '@/lib/aprobaciones';
+import { topesDe } from '@/lib/condiciones';
 import { conCliente, grupoDe } from '@/lib/cotizar';
 import { ocupacionDeTodos } from '@/lib/ocupacion';
 import { diasAbiertosEntre, hoy, sumarDias, esFecha } from '@/lib/fechas';
@@ -126,11 +127,19 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
     // la precarga para el nombre. Ninguna lectura más.
     const { rol } = await quienEs(req);
     let exclusivos: ReturnType<typeof pendientesDeExclusivo> = [];
-    if (puede(rol as Rol, 'exclusividad')) {
+    let condiciones: ReturnType<typeof pendientesDeCondiciones> = [];
+    // **Las condiciones especiales pedidas** (2026-11-23, `condiciones.ts`),
+    // para quien puede aprobarlas: de la misma tanda de `Presupuestos`.
+    const veCondiciones = puede(rol as Rol, 'showBajoMinimo');
+    if (puede(rol as Rol, 'exclusividad') || veCondiciones) {
       const [pres, clientes] = await Promise.all([leerPresupuestos(), leerClientes()]);
       const porId = new Map(pres.map((p) => [p.id, p]));
-      exclusivos = pendientesDeExclusivo(pres.map((p) => conCliente(p, clientes)), reservas, hoy(),
-        cfg.exclusivoDias, (id) => folioDe({ id: grupoDe(porId.get(id) ?? { id, grupo: '' }) }));
+      const folio = (id: string) => folioDe({ id: grupoDe(porId.get(id) ?? { id, grupo: '' }) });
+      const conNombre = pres.map((p) => conCliente(p, clientes));
+      if (puede(rol as Rol, 'exclusividad')) {
+        exclusivos = pendientesDeExclusivo(conNombre, reservas, hoy(), cfg.exclusivoDias, folio);
+      }
+      if (veCondiciones) condiciones = pendientesDeCondiciones(conNombre, topesDe(cfg), folio);
     }
     // **Las cuentas y tarifas por confirmar** (2026-11-13, `plata.ts`), solo
     // para pagos: las cambió alguien que no es pagos. `Trabajadores` y
@@ -139,7 +148,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
       ? pendientesDeCuenta(await leerTrabajadores().catch(() => []), await leerColaboradores().catch(() => []),
         (await leerVendedores().catch(() => [])).filter((f) => f.tipo === 'socio'))
       : [];
-    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas });
+    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

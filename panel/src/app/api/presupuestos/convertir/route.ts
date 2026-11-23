@@ -71,6 +71,16 @@ export const POST = conLecturas([], async function POST(req: Request) {
         error: 'Ponle el día exacto antes de marcarla ganada: la reserva vive en un día.'
       }, { status: 400 });
     }
+    // **Un evento que ya pasó no se gana** (regla B, 2026-11-23): sería
+    // anotar una reserva en un día que ya ocurrió. Si de verdad hay que
+    // dejarlo registrado, lo hace quien aprueba (la gerencia, pagos o el
+    // administrador).
+    if (p.fecha < hoy() && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+      return NextResponse.json({
+        error: 'Ese evento ya pasó: no se puede marcar ganado. Si hay que dejarlo registrado, '
+          + 'lo hace la gerencia, el encargado de pagos o el administrador.'
+      }, { status: 409 });
+    }
     // Convertir dos veces crearía dos reservas para la misma gente, y la
     // segunda sí ocuparía cupo de más. Se comprueba acá y no solo en la
     // pantalla: dos clics seguidos llegan como dos peticiones.

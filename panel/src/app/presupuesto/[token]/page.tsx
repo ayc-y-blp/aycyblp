@@ -206,6 +206,10 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
   // descuento sobre el total, y el IVA encima. Ver `cuentasDe()`.
   const cuentas = cuentasDe(lineas, p.descuento);
   const cond = condicionesDe(p, cuentas.total, cfg);
+  // **Un plazo que ya pasó no se ofrece** (regla B, 2026-11-23): con el evento
+  // más cerca que el plazo del saldo, todo se paga al reservar, como dice el
+  // contrato. Decir *"hasta el lunes pasado"* no le sirve a nadie.
+  const saldoVencido = !!cond.saldoHasta && cond.saldoHasta < hoy();
   const personas = gentePosible(p, lineas);
   return (
     <div className={letra ? 'mt-7 break-inside-avoid rounded-lg border-2 border-hueso/20 p-4' : 'mt-7'}>
@@ -235,14 +239,18 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
             <p className="mt-1">
               Anticipo{cond.fijo ? '' : ` ${cond.pct}%`}: <strong>{enPesos(cond.anticipo)}</strong> para reservar la fecha.
               Saldo: <strong>{enPesos(cond.saldo)}</strong>
-              {cond.saldoHasta
+              {saldoVencido
+                ? <> al reservar, porque el evento es antes del plazo de {cond.dias} días.</>
+                : cond.saldoHasta
                 ? <> hasta el <span>{enPalabras(cond.saldoHasta)}</span>.</>
                 : <>, {cond.dias} días antes del evento.</>}
             </p>
           ) : (
             <p className="mt-1">
               Sin anticipo. Total <strong>{enPesos(cond.saldo)}</strong>
-              {cond.saldoHasta
+              {saldoVencido
+                ? <> al reservar, porque el evento es antes del plazo de {cond.dias} días.</>
+                : cond.saldoHasta
                 ? <> hasta el <span>{enPalabras(cond.saldoHasta)}</span>.</>
                 : <>, {cond.dias} días antes del evento.</>}
             </p>

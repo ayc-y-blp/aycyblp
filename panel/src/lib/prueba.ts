@@ -4365,6 +4365,80 @@ console.log('\nCotizaciones, fase 2');
   ok(cfgFechas.fechasSinExclusivo.join() === '2027-05-09,2027-09-18' && cfgFechas.arriendoPrivadoMinimo1 === 350000,
      'el arriendo y las fechas sin exclusivo se guardan y se leen de vuelta en Configuración');
 
+  // --- Lo que el vendedor puede prometer (2026-11-23, regla A) ---
+  const C = await import('./condiciones.ts');
+  const cfgC = { ...POR_DEFECTO, anticipoPct: 30, saldoDias: 3, cambiosFecha: 2, cancelacionDias: 60, reembolsoPct: 20, descuentos: [5, 10, 15] };
+  const topes = C.topesDe(cfgC);
+  ok(topes.anticipo === 30 && topes.saldoDias === 3 && topes.cambiosFecha === 2 && topes.cancelacionDias === 60
+     && topes.reembolso === 20 && topes.descuento === 15, 'condiciones: los topes salen de Configuración');
+  ok(C.masGeneroso('reembolso', 40, topes) && !C.masGeneroso('reembolso', 10, topes)
+     && C.masGeneroso('anticipo', 10, topes) && !C.masGeneroso('anticipo', 50, topes)
+     && C.masGeneroso('saldoDias', 1, topes) && !C.masGeneroso('saldoDias', 7, topes)
+     && C.masGeneroso('cambiosFecha', 3, topes) && C.masGeneroso('cancelacionDias', 30, topes)
+     && !C.masGeneroso('cancelacionDias', 0, topes) && !C.masGeneroso('cancelacionDias', 90, topes)
+     && C.masGeneroso('descuento', 20, topes),
+     'condiciones: más generoso es menos anticipo, saldo más tarde, más cambios, cancelar con menos aviso, más devolución o descuento');
+  ok(C.alTope('cancelacionDias', 30, C.topesDe({ ...cfgC, cancelacionDias: 0 })) === 0,
+     'condiciones: si Configuración no ofrece cancelar, el vendedor tampoco');
+  const pVend = { anticipo: 10, anticipoMonto: null, saldoDias: 0, cambiosFecha: 5, cancelacionDias: 1, reembolso: 100, descuento: 25 };
+  const r = C.aplicarTopes(pVend, [{ descuento: 30 }, { descuento: 5 }], 1000000, topes);
+  ok(r.p.anticipo === 30 && r.p.saldoDias === 3 && r.p.cambiosFecha === 2 && r.p.cancelacionDias === 60
+     && r.p.reembolso === 20 && r.p.descuento === 15 && r.lineas[0].descuento === 15 && r.lineas[1].descuento === 5,
+     'condiciones: al guardar, lo del vendedor que se pasa queda en su tope (también el descuento de cada línea)');
+  ok(r.recortes.length === 6, 'condiciones: y se sabe qué se recortó');
+  const enBlanco = C.aplicarTopes({ anticipo: null, saldoDias: null, cambiosFecha: null, cancelacionDias: null, reembolso: null, descuento: 0 },
+    [], 1000000, topes);
+  ok(enBlanco.recortes.length === 0 && enBlanco.p.reembolso === null,
+     'condiciones: lo que está en blanco rige de Configuración y no se toca');
+  const antesG = { p: { ...pVend }, lineas: [{ concepto: 'Lo Pirque', descuento: 30 }] };
+  const editada = C.aplicarTopes({ ...pVend, cambiosFecha: 4 },
+    [{ concepto: 'Lo Pirque', descuento: 30 }, { concepto: 'Brasas', descuento: 25 }], 1000000, topes, antesG);
+  ok(editada.p.reembolso === 100 && editada.p.descuento === 25 && editada.p.cambiosFecha === 2
+     && editada.lineas[0].descuento === 30 && editada.lineas[1].descuento === 15 && editada.recortes.length === 2,
+     'condiciones: al editar, solo pasa por el tope lo que cambió (lo que el cliente ya vio no cambia solo)');
+  const monto = C.aplicarTopes({ ...enBlanco.p, anticipoMonto: 100000 }, [], 1000000, topes);
+  ok(monto.p.anticipoMonto === 300000, 'condiciones: un anticipo en pesos no baja del % del tope sobre el total');
+  const aprobada = { condicionesEspeciales: C.marcaCondiciones('aprobada', 'Rodrigo Vera', '2026-11-23 10:00'),
+                     condicionesPedidas: C.escribirPedido({ reembolso: 40, cancelacionDias: 30 }) };
+  const topesAprob = C.topesDe(cfgC, C.aprobadasDe(aprobada));
+  ok(topesAprob.reembolso === 40 && topesAprob.cancelacionDias === 30 && topesAprob.anticipo === 30,
+     'condiciones: lo aprobado pasa a ser el tope de esa cotización, y lo demás sigue igual');
+  ok(C.aplicarTopes({ ...pVend, reembolso: 40, cancelacionDias: 30 }, [], 1000000, topesAprob).p.reembolso === 40,
+     'condiciones: con lo aprobado, el vendedor puede ofrecerlo');
+  ok(Object.keys(C.aprobadasDe({ ...aprobada, condicionesEspeciales: C.marcaCondiciones('pedida', 'Jorge', 'x') })).length === 0
+     && Object.keys(C.aprobadasDe({ ...aprobada, condicionesEspeciales: C.marcaCondiciones('rechazada', 'Paula', 'x') })).length === 0,
+     'condiciones: pedido o rechazado no cambia el tope');
+  ok(JSON.stringify(C.leerPedido('reembolso=40|cancelacionDias=30|otra=5|descuento=x')) === JSON.stringify({ reembolso: 40, cancelacionDias: 30 }),
+     'condiciones: el pedido se lee sin inventar nada');
+  ok(JSON.stringify(C.sobreElTope({ ...pVend }, [{ descuento: 30 }], topes))
+       === JSON.stringify({ anticipo: 10, saldoDias: 0, cambiosFecha: 5, cancelacionDias: 1, reembolso: 100, descuento: 30 }),
+     'condiciones: se sabe qué haría falta pedir');
+  ok(C.frasePedido({ reembolso: 40 }, topes) === 'Devolución al cancelar 40% (en Configuración 20%)', 'condiciones: el pedido en una frase');
+
+  // --- Contra la fecha de hoy (regla B) ---
+  ok(C.vigenciaHasta('2026-11-23', 15, '2026-11-30') === '2026-11-29' && C.vigenciaHasta('2026-11-23', 15, '2027-01-30') === '2026-12-08'
+     && C.vigenciaHasta('2026-11-23', 15, '2026-11-23') === '2026-11-23' && C.vigenciaHasta('2026-11-23', 0, '2026-11-30') === '',
+     'vigencia: nunca después del día antes del evento; en 0 no vence');
+  ok(C.fechaDelContrato({ contratoSubido: '2026-11-10 12:00' }, '2026-11-23') === '2026-11-10'
+     && C.fechaDelContrato({ contratoSubido: '' }, '2026-11-23') === '2026-11-23',
+     'contrato: se lee con la fecha en que se firmó, o con hoy');
+  const v = C.plazosVencidos('2026-12-20', '2026-11-23', { cambiosFecha: 2, cancelacionDias: 60, avisoCambio: 30 }, '2026-12-17');
+  ok(v.dias === 27 && v.sinCancelacion && v.sinCambios && !v.saldoAlFirmar,
+     'plazos: a 27 días, la cancelación hasta 60 antes y el cambio con 30 de aviso ya no aplican');
+  ok(C.plazosVencidos('2026-11-25', '2026-11-23', { cambiosFecha: 0, cancelacionDias: 0 }, '2026-11-22').saldoAlFirmar,
+     'plazos: si el saldo vencía antes de hoy, se paga al firmar');
+
+  const CT = await import('./contrato.ts');
+  const tq = { cambiosFecha: 2, cancelacionDias: 60, reembolsoPct: 20, avisoCambio: 30 };
+  const lejos = CT.tranquilidadDe(tq, 90).join(' ');
+  const cerca = CT.tranquilidadDe(tq, 20).join(' ');
+  ok(lejos.includes('avisando con al menos 30 días') && lejos.includes('hasta con 60 días'),
+     'contrato: con tiempo, ofrece el cambio con su aviso y la cancelación');
+  ok(cerca.includes('no aplica la opción de cambiar su fecha') && cerca.includes('no aplica la opción de cancelarlo con reembolso')
+     && !cerca.includes('reembolso del'),
+     'contrato: encima de la fecha, dice que ya no aplican en vez de prometerlas');
+  ok(CT.tranquilidadDe(tq).join(' ').includes('hasta con 60 días'), 'contrato: sin fecha de referencia, como siempre');
+
   const once = lineaDeProducto(catalogo[1], 'PRE-1', 25, 8000);
   ok(!once.sigue && once.cantidad === 25 && !once.ivaIncluido,
      'agregar la once la deja con todos los invitados, sin seguirlos, y "+ IVA" como dice el catálogo');
@@ -4855,8 +4929,8 @@ console.log('\nCancelar una cotización ganada');
   const CFG = { cambiosFecha: 2, cancelacionDias: 60, reembolsoPct: 20 };
   // Las condiciones: en blanco rige Configuración, y un 0 escrito es 0.
   const enBlanco = { cambiosFecha: null, cancelacionDias: null, reembolso: null };
-  ok(JSON.stringify(tranquilidadDeCotizacion(enBlanco, CFG)) === JSON.stringify(CFG),
-     'una cotización sin condiciones propias usa las de Configuración');
+  ok(JSON.stringify(tranquilidadDeCotizacion(enBlanco, CFG)) === JSON.stringify({ ...CFG, avisoCambio: 0 }),
+     'una cotización sin condiciones propias usa las de Configuración (sin plazo de aviso para cambiar la fecha)');
   const negociada = tranquilidadDeCotizacion({ cambiosFecha: 0, cancelacionDias: 30, reembolso: 50 }, CFG);
   ok(negociada.cambiosFecha === 0 && negociada.cancelacionDias === 30 && negociada.reembolsoPct === 50,
      'y las negociadas mandan, también un 0 (sin cambios de fecha)');

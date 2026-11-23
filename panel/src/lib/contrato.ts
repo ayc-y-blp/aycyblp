@@ -30,7 +30,17 @@
  * Es puro —sin planilla ni red— para poder probarlo.
  */
 import { enPesos } from './ocupacion.ts';
-import { enPalabras, esFecha, type Fecha } from './fechas.ts';
+import { enPalabras, esFecha, sumarDias, type Fecha } from './fechas.ts';
+
+/** Días entre dos fechas `AAAA-MM-DD` contando sobre el texto (sin `Date`, como todo el proyecto). */
+function diasEntreTexto(a: Fecha, b: Fecha): number {
+  if (a === b) return 0;
+  const paso = a < b ? 1 : -1;
+  let n = 0;
+  let f = a;
+  while (f !== b && Math.abs(n) < 4000) { f = sumarDias(f, paso); n += paso; }
+  return n;
+}
 import type { Condiciones } from './cobros.ts';
 import type { Empresa } from './config.ts';
 
@@ -175,6 +185,13 @@ export interface DatosContrato {
   acuerdos: string;
   /** Las medidas de tranquilidad: las de la cotización, o las de Configuración. */
   tranquilidad: Tranquilidad;
+  /**
+   * **La fecha con que se lee el contrato** (2026-11-23, `fechaDelContrato()`):
+   * la de la firma o, sin firmar, hoy. Con ella, un saldo que ya venció se paga
+   * al firmar y una cancelación o un cambio de fecha cuyo plazo pasó no se
+   * ofrecen. Sin ella, el contrato dice los plazos como siempre.
+   */
+  fechaRef?: Fecha;
 }
 
 /** Cuántos cambios de fecha, hasta cuántos días antes se cancela, y qué % se devuelve. */
@@ -182,6 +199,8 @@ export interface Tranquilidad {
   cambiosFecha: number;
   cancelacionDias: number;
   reembolsoPct: number;
+  /** Con cuántos días de aviso se puede cambiar la fecha (2026-11-23). 0 o sin él: sin plazo. */
+  avisoCambio?: number;
 }
 
 const VECES = ['', 'una vez', 'dos veces', 'tres veces', 'cuatro veces', 'cinco veces'];
@@ -191,18 +210,34 @@ const VECES = ['', 'una vez', 'dos veces', 'tres veces', 'cuatro veces', 'cinco 
  * cambios de fecha no se promete ninguno, y sin días de cancelación no se
  * promete poder cancelar. Sin ninguna de las dos, no hay cláusula.
  */
-export function tranquilidadDe(t: Tranquilidad): Parrafo[] {
+export function tranquilidadDe(t: Tranquilidad,
+  /**
+   * Días que faltan para el Evento a la fecha del contrato (2026-11-23). Si ya
+   * no alcanza el aviso, la opción no se ofrece y se dice por qué: prometerla
+   * sería prometer algo que no se puede usar.
+   */
+  diasAlEvento: number | null = null): Parrafo[] {
   const salida: Parrafo[] = [];
+  const aviso = t.avisoCambio ?? 0;
   if (t.cambiosFecha > 0) {
-    salida.push(`El Cliente tendrá la opción de cambiar ${VECES[t.cambiosFecha] ?? `${t.cambiosFecha} veces`} `
-      + 'la fecha del Evento, siempre que la nueva fecha no choque con fechas ya reservadas y solo '
-      + 'por motivos de fuerza mayor.');
+    if (diasAlEvento !== null && aviso > 0 && diasAlEvento < aviso) {
+      salida.push(`Como el Evento se realizará en menos de ${aviso} días, no aplica la opción de cambiar su fecha.`);
+    } else {
+      salida.push(`El Cliente tendrá la opción de cambiar ${VECES[t.cambiosFecha] ?? `${t.cambiosFecha} veces`} `
+        + 'la fecha del Evento' + (aviso > 0 ? `, avisando con al menos ${aviso} días de anticipación` : '')
+        + ', siempre que la nueva fecha no choque con fechas ya reservadas y solo por motivos de fuerza mayor.');
+    }
   }
   if (t.cancelacionDias > 0) {
-    salida.push(`El Cliente tendrá la opción de cancelar el Evento hasta con ${t.cancelacionDias} días `
-      + 'de anticipación' + (t.reembolsoPct > 0
-        ? ` y con un reembolso del ${t.reembolsoPct}% de lo pagado.`
-        : ', sin reembolso de lo pagado.'));
+    if (diasAlEvento !== null && diasAlEvento < t.cancelacionDias) {
+      salida.push(`Como el Evento se realizará en menos de ${t.cancelacionDias} días, no aplica la opción de `
+        + 'cancelarlo con reembolso.');
+    } else {
+      salida.push(`El Cliente tendrá la opción de cancelar el Evento hasta con ${t.cancelacionDias} días `
+        + 'de anticipación' + (t.reembolsoPct > 0
+          ? ` y con un reembolso del ${t.reembolsoPct}% de lo pagado.`
+          : ', sin reembolso de lo pagado.'));
+    }
   }
   return salida;
 }
@@ -254,6 +289,11 @@ export function clausulasDe(d: DatosContrato): Clausula[] {
   const alias = aliasDe(d.empresa);
   const c = d.condiciones;
   const evento = eventoEnFrase(d.tipoEvento);
+  // **Lo que el calendario ya no permite** (2026-11-23): con la fecha del
+  // contrato pasada del plazo del saldo, todo se paga al firmar, y los
+  // invitados se confirman al firmar.
+  const alFirmar = !!d.fechaRef && esFecha(c.saldoHasta) && c.saldoHasta < d.fechaRef;
+  const diasAlEvento = d.fechaRef && esFecha(d.fecha) ? diasEntreTexto(d.fechaRef, d.fecha) : null;
 
   const lista: (Omit<Clausula, 'titulo'> & { nombre: string })[] = [];
   const agregar = (nombre: string, resto: Omit<Clausula, 'titulo'>) =>
@@ -299,11 +339,18 @@ export function clausulasDe(d: DatosContrato): Clausula[] {
       'Sin perjuicio de la determinación del Precio Total, las partes acuerdan que éste podrá '
       + 'variar en la misma proporción en que varíen los invitados cuya asistencia al Evento esté '
       + 'efectivamente confirmada, circunstancia que deberá ser comunicada por el Cliente al '
-      + `Prestador, por medio de correo electrónico, con ${c.dias} días de anticipación al Evento.`
+      + (alFirmar ? 'Prestador, por medio de correo electrónico, al firmar el presente contrato.'
+        : `Prestador, por medio de correo electrónico, con ${c.dias} días de anticipación al Evento.`)
     ]
   });
 
-  const pagos: Parrafo[] = c.pct > 0
+  const pagos: Parrafo[] = alFirmar
+    ? [
+        `El Precio Total, equivalente a la cantidad de **${enPesos(c.anticipo + c.saldo)}** (IVA incluido), se `
+        + 'pagará al Prestador al firmar el presente contrato, porque el Evento se realizará antes del plazo '
+        + `de ${c.dias} días que corresponde al saldo.`
+      ]
+    : c.pct > 0
     ? [
         `La cantidad de **${enPesos(c.anticipo)}** (IVA incluido), representativa aproximadamente `
         + `del ${c.pct}% del Precio Total, se pagará al Prestador al firmar el presente contrato.`,
@@ -351,7 +398,7 @@ export function clausulasDe(d: DatosContrato): Clausula[] {
     parrafos: ['El cliente podrá llevarse lo que quede en postres y alcohol comprado por él para la casa.']
   });
 
-  const tranquilidad = tranquilidadDe(d.tranquilidad);
+  const tranquilidad = tranquilidadDe(d.tranquilidad, diasAlEvento);
   if (tranquilidad.length) agregar('Medidas de tranquilidad', { parrafos: tranquilidad });
 
   if (d.ley20393) {

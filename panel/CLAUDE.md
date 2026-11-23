@@ -166,6 +166,7 @@ revisan antes de cada cambio en esta carpeta.
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
+  | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -345,6 +346,147 @@ día y temporada: ver `panel/FASE5.md`; esta regla es por dónde puede crecer).
   cubre). Por la API: el vendedor lo baja a $50.000 y vuelve a $238.000; la
   gerencia lo baja y queda con la marca; y marcar exclusivo un día sin
   exclusivo responde 409.
+
+## Lo que el vendedor puede prometer, y los plazos contra la fecha de hoy (2026-11-23)
+
+Lo pidió el cliente: *"revises toda la lógica dentro de cotizaciones y el
+contrato de las fechas límites que se pueden configurar y compararlo a la fecha
+actual para que el vendedor no puede hacer ciertas promesas de devolución de
+dinero, de lo que sea, de cuántos días tiene para la anticipación, etcétera, si
+ya está muy encima de la fecha"*. Se le propusieron dos reglas y dijo: *"aplica
+regla A tal cual, pero deja la opción… de solicitar otro monto para esta regla.
+Y ahí tiene que confirmar la gerencia o el encargado de pagos… agrego el plazo
+para cambiar la fecha en configuraciones… hay que organizarlo de forma muy
+buena y muy entendible"*. La lógica vive en **`lib/condiciones.ts`**, pura y
+con pruebas.
+
+**Lo que había**: cada cotización podía escribir lo que quisiera en anticipo,
+saldo, cambios de fecha, cancelación y devolución —*"en blanco rige
+Configuración"*—, sin tope. Un vendedor podía prometer el 100% de devolución
+cancelando un día antes, y el contrato lo imprimía. Y nada miraba la fecha de
+hoy: a dos días del evento, el contrato seguía ofreciendo cancelar *hasta 60
+días antes* y pagar el saldo *hasta el lunes pasado*.
+
+### Regla A: el vendedor ofrece igual o menos que Configuración, nunca más
+
+| Condición | Más generoso para el cliente es… | Tope |
+|---|---|---|
+| Anticipo | menos % (o un monto menor) | `anticipoPct` |
+| Saldo | pagarlo más tarde (menos días antes) | `saldoDias` |
+| Descuento, por línea o sobre el total | más % | el mayor de los botones |
+| Cambios de fecha | más veces | `cambiosFecha` |
+| Cancelación | cancelar con menos aviso (y ofrecerla si Configuración no la ofrece) | `cancelacionDias` |
+| Devolución al cancelar | más % | `reembolsoPct` |
+
+- **Al salir del campo**, lo que se pasa queda en su tope y se dice al lado
+  (*Anticipo: 10% no cabe en lo que permite Configuración; queda en 30%*). **El
+  servidor hace lo mismo** (`conTopes()` en `/api/presupuestos`, con
+  `aplicarTopes()`) y devuelve `recortes`. *Sin anticipo* se apaga si
+  Configuración pide anticipo. Los botones de descuento ya terminaban en el
+  tope; con un descuento mayor aprobado aparece su botón.
+- **Al editar, solo lo que cambia** (`aplicarTopes(…, antes)`): una cotización
+  que el cliente ya vio no cambia sola. Si tenía un 50% de devolución de antes
+  de la regla, queda así hasta que alguien toque ese campo.
+- **Quien aprueba no tiene tope**: la gerencia general, el encargado de pagos y
+  el administrador, con el mismo poder de los mínimos (`showBajoMinimo`, que
+  pasó a llamarse *Cotizar bajo el mínimo… y aprobar condiciones especiales*).
+  Lo que dejen por encima de Configuración queda marcado como aprobado por
+  ellos (*"Aprobada · Rodrigo Vera · cuándo · las dejó quien aprueba"*) y en la
+  bitácora (*Dejó condiciones especiales*).
+
+### Pedir condiciones especiales
+
+**✋ Pedir condiciones especiales…**, en *El pago* (paso 4) y en *Cambios de
+fecha y cancelación* (paso 5), abre `PedirCondiciones`: los seis campos con lo
+que permite hoy al lado, y *Por qué*. Se manda solo lo escrito que de verdad
+pasa el tope; lo que ya cabe se dice (*ya cabe: no hace falta pedirlo*).
+
+- **Le llega a la bandeja** de la gerencia, pagos y el administrador
+  (`PendienteCondiciones`, en la portada y la página del día): *Jorge pide
+  condiciones especiales · Andrés Pino · N° 647318*, con lo pedido al lado de
+  lo de Configuración, el motivo, **✓ Aprobar** y *Rechazar* (con motivo, que
+  el vendedor ve). *Ver la cotización →* la abre.
+- **Aprobado, pasa a ser el tope de esa cotización** (`aprobadasDe()`) y se
+  escribe en ella: el anticipo, el saldo, los cambios, la cancelación y la
+  devolución quedan con lo pedido. **El descuento solo sube el tope**: cuánto y
+  en qué línea lo pone el vendedor.
+- **En la cotización se ve cómo va**: *⏳ pedidas · esperan respuesta*, *✓
+  aprobadas por …* o *✕ … no aprobó: motivo*. Un pedido nuevo conserva lo ya
+  aprobado. Una alternativa nueva hereda lo aprobado, no lo pedido.
+- **Dos columnas nuevas al final de `Presupuestos`**: `Condiciones pedidas`
+  (*"reembolso=40|cancelacionDias=30"*) y `Condiciones especiales` (la marca,
+  con el formato de *Exclusividad*). Las escriben solo el servidor y
+  `/api/presupuestos/condiciones` (`pedir` con `presupuestos` y que la
+  cotización sea suya; `aprobar` y `rechazar` con `showBajoMinimo`).
+
+### Regla B: lo que el calendario ya no permite
+
+- **La vigencia no pasa del día antes del evento** (`vigenciaHasta()`), al
+  mandarla, al renovarla y si el evento se adelanta.
+- **El contrato se lee con la fecha de la firma** —o, sin firmar, con la de
+  hoy— (`fechaDelContrato()`, `DatosContrato.fechaRef`):
+  - un saldo cuyo plazo ya pasó: *El Precio Total… se pagará al firmar el
+    presente contrato, porque el Evento se realizará antes del plazo de 3 días
+    que corresponde al saldo*, y los invitados se confirman al firmar;
+  - una cancelación fuera de plazo: *Como el Evento se realizará en menos de 60
+    días, no aplica la opción de cancelarlo con reembolso*;
+  - un cambio de fecha con el aviso vencido: lo mismo, con el aviso.
+
+  El papel firmado no cambia con los días: se lee con la fecha en que se subió.
+- **La cotización que ve el cliente** dice *Saldo … al reservar, porque el
+  evento es antes del plazo de 3 días*, en vez de una fecha que ya pasó.
+- **En la ventana de cotizar**, lo mismo antes de mandar: *⚠ Faltan 15 días
+  para el evento: el contrato no ofrece cancelar con devolución*, y el saldo
+  *al firmar*.
+- **Un evento que ya pasó no se gana** (`/convertir`, 409), salvo quien
+  aprueba.
+- **El plazo para cambiar la fecha** (nuevo, `contrato_cambios_fecha_aviso`,
+  *Aviso para cambiar la fecha* en Configuración; 0 es sin plazo): el contrato
+  lo dice (*avisando con al menos N días de anticipación*), y **la fecha de una
+  ganada no se mueve dentro de ese plazo** salvo quien aprueba (409 en
+  `/api/presupuestos`). *Cancelar evento* ya miraba su plazo.
+
+### Configuración, ordenada
+
+Con lo nuevo, Configuración crecía, y el cliente pidió ordenarla *"muy buena y
+muy entendible"*:
+
+| Sección | Qué tiene |
+|---|---|
+| Reservas del sitio · Calendario del panel | sin cambios |
+| **Cotizaciones** | en grupos: *La cotización* (vigencia, seguimiento y la carpeta de comprobantes) y *Simulador de evento* (el margen y los gastos, que llegaron con la otra sesión el mismo día) |
+| **Condiciones para el cliente** (nueva) | en grupos: *El pago* (anticipo, saldo), *Descuentos*, *Cambios de fecha y cancelación* (cambios, aviso para cambiar, cancelación, devolución). Su `?` dice que son el tope del vendedor |
+| **Extras y arriendo** | en grupos: *Show ecuestre*, *Arriendo mínimo*, *Eventos exclusivos* (liberar un día con reservas, días sin exclusivo) |
+| **La empresa** | ganó *Ciudad de firma*, que estaba en *Contrato* |
+
+- **La sección *Contrato* se fue**: sus tres números son condiciones para el
+  cliente, y la ciudad es de la empresa.
+- **Un grupo** (`grupo()` en `ConfigEditor`) es un subtítulo con su raya y sus
+  campos en las mismas dos columnas. **En el computador el subtítulo va a la
+  izquierda**, en su columna de 9rem: encima, solo en su fila, lo marcaba
+  `revisarEspacio()`. Lleva `data-grupo` para que la regla de la segunda
+  columna no le quite la raya. Dentro de *Show ecuestre* los campos se llaman
+  *Sin costo desde* y *Mínimo bajo ese número*: el grupo ya dice de qué son.
+
+### Lo de siempre
+
+- **Lecturas de Google**: ninguna más. `/api/ocupacion` saca los pedidos de la
+  tanda de `Presupuestos` que ya leía para los exclusivos; `/condiciones` lee
+  una tanda (`Presupuestos`, `Config`).
+- **Permisos**: ninguno nuevo. `showBajoMinimo` (gerencia, pagos,
+  administrador) ahora también aprueba condiciones especiales.
+- **Ayuda**: el `?` de Cotizaciones y el de Configuración; *Condiciones de
+  pago*, *Cambios de fecha*, *Cancela hasta*, *Devuelve*, los dos descuentos y
+  uno nuevo, *Condiciones especiales*. Ninguna foto de las misiones cambia: el
+  administrador no tiene tope y la del vendedor no toca esos campos.
+- **Ventanas**: tres escenas nuevas, como vendedor —que es quien ve el botón—: `v-pedir-condiciones` (618px), `v-cotizar-4-envio-vendedor` y `v-cotizar-5-contrato-vendedor` (612 y 631px). Con las de la otra sesión, son 54. **El botón *✋ Pedir condiciones especiales…* va al pie de la ventana en el computador**: en la caja, los pasos 4 y 5 del vendedor medían 640 y 670px. En el celular sigue en su caja. Y la escena de *Cancelar evento* ahora espera a que termine *Revisando el contrato…*: a veces medía 195px.
+- **Probado en el panel de ejemplo**: el vendedor escribe 100% de devolución y
+  queda en 20; pide 40% y cancelar hasta 30 días antes, le llega a la gerencia y
+  a pagos, la gerencia aprueba y la cotización queda con 40% y 30 días; después
+  el vendedor no puede pasar de 40. Pagos deja 50% en otra y queda aprobada por
+  ella. Con 30 días de aviso para cambiar la fecha, el vendedor no puede mover
+  una ganada a 8 días del evento. Y el contrato de Andrés Pino, a 15 días,
+  dice que no aplica cancelar con reembolso.
 
 ## El periodo en un marco: Cotizaciones → Lista, Estadísticas, Vendedores e Informe (2026-11-22)
 
@@ -2586,7 +2728,7 @@ prueba**, y falla antes del PR:
 | `npm run letra-chica` | **Que nadie sume letra bajo 13px** (`text-xs`, `text-[9px]` a `text-[12px]`). Lo que ya había —80 en 22 archivos— quedó anotado en `HABIA` como punto de partida: solo puede bajar, y cuando baja la prueba pide anotarlo |
 | `npm run webhook` | **El webhook de Shopify** (`pruebas/webhook.mjs`, 2026-11-21): sin firma o con la de otra tienda, 401; un pedido sin `_booking_date` se descarta **sin gastar lecturas** y deja la línea `descartado` con su número y sin datos del cliente; uno con fecha se anota. Comprobado rompiéndolo: contra la ruta de antes falla (gastaba 2 lecturas y no dejaba línea) |
 | `npm run ajuste` | **El ajuste desde el informe** (`pruebas/ajuste.mjs`, 2026-11-21): el encargado recibe 403; pagos escribe una sola fila de `Turnos` y solo sus dos celdas de ajuste, sumado a lo que había; en un día cerrado entra como corrección; sin turno, 404; un día que no vino, 409; **hoy sin turno va a `Ajustes sueltos` sin tocar `Turnos`**, a alguien fuera del equipo 404, y quitarlo pide `pagar`; cuatro lecturas a lo más |
-| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 50 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
+| `npm run ventanas` | **Que cada ficha y cada ventana quepa en la pantalla de un notebook y tenga sus campos alineados** (`pruebas/ventanas.mjs`, 2026-11-21). Levanta el panel de ejemplo, abre las 54 escenas de `ESCENAS` a 1280×650 y falla si una que cabía deja de caber, si una anotada en `NO_CABEN` crece, o si `revisarAlineacion()` (`pruebas/alineacion.mjs`) encuentra un campo que salta, un nombre partido o dos bordes que casi calzan. Tarda unos minutos. Con `VENTANAS_FOTOS=<carpeta>` deja una foto de cada una; con `VENTANAS_ANCHO=393 VENTANAS_ALTO=740 VENTANAS_MEDIDAS=<archivo>` solo mide, para comparar el celular antes y después de un cambio; con `VENTANAS_PLAYSTATION=1` lista lo que encuentra `revisarPlayStation()`. Si el 3125 está ocupado, `AYUDA_PUERTO=3127 npm run ventanas` |
 | `npm run revisar` | Las de arriba más los tipos y las pruebas de lógica: **lo que se corre antes de cada PR** |
 
 Y para la pasada con Playwright, **`revisarPlayStation(page)`** de
@@ -4090,8 +4232,8 @@ la carpeta de la cotización junto a sus comprobantes, por
 - **No es requisito para marcar ganada**: eso sigue siendo el anticipo.
 - **Las medidas de tranquilidad son configurables** (lo pidió el cliente
   el mismo día): cuántos cambios de fecha, hasta cuántos días antes se
-  cancela y qué % de la reserva se devuelve, en Configuración → Contrato
-  (`contrato_cambios_fecha`, `contrato_cancelacion_dias`,
+  cancela y qué % de la reserva se devuelve, en Configuración → *Condiciones
+  para el cliente* (hasta el 2026-11-23, en una sección *Contrato*) (`contrato_cambios_fecha`, `contrato_cancelacion_dias`,
   `contrato_reembolso`). Parten en 2, 60 y 20, los del CRM. **Un 0 saca la
   frase** del contrato —no se promete lo que no se ofrece— y sin ninguna de
   las dos no hay cláusula; la numeración se corre sola. Valen para los

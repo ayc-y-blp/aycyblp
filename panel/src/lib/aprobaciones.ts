@@ -20,6 +20,7 @@ import { cupoAmpliado } from './sobrecupo.ts';
 import type { Presupuesto } from './presupuestos.ts';
 import { esExclusivo, exclusividadDe, plazoParaLiberar } from './exclusivo.ts';
 import { pagoPorRevisar, descuentoPorVer, partesMarca } from './plata.ts';
+import { condicionesEspecialesDe, leerPedido, frasePedido, type Topes } from './condiciones.ts';
 import { ESTADO_PAGO } from './columnas.ts';
 
 /** Lo que tienen todas las cosas por aprobar. */
@@ -125,8 +126,23 @@ export interface PendienteCuenta extends Base {
 }
 
 /** Lo que se aprueba. Un tipo nuevo se suma a esta unión. */
+/**
+ * **Condiciones especiales que pidió un vendedor** (2026-11-23,
+ * `condiciones.ts`): más devolución, menos anticipo, cancelar con menos aviso…
+ * Las aprueba la gerencia general, el encargado de pagos o el administrador.
+ */
+export interface PendienteCondiciones extends Base {
+  tipo: 'condiciones';
+  /** La cotización: es lo que pide `/api/presupuestos/condiciones`. */
+  id: string;
+  folio: string;
+  cliente: string;
+  /** Lo pedido en una frase, con el tope de cada cosa. */
+  pedido: string;
+}
+
 export type Pendiente = PendienteDescuento | PendienteCupo | PendienteSobrecupo | PendienteExclusivo
-  | PendientePago | PendienteDescuentoVisto | PendienteCuenta;
+  | PendientePago | PendienteDescuentoVisto | PendienteCuenta | PendienteCondiciones;
 
 /** Los tipos que le llegan solo a pagos: se marcan vistos, no se rechazan. */
 export const DE_PAGOS = new Set<Pendiente['tipo']>(['pago', 'descuentoVisto', 'cuenta']);
@@ -271,6 +287,25 @@ export function pendientesDeCuenta(
 }
 
 /** Todo junto, del día más antiguo al más nuevo. */
+/** Los pedidos de condiciones especiales, de la cotización más próxima a la más lejana. */
+export function pendientesDeCondiciones(
+  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'periodo' | 'cliente' | 'condicionesPedidas' | 'condicionesEspeciales'>[],
+  topes: Topes, folio: (id: string) => string = (id) => id
+): PendienteCondiciones[] {
+  const lista: PendienteCondiciones[] = [];
+  for (const p of presupuestos) {
+    const d = condicionesEspecialesDe(p.condicionesEspeciales);
+    const pedido = leerPedido(p.condicionesPedidas);
+    if (d.estado !== 'pedida' || !Object.keys(pedido).length) continue;
+    lista.push({
+      tipo: 'condiciones', clave: `condiciones-${p.id}`, fecha: p.fecha || '', pide: d.quien || 'alguien',
+      cuando: d.cuando, motivo: d.nota, comentario: '', id: p.id, folio: folio(p.id),
+      cliente: p.cliente || 'sin nombre', pedido: frasePedido(pedido, topes)
+    });
+  }
+  return lista.sort(porFecha) as PendienteCondiciones[];
+}
+
 export function juntarPendientes(...listas: Pendiente[][]): Pendiente[] {
   return listas.flat().sort(porFecha);
 }

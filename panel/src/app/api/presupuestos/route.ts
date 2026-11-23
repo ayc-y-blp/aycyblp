@@ -23,9 +23,14 @@ import {
 import { HOJA_CIERRES } from '@/lib/cierres';
 import { HOJA_USUARIOS, cuentaDeSesion } from '@/lib/usuarios';
 import {
-  nuevoId, validoHastaDe, ESTADO_PRESUPUESTO, estaMandada, aEntero, folioDe, estadoNormal, lineasDe,
-  documentoDe, numeroONulo, montoONulo, type Presupuesto, type LineaEntrante
+  nuevoId, ESTADO_PRESUPUESTO, estaMandada, aEntero, folioDe, estadoNormal, lineasDe,
+  documentoDe, numeroONulo, montoONulo, cuentasDe, type Presupuesto, type LineaEntrante
 } from '@/lib/presupuestos';
+import {
+  topesDe, aprobadasDe, aplicarTopes, sobreElTope, escribirPedido, leerPedido, marcaCondiciones,
+  condicionesEspecialesDe, frasePedido, vigenciaHasta, diasAlEvento, NOMBRE_CONDICION, valorCondicion,
+  type CondicionesCotizacion, type Recorte
+} from '@/lib/condiciones';
 import {
   prepararLineas, esDiaPublico, conCliente, ESTADOS_A_MANO, grupoDe, otrasAlternativas, reglaShowDe,
   showQuedaBajoMinimo, showBajoMinimoDe, reglaArriendoDe, arriendoDelDia,
@@ -35,7 +40,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
-import { hoy, esFecha } from '@/lib/fechas';
+import { hoy, esFecha, sumarDias } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { guardaDelDia } from '@/lib/guardaCierre';
 
@@ -125,8 +130,13 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
         // Las condiciones de cancelación por defecto: lo que rige donde la
         // cotización las deja en blanco.
         tranquilidad: { cambiosFecha: cfg.cambiosFecha, cancelacionDias: cfg.cancelacionDias,
-          reembolsoPct: cfg.reembolsoPct }
+          reembolsoPct: cfg.reembolsoPct, avisoCambio: cfg.cambiosFechaDias }
       },
+      // **Los topes de Configuración** (2026-11-23, `condiciones.ts`): lo más
+      // generoso que un vendedor puede ofrecer sin pedirlo. Lo aprobado para
+      // una cotización la pantalla lo saca de su propia marca.
+      topes: topesDe(cfg),
+      cambiosFechaDias: cfg.cambiosFechaDias,
       hoy: hoy(),
       usuario: quien.usuario,
       rol: quien.rol,
@@ -190,6 +200,64 @@ function cuandoDelCuerpo(cuerpo: Record<string, unknown>, antes?: Presupuesto) {
 }
 
 const pct = (v: unknown) => Math.min(100, Math.max(0, aEntero(v)));
+
+/** Las condiciones de una cotización que tienen tope en Configuración. */
+const condicionesDe = (p: Pick<Presupuesto, 'anticipo' | 'anticipoMonto' | 'saldoDias' | 'cambiosFecha'
+  | 'cancelacionDias' | 'reembolso' | 'descuento'>): CondicionesCotizacion => ({
+  anticipo: p.anticipo, anticipoMonto: p.anticipoMonto ?? null, saldoDias: p.saldoDias,
+  cambiosFecha: p.cambiosFecha, cancelacionDias: p.cancelacionDias, reembolso: p.reembolso,
+  descuento: p.descuento
+});
+
+/** Un recorte en una frase, para la pantalla: *Devolución al cancelar: 40% → 20%*. */
+const fraseRecorte = (r: Recorte) =>
+  `${NOMBRE_CONDICION[r.campo]}: ${valorCondicion(r.campo, r.pedido)} → ${valorCondicion(r.campo, r.queda)}`;
+
+/**
+ * **Los topes de Configuración** (regla A, 2026-11-23, `condiciones.ts`).
+ *
+ * Lo que el vendedor escribe más generoso que Configuración —o que lo
+ * aprobado para esa cotización— queda en el tope: menos anticipo, el saldo
+ * más tarde, más cambios de fecha, cancelar con menos aviso, más devolución
+ * o más descuento. Al editar, solo lo que cambia (`antes`): lo que el
+ * cliente ya vio no cambia solo.
+ *
+ * Quien aprueba —la gerencia general, el encargado de pagos y el
+ * administrador— no tiene tope: lo que deje por encima queda como
+ * *Condiciones especiales* aprobadas por él, y en la bitácora.
+ *
+ * Cambia `p` en el lugar y devuelve las líneas que se guardan.
+ */
+function conTopes(
+  p: Omit<Presupuesto, 'fila'>, lineas: LineaEntrante[], cfg: Awaited<ReturnType<typeof leerConfig>>,
+  rol: Rol, usuario: string, antes?: { p: Presupuesto; lineas: LineaEntrante[] }
+): { lineas: LineaEntrante[]; recortes: string[]; aprobo: string } {
+  const total = cuentasDe(lineas, p.descuento).total;
+  if (!puede(rol, 'showBajoMinimo')) {
+    const r = aplicarTopes(condicionesDe(p), lineas, total, topesDe(cfg, aprobadasDe(p)),
+      antes ? { p: condicionesDe(antes.p), lineas: antes.lineas } : undefined);
+    Object.assign(p, r.p);
+    return { lineas: r.lineas, recortes: r.recortes.map(fraseRecorte), aprobo: '' };
+  }
+  const base = topesDe(cfg);
+  const sobre = sobreElTope(condicionesDe(p), lineas, base);
+  if (!Object.keys(sobre).length) return { lineas, recortes: [], aprobo: '' };
+  const vigente = condicionesEspecialesDe(p.condicionesEspeciales).estado === 'aprobada'
+    ? escribirPedido(leerPedido(p.condicionesPedidas)) : '';
+  const nuevo = escribirPedido(sobre);
+  if (vigente === nuevo) return { lineas, recortes: [], aprobo: '' };
+  p.condicionesPedidas = nuevo;
+  p.condicionesEspeciales = marcaCondiciones('aprobada', usuario, ahoraEnChile(), 'las dejó quien aprueba');
+  return { lineas, recortes: [], aprobo: frasePedido(sobre, base) };
+}
+
+/**
+ * **La vigencia no pasa del día antes del evento** (regla B, 2026-11-23):
+ * una cotización no puede seguir abierta cuando el evento ya ocurrió.
+ * Solo baja, nunca alarga.
+ */
+const vigenciaAntesDelEvento = (validoHasta: string, fecha: string) =>
+  validoHasta && esFecha(fecha) && validoHasta >= fecha ? sumarDias(fecha, -1) : validoHasta;
 
 /** Lo que decide los mínimos de una cotización además de sus líneas. */
 interface ParaMinimos {
@@ -289,6 +357,10 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
         devolucion: 0, canceladaPor: '', cancelada: '', diaAbierto: '',
         // El pedido de liberar el día es de la original (2026-11-12).
         exclusividad: '', diaPausado: '', comisionVendedor: '', comisionSocio: '',
+        // Un pedido de condiciones especiales que espera respuesta es de la
+        // original; lo ya aprobado vale para la conversación (2026-11-23).
+        ...(condicionesEspecialesDe(base.condicionesEspeciales).estado === 'aprobada' ? {}
+          : { condicionesPedidas: '', condicionesEspeciales: '' }),
         // Una alternativa nace sin mandar: su vigencia corre cuando se mande.
         enviada: '', ultimoSeguimiento: '', validoHasta: '', contratoEnviado: '',
         // Quien la duplica es su dueño: un vendedor que arma la opción B de
@@ -371,12 +443,16 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
       quien.usuario, ahoraEnChile());
     p.arriendoBajoMinimo = showBajoMinimoDe('', puede(quien.rol as Rol, 'showBajoMinimo'), nuevas.arriendoBajo,
       quien.usuario, ahoraEnChile());
+    const topados = conTopes(p, nuevas.lineas, cfg, quien.rol as Rol, quien.usuario);
     await guardarPresupuesto(p);
-    await guardarLineas(id, nuevas.lineas);
+    await guardarLineas(id, topados.lineas);
     await anotar({ ...quien,
       accion: estado === ESTADO_PRESUPUESTO.candidato ? 'Anotó un candidato' : 'Creó una cotización',
       detalle: `${folioDe(p)} · ${cliente.nombre} · ${p.fecha || p.periodo}` });
-    return NextResponse.json({ presupuesto: { ...p, fila: -1 } });
+    if (topados.aprobo) {
+      await anotar({ ...quien, accion: 'Dejó condiciones especiales', detalle: `${folioDe(p)} · ${topados.aprobo}` });
+    }
+    return NextResponse.json({ presupuesto: { ...p, fila: -1 }, recortes: topados.recortes });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
@@ -454,7 +530,7 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     let enviada = previo.enviada;
     let ultimoSeguimiento = previo.ultimoSeguimiento;
     let validoHasta = cuerpo.renovarVigencia
-      ? validoHastaDe(hoy(), cfgSeg.vigenciaPresupuesto) : previo.validoHasta;
+      ? vigenciaHasta(hoy(), cfgSeg.vigenciaPresupuesto, cuando.fecha) : previo.validoHasta;
     if (cuerpo.seguimiento === 'enviada' && !previo.idReserva && !estaMandada(estado)) {
       estado = ESTADO_PRESUPUESTO.enviado;
     }
@@ -470,7 +546,7 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     // mano— se anota el día y desde ahí corre la vigencia.
     if (estaMandada(estado) && !enviada) {
       enviada = hoy();
-      validoHasta = validoHastaDe(hoy(), cfgSeg.vigenciaPresupuesto);
+      validoHasta = vigenciaHasta(hoy(), cfgSeg.vigenciaPresupuesto, cuando.fecha);
     }
     // **"Todavía no se mandó"** (2026-11-12): de mandada a borrador se borran
     // la fecha de envío y la vigencia, que corren de nuevo al mandarla.
@@ -478,6 +554,8 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       && (estadoNormal(estado) === ESTADO_PRESUPUESTO.borrador
           || estadoNormal(estado) === ESTADO_PRESUPUESTO.candidato);
     if (desmandada) { enviada = ''; validoHasta = ''; }
+    // Si el evento se adelanta, la vigencia baja con él (regla B).
+    if (cuando.fecha !== previo.fecha) validoHasta = vigenciaAntesDelEvento(validoHasta, cuando.fecha);
 
     // Una ganada: si el día de su reserva —o el día al que se mueve— ya se
     // cerró, guardarla es corregirlo. Desde el 2026-11-21 la ventana de
@@ -492,6 +570,18 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
         return NextResponse.json(
           { error: 'Una cotización ganada tiene su reserva en un día: no puede quedar sin fecha.' },
           { status: 400 });
+      }
+      // **El plazo para cambiar la fecha** (2026-11-23, Configuración →
+      // *Cambios de fecha y cancelación*): con el evento más cerca que eso,
+      // moverla lo decide quien aprueba. Es lo que dice el contrato.
+      const faltan = diasAlEvento(previo.fecha, hoy());
+      if (cuando.fecha !== previo.fecha && cfgSeg.cambiosFechaDias > 0 && faltan !== null
+          && faltan < cfgSeg.cambiosFechaDias && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+        return NextResponse.json({
+          error: `Faltan ${Math.max(0, faltan)} días para el evento y la fecha se cambia con al menos `
+            + `${cfgSeg.cambiosFechaDias} días de aviso. Si de verdad hay que moverla, lo hace la gerencia, `
+            + 'el encargado de pagos o el administrador.'
+        }, { status: 409 });
       }
     }
 
@@ -581,8 +671,15 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       p.arriendoBajoMinimo = showBajoMinimoDe(previo.arriendoBajoMinimo ?? '', puede(quien.rol as Rol, 'showBajoMinimo'),
         nuevas.arriendoBajo, quien.usuario, ahoraEnChile());
     }
+    // **Los topes** (regla A, 2026-11-23): solo a lo que cambió.
+    const lineasAntes = lineasDe(await leerLineasPresupuesto(), id);
+    const topados = conTopes(p, nuevas ? nuevas.lineas : lineasAntes, cfgSeg, quien.rol as Rol, quien.usuario,
+      { p: previo, lineas: lineasAntes });
     await guardarPresupuesto(p);
-    if (nuevas) await guardarLineas(id, nuevas.lineas);
+    if (nuevas || topados.recortes.length) await guardarLineas(id, topados.lineas);
+    if (topados.aprobo) {
+      await anotar({ ...quien, accion: 'Dejó condiciones especiales', detalle: `${folioDe(p)} · ${topados.aprobo}` });
+    }
     if (p.showBajoMinimo && !previo.showBajoMinimo) {
       await anotar({ ...quien, accion: 'Dejó el show bajo el mínimo',
         detalle: `${folioDe(p)} · ${p.fecha || p.periodo} · bajo ${reglaShowDe(await leerConfig())?.desde ?? ''} personas` });
@@ -658,7 +755,8 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
                                : 'Editó una cotización',
       detalle: `${folioDe(p)} · ${p.estado || 'Borrador'}`
              + (motivoCorreccion ? ` · cambios: ${motivoCorreccion}` : '') });
-    return NextResponse.json({ ok: true, contratoEnviado: p.contratoEnviado });
+    return NextResponse.json({ ok: true, contratoEnviado: p.contratoEnviado, recortes: topados.recortes,
+      validoHasta: p.validoHasta });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
