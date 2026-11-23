@@ -286,3 +286,35 @@ otra empresa.
    está en Cloudflare.
 5. En Cuentas, darle a cada persona su rol *En Asados y Corderos*.
 
+## Probar Asados y Corderos sin pasar a producción (2026-11-23)
+
+Lo pidió el cliente: *"tenemos que poder desarrollar ahora el panel Asados y
+Corderos con sus pruebas sin pasar a producción aún"*.
+
+Cada versión de prueba de Vercel tiene una dirección distinta, así que ahí
+**la dirección no puede decir la empresa**. En una versión de prueba la dice
+una cookie, `empresa` (`empresaDe()` en `lib/empresas.ts`):
+
+- **En la entrada hay dos botones**, *🧪 Versión de prueba · entrar a: Brasas
+  de Lo Pirque / Asados y Corderos*. Apretar uno llama a `/api/empresa`, que
+  pone la cookie y vuelve a la entrada. Desde ahí todo —la entrada, las
+  rutas, las páginas— es de esa empresa, contra **su planilla de pruebas**.
+- **⇄ Ir a …** funciona igual que en producción, pero el pase se canjea en la
+  misma dirección y es él quien cambia la cookie.
+- **Solo fuera de producción** (`esDePrueba()`: `VERCEL_ENV=preview`, o un
+  computador). En producción `/api/empresa` responde 404 y la cookie no se
+  mira nunca: manda la dirección. Hay una prueba que lo fija.
+- **La sesión sigue siendo de una empresa**: después de cambiar hay que
+  entrar con una cuenta que tenga rol ahí (o pasar con el botón).
+- **Qué planillas usa una versión de prueba**: Lo Pirque, *BBDD Prueba*;
+  Asados y Corderos, la de `AYC_GOOGLE_SHEET_ID` de Preview. **Las cuentas son
+  las de *BBDD Prueba***: el rol *En Asados y Corderos* se da en Cuentas,
+  entrando a Lo Pirque. La pestaña `Usuarios` de la planilla de Asados y
+  Corderos no se usa.
+- **Una variable de Vercel nueva rige desde el despliegue siguiente**: la
+  versión de prueba tiene que haberse construido después de crearla.
+
+**El DNS de `asadosycorderos.cl`** lo sirve NS1 (`dnsN.p09.nsone.net`), que
+es el DNS de Netlify —donde está también el CRM—: el CNAME `panel` se crea
+ahí, en *Domain management* del sitio en Netlify, no en NIC Chile.
+

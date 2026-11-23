@@ -12,7 +12,8 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { anotar } from '@/lib/datos';
-import { empresaActual } from '@/lib/empresa';
+import { conEmpresa, empresaActual, empresaPorId } from '@/lib/empresa';
+import { COOKIE_EMPRESA, empresasEncendidas, esDePrueba } from '@/lib/empresas';
 import { leerPase, firmarSesion, secretoDeSesion, COOKIE_SESION, DURACION_SESION } from '@/lib/sesion';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,13 @@ export const GET = conLecturas([], async function GET(req: Request) {
   const base = `${url.protocol}//${req.headers.get('host') ?? url.host}`;
   const secreto = secretoDeSesion(process.env);
   const pase = await leerPase(url.searchParams.get('t'), secreto);
-  if (!pase || pase.empresa !== empresaActual().id) {
+  // En una versión de prueba no hay una dirección por empresa: el pase vale
+  // para la empresa que nombra, si está encendida, y deja elegida ésa.
+  const dePrueba = esDePrueba(process.env);
+  const vale = !!pase && (dePrueba
+    ? empresasEncendidas(process.env).some((e) => e.id === pase.empresa)
+    : pase.empresa === empresaActual().id);
+  if (!pase || !vale) {
     return NextResponse.redirect(`${base}/login`);
   }
   const token = await firmarSesion({
@@ -36,6 +43,8 @@ export const GET = conLecturas([], async function GET(req: Request) {
     httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
     path: '/', maxAge: DURACION_SESION
   });
-  await anotar({ usuario: pase.usuario, rol: pase.rol, accion: 'Entró al panel (pasó desde la otra empresa)' });
+  if (dePrueba) res.cookies.set(COOKIE_EMPRESA, pase.empresa, { sameSite: 'lax', path: '/', maxAge: DURACION_SESION });
+  await conEmpresa(empresaPorId(pase.empresa), () =>
+    anotar({ usuario: pase.usuario, rol: pase.rol, accion: 'Entró al panel (pasó desde la otra empresa)' }));
   return res;
 });

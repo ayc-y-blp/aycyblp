@@ -18,7 +18,7 @@ import { conLecturas } from '@/lib/sheets';
 import { leerCuentas, anotar } from '@/lib/datos';
 import { cuentaDeSesion, rolEn, otrasDe, HOJA_USUARIOS } from '@/lib/usuarios';
 import { empresaActual } from '@/lib/empresa';
-import { empresasEncendidas, direccionDe, fichaDe } from '@/lib/empresas';
+import { empresasEncendidas, direccionDe, esDePrueba, fichaDe } from '@/lib/empresas';
 import { cookieDe, COOKIE_SESION, leerSesion, firmarSesion, secretoDeSesion, DURACION_PASE } from '@/lib/sesion';
 import { iguales, ROL } from '@/lib/auth';
 
@@ -60,7 +60,10 @@ export const POST = conLecturas([HOJA_USUARIOS], async function POST(req: Reques
     }, secreto, undefined, DURACION_PASE);
     await anotar({ usuario: sesion.usuario, rol: sesion.rol,
       accion: `Pasó al panel de ${fichaDe(destino, process.env).nombre}` });
-    return NextResponse.json({ ir: `${direccionDe(destino, process.env)}/api/sesion/pase?t=${encodeURIComponent(pase)}` });
+    // En una versión de prueba las dos empresas viven en la misma dirección:
+    // el pase se canjea ahí mismo, y es él quien cambia de empresa.
+    const base = esDePrueba(process.env) ? '' : direccionDe(destino, process.env);
+    return NextResponse.json({ ir: `${base}/api/sesion/pase?t=${encodeURIComponent(pase)}` });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

@@ -70,6 +70,48 @@ export function empresaDeHost(host: unknown, env: Entorno): string {
   return CASA;
 }
 
+/**
+ * **En una versión de prueba, la empresa se elige con un botón**
+ * (2026-11-23, lo pidió el cliente: *"tenemos que poder desarrollar ahora el
+ * panel Asados y Corderos con sus pruebas sin pasar a producción aún"*).
+ *
+ * Cada versión de prueba de Vercel tiene una dirección distinta, así que ahí
+ * la dirección no puede decir la empresa. En su lugar la dice una cookie,
+ * `empresa`, que pone `/api/empresa` al apretar el botón.
+ *
+ * **Solo fuera de producción**: en Vercel, `VERCEL_ENV` es `production` en el
+ * panel de verdad, y ahí esta cookie no se mira nunca. Si no, cualquiera
+ * podría pedir la otra empresa con solo escribirla.
+ */
+export const COOKIE_EMPRESA = 'empresa';
+
+export function esDePrueba(env: Entorno): boolean {
+  return env.VERCEL_ENV === 'preview' || (!env.VERCEL_ENV && env.NODE_ENV === 'development');
+}
+
+function cookie(cabecera: unknown, nombre: string): string {
+  for (const parte of String(cabecera ?? '').split(';')) {
+    const i = parte.indexOf('=');
+    if (i > 0 && parte.slice(0, i).trim() === nombre) return parte.slice(i + 1).trim();
+  }
+  return '';
+}
+
+/**
+ * **De qué empresa es una petición.** En producción, la de su dirección. En
+ * una versión de prueba, la que dice la cookie si nombra una empresa
+ * encendida; sin cookie, la de su dirección (o sea, la casa).
+ */
+export function empresaDe(
+  peticion: { get(nombre: string): string | null }, env: Entorno
+): string {
+  if (esDePrueba(env)) {
+    const elegida = cookie(peticion.get('cookie'), COOKIE_EMPRESA);
+    if (elegida && empresasEncendidas(env).some((e) => e.id === elegida)) return elegida;
+  }
+  return empresaDeHost(peticion.get('host'), env);
+}
+
 export function fichaDe(id: string, env: Entorno): FichaEmpresa {
   return empresasDe(env).find((e) => e.id === id) ?? empresasDe(env)[0];
 }

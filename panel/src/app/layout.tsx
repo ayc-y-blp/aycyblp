@@ -1,4 +1,4 @@
-import { empresaDeHost, empresasEncendidas, fichaDe } from '@/lib/empresas';
+import { empresaDe, empresasEncendidas, esDePrueba, fichaDe } from '@/lib/empresas';
 import type { Metadata } from 'next';
 import './globals.css';
 import Cabecera from '@/components/Cabecera';
@@ -30,7 +30,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // **De qué empresa es esta dirección** (2026-11-23, Fase 5), y a cuáles
   // puede pasar la cuenta. Con una sola empresa encendida no se dibuja nada.
   const encendidas = empresasEncendidas(process.env);
-  const empresa = fichaDe(empresaDeHost(headers().get('host'), process.env), process.env);
+  const empresa = fichaDe(empresaDe(headers(), process.env), process.env);
+  // En una versión de prueba la empresa se elige con un botón, en la entrada.
+  const elegir = esDePrueba(process.env) && encendidas.length > 1
+    ? encendidas.map((e) => ({ id: e.id, nombre: e.nombre })) : [];
   const otras = encendidas.filter((e) => e.id !== empresa.id && (sesion?.otras ?? []).includes(e.id))
     .map((e) => ({ id: e.id, nombre: e.nombre }));
   return (
@@ -57,7 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <Cabecera rol={sesion?.rol ?? ''} usuario={sesion?.usuario ?? ''} gerencia={sesion?.gerencia === true}
           rolReal={sesion?.rolReal ?? ''} verComoHasta={sesion?.rolReal ? sesion.expira : 0}
-          conComentar={conComentar} empresa={empresa.nombre} variasEmpresas={encendidas.length > 1} otras={otras} />
+          conComentar={conComentar} empresa={empresa.nombre} variasEmpresas={encendidas.length > 1} otras={otras} elegir={elegir} />
         <Recorrido rol={sesion?.rol ?? ''} />
         {/* El rol y la vista gerencia, para que cada pantalla sepa qué se
             mira y qué se toca (ver `usarSoloMira()`). */}

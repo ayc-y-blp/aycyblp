@@ -32,7 +32,7 @@ import BotonTema from './BotonTema';
 import Comentar from './Comentar';
 
 export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '', verComoHasta = 0, conComentar = false,
-  empresa = 'Brasas de Lo Pirque', variasEmpresas = false, otras = [] }: {
+  empresa = 'Brasas de Lo Pirque', variasEmpresas = false, otras = [], elegir = [] }: {
   rol: string; usuario: string; gerencia?: boolean;
   /** De qué empresa es esta dirección (Fase 5). */
   empresa?: string;
@@ -40,6 +40,8 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
   variasEmpresas?: boolean;
   /** Las otras empresas a las que esta cuenta puede pasar. */
   otras?: { id: string; nombre: string }[];
+  /** Solo en una versión de prueba: las empresas entre las que se elige al entrar. */
+  elegir?: { id: string; nombre: string }[];
   /** Si los comentarios están conectados a su planilla (`COMENTARIOS_SHEET_ID`). */
   conComentar?: boolean;
   /** 'admin' si es un administrador mirando como otro rol ("ver como"). */
@@ -107,6 +109,19 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
                 y es donde alguien se encuentra con el tema que no quería. En
                 la página del trabajador no: ahí la barra es una sola palabra
                 y el botón sería el único control de una página de lectura. */}
+            {/* **Versión de prueba: a qué empresa se entra** (2026-11-23). En
+                producción lo dice la dirección y esto no se dibuja. */}
+            {esEntrada && elegir.length > 1 && (
+              <span className="flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="font-semibold text-ambar-texto">🧪 Versión de prueba · entrar a:</span>
+                {elegir.map((e) => (
+                  <a key={e.id} href={`/api/empresa?a=${e.id}`} aria-current={e.nombre === empresa ? 'true' : undefined}
+                    className={`boton min-h-[40px] ${e.nombre === empresa ? '!border-oro bg-oro/10 font-bold text-oro' : ''}`}>
+                    {e.nombre === empresa ? '✓ ' : ''}{e.nombre}
+                  </a>
+                ))}
+              </span>
+            )}
             {esEntrada && (<><span className="flex-1" /><BotonTema /></>)}
           </div>
         ) : (

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { leerSesion, secretoDeSesion, cookieDe, COOKIE_SESION } from './lib/sesion.ts';
 import { puede, puedeVer, esTareaProgramada, type Rol } from './lib/auth.ts';
-import { empresaDeHost } from './lib/empresas.ts';
+import { empresaDe } from './lib/empresas.ts';
 
 
 /**
@@ -49,6 +49,9 @@ const PUBLICAS = [
   // sesión en esta dirección, y lo que lo protege es la firma del pase, que
   // dura un minuto y dice para qué empresa es.
   '/api/sesion/pase',
+  // Elegir la empresa en una versión de prueba: solo pone una cookie, y en
+  // producción responde 404.
+  '/api/empresa',
   // El ícono de la pestaña y el del teléfono (2026-11-22): sin sesión, la
   // entrada y los links de cotización, contrato y trabajador quedaban con el
   // ícono genérico del navegador. Son dos imágenes fijas, sin datos.
@@ -131,7 +134,7 @@ export async function middleware(req: NextRequest) {
   );
   // **Una sesión vale solo en la dirección de su empresa** (2026-11-23): el
   // rol que lleva es el de esa empresa. Con la de otra, es como no tener.
-  const sesion = leida && leida.empresa === empresaDeHost(req.headers.get('host'), process.env)
+  const sesion = leida && leida.empresa === empresaDe(req.headers, process.env)
     ? leida : null;
   if (sesion) {
     // Quien no puede ver el calendario no tiene nada que hacer en la

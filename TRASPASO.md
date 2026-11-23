@@ -203,6 +203,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `conLecturas()`, y lo que un archivo recuerda de la planilla o la tienda va
   con `porEmpresa()` (ver `panel/CLAUDE.md`, "Dos empresas en el mismo
   panel").
+- **Asados y Corderos se prueba en las versiones de prueba, sin producción**
+  (23-11-2026): en la entrada de una versión de prueba hay un botón por
+  empresa. El cliente creó las dos planillas (*AyC BBDD Produccion* y *AyC
+  BBDD Prueba*) y puso `AYC_GOOGLE_SHEET_ID` en Vercel. El DNS de
+  `asadosycorderos.cl` está en Netlify. Ver `panel/FASE5.md`, "Probar Asados
+  y Corderos sin pasar a producción".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

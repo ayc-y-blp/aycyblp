@@ -28,7 +28,7 @@
  * escapa de la pieza. El plan completo está en `panel/FASE5.md`.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { AYC, CASA, empresaDeHost, fichaDe } from './empresas.ts';
+import { AYC, CASA, empresaDe, fichaDe } from './empresas.ts';
 
 export interface Empresa {
   /** Su nombre corto, fijo. No es el nombre comercial, que vive en `Config`. */
@@ -118,9 +118,9 @@ export function laCasa(): Empresa {
   return delEntorno();
 }
 
-/** La empresa de una petición, por su dirección. */
+/** La empresa de una petición: por su dirección, o la elegida en una versión de prueba. */
 export function empresaDeLaPeticion(req: { headers: { get(n: string): string | null } }): Empresa {
-  return empresaPorId(empresaDeHost(req.headers.get('host'), process.env));
+  return empresaPorId(empresaDe(req.headers, process.env));
 }
 
 /**

@@ -6700,6 +6700,21 @@ console.log('\nDos empresas: la dirección, las cuentas y el pase');
     && M.direccionDe(M.AYC, env) === 'https://panel.asadosycorderos.cl',
     'las direcciones se pueden cambiar por variable, y a un computador se va sin https');
 
+  // En una versión de prueba la empresa se elige con una cookie; en producción, nunca.
+  const pide = (host: string, cookie = '') => ({ get: (n: string) => (n === 'host' ? host : n === 'cookie' ? cookie : null) });
+  const prev = { ...env, VERCEL_ENV: 'preview' }; const prod = { ...env, VERCEL_ENV: 'production' };
+  ok(M.esDePrueba(prev) && !M.esDePrueba(prod) && !M.esDePrueba(env) && M.esDePrueba({ NODE_ENV: 'development' }),
+    'es de prueba una versión de prueba de Vercel o un computador; producción, no');
+  ok(M.empresaDe(pide('landing-pirque-git-x.vercel.app', 'sesion=abc; empresa=asados-y-corderos'), prev) === M.AYC
+    && M.empresaDe(pide('landing-pirque-git-x.vercel.app'), prev) === M.CASA
+    && M.empresaDe(pide('landing-pirque-git-x.vercel.app', 'empresa=inventada'), prev) === M.CASA,
+    'en una versión de prueba manda la cookie, si nombra una empresa encendida; sin ella, la casa');
+  ok(M.empresaDe(pide('panel.brasasdelopirque.cl', 'empresa=asados-y-corderos'), prod) === M.CASA
+    && M.empresaDe(pide('panel.asadosycorderos.cl', 'empresa=lo-pirque'), prod) === M.AYC,
+    'en producción la cookie no se mira: manda la dirección');
+  ok(M.empresaDe(pide('x.vercel.app', 'empresa=asados-y-corderos'), { VERCEL_ENV: 'preview' }) === M.CASA,
+    'y con la otra empresa apagada, tampoco');
+
   // La pestaña de cuentas: la columna del rol en la otra empresa.
   const base = [['Nombre', 'Usuario', 'Rol', 'Activo', 'Clave (huella)', 'Vista gerencia', 'Avisos leídos'],
                 ['Ana', 'ana', 'vendedor', 'Sí', 'h', 'No', ''], ['Beto', 'beto', 'encargado', 'Sí', 'h', 'No', '']];

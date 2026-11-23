@@ -16,7 +16,7 @@ import { NextResponse } from 'next/server';
 import { puede, puedeVer, ROL, type Rol, type Accion } from './auth.ts';
 import { leerSesion, secretoDeSesion, cookieDe, COOKIE_SESION } from './sesion.ts';
 import { NOMBRE_ROL } from './roles.ts';
-import { empresaDeHost } from './empresas.ts';
+import { empresaDe } from './empresas.ts';
 // Se vuelve a exportar porque media app la importa desde acá; vive en
 // sesion.ts para que las pruebas puedan cargarla sin arrastrar next/server.
 export { cookieDe };
@@ -49,7 +49,7 @@ export async function quienEs(req: Request): Promise<Quien> {
   if (!sesion) return NADIE;
   // La sesión es de una empresa y vale solo en su dirección (2026-11-23).
   // El middleware ya lo mira; acá se mira de nuevo, como todo lo demás.
-  if (sesion.empresa !== empresaDeHost(req.headers.get('host'), process.env)) return NADIE;
+  if (sesion.empresa !== empresaDe(req.headers, process.env)) return NADIE;
   return { usuario: sesion.usuario, rol: sesion.rol as Rol, gerencia: sesion.gerencia === true,
            ...(sesion.rolReal ? { rolReal: sesion.rolReal } : {}) };
 }
