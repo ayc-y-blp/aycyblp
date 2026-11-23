@@ -1002,19 +1002,22 @@ seguros"*.
 - Se mide con un script de Playwright que recorre las páginas y lista las
   secciones cuyo contenido pasa del alto útil; no está en el repo.
 
-### El desayuno y la once, solo en socios y en el dossier (2026-11-23)
+### El desayuno y la once: no en Experiencias ni en Promociones (2026-11-23)
 
 Lo pidió el cliente: *"si accedes a experiencias desde el sitio público,
 borra la sección del desayuno y del once campestre. Ahí no hay que
-mostrar. Solo en los socios comerciales… en el dossier sí"*. Se sacó de
-`experiencias.html`, de `eventos.html` y del panel *El recinto y los
-extras* de `promociones.html`, cuya bajada pasó a *Arriendo exclusivo y
-eventos a medida*. **Queda en `landing-afiliados.html` y `dossier.html`**
-(y en sus PDF). El *"y en promociones no"* salió de una frase dictada
-(*"si en la producción no"*), leída junto con el *solo en los socios*: si
-promociones sí lo llevaba, se repone desde el dossier. Los precios siguen
-en `precios.json`; las llaves que ya no usaba nadie salieron de los
-diccionarios.
+mostrar"*. Primero salió también de `eventos.html` y del panel *El recinto
+y los extras* de `promociones.html`, y el cliente lo afinó: *"en eventos
+déjalo, en promociones no"*. Quedó así:
+
+| Página | ¿Desayuno y once? |
+|---|---|
+| `experiencias.html` | no |
+| `eventos.html` | sí |
+| `promociones.html` | no (la bajada del panel dice *Arriendo exclusivo y eventos a medida*) |
+| `landing-afiliados.html`, `dossier.html` y sus PDF | sí |
+
+Los precios siguen en `precios.json`.
 
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
