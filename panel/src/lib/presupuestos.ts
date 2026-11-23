@@ -227,7 +227,22 @@ export const COL_PRESUPUESTOS = {
    * `/api/presupuestos/condiciones`.
    */
   condicionesPedidas: 'Condiciones pedidas',
-  condicionesEspeciales: 'Condiciones especiales'
+  condicionesEspeciales: 'Condiciones especiales',
+  /**
+   * **Los acuerdos adicionales que vio pagos** (2026-11-23, `acuerdos.ts`):
+   * *"Visto · quién · cuándo · huella"*. La huella es la del texto que se vio:
+   * si el vendedor lo cambia, vuelve a la bandeja. La escribe solo
+   * `/api/presupuestos/acuerdos`.
+   */
+  acuerdosRevisados: 'Acuerdos revisados',
+  /**
+   * **Cuántas veces se renovó la vigencia** (2026-11-23, lo decidió el
+   * cliente: la primera la hace el vendedor; la segunda se pide). La segunda
+   * se pide con *Pedir condiciones especiales* (`renovar=1` en `Condiciones
+   * pedidas`), y al aprobarla se renueva en el acto. La escriben solo el
+   * servidor (`/api/presupuestos` y `/api/presupuestos/condiciones`).
+   */
+  renovaciones: 'Renovaciones'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -389,6 +404,10 @@ export interface Presupuesto {
   /** Lo pedido por sobre los topes y su marca: ver `COL_PRESUPUESTOS.condicionesPedidas`. */
   condicionesPedidas?: string;
   condicionesEspeciales?: string;
+  /** Ver `COL_PRESUPUESTOS.acuerdosRevisados`. */
+  acuerdosRevisados?: string;
+  /** Cuántas veces se renovó la vigencia: ver `COL_PRESUPUESTOS.renovaciones`. */
+  renovaciones?: number;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -998,6 +1017,8 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       arriendoBajoMinimo: en(f, i.arriendoBajoMinimo).trim(),
       condicionesPedidas: en(f, i.condicionesPedidas).trim(),
       condicionesEspeciales: en(f, i.condicionesEspeciales).trim(),
+      acuerdosRevisados: en(f, i.acuerdosRevisados).trim(),
+      renovaciones: Math.max(0, aEntero(en(f, i.renovaciones))),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1076,6 +1097,8 @@ export function filaPresupuesto(
   poner(i.arriendoBajoMinimo, p.arriendoBajoMinimo ?? '');
   poner(i.condicionesPedidas, p.condicionesPedidas ?? '');
   poner(i.condicionesEspeciales, p.condicionesEspeciales ?? '');
+  poner(i.acuerdosRevisados, p.acuerdosRevisados ?? '');
+  poner(i.renovaciones, p.renovaciones ? String(p.renovaciones) : '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

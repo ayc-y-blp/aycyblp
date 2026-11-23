@@ -166,7 +166,7 @@ revisan antes de cada cambio en esta carpeta.
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
-  | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
+  | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -487,6 +487,130 @@ muy entendible"*:
   ella. Con 30 días de aviso para cambiar la fecha, el vendedor no puede mover
   una ganada a 8 días del evento. Y el contrato de Andrés Pino, a 15 días,
   dice que no aplica cancelar con reembolso.
+
+## Los otros casos: avisar, pedir o dejar libre (2026-11-23)
+
+Al revisar *lo que el vendedor puede prometer* (sección anterior) se le
+mostraron al cliente siete casos más donde el vendedor podía comprometer algo
+sin que nadie lo viera. Los contestó uno por uno: *"Punto 1, pero como
+recomendación… no como condición. Porque puede ser que se dice, no, ok, los
+dejamos hasta las 23. Mejor vender. De acuerdo con punto 2… 3… 4. Sin
+documento, haz un aviso pero no pides aprobación en ese momento. De acuerdo
+con punto 6. De acuerdo con número 7."*
+
+| Caso | Qué hace el panel | Frena |
+|---|---|---|
+| 1 · El horario pasa del cierre de siempre | En el paso Contrato: *⚠ Pasa del cierre (18:00): cobra el extra*, con su `?` (`horarioExtra`). Es una recomendación | No |
+| 2 · Acuerdos adicionales | Le llegan al encargado de pagos, en la bandeja de lo que revisa | No: ya rigen |
+| 3 · El precio de cada producto | Sigue libre: se propone y se negocia | — |
+| 4 · Ganar sin anticipo ni contrato | Sigue como estaba: pregunta en serio y la reserva nace sujeta a espacio | — |
+| 5 · Sin documento | *⚠ Sin boleta ni factura: queda anotado en la bitácora*, con su `?` (`sinDocumento`) | No |
+| 6 · Renovar la vigencia | La primera la hace el vendedor; la segunda se pide | La segunda |
+| 7 · El show o el arriendo bajo su mínimo | Se pide con el mismo botón de las condiciones especiales | Hasta que lo aprueben |
+
+### 1 · El horario, una recomendación
+
+- **`ElegirHorario`** compara el *hasta* con el cierre del horario de siempre
+  (`datos.contrato.horario`, de Configuración) y, si pasa —o termina después
+  de medianoche—, lo dice en ámbar. No cambia nada ni pide nada.
+- **Para que el paso Contrato no creciera**, *↺ Volver al de siempre* subió a
+  la línea del rótulo *Horario del evento*, a la derecha (36px, secundario),
+  y el aviso va en un renglón. Con un horario propio el paso mide 669px a
+  1280×650, lo mismo que antes del aviso (668): ya no cabía, por los avisos
+  de *En Configuración falta…* del panel de ejemplo. Sin horario propio, 633.
+
+### 2 · Los acuerdos adicionales, a la vista de pagos
+
+Son texto libre que va al contrato como la última cláusula: ahí se puede
+prometer cualquier cosa. **No se frenan** —ya rigen, como un pago anotado—:
+le llegan a quien tiene `pagar` (pagos, la gerencia general y el
+administrador) en la bandeja de lo que revisa, con **✓ Visto**.
+
+- **`lib/acuerdos.ts`** (pura, con pruebas): la marca guarda **la huella del
+  texto que se vio** (`huellaDe()`, sin importar los espacios). Si el vendedor
+  cambia los acuerdos, la huella ya no calza y **vuelven a la bandeja solos**
+  (`acuerdosPorRevisar()`).
+- **Columna nueva al final de `Presupuestos`: `Acuerdos revisados`**
+  (*"Visto · Verónica Lagos · cuándo · huella"*).
+- **La ruta** `POST /api/presupuestos/acuerdos` (`{id, huella}`), con
+  `pagar`. Si el texto cambió mientras se miraba, 409: *vuelve a leerlos*.
+  Bitácora: *Revisó los acuerdos adicionales*.
+- **En la bandeja** (`PendienteAcuerdos`, de `DE_PAGOS`): *Jorge escribió
+  acuerdos adicionales · cliente · N°*, con el texto citado debajo, *Ya rige:
+  va al contrato como la última cláusula…* y *Ver la cotización →*. No se
+  rechaza: si hay que cambiarlos, se conversa con el vendedor. No salen las
+  perdidas, no elegidas ni canceladas.
+
+### 5 · Sin documento, un aviso
+
+En el paso Envío, con *Sin documento* elegido: *⚠ Sin boleta ni factura:
+queda anotado en la bitácora*. **Queda en la bitácora** —*Dejó una
+cotización sin documento*— al crearla así o al pasarla a *Sin documento*; no
+cada vez que se guarda.
+
+### 6 · Renovar la vigencia
+
+- **Columna nueva al final de `Presupuestos`: `Renovaciones`**, cuántas van.
+- En el paso Envío, una cotización vencida dice *Venció el …* y tiene **↻
+  Renovar la vigencia · 15 días** (los de Configuración, desde hoy, sin pasar
+  del día antes del evento: `vigenciaHasta()`). La renueva el vendedor **una
+  vez**; la segunda dice *Ya se renovó una vez: la siguiente se pide con ✋
+  Pedir condiciones especiales…*. Quien aprueba renueva sin límite.
+- **El servidor lo comprueba**: `PATCH /api/presupuestos` con
+  `renovarVigencia` responde 409 si ya van una y la cuenta no tiene
+  `showBajoMinimo`. Bitácora: *Renovó la vigencia de una cotización*.
+- **Mandarla de nuevo no la revive**: pasar una vencida a *Todavía no se
+  mandó* —que borra la vigencia para que corra de nuevo al mandarla— responde
+  409 al vendedor, con *renueva la vigencia en el paso Envío*. Si no, era una
+  renovación sin contar. Por eso, vencida, ese botón no se le dibuja.
+- **Pedida y aprobada, se renueva en el acto** (`/condiciones`, `aprobar`) y
+  cuenta una más. *Renovar* no queda en lo aprobado: si no, cada pedido nuevo
+  lo arrastraría.
+
+### 7 · El show o el arriendo bajo su mínimo, pedidos
+
+- **El mismo botón**: en el paso Productos, cuando el show o el arriendo van
+  con su mínimo, *✋ Pedir condiciones especiales…* va al pie (en el celular,
+  dentro de la caja del mínimo). `PedirCondiciones` suma dos campos —*Show
+  ecuestre* y *Arriendo*, el monto neto, + IVA, con el mínimo al lado— y la
+  fila *Vigencia* cuando hay que renovarla.
+- **En `Condiciones pedidas`** van como `show=60000|arriendo=100000|renovar=1`
+  (`Pedido`, `EXTRAS_PEDIDO` en `lib/condiciones.ts`). `aprobadasDe()` sigue
+  devolviendo solo los topes; **`minimosAprobados()`** devuelve el show y el
+  arriendo aprobados.
+- **Aprobado, es el mínimo de esa cotización**: `conMinimoShow()` y
+  `conMinimoArriendo()` (`lib/cotizar.ts`) bajan el mínimo de la regla al
+  aprobado (nunca lo suben; 0 es sin mínimo). Corre en la ventana, al guardar
+  (`/api/presupuestos`) y al ganar (`/convertir`), con la misma función. La
+  caja dice *mínimo $60.000 (aprobado)*.
+- **Un pedido nuevo conserva lo ya aprobado**, también los mínimos; y lo que
+  deja quien aprueba por encima de Configuración no se los borra.
+- **La frase** (`frasePedido()`): *Show ecuestre a $60.000 + IVA (bajo el
+  mínimo) · Arriendo a $100.000 + IVA · Renovar la vigencia (ya se renovó una
+  vez)*.
+
+### Lo de siempre
+
+- **Lecturas de Google**: ninguna más. Los acuerdos de la bandeja salen de la
+  tanda de `Presupuestos` que `/api/ocupacion` ya leía; `/acuerdos` lee una
+  tanda (`Presupuestos`).
+- **Permisos**: ninguno nuevo. `pagar` ve y marca los acuerdos;
+  `showBajoMinimo` aprueba los mínimos y la segunda renovación.
+- **Dos columnas nuevas** al final de `Presupuestos`: `Acuerdos revisados` y
+  `Renovaciones`.
+- **Ayuda**: `horarioExtra` y `sinDocumento` (nuevos), `acuerdos`,
+  `condicionesEspeciales`, `seguimiento`, el `?` de Cotizaciones y el del
+  calendario (lo que revisa pagos), y la misión *La plata de los clientes*.
+  Ninguna foto cambia: ninguna muestra estos casos.
+- **Ventanas**: *Pedir condiciones especiales* con el show y el arriendo mide
+  442px a 1280×650 (el formulario va en dos campos por fila en el computador).
+- **Probado en el panel de ejemplo**: los acuerdos le llegan a pagos y no al
+  vendedor (403), con la huella vieja responde 409, y después de ✓ Visto
+  salen de la bandeja y vuelven si cambia el texto; la primera renovación del
+  vendedor queda hasta el día antes del evento y la segunda responde 409; pedida
+  y aprobada por la gerencia, cuenta dos. En un martes con 12 personas, el
+  vendedor pide el show a $60.000 y el arriendo a $100.000, la gerencia
+  aprueba y la caja dice *mínimo $60.000 (aprobado)*.
 
 ## El periodo en un marco: Cotizaciones → Lista, Estadísticas, Vendedores e Informe (2026-11-22)
 

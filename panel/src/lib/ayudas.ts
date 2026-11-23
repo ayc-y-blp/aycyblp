@@ -57,8 +57,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'números de las reservas en grandes rasgos: cuántas, no-shows, plata '
       + 'y de dónde vienen.',
       'Si haces los pagos, arriba te llega lo que tienes que revisar: los '
-      + 'pagos que alguien anotó a mano, los descuentos ya aplicados y las '
-      + 'cuentas o tarifas que cambió otro. Ya rigen; los cierras con ✓ '
+      + 'pagos que alguien anotó a mano, los descuentos ya aplicados, las '
+      + 'cuentas o tarifas que cambió otro y los acuerdos adicionales de una '
+      + 'cotización. Ya rigen; los cierras con ✓ '
       + 'Revisado, ✓ Visto o ✓ Confirmar.'
     ],
     ojo: 'Abrir un día acá lo pone en el sitio para recibir reservas. '
@@ -265,7 +266,11 @@ export const AYUDAS: Record<string, Ayuda> = {
        + 'encima de los dos. Las condiciones para el cliente —anticipo, saldo, '
        + 'descuentos, cambios de fecha, cancelación y devolución— tienen su tope '
        + 'en Configuración: algo más generoso se pide con “✋ Pedir condiciones '
-       + 'especiales…” y lo aprueban ellos mismos. Con el evento encima, el '
+       + 'especiales…” y lo aprueban ellos mismos; con el mismo botón se pide el '
+       + 'show o el arriendo bajo su mínimo, y renovar la vigencia por segunda vez '
+       + '(la primera la renueva el vendedor). Los acuerdos adicionales le llegan '
+       + 'al encargado de pagos para que los mire, y una venta sin documento queda '
+       + 'en la bitácora: avisan y no frenan. Con el evento encima, el '
        + 'contrato no ofrece lo que ya no se alcanza a usar: el saldo se paga al '
        + 'firmar y una cancelación o un cambio de fecha fuera de plazo no van. '
        + 'Para ofrecer otra opción al mismo cliente usa “Hacer una '
@@ -832,7 +837,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   acuerdos: {
     titulo: 'Acuerdos adicionales',
     texto: [
-      'Lo que se acordó aparte con el cliente. Va como la última cláusula del contrato, tal como lo escribes.'
+      'Lo que se acordó aparte con el cliente. Va como la última cláusula del contrato, tal como lo escribes.',
+      'Le llega al encargado de pagos para que lo mire: no te frena, ya rige. Si lo cambias, le vuelve a llegar.'
     ]
   },
   cambiosFecha: {
@@ -857,11 +863,26 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Es lo que imprime el contrato y lo que propone "Cancelar evento". Se negocia por cotización, hasta el tope de Configuración.'
     ]
   },
+  horarioExtra: {
+    titulo: 'Pasa del cierre de siempre',
+    texto: [
+      'El horario de siempre sale de Configuración. Se puede pactar más tarde: es una recomendación, no una regla.',
+      'Lo que conviene es que ese tiempo extra vaya en el precio —el equipo, la luz, la cocina abierta—, y no regalarlo.'
+    ]
+  },
+  sinDocumento: {
+    titulo: 'Sin documento',
+    texto: [
+      'La venta queda sin boleta ni factura. Se puede, pero queda en la bitácora a tu nombre, para que la gerencia lo vea.',
+      'Si el cliente necesita factura más adelante, se cambia aquí mismo.'
+    ]
+  },
   condicionesEspeciales: {
     titulo: 'Condiciones especiales',
     texto: [
       'Lo de Configuración es lo más generoso que un vendedor puede ofrecer: el anticipo, el saldo, los descuentos, los cambios de fecha y la cancelación con su devolución. Lo que se escriba más allá queda en el tope al salir del campo.',
       'Si el cliente pide algo más —más devolución, menos anticipo, más descuento—, se pide acá con el porqué. Le llega a la gerencia general, al encargado de pagos y al administrador; si lo aprueban, pasa a ser el tope de esta cotización y queda escrito en ella.',
+      'Con el mismo botón se pide el show ecuestre o el arriendo bajo su mínimo (el monto, + IVA) y renovar la vigencia por segunda vez.',
       'Ellos no tienen tope: lo que dejen por encima de Configuración queda como aprobado por ellos, en la bitácora.'
     ]
   },
@@ -1149,7 +1170,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Seguimiento y envío',
     texto: [
       'WhatsApp y Correo abren el mensaje con el link y tu nombre, listo para mandar: en el celular se abre la aplicación y en el computador WhatsApp Web, directo en el chat. Al volver al panel te pregunta si la mandaste y la pasa a Enviada. Desde ahí corre la vigencia y aparece como posible en el calendario de reservas.',
-      'Después te recuerda preguntarle al cliente: arriba de Cotizaciones, en "Esperando respuesta".'
+      'Después te recuerda preguntarle al cliente: arriba de Cotizaciones, en "Esperando respuesta".',
+      'Si venció, "↻ Renovar la vigencia" le da los días de Configuración desde hoy, sin pasar del día antes del evento. La primera vez la renueva el vendedor; la segunda se pide con "✋ Pedir condiciones especiales…".'
     ]
   },
   esperandoRespuesta: {

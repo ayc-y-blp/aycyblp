@@ -24,17 +24,17 @@ import { HOJA_CIERRES } from '@/lib/cierres';
 import { HOJA_USUARIOS, cuentaDeSesion } from '@/lib/usuarios';
 import {
   nuevoId, ESTADO_PRESUPUESTO, estaMandada, aEntero, folioDe, estadoNormal, lineasDe,
-  documentoDe, numeroONulo, montoONulo, cuentasDe, type Presupuesto, type LineaEntrante
+  documentoDe, numeroONulo, montoONulo, cuentasDe, DOCUMENTO, type Presupuesto, type LineaEntrante
 } from '@/lib/presupuestos';
 import {
   topesDe, aprobadasDe, aplicarTopes, sobreElTope, escribirPedido, leerPedido, marcaCondiciones,
-  condicionesEspecialesDe, frasePedido, vigenciaHasta, diasAlEvento, NOMBRE_CONDICION, valorCondicion,
+  condicionesEspecialesDe, frasePedido, vigenciaHasta, diasAlEvento, NOMBRE_CONDICION, valorCondicion, minimosAprobados,
   type CondicionesCotizacion, type Recorte
 } from '@/lib/condiciones';
 import {
   prepararLineas, esDiaPublico, conCliente, ESTADOS_A_MANO, grupoDe, otrasAlternativas, reglaShowDe,
   showQuedaBajoMinimo, showBajoMinimoDe, reglaArriendoDe, arriendoDelDia,
-  arriendoQuedaBajoMinimo, personasParaMinimos
+  arriendoQuedaBajoMinimo, personasParaMinimos, conMinimoShow, conMinimoArriendo
 } from '@/lib/cotizar';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
@@ -242,9 +242,10 @@ function conTopes(
   const base = topesDe(cfg);
   const sobre = sobreElTope(condicionesDe(p), lineas, base);
   if (!Object.keys(sobre).length) return { lineas, recortes: [], aprobo: '' };
-  const vigente = condicionesEspecialesDe(p.condicionesEspeciales).estado === 'aprobada'
-    ? escribirPedido(leerPedido(p.condicionesPedidas)) : '';
-  const nuevo = escribirPedido(sobre);
+  const aprobado = condicionesEspecialesDe(p.condicionesEspeciales).estado === 'aprobada';
+  const vigente = aprobado ? escribirPedido(leerPedido(p.condicionesPedidas)) : '';
+  // Lo ya aprobado que no son topes —un mínimo del show o del arriendo— se conserva.
+  const nuevo = escribirPedido({ ...(aprobado ? minimosAprobados(p) : {}), ...sobre });
   if (vigente === nuevo) return { lineas, recortes: [], aprobo: '' };
   p.condicionesPedidas = nuevo;
   p.condicionesEspeciales = marcaCondiciones('aprobada', usuario, ahoraEnChile(), 'las dejó quien aprueba');
@@ -268,6 +269,8 @@ interface ParaMinimos {
   /** Si ya hay una autorización guardada (`Show bajo el mínimo`, `Arriendo bajo el mínimo`). */
   showAutorizado: boolean;
   arriendoAutorizado: boolean;
+  /** Los mínimos aprobados como condición especial (2026-11-23, `minimosAprobados()`). */
+  aprobados?: { show?: number; arriendo?: number };
 }
 
 /** El mínimo del arriendo de esta cotización en su día (`arriendoDelDia()`), con las reservas ya leídas. */
@@ -291,11 +294,11 @@ async function lineasListas(crudo: unknown, id: string, invitados: number, fecha
   // los autorizó.
   const pasaPorEncima = puede(rol, 'showBajoMinimo');
   const deConfig = reglaShowDe(cfg);
-  const regla = pasaPorEncima || para.showAutorizado ? null : deConfig;
+  const regla = pasaPorEncima || para.showAutorizado ? null : conMinimoShow(deConfig, para.aprobados?.show);
   const publico = esFecha(fecha) && esDiaPublico(fecha, fechas);
   const arriendo = arriendoParaElDia(fecha, para, cfg, fechas, reservas);
   const lineas = prepararLineas(lineasDelCuerpo(crudo, id), menus, invitados, publico, uf, regla,
-    pasaPorEncima || para.arriendoAutorizado ? null : arriendo);
+    pasaPorEncima || para.arriendoAutorizado ? null : conMinimoArriendo(arriendo, para.aprobados?.arriendo));
   const personas = personasParaMinimos(lineas, invitados);
   const minimo = arriendo ? arriendo(personas) : null;
   return {
@@ -449,6 +452,9 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
     await anotar({ ...quien,
       accion: estado === ESTADO_PRESUPUESTO.candidato ? 'Anotó un candidato' : 'Creó una cotización',
       detalle: `${folioDe(p)} · ${cliente.nombre} · ${p.fecha || p.periodo}` });
+    if (p.documento === DOCUMENTO.sin) {
+      await anotar({ ...quien, accion: 'Dejó una cotización sin documento', detalle: `${folioDe(p)} · ${p.fecha || p.periodo}` });
+    }
     if (topados.aprobo) {
       await anotar({ ...quien, accion: 'Dejó condiciones especiales', detalle: `${folioDe(p)} · ${topados.aprobo}` });
     }
@@ -529,7 +535,17 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     const cfgSeg = await leerConfig();
     let enviada = previo.enviada;
     let ultimoSeguimiento = previo.ultimoSeguimiento;
-    let validoHasta = cuerpo.renovarVigencia
+    // **Renovar la vigencia** (2026-11-23, lo decidió el cliente: la primera
+    // la hace el vendedor; la segunda se pide). Desde la segunda, solo quien
+    // aprueba; el vendedor la pide con *✋ Pedir condiciones especiales…*.
+    const renovar = !!cuerpo.renovarVigencia;
+    if (renovar && (previo.renovaciones ?? 0) >= 1 && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+      return NextResponse.json({
+        error: 'Esta cotización ya se renovó una vez: la siguiente renovación se pide '
+          + '(✋ Pedir condiciones especiales…) y la aprueba la gerencia, el encargado de pagos o el administrador.'
+      }, { status: 409 });
+    }
+    let validoHasta = renovar
       ? vigenciaHasta(hoy(), cfgSeg.vigenciaPresupuesto, cuando.fecha) : previo.validoHasta;
     if (cuerpo.seguimiento === 'enviada' && !previo.idReserva && !estaMandada(estado)) {
       estado = ESTADO_PRESUPUESTO.enviado;
@@ -553,6 +569,13 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     const desmandada = estaMandada(previo.estado) && !previo.idReserva
       && (estadoNormal(estado) === ESTADO_PRESUPUESTO.borrador
           || estadoNormal(estado) === ESTADO_PRESUPUESTO.candidato);
+    // Una vencida no vuelve a correr de cero por esta puerta (2026-11-23): eso
+    // es renovarla, que tiene su límite.
+    if (desmandada && previo.validoHasta && previo.validoHasta < hoy() && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+      return NextResponse.json({
+        error: 'Esta cotización ya venció: para que vuelva a valer, renueva la vigencia en el paso Envío.'
+      }, { status: 409 });
+    }
     if (desmandada) { enviada = ''; validoHasta = ''; }
     // Si el evento se adelanta, la vigencia baja con él (regla B).
     if (cuando.fecha !== previo.fecha) validoHasta = vigenciaAntesDelEvento(validoHasta, cuando.fecha);
@@ -636,7 +659,8 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       enviada, ultimoSeguimiento, contratoEnviado,
       // La vigencia se recalcula solo al mandarla o si lo piden. Editar una
       // línea no puede correrle el plazo al cliente.
-      validoHasta
+      validoHasta,
+      renovaciones: (previo.renovaciones ?? 0) + (renovar ? 1 : 0)
     };
     // Las líneas se vuelven a preparar también cuando solo cambian los
     // invitados o la fecha: las que siguen a los invitados toman el número
@@ -664,7 +688,8 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
         ? cuerpo.lineas : lineasDe(await leerLineasPresupuesto(), id);
       nuevas = await lineasListas(crudo, id, invitados, p.fecha, p.uf, quien.rol as Rol, {
         exclusivo: p.exclusivo ?? '', idReserva: previo.idReserva,
-        showAutorizado: !!previo.showBajoMinimo, arriendoAutorizado: !!previo.arriendoBajoMinimo
+        showAutorizado: !!previo.showBajoMinimo, arriendoAutorizado: !!previo.arriendoBajoMinimo,
+        aprobados: minimosAprobados(previo)
       });
       p.showBajoMinimo = showBajoMinimoDe(previo.showBajoMinimo ?? '', puede(quien.rol as Rol, 'showBajoMinimo'),
         nuevas.bajoMinimo, quien.usuario, ahoraEnChile());
@@ -677,6 +702,12 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       { p: previo, lineas: lineasAntes });
     await guardarPresupuesto(p);
     if (nuevas || topados.recortes.length) await guardarLineas(id, topados.lineas);
+    // **Sin documento** (2026-11-23, lo decidió el cliente: un aviso, sin
+    // pedir aprobación): se puede, y queda en la bitácora a nombre de quien
+    // lo eligió, para que la gerencia lo vea.
+    if (p.documento === DOCUMENTO.sin && previo.documento !== DOCUMENTO.sin) {
+      await anotar({ ...quien, accion: 'Dejó una cotización sin documento', detalle: `${folioDe(p)} · ${p.fecha || p.periodo}` });
+    }
     if (topados.aprobo) {
       await anotar({ ...quien, accion: 'Dejó condiciones especiales', detalle: `${folioDe(p)} · ${topados.aprobo}` });
     }
@@ -750,6 +781,10 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       }
     }
 
+    if (renovar) {
+      await anotar({ ...quien, accion: 'Renovó la vigencia de una cotización',
+        detalle: `${folioDe(p)} · hasta ${p.validoHasta || '—'} · renovación ${p.renovaciones}` });
+    }
     await anotar({ ...quien,
       accion: motivoCorreccion ? 'Corrigió una cotización ganada de un día cerrado'
                                : 'Editó una cotización',

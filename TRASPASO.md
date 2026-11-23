@@ -168,8 +168,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   compactó (la nota del show sube a la fila de los extras). La presentación para la gerencia es un artifact privado
   del cliente. Ver `panel/CLAUDE.md`, "El arriendo mínimo en las
   cotizaciones".
-- **Lo que el vendedor puede prometer** (23-11-2026, PR siguiente al #312, en
-  preview hasta el *"mergea"*): las condiciones para el cliente —anticipo,
+- **Lo que el vendedor puede prometer** (23-11-2026, PR #318, mergeado con el
+  *"mergea"* del cliente): las condiciones para el cliente —anticipo,
   saldo, descuentos, cambios de fecha, cancelación y devolución— tienen su tope
   en Configuración (regla A); algo más generoso se pide con *✋ Pedir
   condiciones especiales…* y lo aprueban la gerencia, pagos o el administrador
@@ -180,6 +180,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Configuración se reordenó en grupos, con la sección nueva *Condiciones para
   el cliente* (la de *Contrato* se fue). Dos columnas nuevas en
   `Presupuestos`. Ver `panel/CLAUDE.md`, "Lo que el vendedor puede prometer".
+- **Los otros siete casos** (23-11-2026, PR siguiente al #318, en preview
+  hasta el *"mergea"*): un horario que pasa del cierre se avisa como
+  recomendación; los acuerdos adicionales le llegan a pagos (✓ Visto, y
+  vuelven si cambian); *sin documento* se avisa y queda en la bitácora; la
+  vigencia la renueva el vendedor una vez y la segunda se pide; y el show o el
+  arriendo bajo su mínimo se piden con *✋ Pedir condiciones especiales…*. Los
+  precios y ganar sin anticipo quedan como estaban. Dos columnas nuevas en
+  `Presupuestos` (`Acuerdos revisados`, `Renovaciones`). La presentación para
+  la gerencia se rehízo con todas las reglas. Ver `panel/CLAUDE.md`, "Los
+  otros casos".
 - **El periodo en un marco** (22-11-2026, PR #309, mergeado con el *"mergea"*
   del cliente): en
   Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
@@ -1045,6 +1055,11 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
   cambia: lo que el cliente ya vio no cambia solo.
 - **El contrato se lee con la fecha de la firma, o la de hoy** (23-11-2026): no
   ofrece lo que ya no se alcanza a usar.
+- **Avisar, pedir o dejar libre** (23-11-2026, lo decidió el cliente caso por
+  caso): lo que puede costar plata sin que nadie lo vea se pide (los mínimos,
+  la segunda renovación); lo que conviene vender igual se avisa (el horario
+  extra, *sin documento*) o le llega a pagos para que lo mire (los acuerdos);
+  el precio de cada producto sigue libre.
 - **El arriendo mínimo cubre lo que cuesta el evento, no el costo fijo del
   día** (23-11-2026, lo decidió el cliente: *"queremos ser un poco más
   agresivos"*): tres filtros y dos tramos por caso en vez de la tabla del

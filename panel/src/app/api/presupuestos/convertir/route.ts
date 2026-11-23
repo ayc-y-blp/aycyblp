@@ -12,7 +12,7 @@ import { condicionesDe, estadoCobros, puedeGanar, ganaSinRespaldo } from '@/lib/
 import { enPesos } from '@/lib/ocupacion';
 import {
   conCliente, otrasAlternativas, alternativasDe, reglaArriendoDe, arriendoDelDia, arriendoQuedaBajoMinimo,
-  personasParaMinimos, reglaShowDe, showQuedaBajoMinimo, esDiaPublico
+  personasParaMinimos, reglaShowDe, showQuedaBajoMinimo, esDiaPublico, conMinimoShow, conMinimoArriendo
 } from '@/lib/cotizar';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { esFecha } from '@/lib/fechas';
@@ -22,6 +22,8 @@ import {
   ESTADO_PRESUPUESTO
 } from '@/lib/presupuestos';
 import { hoy } from '@/lib/fechas';
+
+import { minimosAprobados } from '@/lib/condiciones';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,8 +166,10 @@ export const POST = conLecturas([], async function POST(req: Request) {
     if (!puede(quien.rol as Rol, 'showBajoMinimo')) {
       const otras = reservas.filter((x) => x.fecha === p.fecha && ocupaLugar(x) && x.id !== aMedias?.id).length;
       const personas = personasParaMinimos(suyas, p.invitados);
-      const delDia = arriendoDelDia(reglaArriendoDe(cfg), p.fecha, fechas, cfg.diasAbiertos,
-        esExclusivo(original.exclusivo), otras);
+      // Un mínimo aprobado como condición especial (2026-11-23) rige en vez del de Configuración.
+      const aprobados = minimosAprobados(original);
+      const delDia = conMinimoArriendo(arriendoDelDia(reglaArriendoDe(cfg), p.fecha, fechas, cfg.diasAbiertos,
+        esExclusivo(original.exclusivo), otras), aprobados.arriendo);
       const minimo = delDia ? delDia(personas) : null;
       if (!original.arriendoBajoMinimo && minimo && arriendoQuedaBajoMinimo(suyas, menus, minimo)) {
         return NextResponse.json({
@@ -176,7 +180,8 @@ export const POST = conLecturas([], async function POST(req: Request) {
         }, { status: 409 });
       }
       const publico = esDiaPublico(p.fecha, fechas);
-      if (!original.showBajoMinimo && showQuedaBajoMinimo(suyas, menus, reglaShowDe(cfg), publico, p.invitados)) {
+      if (!original.showBajoMinimo
+          && showQuedaBajoMinimo(suyas, menus, conMinimoShow(reglaShowDe(cfg), aprobados.show), publico, p.invitados)) {
         return NextResponse.json({
           error: 'El show ecuestre quedó bajo el mínimo de un día privado con poca gente. Abre la cotización y '
             + 'guárdala: el panel lo sube solo. Si se acordó menos, lo autoriza la gerencia, el encargado de '

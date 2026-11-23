@@ -56,6 +56,10 @@ function respuesta(p: Pendiente, aprobar: boolean, motivo = ''): { url: string; 
     return { url: '/api/equipo/confirmar', cuerpo: { de: p.de, nombre: p.nombre, id: p.id },
       aviso: `Confirmado: ${p.que} de ${p.nombre}` };
   }
+  if (p.tipo === 'acuerdos') {
+    return { url: '/api/presupuestos/acuerdos', cuerpo: { id: p.id, huella: p.huella },
+      aviso: `Visto: los acuerdos de la cotización N° ${p.folio} quedan a tu nombre` };
+  }
   if (p.tipo === 'condiciones') {
     return { url: '/api/presupuestos/condiciones', cuerpo: { id: p.id, accion: aprobar ? 'aprobar' : 'rechazar', motivo },
       aviso: aprobar ? `Aprobado: ya rige en la cotización N° ${p.folio}. Avísale a ${p.pide}.` : `Rechazado: avísale a ${p.pide}` };
@@ -130,6 +134,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
   const frase = (p: Pendiente) => {
     // **Condiciones especiales** (2026-11-23): una cotización, no un día.
     if (p.tipo === 'condiciones') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">condiciones especiales</b> · {p.cliente} · N° {p.folio}</>;
+    // **Acuerdos adicionales** (2026-11-23): ya rigen; pagos los mira.
+    if (p.tipo === 'acuerdos') return <><b>{p.pide}</b> escribió <b className="text-ambar-texto">acuerdos adicionales</b> · {p.cliente} · N° {p.folio}</>;
     const dia = <span className="first-letter:uppercase">{enPalabras(p.fecha)}</span>;
     if (p.tipo === 'descuento') return <><b>{p.pide}</b> pide <b className="text-ambar-texto">{p.porcentaje}%</b> de descuento · {p.nombre} · {dia}</>;
     if (p.tipo === 'cupo') return <><b>{p.pide}</b> pide subir el cupo a <b className="text-ambar-texto">{p.cupoPedido}</b> · {dia}</>;
@@ -186,6 +192,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                 : p.tipo === 'descuentoVisto' ? '✓ Visto'
                 : p.tipo === 'cuenta' ? '✓ Confirmar'
                 : p.tipo === 'condiciones' ? '✓ Aprobar'
+                : p.tipo === 'acuerdos' ? '✓ Visto'
                 : `✓ Ampliar a ${p.ampliarA}`}
             </button>
           ) : null;
@@ -219,7 +226,7 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                   ✕ Rechazar
                 </button>
               )}
-              {p.tipo === 'condiciones'
+              {p.tipo === 'condiciones' || p.tipo === 'acuerdos'
                 ? <a href={`/presupuestos?abrir=${encodeURIComponent(p.id)}`} className="tecla boton min-h-[44px]">Ver la cotización →</a>
                 : p.tipo === 'cuenta'
                 ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
@@ -238,6 +245,9 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                       pastilla parte en la misma vertical en todos los avisos. */}
                   {p.tipo === 'condiciones' && (
                     <p className="mt-1 text-[14px] leading-snug text-hueso/80">{p.pedido}</p>
+                  )}
+                  {p.tipo === 'acuerdos' && (
+                    <p className="mt-1 whitespace-pre-line text-[14px] leading-snug text-hueso/80">“{p.texto}”</p>
                   )}
                   {p.tipo === 'pago' && (
                     <p className="mt-1 text-[13px] leading-snug text-hueso/65">
@@ -281,11 +291,12 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
                     {p.tipo === 'descuentoVisto' && <>Para <b>{p.nombre}</b> · {p.personas} {p.personas === 1 ? 'persona' : 'personas'} · ya rige en lo que se cobra</>}
                     {p.tipo === 'cuenta' && p.de === 'socio' && <>Ya se puede cotizar con él. Nació con el trato de partida —5% desde 22, 10% desde 55, 15% desde 77—: míralo en su tarjeta, <a className="text-oro underline" href={`/vendedores?usuario=${encodeURIComponent(p.id ?? '')}`}>Vendedores →</a>, y confírmalo</>}
                     {p.tipo === 'cuenta' && p.de !== 'socio' && <>Ya rige. Antes de transferir, mira la ficha y confirma que los datos están bien</>}
+                    {p.tipo === 'acuerdos' && <>Ya rige: va al contrato como la última cláusula. Si algo no corresponde, corrígelo en la cotización y avísale a {p.pide}{p.fecha ? <> · evento el {enPalabras(p.fecha)}</> : null}</>}
                     {p.tipo === 'condiciones' && <>Si lo apruebas, pasa a ser el tope de esa cotización y el vendedor ya lo puede ofrecer{p.fecha ? <> · evento el {enPalabras(p.fecha)}</> : null}</>}
                     {p.tipo === 'exclusivo' && <>Cotización N° {p.folio}{p.invitados > 0 && <> · {p.invitados} invitados</>} · ese día hay que mover{' '}
                       <b>{p.reservas} {p.reservas === 1 ? 'reserva' : 'reservas'}</b> · <b>{p.personas}</b> {p.personas === 1 ? 'persona' : 'personas'}</>}
                     {p.cuando && <> · {DE_PAGOS.has(p.tipo) ? 'lo anotó' : 'lo pidió'} {p.tipo === 'cuenta' ? `el ${enPalabras(p.cuando.slice(0, 10))} a las` : 'a las'} {p.cuando.slice(11) || p.cuando}</>}
-                    {p.fecha === hoy() && p.tipo !== 'cuenta' && p.tipo !== 'condiciones' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
+                    {p.fecha === hoy() && p.tipo !== 'cuenta' && p.tipo !== 'condiciones' && p.tipo !== 'acuerdos' && <span className="ml-2 rounded-full border border-oro/60 px-2 text-[13px] font-semibold text-oro">hoy</span>}
                   </p>
                   {enFila && acciones}
                   </div>

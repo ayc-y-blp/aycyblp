@@ -7,9 +7,10 @@ import { HOJA_CONFIG } from '@/lib/config';
 import { puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { ahoraEnChile } from '@/lib/bitacora';
 import {
-  CAMPOS_CONDICION, MAXIMO_CONDICION, topesDe, aprobadasDe, masGeneroso, escribirPedido, leerPedido,
-  marcaCondiciones, condicionesEspecialesDe, frasePedido, type Topes
+  CAMPOS_CONDICION, MAXIMO_CONDICION, topesDe, aprobadasDe, minimosAprobados, masGeneroso, escribirPedido,
+  leerPedido, marcaCondiciones, condicionesEspecialesDe, frasePedido, vigenciaHasta, type Pedido
 } from '@/lib/condiciones';
+import { hoy } from '@/lib/fechas';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,13 +64,20 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_CONFIG], async function
       // Solo números, dentro de lo posible, y solo lo que de verdad pasa el
       // tope de Configuración: lo demás no hace falta pedirlo.
       const crudo = (b.pedido ?? {}) as Record<string, unknown>;
-      const nuevo: Partial<Topes> = {};
+      const nuevo: Pedido = {};
       for (const c of CAMPOS_CONDICION) {
         const v = Math.round(Number(crudo[c]));
         if (crudo[c] === undefined || crudo[c] === '' || !Number.isFinite(v)) continue;
         if (v < 0 || v > MAXIMO_CONDICION[c]) continue;
         if (masGeneroso(c, v, base)) nuevo[c] = v;
       }
+      // **Un monto menor para el show o el arriendo, y renovar la vigencia**
+      // (2026-11-23): los montos, neto, entre 0 y mil millones; renovar, sí o no.
+      for (const k of ['show', 'arriendo'] as const) {
+        const v = Math.round(Number(crudo[k]));
+        if (crudo[k] !== undefined && crudo[k] !== '' && Number.isFinite(v) && v >= 0 && v < 1e9) nuevo[k] = v;
+      }
+      if (crudo.renovar === 1 || crudo.renovar === true) nuevo.renovar = 1;
       if (!Object.keys(nuevo).length) {
         return NextResponse.json({
           error: 'Lo que pides ya cabe en lo que permite Configuración: no hace falta pedirlo.'
@@ -80,7 +88,7 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_CONFIG], async function
       }
       // Lo ya aprobado se mantiene en el pedido: aprobar el nuevo no le quita
       // lo anterior.
-      const pedido = { ...aprobadasDe(p), ...nuevo };
+      const pedido: Pedido = { ...aprobadasDe(p), ...minimosAprobados(p), ...nuevo };
       const marca = marcaCondiciones('pedida', quien.usuario, ahoraEnChile(), motivo);
       await guardarPresupuesto({ ...resto, condicionesPedidas: escribirPedido(pedido), condicionesEspeciales: marca });
       await anotar({ ...quien, accion: 'Pidió condiciones especiales',
@@ -100,8 +108,15 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_CONFIG], async function
       if (typeof pedido.cambiosFecha === 'number') cambia.cambiosFecha = pedido.cambiosFecha;
       if (typeof pedido.cancelacionDias === 'number') cambia.cancelacionDias = pedido.cancelacionDias;
       if (typeof pedido.reembolso === 'number') cambia.reembolso = pedido.reembolso;
+      // Renovar se hace en el acto, y cuenta como una renovación más.
+      if (pedido.renovar) {
+        cambia.validoHasta = vigenciaHasta(hoy(), cfg.vigenciaPresupuesto, p.fecha);
+        cambia.renovaciones = (p.renovaciones ?? 0) + 1;
+      }
       const marca = marcaCondiciones('aprobada', quien.usuario, ahoraEnChile(), motivo);
-      await guardarPresupuesto({ ...resto, ...cambia, condicionesEspeciales: marca });
+      // Renovar ya se hizo: no queda en lo aprobado (si no, cada pedido nuevo lo arrastraría).
+      const { renovar: _r, ...sinRenovar } = pedido;
+      await guardarPresupuesto({ ...resto, ...cambia, condicionesPedidas: escribirPedido(sinRenovar), condicionesEspeciales: marca });
       await anotar({ ...quien, accion: 'Aprobó condiciones especiales',
         detalle: `${folio} · ${frasePedido(pedido, base)}${actual.quien ? ` · las pidió ${actual.quien}` : ''}`
           + (motivo ? ` · ${motivo}` : '') });
