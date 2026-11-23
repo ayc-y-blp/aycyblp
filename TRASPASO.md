@@ -314,10 +314,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   pestaña `Caja chica`, tres columnas al final de `Reservas` y una de
   `Trabajadores`. Ver `panel/CLAUDE.md`, "El cobro en la mesa y la caja chica"
   y "La jornada de preparación".
-- **Filtrar por de dónde viene la reserva** (23-11-2026, el cliente dijo
-  *"luego mergea"*): *🛒 Shopify · ✍ A mano · 🤝 Cotización*, en Estadísticas
-  (reemplaza a *Visitas · Eventos*) y en la página del día, al lado de *Mías*.
-  Ver `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
+- **Filtrar por de dónde viene la reserva** (23-11-2026, PR #336, mergeado
+  con el *"luego mergea"* del cliente; `verificar.sh` dio 15 de 15 después):
+  *🛒 Shopify · ✍ A mano · 🤝 Cotización*, en Estadísticas (reemplaza a
+  *Visitas · Eventos*, y va en la fila de *Volver* para que el marco del
+  periodo quepa en una) y en la página del día, al lado de *Mías*. Ver
+  `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
