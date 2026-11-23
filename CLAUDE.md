@@ -1019,6 +1019,21 @@ déjalo, en promociones no"*. Quedó así:
 
 Los precios siguen en `precios.json`.
 
+### La foto del show, con el jinete entero (2026-11-23)
+
+Lo marcó el cliente con una captura: *"esa foto está mal recortada"*. La de
+*El show ecuestre* en `actividades.html` (`gallery/g03.jpg`) es vertical y
+el huaso y la bailarina van en el tercio de arriba; con el recorte al centro
+se cortaba la cabeza del jinete, y en el celular la franja de 115px dejaba
+fuera al caballo. Ahora la `<img>` lleva `foco-show` (`object-position`
+50% 22%, y 19% en el celular) y su `split-photo` lleva `split-show`, que en
+el celular le da entre 260 y 290px de alto. En el celular el cliente pidió
+una segunda pasada: *"bajar más hasta que la bailarina queda visible toda
+la pierna y también la bandera chilena completa"*; comprobado en 393, 390,
+375 y 360px. Las otras dos fotos de bloque
+foto + texto (la portada y el arriendo de Eventos) se revisaron y se ven
+bien.
+
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
 Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no

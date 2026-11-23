@@ -331,6 +331,17 @@ a:focus-visible, button:focus-visible, summary:focus-visible,
 .split{ display:grid; grid-template-columns: 1fr 1fr; align-items:stretch; min-height: 520px; }
 .split-photo{ position:relative; min-height: 360px; overflow:hidden; }
 .split-photo img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+/* La foto del show (actividades) es vertical y el huaso y la bailarina van
+   en el tercio de arriba: con el recorte al centro se cortaba la cabeza del
+   jinete (lo marcó el cliente el 2026-11-23). */
+.split-photo img.foco-show{ object-position: 50% 22%; }
+/* En el celular la franja de foto era de unos 115px y cortaba al jinete y
+   al caballo: esta foto pide más alto. Desde la bandera chilena completa
+   arriba hasta los pies de la bailarina abajo (lo pidió el cliente). */
+@media (max-width: 900px){
+  .split-photo.split-show{ min-height: clamp(260px, calc(var(--alto-util) - 360px), 290px); }
+  .split-photo img.foco-show{ object-position: 50% 19%; }
+}
 .split-text{ display:flex; flex-direction:column; justify-content:center; padding: 64px; }
 @media (max-width: 900px){
   .split{ grid-template-columns:1fr; }
