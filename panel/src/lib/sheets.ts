@@ -6,7 +6,7 @@ import { google } from 'googleapis';
 import type { sheets_v4 } from 'googleapis';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { celdas } from './celdas.ts';
-import { empresaActual, porEmpresa } from './empresa.ts';
+import { conEmpresa, empresaActual, empresaDeLaPeticion, porEmpresa } from './empresa.ts';
 
 // La planilla, y los eventos del calendario. El segundo se agregó el
 // 2026-10-21 al jubilar el Apps Script, que era quien los creaba.
@@ -260,16 +260,29 @@ const ambito = new AsyncLocalStorage<Map<string, Promise<string[][]>>>();
 export function conLecturas<A extends unknown[], R>(
   precargar: string[], fn: (...a: A) => Promise<R>
 ): (...a: A) => Promise<R> {
-  return (...a: A) => ambito.run(new Map(), () => {
+  const correr = (...a: A) => ambito.run(new Map(), () => {
     for (const h of precargar) leerHoja(h).catch(() => {});
     return fn(...a);
   });
+  // **La dirección dice de qué empresa es la petición** (2026-11-23): toda
+  // ruta pasa por acá, así que es donde se fija. Lo que no trae una petición
+  // adelante —las pruebas— sigue con la empresa que ya había.
+  return (...a: A) => {
+    const req = a[0] as unknown;
+    return req instanceof Request ? conEmpresa(empresaDeLaPeticion(req), () => correr(...a)) : correr(...a);
+  };
 }
 
+/**
+ * La llave de una pestaña en lo recordado de la petición: **con su empresa**
+ * (2026-11-23). Una petición puede leer la lista de cuentas de la casa
+ * estando en otra empresa, y las dos tienen una pestaña con el mismo nombre.
+ */
+const enPeticion = (hoja: string) => `${empresaActual().id}\n${clave(hoja)}`;
+
 function olvidar(hoja: string) {
-  const k = clave(hoja);
-  memoria().lecturas.delete(k);
-  ambito.getStore()?.delete(k);
+  memoria().lecturas.delete(clave(hoja));
+  ambito.getStore()?.delete(enPeticion(hoja));
 }
 
 /** Espera y vuelve a intentar si Google dice que se pasó del límite. */
@@ -354,7 +367,7 @@ function pedir(hoja: string): Promise<string[][]> {
  * puede ser otra fila si alguien borró una entremedio.
  */
 export async function leerHoja(hoja: string, fresca = false): Promise<string[][]> {
-  const k = clave(hoja);
+  const k = enPeticion(hoja);
   const recuerdo = ambito.getStore();
   let filas = !fresca ? recuerdo?.get(k) : undefined;
   if (!filas) {

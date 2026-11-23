@@ -915,6 +915,25 @@ entra en el ancho de su contenedor con 32px de aire.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
   describe dónde van estas filas, y las fotos se sacan a 400px.
 
+## Dos empresas en el mismo panel (2026-11-23, Fase 5)
+
+El panel atiende también a **Asados y Corderos**, en
+`panel.asadosycorderos.cl`, con su propia planilla. **Está apagado hasta que
+exista `AYC_GOOGLE_SHEET_ID`**. Todo el detalle, en **`panel/FASE5.md`**; lo
+que hay que tener presente al tocar cualquier cosa:
+
+- **La dirección dice la empresa**, y la fija `conLecturas()`. **Una ruta
+  nueva va envuelta en `conLecturas()`** aunque no precargue nada, y una
+  página que lea la planilla usa `enEmpresaDeLaPagina()`: si no, lee Lo
+  Pirque.
+- **Nada se guarda en una variable suelta del archivo** si es de la planilla
+  o de la tienda: va con `porEmpresa()` (`lib/empresa.ts`).
+- **Las cuentas son una sola lista, en la planilla de Lo Pirque**, con un rol
+  por empresa. `leerUsuarios()` es la vista de la empresa en curso y **no se
+  guarda**; para guardar, `leerCuentas()`.
+- **La sesión vale solo en la dirección de su empresa.**
+- **En la otra empresa, lo de Shopify no existe** (`configurado()` da falso).
+
 ## El simulador de evento (2026-11-23)
 
 Lo pidió el cliente al hablar de la Fase 5: *"crear un simulador, me tinca…

@@ -22,6 +22,7 @@
  * de escritura sin contraseña sobre un dato que mueve el cupo de un día. El
  * cliente responde por WhatsApp y el encargado lo marca en el panel.
  */
+import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig } from '@/lib/datos';
 import { porToken, lineasDe, gentePosible, cuentasDe,
          estadoVisible, folioDe, DOCUMENTO } from '@/lib/presupuestos';
@@ -41,7 +42,7 @@ export const metadata = vistaPrevia('Cotización', 'La cotización del evento, c
 
 export const dynamic = 'force-dynamic';
 
-export default async function Pagina({ params }: { params: { token: string } }) {
+async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   const [lista, todas, clientes, cfg] = await Promise.all([
     leerPresupuestos(), leerLineasPresupuesto(),
     leerClientes().catch(() => []), leerConfig()
@@ -267,4 +268,9 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
       )}
     </div>
   );
+}
+
+/** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */
+export default function Pagina(props: Parameters<typeof PaginaDeLaEmpresa>[0]) {
+  return enEmpresaDeLaPagina(() => PaginaDeLaEmpresa(props));
 }

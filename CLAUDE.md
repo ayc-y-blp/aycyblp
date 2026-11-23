@@ -1002,19 +1002,37 @@ seguros"*.
 - Se mide con un script de Playwright que recorre las páginas y lista las
   secciones cuyo contenido pasa del alto útil; no está en el repo.
 
-### El desayuno y la once, solo en socios y en el dossier (2026-11-23)
+### El desayuno y la once: no en Experiencias ni en Promociones (2026-11-23)
 
 Lo pidió el cliente: *"si accedes a experiencias desde el sitio público,
 borra la sección del desayuno y del once campestre. Ahí no hay que
-mostrar. Solo en los socios comerciales… en el dossier sí"*. Se sacó de
-`experiencias.html`, de `eventos.html` y del panel *El recinto y los
-extras* de `promociones.html`, cuya bajada pasó a *Arriendo exclusivo y
-eventos a medida*. **Queda en `landing-afiliados.html` y `dossier.html`**
-(y en sus PDF). El *"y en promociones no"* salió de una frase dictada
-(*"si en la producción no"*), leída junto con el *solo en los socios*: si
-promociones sí lo llevaba, se repone desde el dossier. Los precios siguen
-en `precios.json`; las llaves que ya no usaba nadie salieron de los
-diccionarios.
+mostrar"*. Primero salió también de `eventos.html` y del panel *El recinto
+y los extras* de `promociones.html`, y el cliente lo afinó: *"en eventos
+déjalo, en promociones no"*. Quedó así:
+
+| Página | ¿Desayuno y once? |
+|---|---|
+| `experiencias.html` | no |
+| `eventos.html` | sí |
+| `promociones.html` | no (la bajada del panel dice *Arriendo exclusivo y eventos a medida*) |
+| `landing-afiliados.html`, `dossier.html` y sus PDF | sí |
+
+Los precios siguen en `precios.json`.
+
+### La foto del show, con el jinete entero (2026-11-23)
+
+Lo marcó el cliente con una captura: *"esa foto está mal recortada"*. La de
+*El show ecuestre* en `actividades.html` (`gallery/g03.jpg`) es vertical y
+el huaso y la bailarina van en el tercio de arriba; con el recorte al centro
+se cortaba la cabeza del jinete, y en el celular la franja de 115px dejaba
+fuera al caballo. Ahora la `<img>` lleva `foco-show` (`object-position`
+50% 22%, y 19% en el celular) y su `split-photo` lleva `split-show`, que en
+el celular le da entre 260 y 290px de alto. En el celular el cliente pidió
+una segunda pasada: *"bajar más hasta que la bailarina queda visible toda
+la pierna y también la bandera chilena completa"*; comprobado en 393, 390,
+375 y 360px. Las otras dos fotos de bloque
+foto + texto (la portada y el arriendo de Eventos) se revisaron y se ven
+bien.
 
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 

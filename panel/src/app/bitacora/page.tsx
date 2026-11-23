@@ -11,6 +11,7 @@
  * atrás — con el buscador de Sheets, que para esto es mejor que cualquier
  * filtro que pudiéramos escribir acá.
  */
+import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import AyudaCorta from '@/components/AyudaCorta';
 import AvisoFijo from '@/components/AvisoFijo';
 import { headers } from 'next/headers';
@@ -21,7 +22,7 @@ import { puedeVer, type Rol } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Pagina() {
+async function PaginaDeLaEmpresa() {
   // El permiso se comprueba acá y no solo en el menú: el menú no se lo
   // muestra al encargado, pero escribir /bitacora a mano es gratis.
   const sesion = await leerSesion(
@@ -95,4 +96,9 @@ export default async function Pagina() {
       </p>
     </section>
   );
+}
+
+/** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */
+export default function Pagina() {
+  return enEmpresaDeLaPagina(() => PaginaDeLaEmpresa());
 }

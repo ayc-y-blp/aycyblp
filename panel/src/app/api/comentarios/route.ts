@@ -1,3 +1,4 @@
+import { conEmpresa, laCasa } from '@/lib/empresa';
 import { NextResponse } from 'next/server';
 import { quienEs } from '@/lib/permisos';
 import { ROL } from '@/lib/auth';
@@ -41,7 +42,9 @@ export async function POST(req: Request) {
   }, ahoraEnChile());
 
   try {
-    await agregarFilaEnOtraPlanilla(id, HOJA_COMENTARIOS, fila);
+    // La planilla de comentarios es del panel entero y está compartida con
+    // la cuenta de la casa: se escribe con ésa, se esté en la empresa que se esté.
+    await conEmpresa(laCasa(), () => agregarFilaEnOtraPlanilla(id, HOJA_COMENTARIOS, fila));
     return NextResponse.json({ ok: true });
   } catch (e) {
     const x = e as { code?: number; status?: number; message?: string };

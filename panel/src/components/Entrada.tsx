@@ -14,7 +14,7 @@ const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-sm ' +
   'focus:border-oro focus:outline-none';
 
-export default function Entrada() {
+export default function Entrada({ empresa = 'Brasas de Lo Pirque' }: { empresa?: string }) {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export default function Entrada() {
   return (
     <section className="mx-auto mt-10 max-w-xs">
       <h1 className="text-lg font-bold uppercase tracking-wide">Entrar</h1>
-      <p className="mt-1 text-sm text-hueso/55">Panel de Brasas de Lo Pirque.</p>
+      <p className="mt-1 text-sm text-hueso/55">Panel de {empresa}.</p>
 
       <form onSubmit={entrar} className="mt-6 space-y-4">
         <label className="block">

@@ -11,6 +11,7 @@
  * al entrar, en una ruta normal; leer la sesión ocurre en cada petición,
  * también en el middleware, y eso vive en `sesion.ts` con WebCrypto.
  */
+import { CASA, columnaDelRol, empresasDe, type FichaEmpresa } from './empresas.ts';
 import { scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
 import { normalizar } from './columnas.ts';
 import { ROL, ROLES_DE_CUENTA, esRolDeCuenta, LARGO_MINIMO_CLAVE,
@@ -69,6 +70,14 @@ export interface Usuario {
    * por coma en la celda.
    */
   avisosLeidos: AvisoCerrable[];
+  /**
+   * **Su rol en las otras empresas** (2026-11-23, Fase 5), por el id de cada
+   * una. La lista de cuentas es una sola y vive en la planilla de la casa;
+   * `rol` es el de la casa, y acá va, por ejemplo, `{ 'asados-y-corderos':
+   * 'vendedor' }`. **Sin rol en una empresa, la cuenta no entra a su
+   * dirección.** Cada una es una columna al final, `Rol <nombre>`.
+   */
+  roles?: Record<string, Rol>;
 }
 
 
@@ -123,8 +132,18 @@ export function claveCalza(clave: string, huella: string): boolean {
 
 /* ---------- La pestaña ---------- */
 
+/** Las otras empresas y en qué columna está el rol de cada una (-1: no está). */
+function columnasDeRoles(encabezado: string[] | undefined, otras: readonly FichaEmpresa[]) {
+  const titulos = (encabezado ?? []).map((t) => normalizar(String(t ?? '')));
+  return otras.map((e) => ({ id: e.id, col: titulos.indexOf(normalizar(columnaDelRol(e))) }));
+}
+
+/** Las empresas que no son la casa: las que pueden tener una columna de rol. */
+export const OTRAS_EMPRESAS: readonly FichaEmpresa[] = empresasDe({}).filter((e) => e.id !== CASA);
+
 export function leerUsuariosDe(filas: string[][]): Usuario[] {
   const salida: Usuario[] = [];
+  const deRoles = columnasDeRoles(filas[0], OTRAS_EMPRESAS);
   const vistos = new Set<string>();
   for (let i = 1; i < filas.length; i++) {
     const usuario = String(filas[i]?.[1] ?? '').trim();
@@ -142,19 +161,53 @@ export function leerUsuariosDe(filas: string[][]): Usuario[] {
       // En blanco es NO, al revés que `Activo`: ver más es un permiso que
       // se da a propósito, no uno que se tiene por defecto.
       gerencia: String(filas[i]?.[5] ?? '').trim() !== '' && esSi(filas[i]?.[5]),
-      avisosLeidos: soloAvisosConocidos(filas[i]?.[6])
+      avisosLeidos: soloAvisosConocidos(filas[i]?.[6]),
+      ...rolesDe(filas[i], deRoles)
     });
   }
   return salida;
 }
 
+function rolesDe(fila: string[] | undefined, deRoles: { id: string; col: number }[]) {
+  const roles: Record<string, Rol> = {};
+  for (const { id, col } of deRoles) {
+    // Un rol que no se reconoce **no da acceso**: al revés que en la casa,
+    // donde cae a encargado, acá en blanco o mal escrito es *no entra*.
+    const r = col === -1 ? '' : normalizar(String(fila?.[col] ?? ''));
+    if (esRolDeCuenta(r)) roles[id] = r as Rol;
+  }
+  return Object.keys(roles).length ? { roles } : {};
+}
+
+/**
+ * La columna del rol de otra empresa **se escribe solo si alguien tiene un
+ * rol ahí**: mientras nadie lo tenga, la pestaña queda como siempre.
+ */
 export function aFilasUsuarios(lista: Usuario[]): string[][] {
+  const conRol = OTRAS_EMPRESAS.filter((e) => lista.some((u) => u.roles?.[e.id]));
   return [
     [COL_USUARIOS.nombre, COL_USUARIOS.usuario, COL_USUARIOS.rol,
-     COL_USUARIOS.activo, COL_USUARIOS.clave, COL_USUARIOS.gerencia, COL_USUARIOS.avisos],
+     COL_USUARIOS.activo, COL_USUARIOS.clave, COL_USUARIOS.gerencia, COL_USUARIOS.avisos,
+     ...conRol.map(columnaDelRol)],
     ...lista.map((u) => [u.nombre, u.usuario, u.rol, u.activo ? 'Sí' : 'No', u.huella,
-                         u.gerencia ? 'Sí' : 'No', (u.avisosLeidos ?? []).join(', ')])
+                         u.gerencia ? 'Sí' : 'No', (u.avisosLeidos ?? []).join(', '),
+                         ...conRol.map((e) => u.roles?.[e.id] ?? '')])
   ];
+}
+
+/**
+ * **La lista como se ve desde una empresa.** En la casa, tal cual. En otra,
+ * solo quienes tienen rol ahí, y con ese rol: así todo lo que pregunta *¿qué
+ * rol tiene esta cuenta?* —entrar, la lista de vendedores, a quién se le
+ * puede pasar un cliente— contesta por la empresa en la que se está, sin
+ * saber que hay dos.
+ *
+ * **Esta vista no se guarda nunca**: le faltan las cuentas de la casa.
+ * Guardar se hace sobre la lista entera (`leerCuentas()`).
+ */
+export function vistaDeEmpresa(lista: Usuario[], empresa: string): Usuario[] {
+  if (empresa === CASA) return lista;
+  return lista.filter((u) => u.roles?.[empresa]).map((u) => ({ ...u, rol: u.roles![empresa] }));
 }
 
 /**
@@ -186,4 +239,17 @@ export function cuentaDeSesion(lista: Usuario[], quien: string): Usuario | undef
   const x = normalizar(quien);
   if (!x) return undefined;
   return lista.find((u) => normalizar(u.nombre) === x) ?? lista.find((u) => normalizar(u.usuario) === x);
+}
+
+/**
+ * **El rol de una cuenta en una empresa**, o vacío si no entra ahí. En la
+ * casa es su rol de siempre; en otra, el de su columna.
+ */
+export function rolEn(u: Usuario, empresa: string): Rol | '' {
+  return empresa === CASA ? u.rol : (u.roles?.[empresa] ?? '');
+}
+
+/** A qué otras empresas, de las encendidas, puede pasar una cuenta estando en `aca`. */
+export function otrasDe(u: Usuario, aca: string, encendidas: readonly string[]): string[] {
+  return encendidas.filter((id) => id !== aca && !!rolEn(u, id));
 }

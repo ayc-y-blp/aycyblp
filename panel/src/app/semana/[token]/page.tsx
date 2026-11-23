@@ -17,6 +17,7 @@
  * La llave de la URL se renueva desde /config cuando hace falta que las
  * copias viejas dejen de servir.
  */
+import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerConfig, leerTurnos, leerPuestos, leerReservas, leerFechas } from '@/lib/datos';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { iguales } from '@/lib/auth';
@@ -31,7 +32,7 @@ export const metadata = vistaPrevia('Planilla semanal', 'Los turnos de la semana
 
 export const dynamic = 'force-dynamic';
 
-export default async function Pagina({
+async function PaginaDeLaEmpresa({
   params, searchParams
 }: {
   params: { token: string };
@@ -215,4 +216,9 @@ export default async function Pagina({
       </p>
     </section>
   );
+}
+
+/** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */
+export default function Pagina(props: Parameters<typeof PaginaDeLaEmpresa>[0]) {
+  return enEmpresaDeLaPagina(() => PaginaDeLaEmpresa(props));
 }

@@ -17,40 +17,51 @@
  */
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
-import { leerUsuarios, anotar } from '@/lib/datos';
-import { buscarUsuario, claveCalza, ENCARGADO_COMPARTIDO } from '@/lib/usuarios';
+import { leerCuentas, anotar } from '@/lib/datos';
+import { buscarUsuario, claveCalza, rolEn, otrasDe, ENCARGADO_COMPARTIDO } from '@/lib/usuarios';
+import { CASA, empresasEncendidas } from '@/lib/empresas';
 import { iguales, ROL, type Rol } from '@/lib/auth';
 import {
   firmarSesion, secretoDeSesion, COOKIE_SESION, DURACION_SESION
 } from '@/lib/sesion';
 import { quienEs } from '@/lib/permisos';
+import { empresaActual } from '@/lib/empresa';
 
 export const dynamic = 'force-dynamic';
 
 async function identificar(
   usuario: string, clave: string
-): Promise<{ usuario: string; rol: Rol; gerencia?: boolean; avisos?: string[] } | null> {
+): Promise<{ usuario: string; rol: Rol; gerencia?: boolean; avisos?: string[]; otras?: string[] } | null> {
   const env = process.env;
+  // **En qué empresa se está entrando** (2026-11-23): la de esta dirección.
+  const aca = empresaActual().id;
+  const encendidas = empresasEncendidas(env).map((e) => e.id);
 
   if (env.PANEL_USUARIO && env.PANEL_CLAVE &&
       iguales(usuario, env.PANEL_USUARIO) && iguales(clave, env.PANEL_CLAVE)) {
-    return { usuario: env.PANEL_USUARIO, rol: ROL.admin };
+    // El administrador de emergencia lo es en todas las empresas.
+    return { usuario: env.PANEL_USUARIO, rol: ROL.admin, otras: encendidas.filter((id) => id !== aca) };
   }
-  if (env.PANEL_ENCARGADO_USUARIO && env.PANEL_ENCARGADO_CLAVE &&
+  // La clave compartida de encargado es de antes de las cuentas, y solo de la casa.
+  if (aca === CASA && env.PANEL_ENCARGADO_USUARIO && env.PANEL_ENCARGADO_CLAVE &&
       iguales(usuario, env.PANEL_ENCARGADO_USUARIO) &&
       iguales(clave, env.PANEL_ENCARGADO_CLAVE)) {
     return { usuario: ENCARGADO_COMPARTIDO, rol: ROL.encargado };
   }
 
-  const cuenta = buscarUsuario(await leerUsuarios(), usuario);
-  if (cuenta && claveCalza(clave, cuenta.huella)) {
+  // La cuenta es una sola para todas las empresas; el rol, el que tiene en
+  // ésta. **Sin rol acá no entra**, con el mismo mensaje de una clave mala.
+  const cuenta = buscarUsuario(await leerCuentas(), usuario);
+  const rol = cuenta ? rolEn(cuenta, aca) : '';
+  if (cuenta && rol && claveCalza(clave, cuenta.huella)) {
     // Se anota el NOMBRE de la persona, no su nombre de usuario: la bitácora
     // la va a leer alguien, y "Ana Pérez" se entiende mejor que "aperez".
     // La vista gerencia viaja firmada en la sesión, como el rol: cambiarla
     // en /usuarios vale desde la próxima vez que esa persona entre.
     // Y los avisos fijos que ya cerró (2026-11-13): viajan en la sesión para
     // que ninguna pantalla tenga que leer la planilla para saberlos.
-    return { usuario: cuenta.nombre, rol: cuenta.rol, gerencia: cuenta.gerencia, avisos: cuenta.avisosLeidos };
+    return { usuario: cuenta.nombre, rol, gerencia: cuenta.gerencia, avisos: cuenta.avisosLeidos,
+             otras: otrasDe(cuenta, aca, encendidas) };
   }
   return null;
 }
@@ -77,7 +88,9 @@ export const POST = conLecturas([], async function POST(req: Request) {
       );
     }
 
-    const token = await firmarSesion(quien, secreto);
+    // La sesión es de la empresa de esta dirección: el rol que lleva es el
+    // que la cuenta tiene acá (`leerUsuarios()` ya lo trae así).
+    const token = await firmarSesion({ ...quien, empresa: empresaActual().id }, secreto);
     const res = NextResponse.json({ usuario: quien.usuario, rol: quien.rol });
     res.cookies.set(COOKIE_SESION, token, {
       httpOnly: true,                 // el JavaScript de la página no la ve
