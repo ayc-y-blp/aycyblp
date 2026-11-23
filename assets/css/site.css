@@ -1146,40 +1146,68 @@ footer a:hover{ color: var(--ink); }
 /* ---------- una pantalla por sección (2026-11-23) ----------
    Lo pidió el cliente: "en la sección tres cosas que pasan por acá, no cae
    aún bien en la pantalla del notebook… compactarla para que todo cae en
-   una pantalla… esa revisión para todas las páginas". La medida: el título
-   de una sección y su grupo de tarjetas se ven juntos en 1280x650 (574px
-   bajo la barra) y en 393x740 (659px).
+   una pantalla… esa revisión para todas las páginas". Y al ver la primera
+   versión, medida para 1280x650, en su notebook (1262x573 con la barra de
+   favoritos): "tienes que hacerlo cuadrar para cualquier tamaño de
+   pantalla, simplemente trabajar con ciertos márgenes seguros".
 
-   En el computador se quita aire y las fotos de las tarjetas van más
-   apaisadas; las listas largas (las seis actividades, lo que incluye la
-   reserva) van en una sola fila.
+   Por eso los altos no son números fijos: salen de --alto-util, el alto de
+   la ventana menos la barra del sitio y un margen seguro de 24px. Cada foto
+   de tarjeta, tarjeta que gira, bloque foto + texto y mapa resta del alto
+   útil lo que ocupan su título y su texto, y se queda con el resto, entre
+   un mínimo que se ve bien y un máximo que no se pasa de grande. En una
+   pantalla alta queda como antes; en una baja, las fotos se aplanan y la
+   sección sigue entrando entera.
 
    En el celular, una lista de tarjetas ya no se apila —eran hasta 2.600px—:
    va en un carrusel que se desliza con el dedo, como la galería del sitio.
    Asoma la tarjeta siguiente, que es lo que avisa que hay más. CSS puro,
    con scroll-snap: sin una línea de JavaScript. */
+:root{ --barra: 76px; --alto-util: calc(100vh - var(--barra) - 24px); }
+@supports (height: 100svh){ :root{ --alto-util: calc(100svh - var(--barra) - 24px); } }
+@media (max-width: 920px){ :root{ --barra: 81px; } }
+
 @media (min-width: 901px){
-  .pad{ padding: 72px 0; }
-  .section-head{ margin-bottom: 28px; }
-  .card-photo img{ aspect-ratio: 16/10; }
-  .card-body{ padding: 18px 20px 20px; }
+  .pad{ padding: 64px 0; }
+  .section-head{ margin-bottom: 24px; }
+  /* Tarjetas con foto (Tres cosas que pasan acá, las adicionales, la 404):
+     el titulo de la seccion y el texto de la tarjeta ocupan unos 340px. */
+  .card-photo img{ aspect-ratio:auto; height: clamp(120px, calc(var(--alto-util) - 330px), 300px); }
+  .card-body{ padding: 16px 20px 18px; gap:6px; }
+  .grid-4 .card-photo img{ height: clamp(100px, calc(var(--alto-util) - 380px), 240px); }
+  /* Bloques foto + texto: miden la pantalla, entre 380 y 520px. */
+  .split{ min-height: clamp(380px, var(--alto-util), 520px); }
+  .split-text{ padding: clamp(24px, calc((var(--alto-util) - 380px) / 3), 64px) clamp(32px, 5vw, 64px); }
+  /* La portada: la foto de entrada llena lo que deja la barra. */
+  .hero-lg{ min-height: clamp(400px, calc(var(--alto-util) + 24px), 660px); }
+  .hero-lg .hero-in{ padding-top: 28px; padding-bottom: clamp(24px, calc((var(--alto-util) - 400px) / 2), 60px); }
+  .hero-lg h1{ font-size: clamp(2rem, min(5.2vw, calc(var(--alto-util) / 10)), 3.5rem); }
+  /* Las dos experiencias: a todo el ancho y apaisadas; su alto es el que
+     deja el título. El reverso cabe porque la tarjeta es ancha. */
+  .tier-cards{ max-width:none; }
+  .tier-cards .flip-card{ aspect-ratio:auto; height: clamp(300px, calc(var(--alto-util) - 150px), 460px); }
+  .mapa{ aspect-ratio:auto; height: clamp(260px, calc(var(--alto-util) - 100px), 480px); }
+  /* El calendario de la reserva: sus seis semanas también salen del alto. */
+  .reserva-widget .cal-dia{ height: clamp(30px, calc((var(--alto-util) - 230px) / 6.4), 40px); }
+}
+/* Entre 901 y 1099px la columna de texto de un bloque foto + texto es
+   angosta y el texto se alarga: le toca más ancho que a la foto. */
+@media (min-width: 901px) and (max-width: 1099px){
+  .split{ grid-template-columns: 0.8fr 1.2fr; }
 }
 .grid-4{ grid-template-columns: repeat(4,1fr); }
-@media (max-width: 1099px){ .grid-4{ grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 999px){ .grid-4{ grid-template-columns: repeat(2,1fr); } }
 @media (min-width: 1000px){
   .tiles{ grid-template-columns: repeat(6,1fr); }
-  .tile-cuerpo{ padding: 14px 16px 18px; }
+  .tile-cuerpo{ padding: 12px 14px 16px; }
+  .tile-media img, .tile-icono{ aspect-ratio:auto; height: clamp(90px, calc(var(--alto-util) - 360px), 200px); }
   .incluye-grid{ grid-template-columns: repeat(6,1fr); gap:16px; }
+  .incluye-item img{ aspect-ratio:auto; height: clamp(80px, calc(var(--alto-util) - 380px), 190px); }
   .incluye-item h4{ font-size:0.88rem; }
-}
-/* Las dos experiencias: un poco más bajas, para que entren con su título. */
-@media (min-width: 901px){
-  .tier-cards{ max-width: 660px; }
-  .mapa{ aspect-ratio: 16/10; }
 }
 
 @media (max-width: 620px){
-  .grid-3, .grid-4, .tiles, .incluye-grid{
+  .grid-3, .grid-4, .grid-2, .tiles, .incluye-grid{
     display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
     grid-template-columns:none; gap:12px;
     overflow-x:auto; overscroll-behavior-x:contain;
@@ -1188,7 +1216,7 @@ footer a:hover{ color: var(--ink); }
     padding: 0 var(--pad-x) 12px;
     scrollbar-width: thin;
   }
-  .grid-3 > *, .grid-4 > *, .tiles > *, .incluye-grid > *{ scroll-snap-align:start; }
+  .grid-3 > *, .grid-4 > *, .grid-2 > *, .tiles > *, .incluye-grid > *{ scroll-snap-align:start; }
   /* Las actividades del recinto se separaban con líneas de 1px sobre un
      fondo; en el carrusel cada una es su propia tarjeta. */
   .tiles{ background:none; border:0; }
@@ -1203,10 +1231,28 @@ footer a:hover{ color: var(--ink); }
     margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x));
     padding: 0 var(--pad-x) 12px;
   }
-  .tier-cards > .flip-card{ scroll-snap-align:start; aspect-ratio: 4/5; }
-  .section-head{ margin-bottom: 24px; }
-  .split-photo{ min-height: 150px; }
-  .split-text{ padding: 28px var(--pad-x); }
+  .tier-cards > .flip-card{ scroll-snap-align:start; aspect-ratio:auto; height: clamp(300px, calc(var(--alto-util) - 190px), 420px); }
+  /* En el celular las fotos también salen del alto de la pantalla: en un
+     telefono bajo se aplanan y la tarjeta entra con su titulo. */
+  .card-photo img{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 440px), 240px); }
+  .tile-media img, .tile-icono{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 380px), 240px); }
+  .incluye-item img{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 420px), 240px); }
+  .mapa{ aspect-ratio:auto; height: clamp(160px, calc(var(--alto-util) - 370px), 260px); }
+  /* Los dos precios del arriendo, lado a lado. */
+  .precios{ display:grid; grid-template-columns: 1fr 1fr; }
+  .precio{ padding-left:12px; }
+  .precio .monto{ font-size:1.25rem; }
+  .precio .monto .mas-iva{ display:block; margin-left:0; }
+  /* Los tres pasos de Eventos: el numero al lado del titulo, no encima. */
+  .pasos{ gap:16px; }
+  .paso{ display:grid; grid-template-columns: 34px 1fr; column-gap:10px; }
+  .paso .num{ grid-row: span 2; font-size:1.6rem; line-height:1; }
+  .paso h3{ margin-top:4px; }
+  .split-text{ padding: 24px var(--pad-x); }
+  .hero-lg{ min-height: clamp(440px, calc(var(--alto-util) + 24px), 540px); }
+  .hero-lg .hero-in{ padding-top:24px; padding-bottom:28px; }
+  .section-head{ margin-bottom: 20px; }
+  .split-photo{ min-height: clamp(90px, calc(var(--alto-util) - 520px), 220px); }
   .split-text .rule{ margin:12px 0; }
   .precios{ gap:14px 22px; margin-top:18px; }
   .pasos{ gap:20px; }
