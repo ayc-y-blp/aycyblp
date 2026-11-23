@@ -64,7 +64,7 @@ export const SE_VACIAN: PestanaProduccion[] = [
   { hoja: HOJA_FECHAS, que: 'Días abiertos y sus cupos' },
   { hoja: HOJA_BITACORA, que: 'Bitácora' },
   // La caja chica (2026-11-23): sus movimientos son de las reservas y los días que se borran.
-  { hoja: HOJA_CAJA, que: 'Movimientos de la caja chica' }
+  { hoja: HOJA_CAJA, que: 'Caja chica' }
 ];
 
 /** Lo que se conserva. Los comentarios viven en otra planilla y no se tocan. */

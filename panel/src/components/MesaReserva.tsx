@@ -299,14 +299,16 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
       {!compacta && <p className="text-[13px] font-semibold uppercase tracking-widest text-hueso/60">🍽 La mesa</p>}
 
       {/* Lo que ya tiene: lo agregado y el valor final, siempre a la vista. */}
-      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      {/* Mientras se cobra y no se sumó nadie, *Nadie agregado* se esconde:
+          así la ficha cabe en una pantalla (2026-11-23). */}
+      {!(cobrando && !lista.length) && <div className="mt-1 flex flex-wrap items-center gap-1.5">
         {lista.length ? lista.map((a) => (
           <span key={a.menu} className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border-2
                                         border-cielo-fuerte/60 bg-cielo/10 px-2.5 py-0.5 text-[14px] font-bold text-cielo-texto">
             +{a.cantidad} {a.menu === A_LA_CARTA ? 'a la carta' : a.menu}
           </span>
         )) : <span className="text-[14px] text-hueso/65">Nadie agregado.</span>}
-      </div>
+      </div>}
       <p className={`mt-1.5 text-[15px] ${r.valorFinal != null ? 'font-bold' : 'text-hueso/65'}`}>
         🧾 {r.valorFinal != null
           ? <>Valor final {pesosCL(r.valorFinal)}{marca && <span className="font-normal text-hueso/65">

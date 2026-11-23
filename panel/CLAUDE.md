@@ -285,10 +285,10 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
 - **En la página del día**, *Las mesas* suma el ***Efectivo del día*** (lo que
   entró a la caja, y la transferencia y la tarjeta en su nota), y *mesa por
   mesa* dice cómo pagó cada una.
-- **Para que la ficha de la Recepción quepa en 1280×650** (641px con dos
-  medios): mientras se elige cómo pagó, la mesa esconde *Agregar a la mesa* y
-  *Cambiar el valor final*, y no hay una pregunta encima de los medios (ya lo
-  dice *Falta por cobrar*). En el celular, el nombre del medio cede ancho y el
+- **Para que la ficha de la Recepción quepa en 1280×650** (637px con dos
+  medios y una caja de Fudo de dos menús): mientras se elige cómo pagó, la mesa
+  esconde *Agregar a la mesa*, *Cambiar el valor final* y *Nadie agregado*, y no
+  hay una pregunta encima de los medios (ya lo dice *Falta por cobrar*). En el celular, el nombre del medio cede ancho y el
   `$` se esconde: el monto es lo que se escribe.
 
 ### La caja chica (`lib/caja.ts`, pantalla `/caja`)
@@ -332,7 +332,8 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
 - **Las fotos** van a la carpeta de comprobantes de Drive (`Caja chica
   AAAA-MM`) y se ven solo a través del panel (`/api/caja/comprobante`).
 - **Dejar la base en cero vacía `Caja chica`** (`SE_VACIAN`): sus movimientos
-  son de las reservas y los días que se borran.
+  son de las reservas y los días que se borran. Después hay que volver a anotar
+  el saldo inicial.
 
 ### Lo de siempre
 
@@ -356,9 +357,10 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   encargado *La recepción y qué cobrar*. Lo que puede cada rol sale solo de
   `PERMISOS` (`roles.ts`, `poderes.ts`: los dos poderes nuevos van en *La
   plata*).
-- **Ventanas**: `ficha-recepcion-cobro` (641px), `ficha-caja-gasto` y
+- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` y
   `ficha-caja-entregar` (262px); la pantalla `caja` entra en la prueba de
-  espacio.
+  espacio. *Dejar la base en cero* suma la fila *Caja chica* y no cabía (676px):
+  sus dos listas van con 2px entre filas en el computador, y mide 627px.
 - **El panel de ejemplo**: la caja con su historia (saldo inicial de $7.000,
   el cobro en efectivo de Ricardo Godoy el sábado 7, un gasto, una entrega
   recibida por Marcela y su depósito, todo revisado), y Martín Araya hoy con

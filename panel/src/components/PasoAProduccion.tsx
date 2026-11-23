@@ -144,7 +144,7 @@ export default function PasoAProduccion() {
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:col-start-1 lg:row-span-4 lg:row-start-1">
                 <div className="rounded-xl border-2 border-rojo-fuerte/60 p-3">
                   <p className="text-[15px] font-bold text-rojo-texto">✕ Se borra</p>
-                  <ul className="mt-2 space-y-1 text-[14px]">
+                  <ul className="mt-2 space-y-1 text-[14px] lg:space-y-0.5">
                     {estado.seVacian.map((p) => (
                       <li key={p.hoja} className="flex justify-between gap-3">
                         <span>{p.que}</span>
@@ -163,7 +163,7 @@ export default function PasoAProduccion() {
                 </div>
                 <div className="rounded-xl border-2 border-dashed border-verde-fuerte/70 p-3">
                   <p className="text-[15px] font-bold text-verde-texto">✓ Se conserva</p>
-                  <ul className="mt-2 space-y-1 text-[14px]">
+                  <ul className="mt-2 space-y-1 text-[14px] lg:space-y-0.5">
                     {estado.seConservan.map((p) => (
                       <li key={p.hoja} className="flex justify-between gap-3">
                         <span>{p.que}</span>

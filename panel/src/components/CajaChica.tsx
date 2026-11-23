@@ -335,7 +335,7 @@ export default function CajaChica() {
                 || (mio && !m.revisado && !(m.tipo === TIPO_CAJA.entrega && rec)));
               const sePuedeRevisar = d.puede.revisar && m.tipo !== TIPO_CAJA.cobro && !(m.tipo === TIPO_CAJA.entrega && !rec);
               return (
-                <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+                <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 lg:flex-nowrap">
                   {/* En el celular, la fecha y el monto en la primera línea y el
                       detalle debajo; en el computador, todo en una fila. */}
                   <span className="order-1 w-[5.5rem] shrink-0"><FechaDia fecha={m.fecha} tamano="aviso" conMes /></span>
