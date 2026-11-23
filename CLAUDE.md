@@ -859,6 +859,69 @@ idioma y Diurno/Nocturno.
 cuerpo de texto, que ya estaban a tamaño de leer; y el aspecto general, que
 sigue siendo el mismo.
 
+### La reserva en tres pasos y los llamados a reservar (2026-11-23)
+
+Lo pidió el cliente: *"rediseñar esta sección de reservas con mucho
+enfoque, que de verdad los pasos son muy fácil, muy bien visible en una
+pantalla, tanto en el celular como en el computador, para liderar que al
+final el cliente vaya a pagar ahora"*, y un recorrido por el sitio entero.
+Eligió las tres propuestas (*"dale a b c"*).
+
+**Lo medido antes** (1280×650 y 393×740): en el computador el formulario
+partía a los 628px —nada a la vista al llegar—, el calendario solo medía
+578px y *Pagar ahora* quedaba en la tercera pantalla; en el celular, a dos
+pantallas y media. La fecha elegida no se escribía en ninguna parte y el
+ahorro de pagar ahora había que restarlo a mano.
+
+- **Tres pasos numerados**: *① Elige la fecha · ② ¿Cuántos van? · ③ Paga y
+  asegura tu lugar*. En el computador, **dos columnas** (fecha a la
+  izquierda, pedido y pago a la derecha) con casillas del calendario de 44px
+  de alto en vez de cuadradas: **el formulario entero mide 510px y cabe en
+  1280×650 con holgura** (quedan 574 bajo la barra), en los tres idiomas.
+  La segunda pasada, el mismo día, la pidió el cliente: *"achicaría más la
+  portada en reservas y compactar otra vez un poco… tener todo en una vista
+  en la pantalla, con los botones… juega un poco con los tamaños de la
+  tipografía también, pero sin perder elegancia"*. Se quitó aire y se bajó
+  un punto el texto de apoyo; los números del calendario, los precios y
+  *Pagar ahora* siguen pesando lo mismo. Los botones *Reservar* que llevan a
+  `#reserva-en-linea` dejan el formulario entero bajo la barra fija
+  (`scroll-margin-top`).
+- **Todo *Reservar* del sitio llega al formulario** (lo pidió el cliente el
+  mismo día): el del menú, el del pie y el de la portada apuntan a
+  `reservas.html#reserva-en-linea`, como ya lo hacían los de las tarjetas y
+  los cierres. Quien aprieta *Reservar* cae en el paso 1, no en la franja. El título *Reserva en línea* queda solo
+  para lectores de pantalla en el computador (los pasos ya lo dicen). El
+  aviso *Tienda de prueba* suma 32px, solo en las versiones de prueba.
+- **El héroe de la página es una franja** (`hero-corto`, 190px en el
+  computador, con el título en una línea): el formulario empieza en la
+  primera pantalla.
+- **El resumen antes de pagar**: *Sábado, 28 de noviembre · Personas 3*, lo
+  escribe `reserva.js`. Sin JS dice *Fecha por elegir*.
+- **Pagar ahora manda**: ancho entero, más alto, y una pastilla *Ahorras
+  $15.000* que sale de restar los dos totales —el recargo sigue sin estar
+  escrito en ninguna parte—. *Solo reservar* va debajo, delineado y más
+  bajo, con su condición en letra chica.
+- **En el celular**, el precio de cada fila va bajo el nombre y no en un
+  renglón propio, y **una barra fija abajo con *Pagar ahora*** aparece
+  apenas hay fecha y gente, mientras el botón de verdad no se ve. Es el
+  mismo botón en la lista `botones` de `reserva.js`: se apaga, muestra su
+  total y crea el carrito igual que los otros dos. Mientras está, el botón
+  de WhatsApp sube y la tarjeta de idioma se esconde. Vive dentro de
+  `reserva.js`, que ya era la excepción de esa página: no es una cuarta.
+- **Lo que incluye** va a todo el ancho en el computador, tres fotos por
+  fila: la página bajó de 5.333 a 3.990px.
+- **En el resto del sitio**: la portada mide lo que deja la pantalla
+  (`clamp(500px, 100vh − 76px, 660px)`), así *Reservar* ya no queda cortado
+  en un notebook; en Experiencias, *Pagando tu reserva ahora* pasó a ser un
+  botón dorado *Reservar pagando ahora* en cada tarjeta; **en los cierres de
+  la portada, Experiencias y Actividades, *Reservar* va relleno y WhatsApp
+  delineado** (antes el único botón relleno era el verde). En Eventos el
+  WhatsApp sigue relleno —un evento se cotiza conversando— y *Ver contacto*
+  pasó a *Reservar una visita*.
+- **Los botones de idioma y Diurno/Nocturno** subieron a 13px y 36px de alto
+  en el computador, también en los tres landings (por eso se rehicieron los
+  PDF; el contenido es el mismo).
+
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
 Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no

@@ -21,10 +21,10 @@
 /* ---------- el botón (se ve en los dos temas) ---------- */
 .tema-btn{
   display:inline-flex; align-items:center; gap:6px; flex:none;
-  margin-left:10px; padding:5px 11px;
+  margin-left:10px; padding:5px 12px; min-height:36px;
   border:1px solid var(--line); border-radius:999px;
   background: rgba(255,255,255,0.03); color: var(--ink-dim);
-  font: 600 0.78rem/1 var(--sans, sans-serif); letter-spacing:0.06em;
+  font: 600 0.82rem/1 var(--sans, sans-serif); letter-spacing:0.06em;
   text-transform:uppercase; cursor:pointer;
   transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
