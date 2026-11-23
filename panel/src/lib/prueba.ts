@@ -1130,7 +1130,7 @@ const filasMenus = aFilasMenus(POR_DEFECTO_MENUS);
 ok(filasMenus[0].slice(0, 3).join('|') === 'Menú|Precio en línea|Precio en el local',
    'las tres columnas de siempre van primero y en el mismo orden: una planilla vieja se sigue leyendo');
 ok(filasMenus[0].slice(3).join('|')
-     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor',
+     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo',
    'y las del catálogo van al final');
 ok(filasMenus.length === POR_DEFECTO_MENUS.length + 1, 'una fila por menu, mas el encabezado');
 ok(JSON.stringify(leerMenusDe(filasMenus)) === JSON.stringify(POR_DEFECTO_MENUS),
@@ -6419,6 +6419,76 @@ console.log('\nCambiar el vendedor');
   ok(R.puede(R.ROL.gerencia, 'asignarVendedor') && R.puede(R.ROL.pagos, 'asignarVendedor') && R.puede(R.ROL.admin, 'asignarVendedor')
      && !R.puede(R.ROL.vendedor, 'asignarVendedor') && !R.puede(R.ROL.operaciones, 'asignarVendedor') && !R.puede(R.ROL.encargado, 'asignarVendedor'),
      'cambiar el vendedor es de la gerencia, pagos y el administrador');
+}
+
+// --- El simulador de evento (Fase 5) ---
+console.log('\nEl simulador de evento');
+{
+  const S = await import('./simulador.ts');
+  const M = await import('./menus.ts');
+  ok(JSON.stringify(S.aGastos('Hielo: 15000; Transporte: 800 pp\nCalefacción = $40.000; basura; Nada: 0'))
+    === JSON.stringify([{ nombre: 'Hielo', monto: 15000, porPersona: false }, { nombre: 'Transporte', monto: 800, porPersona: true },
+      { nombre: 'Calefacción', monto: 40000, porPersona: false }]),
+    'los gastos se leen de un texto: fijo o por persona (pp), y lo que no se entiende se salta');
+  ok(S.deGastos(S.aGastos('Hielo: 15000; Transporte: 800 pp')) === 'Hielo: 15000; Transporte: 800 pp', 'y se escriben de vuelta igual');
+
+  const jornadas = S.jornadaPorPuesto([
+    { puesto: 'Garzón', activo: true, pagoJornada: 30000, modalidad: '' },
+    { puesto: 'garzon', activo: true, pagoJornada: 40000, modalidad: 'Por turno' },
+    { puesto: 'Garzón', activo: false, pagoJornada: 90000, modalidad: '' },
+    { puesto: 'Cocina', activo: true, pagoJornada: 50000, modalidad: 'Contratado' },
+    { puesto: 'Barra', activo: true, pagoJornada: 0, modalidad: '' }
+  ]);
+  ok(jornadas.garzon === 35000 && !('cocina' in jornadas) && !('barra' in jornadas),
+    'la jornada de un puesto es el promedio de sus activos por turno: sin desactivados, contratados ni fichas sin monto');
+
+  const catalogo = [{ nombre: 'Tradiciones', costo: 15000 }, { nombre: 'Show ecuestre', costo: 200000 }, { nombre: 'Once', costo: 0 }];
+  const puestos = [{ nombre: 'Garzón', cadaCuantas: 15 }, { nombre: 'Cocina', cadaCuantas: 0 }];
+  const base = { catalogo, puestos, jornadas, gastos: S.aGastos('Hielo: 20000; Transporte: 1000 pp'), minimoPct: 30 };
+  // 40 × $50.000 + IVA (neto 2.000.000) y el show incluido a $0.
+  const lineas = [{ concepto: 'Tradiciones', cantidad: 40, precio: 50000, ivaIncluido: false },
+                  { concepto: 'Show ecuestre', cantidad: 1, precio: 0, ivaIncluido: false }];
+  const r = S.simular({ ...base, lineas, invitados: 40 });
+  const total = (que: string) => r.grupos.find((g) => g.que === que)?.total;
+  ok(r.ingreso === 2000000, 'lo cobrado va en neto, sin IVA');
+  ok(total('productos') === 40 * 15000 + 200000, 'lo que se sirve: el costo por su cantidad, y lo incluido a $0 también cuesta');
+  ok(total('equipo') === 3 * 35000, 'el equipo: uno cada 15 con 40 invitados son 3, por su jornada; un puesto sin regla no suma');
+  ok(total('gastos') === 20000 + 40 * 1000, 'los gastos: el fijo una vez y el por persona por los invitados');
+  ok(r.costo === 800000 + 105000 + 60000 && r.margen === 2000000 - 965000 && r.pct === 51.8, 'costo, margen y porcentaje');
+  ok(r.senal === 'conviene' && r.faltan.length === 0, 'sobre el mínimo: conviene');
+  ok(r.netoNecesario === Math.ceil(965000 / 0.7) && r.netoNecesarioPorPersona === Math.ceil(Math.ceil(965000 / 0.7) / 40),
+    'cuánto habría que cobrar para llegar al mínimo, en total y por persona');
+
+  const justo = S.simular({ ...base, invitados: 40, lineas: [{ concepto: 'Tradiciones', cantidad: 40, precio: 24000, ivaIncluido: false }] });
+  ok(justo.senal === 'justo' && justo.pct !== null && justo.pct < 30 && justo.pct >= 15, 'entre la mitad del mínimo y el mínimo: justo');
+  const mal = S.simular({ ...base, invitados: 40, lineas: [{ concepto: 'Tradiciones', cantidad: 40, precio: 18000, ivaIncluido: false }] });
+  ok(mal.senal === 'noConviene' && mal.margen < 0, 'si se pierde plata: no conviene');
+  const conDescuento = S.simular({ ...base, lineas, invitados: 40, descuentoTotal: 10 });
+  ok(conDescuento.ingreso === 1800000, 'el descuento sobre el total baja lo cobrado');
+  ok(S.simular({ ...base, lineas, invitados: 40, comision: 100000 }).costo === r.costo + 100000, 'la comisión, si viene, se resta');
+
+  const falta = S.simular({ ...base, invitados: 40, lineas: [...lineas, { concepto: 'Once', cantidad: 40, precio: 7000, ivaIncluido: false }] });
+  ok(falta.senal === 'sinDatos' && falta.faltan.join() === 'el costo de Once' && falta.netoNecesario === null,
+    'un producto sin costo se nombra, y la señal es sin datos: no se inventa un margen');
+  const sinJornada = S.simular({ ...base, lineas, invitados: 40, puestos: [{ nombre: 'Barra', cadaCuantas: 20 }] });
+  ok(sinJornada.senal === 'sinDatos' && sinJornada.faltan.includes('el pago por jornada de Barra'), 'un puesto sin jornada, también');
+  const conArriendo = S.simular({ ...base, invitados: 40, catalogo: [...catalogo, { nombre: 'Arriendo del recinto', costo: 0, tipo: 'Arriendo' }],
+    lineas: [...lineas, { concepto: 'Arriendo del recinto', cantidad: 1, precio: 1500000, ivaIncluido: false }] });
+  ok(conArriendo.faltan.length === 0 && conArriendo.costo === r.costo && conArriendo.ingreso === 3500000,
+    'el arriendo del recinto propio no cuesta ni se pide: sin costo puesto va en cero');
+  ok(JSON.stringify(S.soloLaSenal(r)) === '{"senal":"conviene"}', 'quien no ve los costos recibe solo la señal');
+
+  // El costo en el catálogo: se lee, se escribe y se saca para quien no lo ve.
+  const fila = ['Tradiciones', '44000', '49000', 'Menú', 'sí', 'sí', 'Por persona', '50000', '+ IVA', 'Pesos', 'sí', '', '15000'];
+  const leido = M.leerMenusDe([Object.values(M.COL_MENUS), fila]);
+  ok(leido[0].costo === 15000 && M.aFilasMenus(leido)[1][12] === '15000' && M.aFilasMenus(leido)[0][12] === 'Costo',
+    'el costo de un producto vive en su columna, al final');
+  ok(M.leerMenusDe([Object.values(M.COL_MENUS).slice(0, 12), fila.slice(0, 12)])[0].costo === 0, 'una planilla sin la columna se lee con el costo sin poner');
+  ok(M.sinCostos(leido)[0].costo === 0 && leido[0].costo === 15000, 'a quien no ve los costos el catálogo le llega sin ellos');
+  const R = await import('./auth.ts');
+  ok(R.puede(R.ROL.gerencia, 'costos') && R.puede(R.ROL.pagos, 'costos') && R.puede(R.ROL.admin, 'costos')
+    && !R.puede(R.ROL.vendedor, 'costos') && !R.puede(R.ROL.encargado, 'costos') && !R.puede(R.ROL.operaciones, 'costos'),
+    'los costos los ven la gerencia, pagos y el administrador');
 }
 
 // --- La empresa, como una pieza (Fase 5, paso 1) ---

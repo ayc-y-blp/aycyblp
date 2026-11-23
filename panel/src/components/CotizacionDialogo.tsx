@@ -65,6 +65,7 @@ import { cupoParaGanar } from '@/lib/dias';
 import { tieneArriendo, esExclusivo, exclusividadDe, plazoParaLiberar } from '@/lib/exclusivo';
 import { usarSoloMira } from './SesionCliente';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
+import SimularEvento from './SimularEvento';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -2125,6 +2126,11 @@ export default function CotizacionDialogo({
                   <dt>Total</dt><dd className="text-oro">{enPesos(cuentas.total)}</dd>
                 </div>
               </dl>
+              {/* **El simulador de evento** (2026-11-23): cuánto cuesta y cuánto
+                  deja lo que hay cargado. Quien no ve los costos ve solo la señal. */}
+              <div className="mt-2 flex justify-end lg:mt-0">
+                <SimularEvento lineas={vistas} descuentoTotal={descuento} invitados={invitados} />
+              </div>
             </div>
             </div>
 

@@ -436,6 +436,13 @@ export const PERMISOS = {
    * no está cerrada— su comisión. Ver `lib/asignar.ts`.
    */
   asignarVendedor: [ROL.admin, ROL.pagos, ROL.gerencia],
+  /**
+   * **Ver cuánto cuesta un producto y el margen de un evento** (2026-11-23,
+   * el simulador de evento, `lib/simulador.ts`). Lo decidió el cliente: la
+   * gerencia, pagos y el administrador ven los números; el vendedor, solo la
+   * señal —conviene, justo, no conviene—. El costo no viaja a quien no lo ve.
+   */
+  costos: [ROL.admin, ROL.pagos, ROL.gerencia],
   /** Marcar que llegó la boleta de alguien en el informe (2026-11-12). */
   boleta: [ROL.admin, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /**

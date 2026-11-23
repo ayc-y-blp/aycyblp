@@ -46,7 +46,11 @@ export const COL_MENUS = {
   activo: 'Activo',
   // 2026-11-12. Los que suman el bono del vendedor (`lib/vendedores.ts`).
   // En blanco es no.
-  bonoVendedor: 'Bono vendedor'
+  bonoVendedor: 'Bono vendedor',
+  // 2026-11-23. Lo que le cuesta al negocio, por unidad —por persona o una
+  // vez, como se cobra—. Lo usa el simulador de evento (`lib/simulador.ts`).
+  // En blanco es "sin poner", y el simulador lo dice.
+  costo: 'Costo'
 } as const;
 
 /**
@@ -126,6 +130,8 @@ export interface Menu {
    * encima del % de su etapa. Ver `comisionDe()`.
    */
   bonoVendedor: boolean;
+  /** Lo que cuesta, en pesos y sin IVA. Cero es *sin poner*. Solo lo ve quien tiene `costos`. */
+  costo: number;
 }
 
 /**
@@ -142,7 +148,7 @@ export function nuevoProducto(p: Partial<Menu> & { nombre: string }): Menu {
     nombre, precioEnLinea: 0, precioEnLocal: 0,
     tipo: TIPO_PRODUCTO.menu, sitioPublico: true, cotizacion: false,
     cobro: COBRO.porPersona, precioCotizacion: 0,
-    iva: IVA_PRECIO.incluido, moneda: MONEDA.pesos, activo: true, bonoVendedor: false,
+    iva: IVA_PRECIO.incluido, moneda: MONEDA.pesos, activo: true, bonoVendedor: false, costo: 0,
     ...resto
   };
 }
@@ -236,7 +242,8 @@ export function leerMenusDe(filas: string[][]): Menu[] {
       iva: unoDe(f[8], Object.values(IVA_PRECIO), base.iva),
       moneda: unoDe(f[9], Object.values(MONEDA), base.moneda),
       activo: blanco(10) ? base.activo : esSiCelda(f[10]),
-      bonoVendedor: blanco(11) ? base.bonoVendedor : esSiCelda(f[11])
+      bonoVendedor: blanco(11) ? base.bonoVendedor : esSiCelda(f[11]),
+      costo: aMonto(f[12])
     });
   }
   return salida;
@@ -253,7 +260,7 @@ export function aFilasMenus(menus: Menu[]): string[][] {
     ...menus.map((m) => [
       m.nombre, monto(m.precioEnLinea), monto(m.precioEnLocal),
       m.tipo, siNo(m.sitioPublico), siNo(m.cotizacion), m.cobro,
-      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : ''
+      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : '', monto(m.costo)
     ])
   ];
 }
@@ -386,6 +393,15 @@ export function limpiarProducto(m: Partial<Record<keyof Menu, unknown>>): Menu {
     iva: unoDe(m?.iva, Object.values(IVA_PRECIO), base.iva),
     moneda: unoDe(m?.moneda, Object.values(MONEDA), base.moneda),
     activo: typeof m?.activo === 'boolean' ? m.activo : base.activo,
-    bonoVendedor: typeof m?.bonoVendedor === 'boolean' ? m.bonoVendedor : base.bonoVendedor
+    bonoVendedor: typeof m?.bonoVendedor === 'boolean' ? m.bonoVendedor : base.bonoVendedor,
+    costo: aMonto(m?.costo)
   };
+}
+
+/**
+ * El catálogo sin los costos, para quien no los ve (`costos`). **El costo no
+ * viaja a esa pantalla**: lo que no se manda no se puede mirar.
+ */
+export function sinCostos(menus: Menu[]): Menu[] {
+  return menus.map((m) => ({ ...m, costo: 0 }));
 }

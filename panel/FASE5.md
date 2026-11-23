@@ -108,7 +108,7 @@ comprobante, comisiones, equipo, turnos, propinas, informe y boletas.
 | 5 | Calicanto: su planilla, sus productos y sus módulos | — |
 | 6 | El contrato de matrimonio | — |
 | 7 | El tablero de la gerencia | — |
-| 8 | El simulador de evento (costos y margen) | Lógica propuesta al cliente el 2026-11-23 |
+| 8 | El simulador de evento (costos y margen) | Primera parte en un PR abierto el 2026-11-23: dentro de la cotización. Falta el simulador suelto, la comisión, los extras contratados y el gasto real |
 
 **Recordatorio, fuera de esta fase**: la caja (flujo de caja por empresa,
 pendientes con vencimiento y pagos solicitados con aprobación). El cliente
@@ -127,3 +127,39 @@ la quiere, pero hay otro trabajo antes.
   Vercel.
 - **Ninguna lectura de Google más, ningún permiso, ninguna columna, nada que
   se vea.**
+
+### El simulador de evento, primera parte (2026-11-23)
+
+El cliente aprobó la lógica (*"sí a los dos, dale con el simulador"*): los
+números los ven la gerencia, pagos y el administrador, el vendedor ve solo la
+señal, y sirve también para Lo Pirque.
+
+- **`lib/simulador.ts`** (pura, con pruebas): lo cobrado sin IVA menos lo que
+  se sirve (el `Costo` de cada producto por su cantidad), el equipo (la regla
+  *uno cada N personas* de cada puesto por el promedio de la jornada de
+  quienes lo tienen de puesto habitual) y los gastos del evento. Da el margen,
+  la señal —conviene, justo, no conviene, faltan datos— y cuánto habría que
+  cobrar para llegar al mínimo.
+- **No inventa**: un producto sin costo o un puesto sin jornada se nombran y
+  la señal queda en *faltan datos*. El arriendo del recinto propio va en cero
+  sin pedirlo.
+- **Columna nueva `Costo` en `Menús`**, al final. Se carga en *Productos*,
+  dentro de *En una cotización*.
+- **Dos claves nuevas en `Config`**: `margen_minimo` (parte en 0) y
+  `gastos_evento` (texto: *Hielo: 15000; Transporte: 800 pp*). En
+  Configuración → Cotizaciones.
+- **Permiso nuevo `costos`**: gerencia, pagos y administrador. El costo no
+  viaja a quien no lo tiene (`sinCostos()` en `/api/presupuestos`,
+  `/api/reservas` y `/api/menus`), y esa cuenta no lo puede borrar al guardar
+  productos.
+- **`/api/simulador`** (`POST`, con `presupuestos`): no escribe nada. Una
+  tanda de lecturas (Menús, Puestos, Trabajadores y Config). A quien no tiene
+  `costos` le responde solo `{senal}`.
+- **`SimularEvento.tsx`**: el botón *🧮 Simular* en el paso de productos de
+  la cotización, con *¿Y si vienen…?* (− y + de a diez).
+- **Ventanas**: escena `v-simulador` (524px a 1280×650).
+
+**Lo que falta del simulador**: usarlo suelto, antes de cotizar; restar la
+comisión del vendedor y del socio; sumar los extras contratados (show,
+pintacaritas) por su monto habitual; anotar el gasto real después del evento;
+y un editor de los gastos del evento mejor que un renglón de texto.
