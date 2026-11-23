@@ -638,6 +638,78 @@
 
   footer{ padding: 40px 0; border-top: 1px solid var(--line); }
   footer .wrap{ display:flex; flex-wrap:wrap; justify-content:space-between; gap: 16px; font-size: 0.8rem; color: var(--ink-faint); }
+
+  /* ---------- una pantalla por sección (2026-11-23) ----------
+     Lo pidió el cliente: que cada sección quepa en la pantalla, "para
+     cualquier tamaño de pantalla, simplemente trabajar con ciertos márgenes
+     seguros". Igual que el sitio público: los altos salen de --alto-util,
+     el alto de la ventana menos la barra y 24px de margen; cada foto o
+     tarjeta resta lo que ocupan su título y su texto. En el celular, las
+     listas de tarjetas se deslizan en un carrusel con scroll-snap (CSS
+     puro) en vez de apilarse, asomando la siguiente. */
+  :root{ --barra: 88px; --alto-util: calc(100vh - var(--barra) - 24px); }
+  @supports (height: 100svh){ :root{ --alto-util: calc(100svh - var(--barra) - 24px); } }
+  @media (max-width: 900px){ :root{ --barra: 77px; } }
+  @media (min-width: 901px){
+    .pad{ padding: 60px 0; }
+    .section-head{ margin-bottom: 22px; }
+    .hero-full{ min-height: clamp(420px, calc(var(--alto-util) + 24px), 90vh); }
+    .flip-card{ aspect-ratio:auto; height: clamp(280px, calc(var(--alto-util) - 170px), 480px); }
+    .venue-photo{ aspect-ratio:auto; height: clamp(260px, calc(var(--alto-util) - 20px), 560px); }
+    .service-photo{ aspect-ratio:auto; height: clamp(220px, calc(var(--alto-util) - 70px), 420px); }
+    .food-strip figure img{ aspect-ratio:auto; height: clamp(200px, calc(var(--alto-util) - 180px), 360px); }
+    .fullbleed-ecuestre{ min-height: clamp(400px, calc(var(--alto-util) + 24px), 560px); }
+    .oferta{ margin-top: 20px; }
+    .oferta-nota{ margin-top: 10px; }
+  }
+  /* En una pantalla baja de computador, el texto de entrada de promociones
+     se aprieta un poco: el titulo y los tres datos. */
+  @media (min-width: 901px) and (max-height: 720px){
+    .intro-text .wrap{ max-width: 980px; }
+    .intro-text h2{ font-size: 1.8rem; }
+    .intro-text .lede{ margin-top: 10px !important; }
+    .intro-text .hero-cta{ margin-top: 16px !important; }
+    .oferta-dato{ padding: 14px 18px; }
+    .oferta-dato b{ font-size: 2rem; }
+  }
+  @media (min-width: 1000px){
+    .fam-grid{ grid-template-columns: repeat(6,1fr); }
+    .fam-cuerpo{ padding: 12px 14px 16px; }
+    .fam-media img, .fam-icono{ aspect-ratio:auto; height: clamp(90px, calc(var(--alto-util) - 340px), 200px); }
+    .ext-card .ext-photo{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 300px), 260px); }
+  }
+  @media (max-width: 620px){
+    .fam-grid, .ext-grid, .tier-cards{
+      display:grid; grid-auto-flow:column; grid-auto-columns: 84%;
+      grid-template-columns:none; justify-content:start; gap:12px;
+      overflow-x:auto; overscroll-behavior-x:contain;
+      scroll-snap-type:x mandatory; scroll-padding-left: 22px;
+      margin-left:-22px; margin-right:-22px; padding: 0 22px 12px;
+      background:none; border:0;
+    }
+    .fam-grid > *, .ext-grid > *, .tier-cards > *{ scroll-snap-align:start; }
+    .fam-card{ border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+    .tier-cards > .flip-card{ aspect-ratio:auto; height: clamp(300px, calc(var(--alto-util) - 200px), 420px); }
+    .fam-media img, .fam-icono{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 360px), 240px); }
+    .ext-card .ext-photo{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 380px), 240px); }
+    .section-head{ margin-bottom: 20px; }
+    .venue-photo, .service-photo{ aspect-ratio:auto; height: clamp(110px, calc(var(--alto-util) - 430px), 240px); }
+    .segments{ gap: 12px; }
+    .benefits{ gap: 16px; }
+    .food-strip figure img{ aspect-ratio:auto; height: clamp(220px, calc(var(--alto-util) - 260px), 380px); }
+    .venue-split, .service-split{ gap: 18px; }
+    .service-cards{ gap: 12px; }
+    .service-card{ padding: 14px 16px; }
+    /* La oferta de promociones: cada dato en una fila, el numero a la
+       izquierda y lo que significa a la derecha. */
+    .oferta-dato{ display:grid; grid-template-columns: 118px 1fr; align-items:center; gap:2px 14px; padding: 12px 16px; }
+    .oferta-dato b{ grid-row: span 2; font-size: 1.8rem; white-space:nowrap; }
+    .oferta-dato span, .oferta-dato small{ grid-column: 2; margin-top:0; }
+    .oferta{ margin-top: 20px; }
+    .intro-text .lede{ font-size: 0.95rem; }
+    .intro-text .hero-cta{ margin-top: 18px !important; }
+    .wrap{ padding: 0 22px; }
+  }
 </style>
 <!--i18n:alternate-->
 <link rel="alternate" hreflang="es" href="https://brasasdelopirque.cl/promociones.html">
@@ -1074,30 +1146,9 @@
 
 
     <details class="panel">
-    <summary><span class="wrap panel-fila"><span class="panel-txt"><span class="panel-titulo">El recinto y los extras</span><span class="panel-bajada">Desayuno y once, arriendo exclusivo y eventos a medida</span></span><span class="panel-icono" aria-hidden="true"></span></span></summary>
+    <summary><span class="wrap panel-fila"><span class="panel-txt"><span class="panel-titulo">El recinto y los extras</span><span class="panel-bajada">Arriendo exclusivo y eventos a medida</span></span><span class="panel-icono" aria-hidden="true"></span></span></summary>
     <div class="panel-cuerpo">
-  <section class="pad">
-      <div class="wrap">
-        <div class="section-head"><h2>Para completar la jornada</h2></div>
-        <div class="service-split">
-          <div class="service-photo"><img src="assets/imgs2/SPREAD.jpg" alt="Mesa servida con platos de la parrilla" width="1200" height="1600" loading="lazy" decoding="async"></div>
-          <div class="service-cards">
-            <div class="service-card">
-              <span class="tag"><span data-lista="texto:desayuno_de_campo.por_persona">$8.000</span> + IVA por persona</span>
-              <h3>Desayuno de campo</h3>
-              <p>Pan amasado, huevos revueltos, tapaditos de jamón y queso, café de grano, té, jugo natural de naranja, ensalada de fruta y muffin. Extra: sándwich mechado, pie o kuchen (consultar valor).</p>
-            </div>
-            <div class="service-card">
-              <span class="tag"><span data-lista="texto:once_campesina.por_persona">$8.000</span> + IVA por persona</span>
-              <h3>Once campesina</h3>
-              <p>Misma propuesta que el desayuno de campo, en formato once.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="arriendo" class="pad">
+  <section id="arriendo" class="pad">
       <div class="wrap venue-split">
         <div class="venue-photo"><img src="assets/imgs2/MEATPLATE.jpg" alt="Costillar a la parrilla con papas fritas y ensalada" width="1120" height="1400" loading="lazy" decoding="async"></div>
         <div>
