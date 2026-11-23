@@ -29,6 +29,8 @@ interface Fila {
   tieneClave: boolean;
   /** Vista gerencia: ve todo el panel, edita solo lo de su rol. */
   gerencia?: boolean;
+  /** Su rol en las otras empresas, por id. En blanco: no entra ahí. */
+  roles?: Record<string, string>;
 }
 
 const ENTRADA =
@@ -44,12 +46,18 @@ export default function UsuariosEditor() {
   const [aviso, setAviso] = useState('');
   const [poniendoClave, setPoniendoClave] = useState<string | null>(null);
   const [clave, setClave] = useState('');
+  // Las otras empresas encendidas (Fase 5): con ninguna, la pantalla es la de siempre.
+  const [otras, setOtras] = useState<{ id: string; nombre: string }[]>([]);
+  // Desde otra empresa las cuentas se ven y no se cambian.
+  const [soloLectura, setSoloLectura] = useState('');
 
   useEffect(() => {
     fetch('/api/usuarios').then((r) => r.json())
       .then((d) => {
         if (d.error) { setSinPermiso(!!d.permiso); return setError(d.error); }
         setLista(d.usuarios);
+        setOtras(d.otrasEmpresas ?? []);
+        setSoloLectura(d.soloLectura ? String(d.empresa ?? 'esta empresa') : '');
       })
       .catch((e) => setError(String(e)));
   }, []);
@@ -94,6 +102,12 @@ export default function UsuariosEditor() {
     setLista(copia);
     setSucio(true);
   };
+  const cambiarRolEn = (i: number, empresa: string, rol: string) => {
+    const copia = lista.map((u) => ({ ...u, roles: { ...(u.roles ?? {}) } }));
+    if (rol) copia[i].roles[empresa] = rol; else delete copia[i].roles[empresa];
+    setLista(copia);
+    setSucio(true);
+  };
 
   return (
     <section>
@@ -116,12 +130,19 @@ export default function UsuariosEditor() {
       </AvisoFijo>
       </div>
 
+      {soloLectura && (
+        <p className="mb-4 rounded-lg border-2 border-ambar-fuerte/60 bg-ambar/10 px-3 py-2 text-sm">
+          Estas son las cuentas que entran a <strong>{soloLectura}</strong>, con el rol que tienen acá.{' '}
+          <strong>Se cambian en el panel de Brasas de Lo Pirque</strong>: son las mismas para las dos empresas.
+        </p>
+      )}
       {aviso && (
         <p className="mb-5 rounded border border-hueso/20 bg-panel px-3 py-2 text-sm">
           {aviso}
         </p>
       )}
 
+      <fieldset disabled={!!soloLectura} className="min-w-0 disabled:opacity-80">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wide text-hueso/50">
@@ -192,6 +213,21 @@ export default function UsuariosEditor() {
                       <AyudaCorta tema="vistaGerencia" />
                     </div>
                   )}
+                  {/* **El rol en la otra empresa** (2026-11-23, Fase 5): la
+                      cuenta es una sola; acá se dice si entra allá y con
+                      qué rol. Sale solo si esa empresa está encendida. */}
+                  {otras.map((e) => (
+                    <label key={e.id} className="mt-2 flex min-h-[40px] items-center gap-2 text-[13px] xl:order-4 xl:basis-full">
+                      <span className="shrink-0 font-semibold text-hueso/80">En {e.nombre}</span>
+                      <select value={u.roles?.[e.id] ?? ''} className={`${ENTRADA} xl:w-72`}
+                        onChange={(ev) => cambiarRolEn(i, e.id, ev.target.value)}>
+                        <option value="">— No entra</option>
+                        {ROLES_DE_CUENTA.map((r) => (
+                          <option key={r} value={r}>{NOMBRE_ROL[r] ?? r}</option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
                   </div>
                 </td>
                 <td className="py-2 pr-3">
@@ -297,6 +333,7 @@ export default function UsuariosEditor() {
           </div>
         </Dialogo>
       )}
+      </fieldset>
     </section>
   );
 }

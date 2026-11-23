@@ -61,6 +61,7 @@
  * trabajadores, ni las actividades extras.** Los totales por menú son cuánto
  * hay que cocinar; quién lo pidió y cuánto pagó no es dato de un turno.
  */
+import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerTrabajadores, leerTurnos, leerAjustesSueltos, leerFechas, leerConfig, leerReservas,
          leerMenus, leerPagosEquipo, leerColaboradores, leerExtras, leerVendedores, leerBoletas,
          leerPresupuestos, leerLineasPresupuesto, leerCobros, leerClientes } from '@/lib/datos';
@@ -364,7 +365,7 @@ function Flecha({ href, children, etiqueta }: {
   );
 }
 
-export default async function Pagina({ params, searchParams }: {
+async function PaginaDeLaEmpresa({ params, searchParams }: {
   params: { token: string };
   searchParams: { p?: string; v?: string };
 }) {
@@ -1037,4 +1038,9 @@ export default async function Pagina({ params, searchParams }: {
       </p>
     </section>
   );
+}
+
+/** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */
+export default function Pagina(props: Parameters<typeof PaginaDeLaEmpresa>[0]) {
+  return enEmpresaDeLaPagina(() => PaginaDeLaEmpresa(props));
 }

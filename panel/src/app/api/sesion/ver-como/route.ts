@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { anotar } from '@/lib/datos';
+import { conLecturas } from '@/lib/sheets';
 import {
   leerSesion, firmarSesion, secretoDeSesion, cookieDe, COOKIE_SESION, ROLES_VER_COMO
 } from '@/lib/sesion';
@@ -24,7 +25,7 @@ export const dynamic = 'force-dynamic';
  *   nuevo, con contraseña. Al volver a administrador antes de la hora se
  *   recupera el vencimiento que tenía la sesión de administrador.
  */
-export async function POST(req: Request) {
+export const POST = conLecturas([], async function POST(req: Request) {
   const secreto = secretoDeSesion(process.env);
   const sesion = await leerSesion(cookieDe(req.headers.get('cookie'), COOKIE_SESION), secreto);
   if (!sesion) {
@@ -45,7 +46,8 @@ export async function POST(req: Request) {
   const ahora = Math.floor(Date.now() / 1000);
   // Lo que le queda a la sesión de administrador, no a la vista de una hora.
   const queda = Math.max(60, (sesion.expiraReal ?? sesion.expira) - ahora);
-  const token = await firmarSesion({ usuario: sesion.usuario, rol: 'admin', como, avisos: sesion.avisos },
+  const token = await firmarSesion({ usuario: sesion.usuario, rol: 'admin', como, avisos: sesion.avisos,
+    empresa: sesion.empresa },
     secreto, ahora, queda);
   const vista = (await leerSesion(token, secreto, ahora))?.expira ?? ahora + queda;
   const res = NextResponse.json({ ok: true, rol: como || 'admin' });
@@ -56,4 +58,4 @@ export async function POST(req: Request) {
   await anotar({ usuario: sesion.usuario, rol: 'admin',
     accion: como ? `Pasó a ver el panel como ${como}` : 'Volvió a ver el panel como administrador' });
   return res;
-}
+});

@@ -9,7 +9,7 @@
  * continuo— pero es real. Por eso las reservas creadas acá llevan un id
  * MANUAL-<timestamp>: no pueden chocar con los ids numéricos de Shopify.
  */
-import { porEmpresa } from './empresa.ts';
+import { conEmpresa, empresaActual, laCasa, porEmpresa } from './empresa.ts';
 import { leerHoja, agregarFila, agregarFilas, escribirFila, borrarFila, borrarFilas,
          escribirBloque, asegurarEncabezado, asegurarColumna, asegurarHoja, leerEncabezado,
          esPestanaQueNoExiste } from './sheets.ts';
@@ -29,7 +29,7 @@ import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
 import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
 import { normalizar } from './columnas.ts';
-import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, type Usuario } from './usuarios.ts';
+import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, vistaDeEmpresa, type Usuario } from './usuarios.ts';
 import { HOJA_CIERRES, COL_CIERRES, ENCABEZADO_CIERRES, leerCierresDe,
          type Cierre } from './cierres';
 import { HOJA_PAGOS, ENCABEZADO_PAGOS, COL_PAGOS, leerPagosDe, filaPago, nuevoIdPago,
@@ -629,6 +629,20 @@ export async function guardarExtrasDelDia(
  * que la planilla no responda o alguien borre la última cuenta.
  */
 export async function leerUsuarios(): Promise<Usuario[]> {
+  return vistaDeEmpresa(await leerCuentas(), empresaActual().id);
+}
+
+/**
+ * **La lista entera de cuentas, que es una sola y vive en la planilla de la
+ * casa** (2026-11-23, Fase 5): la misma persona entra con la misma clave a
+ * las dos empresas. Se lee y se guarda siempre allá, se esté donde se esté.
+ * `leerUsuarios()` es esta lista vista desde la empresa en curso.
+ */
+export async function leerCuentas(): Promise<Usuario[]> {
+  return conEmpresa(laCasa(), leerCuentasDeLaCasa);
+}
+
+async function leerCuentasDeLaCasa(): Promise<Usuario[]> {
   try {
     return leerUsuariosDe(await leerHoja(HOJA_USUARIOS));
   } catch {
@@ -636,8 +650,9 @@ export async function leerUsuarios(): Promise<Usuario[]> {
   }
 }
 
+/** Guarda **la lista entera** (la de `leerCuentas()`), en la casa. */
 export async function guardarUsuarios(lista: Usuario[]): Promise<void> {
-  await escribirBloque(HOJA_USUARIOS, aFilasUsuarios(lista));
+  await conEmpresa(laCasa(), () => escribirBloque(HOJA_USUARIOS, aFilasUsuarios(lista)));
 }
 
 /* ---------- La bitácora ---------- */

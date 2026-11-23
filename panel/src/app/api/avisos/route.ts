@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
-import { leerUsuarios, guardarUsuarios } from '@/lib/datos';
+import { leerCuentas, guardarUsuarios } from '@/lib/datos';
 import { HOJA_USUARIOS, esAvisoCerrable, cuentaDeSesion, type Usuario } from '@/lib/usuarios';
 import { quienEs } from '@/lib/permisos';
 import { cookieDe, COOKIE_SESION, leerSesion, resellarConAvisos, secretoDeSesion } from '@/lib/sesion';
@@ -39,7 +39,8 @@ export const POST = conLecturas([HOJA_USUARIOS], async function POST(req: Reques
     let cuenta: Usuario | undefined;
     let falla = '';
     try {
-      const lista = await leerUsuarios();
+      // La lista entera, la de la casa: es la que se guarda.
+      const lista = await leerCuentas();
       cuenta = cuentaDeSesion(lista, quien.usuario);
       if (cuenta && !cuenta.avisosLeidos.includes(clave)) {
         const i = lista.indexOf(cuenta);

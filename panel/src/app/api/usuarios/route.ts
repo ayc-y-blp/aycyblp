@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
-import { leerUsuarios, guardarUsuarios, anotar } from '@/lib/datos';
+import { leerUsuarios, leerCuentas, guardarUsuarios, anotar } from '@/lib/datos';
+import { empresaActual } from '@/lib/empresa';
+import { CASA, empresasEncendidas } from '@/lib/empresas';
 import {
   hashDeClave, esRolDeCuenta, LARGO_MINIMO_CLAVE, type Usuario
 } from '@/lib/usuarios';
@@ -24,11 +26,36 @@ export const GET = conLecturas([], async function GET(req: Request) {
   const no = await exigir(req, 'usuarios');
   if (no) return no;
   try {
-    return NextResponse.json({ usuarios: sinHuellas(await leerUsuarios()) });
+    // **Las cuentas se administran en la casa** (2026-11-23): desde otra
+    // empresa se ven —con el rol que tienen ahí— y no se cambian.
+    const aca = empresaActual();
+    const otras = empresasEncendidas(process.env).filter((e) => e.id !== CASA)
+      .map((e) => ({ id: e.id, nombre: e.nombre }));
+    return NextResponse.json({
+      usuarios: sinHuellas(await leerUsuarios()),
+      ...(aca.id === CASA ? { otrasEmpresas: otras } : { soloLectura: true, empresa: aca.nombre })
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 });
+
+const SOLO_EN_LA_CASA = 'Las cuentas se cambian en el panel de Brasas de Lo Pirque: son las mismas para las dos empresas.';
+
+/**
+ * El rol en las otras empresas: de las encendidas, lo que mandó la pantalla
+ * (en blanco quita el acceso); de las que no, lo que ya había, sin tocar.
+ */
+function rolesLimpios(
+  mandados: unknown, previos: Record<string, Rol> | undefined, encendidas: string[]
+): { roles?: Record<string, Rol> } {
+  const roles: Record<string, Rol> = { ...(previos ?? {}) };
+  for (const id of encendidas) {
+    const r = normalizar(String((mandados as Record<string, unknown> | undefined)?.[id] ?? ''));
+    if (esRolDeCuenta(r)) roles[id] = r as Rol; else delete roles[id];
+  }
+  return Object.keys(roles).length ? { roles } : {};
+}
 
 /**
  * Guarda la lista: nombres, roles y quién está activo.
@@ -42,6 +69,7 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
   const no = await exigir(req, 'usuarios');
   if (no) return no;
   try {
+    if (empresaActual().id !== CASA) return NextResponse.json({ error: SOLO_EN_LA_CASA }, { status: 409 });
     const { usuarios } = await req.json();
     if (!Array.isArray(usuarios)) {
       return NextResponse.json({ error: 'Falta la lista de usuarios.' }, { status: 400 });
@@ -50,8 +78,9 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
     // Lo que no viene del navegador se conserva de la fila de antes: la
     // huella de la contraseña y los avisos que la persona ya cerró.
     const previas = new Map(
-      (await leerUsuarios()).map((u) => [normalizar(u.usuario), u])
+      (await leerCuentas()).map((u) => [normalizar(u.usuario), u])
     );
+    const encendidas = empresasEncendidas(process.env).filter((e) => e.id !== CASA).map((e) => e.id);
     const limpia: Usuario[] = [];
     const vistos = new Set<string>();
     for (const u of usuarios) {
@@ -70,13 +99,15 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
         avisosLeidos: previas.get(normalizar(usuario))?.avisosLeidos ?? [],
         // La vista gerencia: un agregado a la cuenta, no un rol. Al
         // administrador no le suma nada —ya ve todo—, así que no se guarda.
-        gerencia: u?.gerencia === true && rol !== ROL.admin
+        gerencia: u?.gerencia === true && rol !== ROL.admin,
+        ...rolesLimpios(u?.roles, previas.get(normalizar(usuario))?.roles, encendidas)
       });
     }
 
     await guardarUsuarios(limpia);
     await anotar({ ...(await quienEs(req)), accion: 'Cambió las cuentas del panel',
-      detalle: limpia.map((u) => `${u.usuario} (${u.rol}${u.activo ? '' : ', inactivo'})`)
+      detalle: limpia.map((u) => `${u.usuario} (${u.rol}${u.activo ? '' : ', inactivo'}`
+                       + Object.entries(u.roles ?? {}).map(([e, r]) => `, en ${e}: ${r}`).join('') + ')')
                      .join(' · ') });
     return NextResponse.json({ usuarios: sinHuellas(limpia) });
   } catch (e) {
@@ -104,7 +135,8 @@ export const POST = conLecturas([], async function POST(req: Request) {
       );
     }
 
-    const lista = await leerUsuarios();
+    if (empresaActual().id !== CASA) return NextResponse.json({ error: SOLO_EN_LA_CASA }, { status: 409 });
+    const lista = await leerCuentas();
     const i = lista.findIndex((u) => normalizar(u.usuario) === normalizar(String(usuario ?? '')));
     if (i === -1) {
       return NextResponse.json(

@@ -60,6 +60,26 @@ export interface Sesion {
    * sabe **sin leer la planilla**. Ver `lib/avisos.ts`.
    */
   avisos?: string[];
+  /**
+   * **De qué empresa es la sesión** (2026-11-23, Fase 5). El rol de arriba es
+   * el que la persona tiene **en esa empresa**, así que la sesión vale solo
+   * en su dirección: el middleware la compara con la de la petición. Una
+   * sesión de antes, sin este dato, es de la casa (`lo-pirque`).
+   */
+  empresa: string;
+  /**
+   * **Un pase**: el token de un minuto con que alguien pasa de una empresa a
+   * la otra sin escribir su clave de nuevo. **No es una sesión**: el
+   * middleware y las rutas lo rechazan; solo lo acepta `/api/sesion/pase`.
+   */
+  pase?: boolean;
+  /**
+   * **Las otras empresas a las que esta cuenta puede pasar**, por su id. Se
+   * anota al entrar, como el rol: darle o quitarle una empresa a alguien
+   * rige desde la próxima vez que entre. Es solo para dibujar el botón; al
+   * pasar, el servidor vuelve a mirar la cuenta.
+   */
+  otras?: string[];
 }
 
 /**
@@ -120,7 +140,8 @@ function clave(secreto: string): Promise<CryptoKey> {
  * días.
  */
 export async function firmarSesion(
-  datos: { usuario: string; rol: string; gerencia?: boolean; como?: string; avisos?: readonly string[] },
+  datos: { usuario: string; rol: string; gerencia?: boolean; como?: string; avisos?: readonly string[];
+           empresa?: string; pase?: boolean; otras?: readonly string[] },
   secreto: string,
   ahora = Math.floor(Date.now() / 1000),
   duracion = DURACION_SESION
@@ -135,7 +156,11 @@ export async function firmarSesion(
     expira: como ? Math.min(expira, ahora + DURACION_VER_COMO) : expira,
     ...(datos.gerencia ? { gerencia: true } : {}),
     ...(como ? { como, vuelta: expira } : {}),
-    ...(datos.avisos?.length ? { avisos: soloAvisosConocidos(datos.avisos) } : {})
+    ...(datos.avisos?.length ? { avisos: soloAvisosConocidos(datos.avisos) } : {}),
+    // La casa no se escribe: así una sesión de hoy y una de antes son iguales.
+    ...(datos.empresa && datos.empresa !== 'lo-pirque' ? { empresa: datos.empresa } : {}),
+    ...(datos.pase ? { pase: true } : {}),
+    ...(datos.otras?.length ? { otras: [...datos.otras] } : {})
   };
   return sellar(cuerpo, secreto);
 }
@@ -163,6 +188,25 @@ async function sellar(cuerpo: object, secreto: string): Promise<string> {
 export async function leerSesion(
   token: unknown, secreto: string, ahora = Math.floor(Date.now() / 1000)
 ): Promise<Sesion | null> {
+  const s = await leerToken(token, secreto, ahora);
+  // Un pase no abre nada: solo sirve para canjearlo por una sesión.
+  return s && !s.pase ? s : null;
+}
+
+/** Un pase válido, o `null`. Lo usa solo `/api/sesion/pase`. */
+export async function leerPase(
+  token: unknown, secreto: string, ahora = Math.floor(Date.now() / 1000)
+): Promise<Sesion | null> {
+  const s = await leerToken(token, secreto, ahora);
+  return s?.pase ? s : null;
+}
+
+/** Cuánto dura un pase: lo justo para el salto de una dirección a la otra. */
+export const DURACION_PASE = 60;
+
+async function leerToken(
+  token: unknown, secreto: string, ahora: number
+): Promise<Sesion | null> {
   const texto = String(token ?? '');
   if (!secreto || !texto) return null;
 
@@ -185,7 +229,10 @@ export async function leerSesion(
       rol: String(datos?.rol ?? ''),
       expira: Number(datos?.expira ?? 0),
       gerencia: datos?.gerencia === true,
-      avisos: soloAvisosConocidos(datos?.avisos ?? [])
+      avisos: soloAvisosConocidos(datos?.avisos ?? []),
+      empresa: String(datos?.empresa ?? '') || 'lo-pirque',
+      ...(datos?.pase === true ? { pase: true } : {}),
+      ...(Array.isArray(datos?.otras) && datos.otras.length ? { otras: datos.otras.map(String) } : {})
     };
     if (!sesion.usuario || !sesion.rol) return null;
     // "Ver como": la firma ya garantiza que lo escribió el servidor, y además
