@@ -886,6 +886,16 @@ ahorro de pagar ahora había que restarlo a mano.
   *Pagar ahora* siguen pesando lo mismo. Los botones *Reservar* que llevan a
   `#reserva-en-linea` dejan el formulario entero bajo la barra fija
   (`scroll-margin-top`).
+- **Los nombres de los menús van en Fraunces recta, seminegrita**
+  (2026-11-23, lo pidió el cliente: *"los títulos de los menú deberían ser
+  un poco más grande o grueso, o una fuente elegante distinta (bien
+  legible) y quitar el espacio necesario equitativamente"*). Es la serif de
+  los precios: la fila se lee como una carta, el plato en serif y su precio
+  en serif itálica; la edad sigue en Work Sans. En el computador las tres
+  filas ganaron el mismo aire arriba y abajo y el formulario sigue en una
+  vista (516px). En el celular el contador cede 12px —los botones quedan en
+  44— para que el nombre quepa en una línea; *Menú A Brasas abiertas*, con
+  la casilla marcada, se dobla en dos.
 - **Todo *Reservar* del sitio llega al formulario** (lo pidió el cliente el
   mismo día): el del menú, el del pie y el de la portada apuntan a
   `reservas.html#reserva-en-linea`, como ya lo hacían los de las tarjetas y
