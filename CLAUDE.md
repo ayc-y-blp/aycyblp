@@ -885,7 +885,11 @@ ahorro de pagar ahora había que restarlo a mano.
   un punto el texto de apoyo; los números del calendario, los precios y
   *Pagar ahora* siguen pesando lo mismo. Los botones *Reservar* que llevan a
   `#reserva-en-linea` dejan el formulario entero bajo la barra fija
-  (`scroll-margin-top`). El título *Reserva en línea* queda solo
+  (`scroll-margin-top`).
+- **Todo *Reservar* del sitio llega al formulario** (lo pidió el cliente el
+  mismo día): el del menú, el del pie y el de la portada apuntan a
+  `reservas.html#reserva-en-linea`, como ya lo hacían los de las tarjetas y
+  los cierres. Quien aprieta *Reservar* cae en el paso 1, no en la franja. El título *Reserva en línea* queda solo
   para lectores de pantalla en el computador (los pasos ya lo dicen). El
   aviso *Tienda de prueba* suma 32px, solo en las versiones de prueba.
 - **El héroe de la página es una franja** (`hero-corto`, 190px en el
