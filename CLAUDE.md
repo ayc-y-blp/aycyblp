@@ -1247,6 +1247,44 @@ aterrizar sin mezclarse con el programa de socios.
 - Está enlazada desde el pie del sitio público y registrada en `PAGINAS` de
   `tools/traducir.py`. Con el dossier son **10 páginas × 3 idiomas = 30**.
 
+### Seis promociones que se eligen en la cabecera (2026-11-23)
+
+Lo pidió el cliente con el documento *Brasas Empresas: los cinco
+productos*: *"que la imagen de título… muestre además estas promociones…
+con una imagen switcheable. Y cuando switcheo veo el título de la promoción
+que estoy viendo ahora, y obviamente hay que hacer coherente la información
+que se ve abajo"*. Decidió **seis, separadas**: la de fin de año que ya
+estaba (con su animación, abre por defecto) y los cinco productos —Combate
+de Parrillas, Gran Premio de Fin de Año, Día de Campo en Familia, IA a las
+Brasas y Mesa de Directorio—.
+
+- **Sin JavaScript**: seis botones de opción (`.promo-radio`) antes de la
+  cabecera; cada uno muestra su diapositiva (`.psN`) y su oferta (`.pbN`)
+  con el selector de hermanos `~`. Se elige con las pastillas o con las
+  flechas, que son `<label>`. **En el celular se ve solo la elegida entre
+  las dos flechas**: las seis no caben y una fila deslizable dejaba la
+  elegida cortada.
+- **La oferta de cada producto** sale del documento: a quién le habla, qué
+  es, qué incluye, tres datos (precio, mínimo y lo que más vende), *Se puede
+  sumar* con los extras del documento y su propio mensaje de WhatsApp. **Lo
+  incluido no se repite en los extras**: el Combate trae bar abierto, así
+  que ahí no se ofrece sumarlo.
+- **Los precios y los mínimos son inventados** (el documento no trae
+  ninguno, y el cliente pidió anotarlo): viven en `precios.json` →
+  `paquetes`, con la nota *INVENTADOS*, y en la página llevan la etiqueta
+  *Precio de ejemplo* / *Mínimo de ejemplo* (`.de-ejemplo`). **Se publicó
+  así, con las etiquetas a la vista** (el cliente dijo *"mergea"* el
+  2026-11-23, sabiendo que los precios eran de ejemplo). Cuando los
+  confirme, se cambian en `precios.json` y se borran las etiquetas.
+- **La condición especial** (como el 11% de fin de año) **se define producto
+  por producto** (lo pidió el cliente): cada oferta trae su espacio,
+  *Condición especial · Por definir* (`.condicion-especial`).
+- **Fotos**: la parrilla (`g20`), el karting (`g24`), la carreta
+  (`paseo-carreta`), el galpón montado (`g27`, a falta de una foto de una
+  charla) y la mesa servida (`g18`).
+- Los nombres en inglés y portugués (*Grill Battle*, *Duelo de Churrasco*…)
+  los escribió Claude.
+
 ## Landing dossier (`dossier.html`) y los precios de empresa (2026-11-18)
 
 Lo pidió el cliente: *"un tercer landing page, que lo llamamos dossier…

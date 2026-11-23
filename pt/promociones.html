@@ -300,6 +300,111 @@
   .promo-sello::before{ content:""; height:1px; background:currentColor; opacity:0.5; flex:0 0 34px; }
   .promo-sello::after{ content:""; height:1px; background:currentColor; opacity:0.5; flex:1; max-width:150px; }
 
+  /* ---------- seis promociones que se eligen (2026-11-23) ----------
+     Lo pidió el cliente: que la cabecera muestre, además de la de fin de
+     año, los cinco productos para empresas, "con una imagen switcheable", y
+     que lo de abajo diga lo de la promoción que se está viendo. Es CSS y no
+     JavaScript: seis botones de opción (.promo-radio) antes de la cabecera,
+     y cada uno muestra su diapositiva (.psN) y su oferta (.pbN) con el
+     selector de hermanos (~). Los botones se aprietan con las pastillas y
+     las flechas, que son <label>; con el teclado, con las flechas del
+     teclado, como cualquier grupo de opciones. */
+  .promo-radio{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+  /* align-items vuelve a stretch: .hero-full trae flex-end, y en una grilla
+     eso dejaba las diapositivas más bajas sin foto arriba. */
+  .promo-hero{ display:grid; grid-template-columns: minmax(0,1fr); align-items:stretch; }
+  .promo-slide{
+    grid-area: 1 / 1; position:relative; display:flex; align-items:flex-end;
+    opacity:0; visibility:hidden; transition: opacity .45s ease, visibility .45s;
+  }
+  .promo-slide .hero-full-content{ padding-bottom: 118px; }
+  #promo-0:checked ~ .promo-hero .ps0, #promo-1:checked ~ .promo-hero .ps1,
+  #promo-2:checked ~ .promo-hero .ps2, #promo-3:checked ~ .promo-hero .ps3,
+  #promo-4:checked ~ .promo-hero .ps4, #promo-5:checked ~ .promo-hero .ps5{ opacity:1; visibility:visible; }
+  .promo-titulo{ margin-top:0; max-width:20ch; font-size: clamp(2rem, 5.4vw, 3.6rem); }
+  .promo-promesa{
+    margin-top:14px; max-width:36ch; font-family: var(--serif); font-style:italic;
+    font-size: clamp(1.15rem, 2.4vw, 1.6rem); line-height:1.3; color:#F4F0E6;
+  }
+  /* La fila para elegir: pastillas con el nombre y una flecha a cada lado.
+     Va sobre las seis diapositivas, abajo; las flechas que se ven son las
+     de la promoción elegida (anterior y siguiente). */
+  .promo-nav{
+    grid-area: 1 / 1; align-self:end; position:relative; z-index:3;
+    display:flex; align-items:center; gap:10px;
+    max-width:1180px; width:100%; margin:0 auto; padding: 0 32px 34px;
+  }
+  .promo-pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  .promo-pill, .promo-flecha{
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+    min-height:40px; border:1px solid rgba(244,240,230,0.55); border-radius:999px;
+    background: rgba(11,11,10,0.45); color:#F4F0E6; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    font-size:0.86rem; font-weight:600; letter-spacing:0.02em; white-space:nowrap;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .promo-pill{ padding: 0 16px; }
+  .promo-flecha{ flex:0 0 44px; width:44px; height:44px; font-size:1.6rem; line-height:1; padding-bottom:3px; display:none; }
+  .promo-pill:hover, .promo-flecha:hover{ border-color:#C9A227; }
+  #promo-0:checked ~ .promo-hero :is(.pp0), #promo-1:checked ~ .promo-hero :is(.pp1),
+  #promo-2:checked ~ .promo-hero :is(.pp2), #promo-3:checked ~ .promo-hero :is(.pp3),
+  #promo-4:checked ~ .promo-hero :is(.pp4), #promo-5:checked ~ .promo-hero :is(.pp5){
+    background:#C9A227; border-color:#C9A227; color:#0B0B0A;
+  }
+  #promo-0:checked ~ .promo-hero :is(.fa0,.fs0), #promo-1:checked ~ .promo-hero :is(.fa1,.fs1),
+  #promo-2:checked ~ .promo-hero :is(.fa2,.fs2), #promo-3:checked ~ .promo-hero :is(.fa3,.fs3),
+  #promo-4:checked ~ .promo-hero :is(.fa4,.fs4), #promo-5:checked ~ .promo-hero :is(.fa5,.fs5){ display:inline-flex; }
+  #promo-0:focus-visible ~ .promo-hero .pp0, #promo-1:focus-visible ~ .promo-hero .pp1,
+  #promo-2:focus-visible ~ .promo-hero .pp2, #promo-3:focus-visible ~ .promo-hero .pp3,
+  #promo-4:focus-visible ~ .promo-hero .pp4, #promo-5:focus-visible ~ .promo-hero .pp5{ outline:2px solid #F4F0E6; outline-offset:3px; }
+  @media (max-width: 760px){
+    .promo-nav{ padding: 0 76px 22px 16px; gap:8px; } /* a la derecha, el botón de WhatsApp */
+    /* En el celular no caben las seis: se ve solo la elegida, entre las
+       dos flechas, y las flechas pasan a la anterior y la siguiente. */
+    .promo-pills{ flex:1; min-width:0; }
+    .promo-pill{ display:none; flex:1; padding: 0 12px; white-space:normal; text-align:center; line-height:1.2; }
+    #promo-0:checked ~ .promo-hero .pp0, #promo-1:checked ~ .promo-hero .pp1,
+    #promo-2:checked ~ .promo-hero .pp2, #promo-3:checked ~ .promo-hero .pp3,
+    #promo-4:checked ~ .promo-hero .pp4, #promo-5:checked ~ .promo-hero .pp5{ display:inline-flex; }
+    .promo-slide .hero-full-content{ padding-bottom: 96px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .promo-slide{ transition:none; } }
+
+  /* La oferta de cada producto: a la izquierda qué es y qué incluye; a la
+     derecha los tres datos, la condición especial y el botón. */
+  .promo-bloque{ display:none; }
+  #promo-0:checked ~ #oferta .pb0, #promo-1:checked ~ #oferta .pb1,
+  #promo-2:checked ~ #oferta .pb2, #promo-3:checked ~ #oferta .pb3,
+  #promo-4:checked ~ #oferta .pb4, #promo-5:checked ~ #oferta .pb5{ display:block; }
+  .intro-text .wrap.promo-bloque:not(.pb0){ max-width:1180px; }
+  .paquete{ display:grid; gap: 26px 48px; }
+  @media (min-width: 901px){ .paquete{ grid-template-columns: 1.15fr 1fr; align-items:start; } }
+  .paquete-nombre{ font-size: clamp(1.7rem,3.6vw,2.4rem); margin-top:8px; }
+  .paquete .lede{ margin-top:12px; }
+  .paquete-rotulo{ margin-top:18px; font-size:0.84rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color: var(--gold); }
+  .paquete-incluye{ list-style:none; padding:0; margin:8px 0 0; display:grid; gap:6px; }
+  .paquete-incluye li{ position:relative; padding-left:24px; font-size:0.98rem; line-height:1.45; }
+  .paquete-incluye li::before{ content:"✓"; position:absolute; left:0; top:0; color: var(--gold); font-weight:700; }
+  .paquete-extras{ margin-top:14px; font-size:0.9rem; color: var(--ink-dim); }
+  .paquete-extras b{ color: var(--ink); font-weight:600; }
+  .paquete-datos{ margin-top:0; }
+  .paquete-datos .oferta-dato b{ font-size: clamp(1.5rem,3vw,1.9rem); white-space:nowrap; }
+  /* Lo inventado se ve inventado (lo pidió el cliente): hasta que diga el
+     precio de verdad, cada número que salió de nosotros lleva su etiqueta. */
+  .de-ejemplo{
+    display:inline-block; margin-top:8px; padding:2px 8px; border:1px dashed var(--gold); white-space:nowrap;
+    border-radius:999px; font-style:normal; font-size:0.8rem; color: var(--gold);
+  }
+  /* El lugar de la condición especial de cada producto (como el 11% de
+     fin de año): se define producto por producto. */
+  .condicion-especial{
+    margin-top:14px; padding:12px 16px; border:1px dashed var(--line);
+    display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; font-size:0.92rem;
+  }
+  .condicion-especial b{ font-size:0.82rem; text-transform:uppercase; letter-spacing:0.1em; color: var(--gold); }
+  .condicion-especial span{ color: var(--ink-dim); }
+  .paquete-cierre .hero-cta{ margin-top:16px; }
+  @media (min-width: 901px){ .paquete-datos{ grid-template-columns: repeat(3,1fr); } }
+
   /* ---------- la oferta concreta ---------- */
   /* Era una línea de letra chica. Son los tres datos que decide un
      encargado de RRHH, así que se leen como datos y no como condiciones. */
@@ -769,28 +874,115 @@
        a generar y lista lo que falta traducir, que es lo que evita
        publicar una promo a medio traducir.
        ================================================================= -->
+  <!-- Las seis promociones se eligen con estos botones de opción (CSS, sin
+       JavaScript): cada uno muestra su foto arriba y su oferta abajo. -->
+  <input class="promo-radio" type="radio" name="promo" id="promo-0" checked aria-label="Fim de ano">
+  <input class="promo-radio" type="radio" name="promo" id="promo-1" aria-label="Duelo de Churrasco">
+  <input class="promo-radio" type="radio" name="promo" id="promo-2" aria-label="Grande Prêmio de Fim de Ano">
+  <input class="promo-radio" type="radio" name="promo" id="promo-3" aria-label="Dia de Campo em Família">
+  <input class="promo-radio" type="radio" name="promo" id="promo-4" aria-label="IA na Brasa">
+  <input class="promo-radio" type="radio" name="promo" id="promo-5" aria-label="Mesa de Diretoria">
   <header class="hero-full promo-hero">
-    <div class="hero-full-bg">
-      <img class="promo-foto promo-f1" src="../assets/imgs/img-000.jpg" alt="O galpão do Brasas de Lo Pirque" width="830" height="1275">
-      <img class="promo-foto promo-f2" src="../assets/gallery/g14.jpg" alt="Costelas assando nas grelhas" width="567" height="850" loading="lazy" decoding="async">
-      <img class="promo-foto promo-f3" src="../assets/gallery/g27.jpg" alt="Uma celebração montada sob o galpão" width="850" height="497" loading="lazy" decoding="async">
-      <div class="scrim"></div>
-    </div>
-    <div class="hero-full-content">
-      <p class="promo-sello">Promoção de temporada</p>
-      <div class="promo-escena">
-        <p class="promo-t promo-t1 promo-numero">11?</p>
-        <p class="promo-t promo-t2 promo-remate">De lamber os dedos, então…</p>
-        <div class="promo-t promo-t3">
-          <img class="promo-logo" src="../assets/logo-brasas.png" alt="" width="368" height="161">
-          <h1 class="hero-full-title">Comemore o fim de ano ou o Natal com a gente</h1>
+    <div class="promo-slide ps0">
+      <div class="hero-full-bg">
+        <img class="promo-foto promo-f1" src="../assets/imgs/img-000.jpg" alt="O galpão do Brasas de Lo Pirque" width="830" height="1275">
+        <img class="promo-foto promo-f2" src="../assets/gallery/g14.jpg" alt="Costelas assando nas grelhas" width="567" height="850" loading="lazy" decoding="async">
+        <img class="promo-foto promo-f3" src="../assets/gallery/g27.jpg" alt="Uma celebração montada sob o galpão" width="850" height="497" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Promoção de temporada</p>
+        <div class="promo-escena">
+          <p class="promo-t promo-t1 promo-numero">11?</p>
+          <p class="promo-t promo-t2 promo-remate">De lamber os dedos, então…</p>
+          <div class="promo-t promo-t3">
+            <img class="promo-logo" src="../assets/logo-brasas.png" alt="" width="368" height="161">
+            <h1 class="hero-full-title">Comemore o fim de ano ou o Natal com a gente</h1>
+          </div>
         </div>
       </div>
     </div>
+    <div class="promo-slide ps1">
+      <div class="hero-full-bg">
+        <img class="promo-foto" src="../assets/gallery/g20.jpg" alt="Equipe de cozinha trabalhando na parrilla" width="850" height="567" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Empresas · 01</p>
+        <h2 class="hero-full-title promo-titulo">Duelo de Churrasco</h2>
+        <p class="promo-promesa">Sua equipe compete, aprende com um chef churrasqueiro e come o resultado.</p>
+      </div>
+    </div>
+    <div class="promo-slide ps2">
+      <div class="hero-full-bg">
+        <img class="promo-foto" src="../assets/gallery/g24.jpg" alt="Kart para empresas" width="792" height="638" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Empresas · 02</p>
+        <h2 class="hero-full-title promo-titulo">Grande Prêmio de Fim de Ano</h2>
+        <p class="promo-promesa">O fim de ano que sua equipe vai comentar até março.</p>
+      </div>
+    </div>
+    <div class="promo-slide ps3">
+      <div class="hero-full-bg">
+        <img class="promo-foto" src="../assets/imgs3/paseo-carreta.jpg" alt="Crianças acenando da carroça puxada por cavalos" width="1400" height="933" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Empresas · 03</p>
+        <h2 class="hero-full-title promo-titulo">Dia de Campo em Família</h2>
+        <p class="promo-promesa">As crianças se divertem e os adultos finalmente descansam.</p>
+      </div>
+    </div>
+    <div class="promo-slide ps4">
+      <div class="hero-full-bg">
+        <img class="promo-foto" src="../assets/gallery/g27.jpg" alt="Evento montado no galpão" width="850" height="497" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Empresas · 04</p>
+        <h2 class="hero-full-title promo-titulo">IA na Brasa</h2>
+        <p class="promo-promesa">Sua equipe chega com dúvidas sobre IA e sai com ideias concretas para o trabalho.</p>
+      </div>
+    </div>
+    <div class="promo-slide ps5">
+      <div class="hero-full-bg">
+        <img class="promo-foto" src="../assets/gallery/g18.jpg" alt="Mesa posta com pratos da parrilla" width="637" height="850" loading="lazy" decoding="async">
+        <div class="scrim"></div>
+      </div>
+      <div class="hero-full-content">
+        <p class="promo-sello">Empresas · 05</p>
+        <h2 class="hero-full-title promo-titulo">Mesa de Diretoria</h2>
+        <p class="promo-promesa">As decisões do ano, longe do escritório e sem interrupções.</p>
+      </div>
+    </div>
+    <nav class="promo-nav" aria-label="Promoções">
+      <label class="promo-flecha fl-ant fa0" for="promo-5" aria-label="Anterior">‹</label>
+      <label class="promo-flecha fl-ant fa1" for="promo-0" aria-label="Anterior">‹</label>
+      <label class="promo-flecha fl-ant fa2" for="promo-1" aria-label="Anterior">‹</label>
+      <label class="promo-flecha fl-ant fa3" for="promo-2" aria-label="Anterior">‹</label>
+      <label class="promo-flecha fl-ant fa4" for="promo-3" aria-label="Anterior">‹</label>
+      <label class="promo-flecha fl-ant fa5" for="promo-4" aria-label="Anterior">‹</label>
+      <div class="promo-pills">
+        <label class="promo-pill pp0" for="promo-0">Fim de ano</label>
+        <label class="promo-pill pp1" for="promo-1">Duelo de Churrasco</label>
+        <label class="promo-pill pp2" for="promo-2">Grande Prêmio</label>
+        <label class="promo-pill pp3" for="promo-3">Dia de Campo</label>
+        <label class="promo-pill pp4" for="promo-4">IA na Brasa</label>
+        <label class="promo-pill pp5" for="promo-5">Mesa de Diretoria</label>
+      </div>
+      <label class="promo-flecha fl-sig fs0" for="promo-1" aria-label="Próxima">›</label>
+      <label class="promo-flecha fl-sig fs1" for="promo-2" aria-label="Próxima">›</label>
+      <label class="promo-flecha fl-sig fs2" for="promo-3" aria-label="Próxima">›</label>
+      <label class="promo-flecha fl-sig fs3" for="promo-4" aria-label="Próxima">›</label>
+      <label class="promo-flecha fl-sig fs4" for="promo-5" aria-label="Próxima">›</label>
+      <label class="promo-flecha fl-sig fs5" for="promo-0" aria-label="Próxima">›</label>
+    </nav>
   </header>
 
   <section class="pad intro-text" id="oferta">
-    <div class="wrap">
+    <div class="wrap promo-bloque pb0">
       <p class="kicker">Bem-estar e eventos corporativos</p>
       <h2 style="font-size:clamp(1.7rem,3.6vw,2.4rem); margin-top:10px;">Tire a equipe do escritório por um dia</h2>
       <p class="lede" style="margin-top:16px;">Campo, fogo e tradição chilena em Pirque — para fechar o ano, premiar um bom semestre ou simplesmente reunir a equipe longe das telas. Se a organização é com você, está tudo em um só lugar: combinamos com você a comida, o show e as atividades, e você só chega com a equipe.</p>
@@ -808,6 +1000,157 @@
           Fale com a gente no WhatsApp
         </a>
         <a href="#experiencias" class="btn btn-ghost">Ver experiências</a>
+      </div>
+    </div>
+    <div class="wrap promo-bloque pb1">
+      <div class="paquete">
+        <div class="paquete-texto">
+          <p class="kicker">Para RH e líderes de área que buscam uma atividade de integração</p>
+          <h2 class="paquete-nombre">Duelo de Churrasco</h2>
+          <p class="lede">Coquetel campestre de boas-vindas e, depois, uma competição por equipes que também é aula de churrasco. No final, todos comem o que prepararam.</p>
+          <p class="paquete-rotulo">Inclui</p>
+          <ul class="paquete-incluye">
+            <li>Coquetel campestre de boas-vindas</li>
+            <li>Competição por equipes e aula de churrasco com o chef Ismael Barros</li>
+            <li>Almoço com o que cada equipe prepara</li>
+            <li>Open bar</li>
+          </ul>
+          <p class="paquete-extras"><b>Pode ser adicionado:</b> Transfer de Santiago · mesa livre</p>
+        </div>
+        <div class="paquete-cierre">
+          <div class="oferta paquete-datos">
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.combate">$85.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato"><b>Open bar</b><span>incluído</span></div>
+          </div>
+          <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
+          <div class="hero-cta">
+            <a href="https://wa.me/56933858575?text=Ol%C3%A1%2C%20quero%20um%20or%C3%A7amento%20do%20Duelo%20de%20Churrasco%20para%20minha%20empresa" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+              Pedir orçamento pelo WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap promo-bloque pb2">
+      <div class="paquete">
+        <div class="paquete-texto">
+          <p class="kicker">Para quem organiza a festa de fim de ano da empresa</p>
+          <h2 class="paquete-nombre">Grande Prêmio de Fim de Ano</h2>
+          <p class="lede">Corridas de kart pela manhã, um longo almoço na brasa e um show equestre com cavalos chilenos para fechar o dia.</p>
+          <p class="paquete-rotulo">Inclui</p>
+          <ul class="paquete-incluye">
+            <li>Corridas de kart pela manhã</li>
+            <li>Um longo almoço na brasa</li>
+            <li>Show equestre com cavalos chilenos</li>
+          </ul>
+          <p class="paquete-extras"><b>Pode ser adicionado:</b> Transfer de Santiago · mesa livre · open bar</p>
+        </div>
+        <div class="paquete-cierre">
+          <div class="oferta paquete-datos">
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.gran_premio">$95.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato"><b>Kart</b><span>e show equestre</span></div>
+          </div>
+          <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
+          <div class="hero-cta">
+            <a href="https://wa.me/56933858575?text=Ol%C3%A1%2C%20quero%20um%20or%C3%A7amento%20do%20Grande%20Pr%C3%AAmio%20de%20Fim%20de%20Ano%20para%20minha%20empresa" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+              Pedir orçamento pelo WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap promo-bloque pb3">
+      <div class="paquete">
+        <div class="paquete-texto">
+          <p class="kicker">Para RH e bem-estar. Também serve como festa de Natal da empresa</p>
+          <h2 class="paquete-nombre">Dia de Campo em Família</h2>
+          <p class="lede">Um dia de campo para os colaboradores e suas famílias, com atividades para as crianças, almoço na brasa e show equestre.</p>
+          <p class="paquete-rotulo">Inclui</p>
+          <ul class="paquete-incluye">
+            <li>Brinquedos infláveis, pintura facial e monitores para as crianças</li>
+            <li>Almoço em família na brasa</li>
+            <li>Show equestre</li>
+            <li>Passeios de carroça</li>
+          </ul>
+          <p class="paquete-extras"><b>Pode ser adicionado:</b> Transfer de Santiago · mesa livre · open bar</p>
+        </div>
+        <div class="paquete-cierre">
+          <div class="oferta paquete-datos">
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.dia_campo.adulto">$55.000 CLP</i></b><span>+ IVA por adulto</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.dia_campo.nino">$25.000 CLP</i></b><span>+ IVA por criança</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b>40</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          </div>
+          <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
+          <div class="hero-cta">
+            <a href="https://wa.me/56933858575?text=Ol%C3%A1%2C%20quero%20um%20or%C3%A7amento%20do%20Dia%20de%20Campo%20em%20Fam%C3%ADlia%20para%20minha%20empresa" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+              Pedir orçamento pelo WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap promo-bloque pb4">
+      <div class="paquete">
+        <div class="paquete-texto">
+          <p class="kicker">Para diretores gerais e donos de pequenas empresas</p>
+          <h2 class="paquete-nombre">IA na Brasa</h2>
+          <p class="lede">Uma palestra sobre inteligência artificial preparada com antecedência sob medida para a empresa, e um almoço com o palestrante para conversar com calma.</p>
+          <p class="paquete-rotulo">Inclui</p>
+          <ul class="paquete-incluye">
+            <li>Palestra sobre inteligência artificial sob medida para a empresa</li>
+            <li>Almoço na brasa com o palestrante</li>
+          </ul>
+          <p class="paquete-extras"><b>Pode ser adicionado:</b> Transfer de Santiago · mesa livre · open bar</p>
+        </div>
+        <div class="paquete-cierre">
+          <div class="oferta paquete-datos">
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.ia">$75.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b>15</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato"><b>Sob medida</b><span>preparada com antecedência</span></div>
+          </div>
+          <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
+          <div class="hero-cta">
+            <a href="https://wa.me/56933858575?text=Ol%C3%A1%2C%20quero%20um%20or%C3%A7amento%20do%20IA%20na%20Brasa%20para%20minha%20empresa" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+              Pedir orçamento pelo WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap promo-bloque pb5">
+      <div class="paquete">
+        <div class="paquete-texto">
+          <p class="kicker">Para diretores e gerentes gerais, e para receber clientes VIP</p>
+          <h2 class="paquete-nombre">Mesa de Diretoria</h2>
+          <p class="lede">Uma reunião estratégica em um espaço de total privacidade, seguida de um menu premium na brasa com harmonização.</p>
+          <p class="paquete-rotulo">Inclui</p>
+          <ul class="paquete-incluye">
+            <li>Espaço de total privacidade para a reunião</li>
+            <li>Menu premium na brasa com harmonização</li>
+            <li>Kart, se quiserem incluir</li>
+          </ul>
+          <p class="paquete-extras"><b>Pode ser adicionado:</b> Transfer de Santiago · mesa livre · open bar</p>
+        </div>
+        <div class="paquete-cierre">
+          <div class="oferta paquete-datos">
+          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.directorio">$120.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato"><b>8</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato"><b>Harmonização</b><span>com o menu premium</span></div>
+          </div>
+          <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
+          <div class="hero-cta">
+            <a href="https://wa.me/56933858575?text=Ol%C3%A1%2C%20quero%20um%20or%C3%A7amento%20da%20Mesa%20de%20Diretoria%20para%20minha%20empresa" class="btn btn-whatsapp" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
+              Pedir orçamento pelo WhatsApp
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
