@@ -186,8 +186,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   **`panel/FASE5.md`**. Paso 1, *la empresa como una pieza*
   (`lib/empresa.ts`), mergeado el 23-11-2026 (PR #311). El cliente decidió:
   una dirección por empresa con una sola cuenta, Calicanto sin Shopify, y la
-  caja para después. **El simulador de evento**, primera parte, en un PR
-  abierto: permiso nuevo `costos` y columna `Costo` en `Menús`.
+  caja para después. **El simulador de evento**, primera parte (permiso nuevo
+  `costos`, columna `Costo` en `Menús`, *🧮 Simular* en el pie del paso de
+  productos), y **el paso 2, la memoria de cada instancia por empresa**
+  (`porEmpresa()`, `conEmpresa()`): PR #313, el cliente dijo *"mergea"* el
+  23-11-2026. **El simulador queda en pausa**: primero las dos empresas.
+  Decidido ese día: el panel de Asados y Corderos va en
+  **`panel.asadosycorderos.cl`**, y en un matrimonio la recepción **puede**
+  llevar la lista de invitados uno por uno (opcional).
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

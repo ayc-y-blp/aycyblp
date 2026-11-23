@@ -198,3 +198,12 @@ respuesta de la otra.
   alternar entre dos tiendas no cruza ni vuelve a pedir el token.
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** Ninguna
   variable nueva en Vercel.
+
+## Decidido el 2026-11-23
+
+- **La dirección del panel de Asados y Corderos: `panel.asadosycorderos.cl`.**
+  Es la que usa el paso 4 para saber de qué empresa es cada petición.
+- **La recepción de un matrimonio: con la posibilidad de la lista de
+  invitados uno por uno.** Opcional: un evento puede seguir con solo el
+  total. Va con el paso 5 (los módulos de Calicanto).
+
