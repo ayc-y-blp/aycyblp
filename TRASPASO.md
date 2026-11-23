@@ -221,6 +221,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   BBDD Prueba*) y puso `AYC_GOOGLE_SHEET_ID` en Vercel. El DNS de
   `asadosycorderos.cl` está en Netlify. Ver `panel/FASE5.md`, "Probar Asados
   y Corderos sin pasar a producción".
+- **La cultura de trabajo, empaquetada para otros proyectos** (23-11-2026, lo
+  pidió el cliente: *"cómo me puedo llevar toda esta cultura… a otro proyecto
+  nuevo"*): carpeta **`cultura/`**, con un `CLAUDE.md` de usuario destilado
+  (conducta que vale en cualquier proyecto) y tres skills —`ritual-de-trabajo`,
+  `panel-playstation` y `sitio-elegante`—, más un `README` con cómo instalarlos
+  en `~/.claude/`. Es una **copia destilada**: la fuente de verdad sigue siendo
+  `CLAUDE.md` y `panel/CLAUDE.md`. **Cuando el cliente diga "regla: …" y valga
+  para todos los proyectos, se anota también en `cultura/`.** Es solo
+  documentación: no toca el sitio ni el panel, sin lecturas de Google ni
+  permisos. Ver `cultura/README.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1276,6 +1286,13 @@ PR, documentación—, con tuteo y sin voseo.
   y espera el *"mergea"* del cliente** (22-11-2026), también lo chico.
 - Si el PR de la rama ya se mergeó, lo nuevo va rebasado sobre `main` en un
   PR propio. Nunca commits nuevos sobre historia ya mergeada.
+- **Varias sesiones, de distintos modelos, trabajan en paralelo en este mismo
+  proyecto** (lo dijo el cliente el 23-11-2026: *"estoy trabajando en
+  distintos modelos… otros chats también están mergeando"*). Por eso **este
+  archivo se actualiza siempre, al terminar cada etapa**, y **antes de
+  empezar y antes de pedir el *"mergea"* se hace `git fetch origin main`**:
+  si `main` se movió, la rama se pone al día primero y se lee lo que dejó el
+  otro chat. Una sesión que no deja su línea acá deja a la siguiente a ciegas.
 - **Dos sesiones trabajan en paralelo desde el 22-11-2026**: una sigue con
   Lo Pirque y otra con la Fase 5 (Calicanto / Asados y Corderos, notas en
   `panel/FASE5.md`). Las dos en PR chicos desde el `main` del día. **Antes de
