@@ -181,10 +181,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ni lo que gana nadie más.'
     ],
     pasos: [
-      'Crear link personal se lo genera y te lo copia. Pégalo en su WhatsApp.',
-      'Copiar link personal vuelve a copiar el mismo, por si lo perdió.',
+      'Copiar link personal te lo copia; la primera vez, además, se lo crea. '
+      + 'Pégalo en su WhatsApp.',
       'Renovar crea uno nuevo y deja el anterior inservible al instante: es '
-      + 'lo que hay que hacer si alguien pierde el teléfono.'
+      + 'lo que hay que hacer si alguien pierde el teléfono.',
+      'Quitar link lo apaga del todo. Lo hacen el administrador, el encargado '
+      + 'de pagos y la gerencia; los encargados lo mandan y lo renuevan.'
     ],
     ojo: 'Quien tenga el link ve esa página, así que es de una sola persona '
        + 'y no se manda al grupo. Desactivarla también se lo cierra.'
@@ -601,7 +603,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'El link personal',
     texto: [
       'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Se la mandas por WhatsApp.',
-      'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga.'
+      'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga: eso lo hacen el administrador, el encargado de pagos y la gerencia.'
     ]
   },
   // ---------- El día y la recepción ----------

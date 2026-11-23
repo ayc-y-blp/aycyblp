@@ -10,6 +10,11 @@ export const dynamic = 'force-dynamic';
 /**
  * Crear, renovar o quitar el link personal de un trabajador.
  *
+ * **Crear, copiar y renovar piden `enviarLink`; quitar, `links`**
+ * (2026-11-23): el encargado de turno le manda su link a alguien del equipo,
+ * pero apagarle el acceso sigue siendo del administrador, pagos y la
+ * gerencia. Es el reparto de la planilla semanal.
+ *
  * Es una ruta aparte de `PUT /api/equipo` y no un campo más del formulario
  * **porque no es lo mismo editar una lista que repartir credenciales**.
  * Separadas, el permiso se lee de un vistazo —solo el administrador llega
@@ -19,7 +24,7 @@ export const dynamic = 'force-dynamic';
  * Es lo que hay que hacer cuando alguien pierde el teléfono.
  */
 export const POST = conLecturas([], async function POST(req: Request) {
-  const no = await exigir(req, 'links');
+  const no = await exigir(req, 'enviarLink');
   if (no) return no;
 
   try {
@@ -34,6 +39,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
       );
     }
 
+    if (accion === 'quitar') {
+      const noQuitar = await exigir(req, 'links');
+      if (noQuitar) return noQuitar;
+    }
+
     const gente = await leerTrabajadores();
     const i = gente.findIndex((t) => normalizar(t.nombre) === buscado);
     if (i === -1) {
@@ -41,6 +51,12 @@ export const POST = conLecturas([], async function POST(req: Request) {
         { error: `"${nombre}" no está en la lista de trabajadores. Guarda la lista primero.` },
         { status: 404 }
       );
+    }
+    // **Crear no pisa uno que ya existe**: devuelve el mismo. Así quien solo
+    // manda links no puede dejar inservible el de alguien por apretar dos
+    // veces o con la pantalla vieja; cambiarlo es *Renovar*, a propósito.
+    if (accion === 'crear' && gente[i].token) {
+      return NextResponse.json({ nombre: gente[i].nombre, token: gente[i].token });
     }
 
     const token = accion === 'quitar' ? '' : nuevoToken();

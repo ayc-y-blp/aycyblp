@@ -64,7 +64,13 @@ export default function EquipoEditor() {
   // que mover una sola era imposible sin mover las tres. Hoy cada una dice
   // qué gobierna, y abrirlas es cambiar la tabla de permisos y nada más.
   const [verSueldos, setVerSueldos] = useState(false);
+  /** Si manda los links (`enviarLink`): crearlos, copiarlos y renovarlos. */
   const [verLinks, setVerLinks] = useState(false);
+  /**
+   * Si además los quita (`links`). **El encargado de turno manda el link y
+   * no lo apaga** (2026-11-23): a él no se le dibuja *Quitar link*.
+   */
+  const [quitarLinks, setQuitarLinks] = useState(false);
   const [editarPuestos, setEditarPuestos] = useState(false);
   // **Vista gerencia** (2026-11-11): con el rol sin `equipo` las fichas se
   // miran y no se tocan; sin `sueldos`, el pago y la cuenta tampoco.
@@ -135,6 +141,7 @@ export default function EquipoEditor() {
         setTurnosDe(cuenta);
         setVerSueldos(!!d.verSueldos);
         setVerLinks(!!d.verLinks);
+        setQuitarLinks(!!d.quitarLinks);
         setEditarPuestos(!!d.editarPuestos);
       })
       .catch((e) => setError(String(e)));
@@ -506,9 +513,10 @@ export default function EquipoEditor() {
           porqué largo del link vive en su `?`, que se pide; lo de los días
           cerrados, en la ayuda de `/turnos`. */}
       {/* Con su ✕ (2026-11-13): ver `AvisoFijo`. La segunda línea, solo para
-          quien de verdad tiene ese bloque: el administrador y quien paga
-          (permiso `links`). Al encargado no se le muestra, porque
-          prometerle algo que no va a encontrar es peor que no decir nada. */}
+          quien de verdad tiene ese bloque (permiso `enviarLink`: desde el
+          2026-11-23 también los encargados). A quien no lo tiene no se le
+          muestra, porque prometerle algo que no va a encontrar es peor que no
+          decir nada. */}
       <AvisoFijo clave="equipo-intro" className="mb-4 max-w-2xl lg:order-3 lg:mb-3 lg:basis-full">
         Acá puedes agregar y editar trabajadores.
         {verLinks && <> Dentro de cada trabajador puedes copiar su <strong>link personal</strong>.</>}
@@ -838,10 +846,12 @@ export default function EquipoEditor() {
                               misma tarjeta hay otro botón que quita a la
                               persona, y dos "Quitar" a dos centímetros de
                               distancia son una confusión esperando a pasar. */}
+                          {quitarLinks && (
                           <button onClick={() => link(t.nombre, 'quitar')}
                             className="boton hover:border-rojo-fuerte hover:text-rojo-texto">
                             Quitar link
                           </button>
+                          )}
                             </>
                           )}
                         </>

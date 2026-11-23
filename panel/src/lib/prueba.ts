@@ -1867,14 +1867,28 @@ ok(puede(ROL.encargado, 'reservas') && !puede(ROL.encargado, 'dias') && puede(RO
    'el encargado hace el día a día y anota reservas, pero no agrega ni edita fechas (2026-11-12)');
 ok(!puede(ROL.encargado, 'configurar') && !puede(ROL.encargado, 'puestos') &&
    !puede(ROL.encargado, 'links') && !puede(ROL.encargado, 'mantencion'),
-   'pero no toca precios, puestos, links ni mantención');
+   'pero no toca precios, puestos ni mantención, ni apaga un link');
 
 // **La planilla semanal es del encargado** (2026-10-29): mandarla, crear su
 // link y renovarlo cuando alguien deja el equipo. Lo que no tiene es
 // `links`, que es lo que apaga la planilla del todo y administra los links
 // personales de cada trabajador. Las dos cosas juntas son la prueba.
 ok(puede(ROL.encargado, 'planilla') && !puede(ROL.encargado, 'links'),
-   'el encargado manda y renueva la planilla, pero no toca los links personales');
+   'el encargado manda y renueva la planilla, pero no la apaga');
+// **Y desde el 2026-11-23, lo mismo con el link personal** (lo pidió el
+// cliente: *"agregar enviar link personal a encargado de turno"*): lo crea,
+// lo copia y lo renueva (`enviarLink`), y quitarlo sigue en `links`.
+ok(puede(ROL.encargado, 'enviarLink') && puede(ROL.operaciones, 'enviarLink')
+   && puede(ROL.pagos, 'enviarLink') && puede(ROL.gerencia, 'enviarLink') && puede(ROL.admin, 'enviarLink'),
+   'los dos encargados, pagos, la gerencia y el administrador le mandan su link personal a alguien del equipo');
+ok(!puede(ROL.vendedor, 'enviarLink') && !puede(ROL.anfitrion, 'enviarLink'),
+   'el vendedor y la anfitriona no: no ven al equipo');
+ok(NO_SE_LEE_CON_GERENCIA.includes('enviarLink'),
+   'la vista gerencia no da links: es acceso, no información');
+// El de operaciones tiene todo lo del de turno, más lo suyo: así lo
+// describe su rol (`roles.ts`). Darle algo solo al de turno lo dejaba al revés.
+ok((Object.keys(PERMISOS) as Accion[]).every((a) => !puede(ROL.encargado, a) || puede(ROL.operaciones, a)),
+   'el encargado de operaciones puede todo lo del encargado de turno');
 ok(puede(ROL.admin, 'planilla'), 'y el administrador también la manda');
 // Quien paga TAMBIÉN la manda, desde el 2026-11-01: tiene todo lo del
 // encargado. El trabajador no — su acceso no pasa por la tabla de permisos.
@@ -2280,7 +2294,7 @@ ok(puede(ROL.pagos, 'links') && puede(ROL.pagos, 'puestos')
 // **Y desde el 2026-11-12 la costura sirvió**: el encargado de turno llena
 // la ficha completa (`sueldos`) y sigue sin los links.
 ok(puede(ROL.encargado, 'sueldos') && !puede(ROL.encargado, 'links'),
-   'el encargado de turno llena la ficha completa, sueldos y cuenta, pero no maneja links');
+   'el encargado de turno llena la ficha completa, sueldos y cuenta, y manda el link sin poder apagarlo');
 ok(puede(ROL.pagos, 'pagar'), 'quien paga puede registrar que pagó');
 ok(!puede(ROL.encargado, 'pagar'),
    'el encargado NO: ve el informe, pero declarar que una plata salió es otra cosa');
@@ -2405,7 +2419,7 @@ ok(!puede(ROL.vendedor, 'equipo') && !puede(ROL.vendedor, 'extras'),
 ok(puede(ROL.vendedor, 'presupuestos'),
    'cotiza desde el 2026-11-10: es su trabajo (ve todas, edita solo las suyas)');
 ok(!puede(ROL.vendedor, 'informe') && !puede(ROL.vendedor, 'pagar')
-   && !puede(ROL.vendedor, 'sueldos') && !puede(ROL.vendedor, 'links'),
+   && !puede(ROL.vendedor, 'sueldos') && !puede(ROL.vendedor, 'links') && !puede(ROL.vendedor, 'enviarLink'),
    'nada de plata, y ningún link personal de nadie');
 
 // **Las cuatro rutas que se contentaban con `ver` y no devuelven reservas.**
@@ -5189,7 +5203,9 @@ console.log('\nVista gerencia');
   ok(puedeVer(ROL.encargado, 'configurar', true) && !puede(ROL.encargado, 'configurar'),
      'el encargado con vista gerencia ve la configuración; guardarla sigue pidiendo el rol');
   ok(!puedeVer(ROL.vendedor, 'informe', false), 'sin la vista gerencia, el vendedor no ve el informe');
-  ok(NO_SE_LEE_CON_GERENCIA.every((a) => !puedeVer(ROL.encargado, a, true)),
+  // Con el vendedor, que no tiene ninguno de los cuatro: el encargado manda
+  // links desde el 2026-11-23, por su rol y no por la vista.
+  ok(NO_SE_LEE_CON_GERENCIA.every((a) => !puedeVer(ROL.vendedor, a, true)),
      'ni con vista gerencia se ven las cuentas, la mantención ni los links personales');
   ok(!puedeVer(ROL.ninguno, 'ver', true), 'sin sesión, la gerencia no abre nada');
   const conG = await firmarSesion({ usuario: 'Felipe', rol: ROL.pagos, gerencia: true }, SECRETO_SESION, AHORA);

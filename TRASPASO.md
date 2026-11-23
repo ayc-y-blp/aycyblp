@@ -202,6 +202,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   cliente; en preview): se sumó al permiso `corregir`. Hasta ese día cerraba
   y le pedía la corrección a operaciones o a pagos. Ver `panel/CLAUDE.md`,
   "Corrigen el administrador y quien paga".
+- **Los encargados mandan el link personal** (23-11-2026, lo pidió el
+  cliente; en preview): permiso nuevo `enviarLink` —crear, copiar y renovar
+  el link de un trabajador o un colaborador—, para los dos encargados, pagos,
+  la gerencia y el administrador. Quitarlo sigue en `links`. Ver
+  `panel/CLAUDE.md`, "Los encargados mandan el link personal".
 - ***✎ Editar cliente*, desde la cotización** (23-11-2026, PR #331,
   mergeado con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
   después): en el paso Cliente, la ficha del cliente en una ventanita, sin

@@ -1388,6 +1388,52 @@ cerrar la cotización, ir a *Clientes*, buscarlo y abrir su ficha.
   servidor queda con los dos cambios. El botón se ve para el administrador,
   pagos, la gerencia, operaciones y el vendedor.
 
+## Los encargados mandan el link personal (2026-11-23)
+
+Lo pidió el cliente: *"agregar enviar link personal a encargado de turno"*.
+El encargado de turno es quien está con la gente el día del servicio, y a
+quien le dicen *"no me llegó el link"* o *"perdí el teléfono"*; hasta ese
+día tenía que pedírselo a pagos.
+
+- **Permiso nuevo, `enviarLink`**: crear el link si no tiene, copiarlo y
+  renovarlo, en la ficha de un trabajador (*Equipo*) y de un colaborador
+  (*Extras*). Lo tienen el encargado de turno, el de operaciones, pagos, la
+  gerencia y el administrador.
+- **Quitarlo sigue en `links`** (el administrador, pagos y la gerencia), y
+  también los links de vendedores y socios. Es el mismo reparto de la
+  planilla semanal, que el encargado crea y renueva pero no apaga. A quien
+  no tiene `links` no se le dibuja *Quitar link* (`quitarLinks`, que mandan
+  `/api/equipo` y `/api/extras`), y la ruta le responde 403.
+- **El de operaciones también**, sin que el cliente lo nombrara: su rol dice
+  *"lo del encargado de turno, más…"*, y darle algo solo al de turno lo
+  dejaba al revés. Una prueba fija ahora que operaciones puede todo lo del de
+  turno. Se le dijo al cliente.
+- **No le abre nada que no vea**: la página del link muestra los turnos de
+  esa persona y lo que se le pagó, y los encargados ya llenan la ficha
+  completa (`sueldos`) desde el 2026-11-12.
+- **Crear no pisa un link que ya existe** (`/api/equipo/link` y
+  `/api/extras/link`): devuelve el mismo. Así nadie deja inservible el de
+  otro por apretar dos veces o con la pantalla vieja; cambiarlo es
+  *Renovar*. Vale para todos.
+- **Guardar la lista no escribe tokens de quien solo los manda**: el `PUT`
+  de `/api/equipo` acepta el token del navegador solo con `links` (con él se
+  podía dejar en blanco, o sea apagarlo); los demás arrastran el guardado.
+  En Extras ya no se aceptaba de nadie.
+- **La vista gerencia no da `enviarLink`** (`NO_SE_LEE_CON_GERENCIA`): es
+  acceso, no información.
+- **Ayuda**: el `?` del link en Equipo (*Crear link personal* ya no existía
+  como botón: es *Copiar link personal*) y el de Extras dicen quién lo
+  quita; la lista de lo que puede cada rol sale sola de `PERMISOS`, y se
+  corrigió la frase de los dos encargados (`roles.ts`: el de turno no cotiza,
+  y corregir un día ya no es solo del de operaciones). Ninguna foto cambia:
+  las misiones del encargado no muestran la ficha.
+- **Lecturas de Google**: ninguna más. **Ninguna columna nueva.**
+- **Probado en el panel de ejemplo**, como encargado: recibe los tokens, ve
+  *Copiar link personal* y *Renovar* sin *Quitar link* (a 1280 y a 393, en
+  Equipo y Extras); crear sobre uno existente devuelve el mismo, renovar da
+  uno nuevo, quitar responde 403, y guardar la lista con el token en blanco
+  no se lo borra a nadie. Pagos sigue viendo y usando *Quitar link*.
+
 ## La tarjeta del día: el tiempo no baja de renglón (2026-11-22)
 
 Lo marcó el cliente con una foto del panel de verdad: en un día con *150/150
@@ -8671,6 +8717,10 @@ Por eso se partió en dos:
 | **`sueldos`** | modalidad, jornada, valor hora, propina y cuenta bancaria de la ficha | administrador y quien paga |
 | **`links`** | crear, copiar, renovar y quitar el link personal | administrador y quien paga |
 
+> **Desde el 2026-11-23, crear, copiar y renovar van en `enviarLink`**, que
+> tienen también los dos encargados; `links` quedó para quitarlo y para los
+> links de vendedores y socios. Ver "Los encargados mandan el link personal".
+
 **Hoy los tiene el mismo par de roles, así que no discriminan entre ellos
 —el cliente terminó dando los dos— y se dejan separados igual.** Son cosas
 distintas: uno es plata y el otro una credencial. La costura queda para el
@@ -9465,7 +9515,9 @@ Una pestaña `Bitácora` con cuándo, quién, rol, acción y detalle. Se lee en
 administra desde `/equipo`, columna **Link personal**: crear, copiar, renovar
 y quitar — **el administrador y quien paga** (permiso `links`), aunque el
 encargado sí edite la lista. Un encargado ni siquiera recibe los tokens: la
-ruta se los borra de la respuesta.
+ruta se los borra de la respuesta. **Cambió el 2026-11-23**: los encargados
+lo crean, lo copian y lo renuevan (`enviarLink`); quitarlo sigue siendo de
+`links`. Ver "Los encargados mandan el link personal".
 
 **Si alguien de pagos no ve el botón *Crear link personal*, casi seguro su
 sesión dice encargado** (pasó con la cuenta de Felipe el 2026-11-03). El rol
