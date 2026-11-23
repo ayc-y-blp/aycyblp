@@ -361,11 +361,13 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   espacio.
 - **El panel de ejemplo**: la caja con su historia (saldo inicial de $7.000,
   el cobro en efectivo de Ricardo Godoy el sábado 7, un gasto, una entrega
-  recibida por Marcela y su depósito, todo revisado), y Valentina Castro hoy
-  con valor final $290.000: le faltan $26.000. **Drive es de mentira** en la
+  recibida por Marcela y su depósito, todo revisado), y Martín Araya hoy con
+  valor final $112.000: le faltan $18.000 (no Valentina Castro: la foto de la
+  misión de la anfitriona la muestra sin valor final). **Drive es de mentira** en la
   copia (`capturas.sh`), así que las fotos se suben y se ven; y la Configuración
   de ejemplo trae una carpeta de comprobantes.
-- **Probado en el panel de ejemplo**, como encargado: cobrar sin que sume justo
+- **Probado en el panel de ejemplo**, como encargado (en una primera versión
+  del ejemplo, con Valentina Castro y $26.000 por cobrar): cobrar sin que sume justo
   o una transferencia sin foto se rechaza; con $20.000 en efectivo y $6.000 en
   transferencia, la reserva queda pagada, con su comprobante, a la bandeja de
   pagos, y los $20.000 en la caja; cobrar de nuevo responde 409; deshacer la
