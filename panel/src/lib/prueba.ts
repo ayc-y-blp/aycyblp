@@ -44,7 +44,7 @@ import { limiteSinAprobar, subeElCupo, marcaCupoPedido, cupoPedidoDe, cupoAlApro
 import { leerClientesDe, filaCliente, limpiarCliente, faltaEnCliente, parecidos,
          nuevoIdCliente, buscarClientes, migrarAClientes, ENCABEZADO_CLIENTES,
          faltaParaFactura, type Cliente } from './clientes.ts';
-import { diaParaReservaManual, queLeHizo, deshacerDia, cupoParaGanar } from './dias.ts';
+import { diaParaReservaManual, diaParaGanar, queLeHizo, deshacerDia, cupoParaGanar } from './dias.ts';
 import { valorSeguro } from './celdas.ts';
 import { tranquilidadDeCotizacion, devolucionSugerida, faltaDevolver, frasesCancelacion,
          CONCEPTO_DEVOLUCION } from './cancelacion.ts';
@@ -1607,6 +1607,22 @@ for (const antes of [undefined,
   ok(despues === null || despues.estado !== ESTADO_DIA.abierta,
      'anotar una reserva NUNCA deja un dia abierto al publico');
 }
+
+// **Al ganar una cotización, un sábado que no está en el calendario nace
+// público** (2026-11-23, lo decidió el cliente), como lo abriría la regla.
+// 2026-12-05 es sábado; 2026-12-08, martes.
+const ganarSab = diaParaGanar(undefined, '2026-12-05', cfgBase, false);
+ok(ganarSab !== null && ganarSab.estado === ESTADO_DIA.abierta && ganarSab.capacidad === 60,
+   'al ganar, un sábado que todavía no está en el calendario nace público, con el cupo normal');
+ok(diaParaGanar(undefined, '2026-12-05', cfgBase, true)?.estado === ESTADO_DIA.privada,
+   'si la cotización es exclusiva, nace privado (después queda exclusivo)');
+ok(diaParaGanar(undefined, '2026-12-08', cfgBase, false)?.estado === ESTADO_DIA.privada,
+   'un martes sigue naciendo privado');
+ok(diaParaGanar(dia({ fecha: '2026-12-05', capacidad: 60, estado: ESTADO_DIA.cerrada }), '2026-12-05', cfgBase, false)
+     ?.estado === ESTADO_DIA.privada,
+   'un sábado que alguien cerró a propósito se abre solo para nosotros, como antes');
+ok(diaParaReservaManual(undefined, '2026-12-05', cfgBase)?.estado === ESTADO_DIA.privada,
+   'una reserva anotada a mano en ese sábado sigue creándolo privado');
 
 /* ---------- un dia cerrado desaparece, salvo que tenga gente ---------- */
 // Cerrar un dia es decir "este dia no existe para nosotros", asi que

@@ -304,17 +304,32 @@ día y temporada: ver `panel/FASE5.md`, del PR #311; esta regla es por dónde pu
 
 **Lo que conviene saber**:
 
-- **La ventana del paso 3 con arriendo no cabe en 1280×650**: 735px con la
-  caja del mínimo. Ya no cabía con arriendo antes de este cambio (696px), por
-  la pregunta *¿El día es exclusivo?*, que aparece con él. La escena de
-  `npm run ventanas` (Andrés Pino, 80 personas) no tiene arriendo y sigue en
-  604px; un caso con arriendo pide escribir una cotización, y una escena no
-  escribe. Medido a mano en el panel de ejemplo.
-- **Ganar en un sábado que todavía no está en el calendario lo crea privado**
-  (`diaParaReservaManual()`, ya era así), aunque para el arriendo cuente como
-  público: un grupo de 20 sin exclusividad no paga arriendo, y al ganarla el
-  sábado queda fuera del sitio. **(Por confirmar)** si se cambia para que al
-  ganar se cree público cuando la regla diaria lo abriría.
+- **La ventana del paso 3 con arriendo no cabe del todo en 1280×650**: mide
+  699px (el pie queda 49px abajo). Ya no cabía con arriendo antes de este
+  cambio (696px), por la pregunta *¿El día es exclusivo?*, que aparece con él.
+  Con la caja del mínimo llegó a 735px, y se compactó lo que se podía sin
+  afear (lo pidió el cliente: *"compacta paso 3 pero solo si no se pone feo y
+  no entendible"*): **la nota *Día privado: el show va solo si lo agregas* sube
+  a la fila de *Extras y arriendo***, a la derecha, en vez de un renglón suelto
+  (en el celular sigue debajo), y las cajas del mínimo del show y del arriendo
+  tienen menos aire. Lo que queda es la fila de menús partida en dos —con seis
+  menús no entran en una— y la pregunta de exclusivo: achicarlas era bajar
+  botones o esconder precios, y no se hizo. La escena de `npm run ventanas`
+  (Andrés Pino, 80 personas) no tiene arriendo y sigue en 604px; un caso con
+  arriendo pide escribir una cotización, y una escena no escribe. Medido a mano
+  en el panel de ejemplo.
+- **Ganar en un sábado que todavía no está en el calendario lo crea público**
+  (cambió el mismo día, lo decidió el cliente: *"sí, cambia lo del sábado"*),
+  si la cotización no es exclusiva: como lo abriría la regla diaria
+  (`diaParaGanar()` en `lib/dias.ts`, usado por `/convertir` vía
+  `abrirElDiaSiHaceFalta(fecha, { exclusivo })`). Antes nacía privado y el
+  sábado salía del sitio por un grupo que no lo había arrendado entero. Uno
+  exclusivo sigue naciendo privado y queda exclusivo; un sábado que alguien
+  cerró se abre solo para nosotros; **las reservas anotadas a mano y lo
+  importado no cambian** (`diaParaReservaManual()`). Si la cotización se
+  cancela, el día se borra como siempre (*creado*) y la regla lo vuelve a abrir
+  cuando entre en sus días hacia adelante. El sitio no lo ofrece antes de
+  tiempo: `/api/publico/fechas` corta en los días hacia adelante.
 - **Un arriendo sin comida** (sin menús ni invitados) cae en el primer tramo.
 - **Lecturas de Google**: ninguna más. `/api/presupuestos` suma `Reservas` a
   la tanda de POST y PATCH (la del GET ya la traía), y `/convertir` usa lo que

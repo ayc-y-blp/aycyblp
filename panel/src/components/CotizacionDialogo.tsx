@@ -1065,6 +1065,9 @@ export default function CotizacionDialogo({
    * la gerencia (`/api/presupuestos/exclusivo`). Nada se hace solo.
    */
   const conArriendo = tieneArriendo(vistas, datos.menus);
+  /** En un día privado sin show, que va solo si se agrega (paso 3). */
+  const notaShow = show && !publico && esFecha(fechaReal) && !vistas.some((l) => l.concepto === show.nombre)
+    ? 'Día privado: el show ecuestre va solo si lo agregas.' : '';
   const esExcl = esExclusivo(exclusivo);
   /** Un día en que el vendedor no puede marcar exclusivo (Configuración, 2026-11-23). */
   const sinExclusivo = esFecha(fechaReal) && !pasaPorEncima
@@ -1927,12 +1930,19 @@ export default function CotizacionDialogo({
                         </button>
                       )}
                     </div>
+                    {/* En el computador, la nota del show va en la fila de los extras,
+                        a la derecha, y no en un renglón suelto debajo (2026-11-23, al
+                        compactar el paso 3; regla *lo que cabe en una fila no se apila*). */}
+                    {g.otra && notaShow && (
+                      <p className="hidden text-[13px] leading-snug text-hueso/70 lg:ml-auto lg:block lg:max-w-[11rem]
+                                    lg:shrink-0 lg:self-center">
+                        Día privado: el show va solo si lo agregas.
+                      </p>
+                    )}
                   </div>
                 ))}
-                {show && !publico && esFecha(fechaReal) && !vistas.some((l) => l.concepto === show.nombre) && (
-                  <p className="mt-2 text-[13px] text-hueso/70">
-                    Día privado: el show ecuestre va solo si lo agregas.
-                  </p>
+                {notaShow && (
+                  <p className="mt-2 text-[13px] text-hueso/70 lg:hidden">{notaShow}</p>
                 )}
               </div>
             )}
@@ -2109,7 +2119,7 @@ export default function CotizacionDialogo({
                           pasar por encima, se les dice el mínimo sin forzarlo. */}
                       {showMinimo && (
                         <p className={`mt-2 rounded border px-3 py-2 text-[14px] font-semibold lg:col-span-full lg:row-start-2
-                                       lg:mb-1 lg:mt-1 lg:py-1 ${reglaShow
+                                       lg:mb-0.5 lg:mt-0.5 lg:py-0.5 ${reglaShow
                           ? 'border-ambar/50 bg-ambar/5 text-ambar-texto' : 'border-hueso/20 text-hueso/75'}`}>
                           🐎 Día privado con menos de {showMinimo.desde} personas: el show se cobra, mínimo{' '}
                           {enPesos(showMinimo.minimo)} + IVA.{' '}
@@ -2124,7 +2134,7 @@ export default function CotizacionDialogo({
                       {arriendoMinimo && (
                         <p data-arriendo-minimo
                           className={`mt-2 rounded border px-3 py-2 text-[14px] font-semibold lg:col-span-full lg:row-start-2
-                                       lg:mb-1 lg:mt-1 lg:py-1 ${arriendoFijo
+                                       lg:mb-0.5 lg:mt-0.5 lg:py-0.5 ${arriendoFijo
                           ? 'border-ambar/50 bg-ambar/5 text-ambar-texto' : 'border-hueso/20 text-hueso/75'}`}>
                           🏠 {arriendoMinimo.caso === 'exclusivo' ? 'Exclusivo en un día público' : 'Día no abierto al público'},{' '}
                           {personasParaMinimos(vistas, invitados)} personas: arriendo mínimo {enPesos(arriendoMinimo.minimo)} + IVA.{' '}

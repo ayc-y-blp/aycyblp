@@ -215,8 +215,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
     // **Ganar abre el día**, igual que anotar una reserva a mano: si no
     // estaba en el calendario se crea privado con el cupo de siempre, y si
     // estaba cerrado se abre para nosotros. Sin esto el día quedaba "sin
-    // cupo" con la gente de la cotización adentro.
-    const diaAbierto = await abrirElDiaSiHaceFalta(p.fecha);
+    // cupo" con la gente de la cotización adentro. **Desde el 2026-11-23, un
+    // sábado o domingo que todavía no está en el calendario nace público** si
+    // la cotización no es exclusiva, como lo abriría la regla diaria
+    // (`diaParaGanar()`).
+    const diaAbierto = await abrirElDiaSiHaceFalta(p.fecha, { exclusivo: esExclusivo(original.exclusivo) });
     // Exclusiva: el día queda **privado exclusivo**, y se guarda cómo estaba
     // para devolverlo si se cancela (`Día pausado`).
     const diaPausado = esExclusivo(original.exclusivo)
