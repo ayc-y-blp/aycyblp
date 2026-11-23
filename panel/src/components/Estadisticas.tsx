@@ -267,7 +267,12 @@ export default function Estadisticas() {
       ))}
     </div>
   );
-  const juntos = !!queReservas && modo !== 'personalizado';
+  // **Desde el 2026-11-23 va siempre en la fila de la cabecera**: con *Todo ·
+  // 🛒 Shopify · ✍ A mano · 🤝 Cotización* (cuatro botones), al lado del marco
+  // le quitaba tanto ancho que el marco se partía en tres renglones —la prueba
+  // de espacio lo marcó—. Arriba, junto a *Volver*, hay lugar, y el marco
+  // queda entero. `juntos` queda por si vuelve a caber.
+  const juntos = false && !!queReservas && modo !== 'personalizado';
 
   const cabecera = (periodo?: React.ReactNode) => (
     <>

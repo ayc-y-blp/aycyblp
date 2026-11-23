@@ -232,7 +232,10 @@ cotización, Shopify o manual"*. Eligió las dos pantallas.
   Shopify si su id es un número, y si no, a mano.
 - **Estadísticas**: *Todo · Visitas · Eventos* pasó a *Todo · 🛒 Shopify · ✍ A
   mano · 🤝 Cotización* (`enTipo()`: Shopify son sus dos modalidades). *Visitas*
-  juntaba Shopify y a mano.
+  juntaba Shopify y a mano. **Ahora va siempre en la fila de arriba**, junto a
+  *Volver*: al lado del marco del periodo, los cuatro botones le quitaban tanto
+  ancho que el marco se partía en tres renglones (lo marcó `revisarEspacio()`).
+  Así el marco queda en una fila.
 - **La página del día**: los tres, al lado de *Mías* y del filtro del pago, y
   se suman a ellos. **Como *Mías*, se aprietan para filtrar y otra vez para
   soltar** —un segundo *Todas* al lado del de pago confundía—, con cuántas hay
