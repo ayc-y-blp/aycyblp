@@ -1034,6 +1034,18 @@ la pierna y también la bandera chilena completa"*; comprobado en 393, 390,
 foto + texto (la portada y el arriendo de Eventos) se revisaron y se ven
 bien.
 
+### El título de los bloques foto + texto, más grande en el computador (2026-11-23)
+
+Lo pidió el cliente sobre *El show ecuestre*: *"agranda un poco el título
+en esta sección, sobre todo en el computador. En el celular está bien"*.
+El texto se deja como estaba (*"deja la frase"*). **Es la misma pieza en
+tres páginas** —*Una experiencia para todas las edades* (portada), *El show
+ecuestre* (Actividades) y *Arriendo exclusivo del recinto* (Eventos)—, que
+tenían cada una un `style` suelto de 1.55 o 1.6rem: ahora las tres llevan
+`.split-titulo`, de 1.55rem en el celular y hasta 2.15rem en el computador.
+Para que el bloque siga cabiendo en 1262×573 también en inglés y portugués,
+se quitó un poco de aire alrededor (la raya, los precios y el botón).
+
 ### El ícono de la pestaña: el huaso a caballo (2026-11-22)
 
 Lo pidió el cliente: *"que no se vea solo el planeta como en los sitios no

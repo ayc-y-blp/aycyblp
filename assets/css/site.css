@@ -343,6 +343,20 @@ a:focus-visible, button:focus-visible, summary:focus-visible,
   .split-photo img.foco-show{ object-position: 50% 19%; }
 }
 .split-text{ display:flex; flex-direction:column; justify-content:center; padding: 64px; }
+/* El título de un bloque foto + texto (la portada, el show, el arriendo).
+   En el computador, del tamaño de los demás títulos de sección (lo pidió el
+   cliente el 2026-11-23: "agranda un poco el título… sobre todo en el
+   computador"); en el celular sigue como estaba. Antes era un style suelto
+   en cada página, con 1.55 o 1.6rem. */
+.split-titulo{ font-size:1.55rem; }
+@media (min-width: 901px){
+  .split-titulo{ font-size: clamp(1.8rem, 2.4vw, 2.15rem); }
+  /* El título más grande se paga con menos aire alrededor, para que el
+     bloque siga cabiendo en una pantalla baja también en inglés y portugués. */
+  .split-text .rule{ margin:12px 0; }
+  .split-text .precios{ margin-top:18px; gap:18px 30px; }
+  .split-text .btn-row{ margin-top:22px; }
+}
 @media (max-width: 900px){
   .split{ grid-template-columns:1fr; }
   .split-text{ padding: 44px var(--pad-x); }
