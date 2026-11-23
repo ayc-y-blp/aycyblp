@@ -1272,9 +1272,10 @@ Brasas y Mesa de Directorio—.
 - **Los precios y los mínimos son inventados** (el documento no trae
   ninguno, y el cliente pidió anotarlo): viven en `precios.json` →
   `paquetes`, con la nota *INVENTADOS*, y en la página llevan la etiqueta
-  *Precio de ejemplo* / *Mínimo de ejemplo* (`.de-ejemplo`). **No se mergea
-  a producción con precios de ejemplo**: cuando el cliente los confirme, se
-  cambian en `precios.json` y se borran las etiquetas.
+  *Precio de ejemplo* / *Mínimo de ejemplo* (`.de-ejemplo`). **Se publicó
+  así, con las etiquetas a la vista** (el cliente dijo *"mergea"* el
+  2026-11-23, sabiendo que los precios eran de ejemplo). Cuando los
+  confirme, se cambian en `precios.json` y se borran las etiquetas.
 - **La condición especial** (como el 11% de fin de año) **se define producto
   por producto** (lo pidió el cliente): cada oferta trae su espacio,
   *Condición especial · Por definir* (`.condicion-especial`).
