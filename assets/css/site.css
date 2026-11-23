@@ -699,7 +699,7 @@ details.menu-details summary:hover .menu-cta{ background: rgba(201,162,39,0.10);
 /* En un telefono cada casilla mide lo que deje el ancho entre siete
    columnas: el aire que se le quita al marco va a las casillas. */
 @media (max-width: 480px){
-  .reserva-widget{ padding:20px 16px; }
+  .reserva-caja{ padding:12px 12px 14px; }
   .calendario{ padding:10px 8px; }
   .cal-grilla{ gap:4px; }
   .cal-dia{ font-size:1rem; border-radius:6px; }
@@ -879,9 +879,48 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   font-family:var(--serif); font-style:italic; font-weight:600; font-size:1rem;
   letter-spacing:0;
 }
-.reserva-col-pedido{ margin-top:8px; }
-.reserva-col-pedido > .reserva-paso:not(:first-child){ margin-top:24px; }
-.reserva-col-pedido > .reserva-paso + .reserva-fila{ border-top:0; padding-top:4px; }
+/* Cada paso en su tarjeta (2026-11-23, lo pidio el cliente: "separar paso
+   1, 2, 3 de forma mas ludica, decente, elegante, pero que se vea un poco
+   mas los distintos pasos, secciones"). Es la regla del marco del panel
+   llevada al tono del sitio: la tarjeta es el marco que manda, el titulo
+   del paso va arriba con su linea fina, y lo de adentro —el calendario, la
+   casilla, el resumen— lleva un borde mas suave.
+
+   Lo ludico es el avance: el paso que sigue lleva el borde dorado y el que
+   ya esta listo cambia su numero por un tic dorado relleno. Lo marca
+   reserva.js (marcarPasos); sin JS las tres tarjetas se ven iguales. */
+.reserva-widget{ border:0; background:none; padding:0; }
+.reserva-caja{
+  position:relative; padding:14px 18px 18px;
+  border:1px solid var(--line); border-radius:10px; background: var(--bg-panel);
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.reserva-caja.actual{ border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold-soft); }
+.reserva-col-pedido{ margin-top:14px; }
+.reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:14px; }
+.reserva-caja > .reserva-paso,
+.reserva-caja > .campo > .reserva-paso{
+  margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--line);
+}
+.reserva-caja > .reserva-paso + .reserva-fila{ border-top:0; padding-top:2px; }
+.reserva-caja.hecho .num{
+  background: var(--gold); border-color: var(--gold); color:#1A1400;
+  font-size:0;
+}
+.reserva-caja.hecho .num::before{
+  content:"\2713"; font-family:var(--sans); font-style:normal; font-weight:700; font-size:0.9rem;
+}
+.reserva-caja.actual .num{ box-shadow: 0 0 0 3px var(--gold-wash); }
+.reserva-caja .reserva-mensaje:empty{ display:none; }
+/* El detalle del pedido en el paso 3, como una boleta: cantidad y menu a la
+   izquierda, el monto pagando ahora a la derecha, en la serif de los precios. */
+.resumen-lineas{ list-style:none; margin:0 0 12px; padding:0 2px; }
+.resumen-lineas:empty{ display:none; }
+.resumen-lineas li{
+  display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  padding:5px 0; border-bottom:1px dashed var(--line); font-size:0.9rem; color: var(--ink-dim);
+}
+.resumen-lineas b{ font-family:var(--serif); font-style:italic; font-weight:400; font-size:1.02rem; color: var(--ink); white-space:nowrap; }
 
 /* El resumen de lo elegido: la fecha en palabras y cuantos van. Es lo que
    da seguridad antes de pagar. */
@@ -936,7 +975,7 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
    pago a la derecha. El calendario deja de ser de casillas cuadradas —a
    ese ancho median 70px de alto— y pasa a 44px, con la misma letra. */
 @media (min-width: 900px){
-  .reserva-widget{ max-width:none; padding:16px 30px 16px; }
+  .reserva-widget{ max-width:none; padding:0; }
   /* El titulo se deja para los lectores de pantalla: en el computador los
      tres pasos numerados ya dicen que esto es la reserva, y esos 50px son
      los que faltaban para que el formulario entero quepa en 1280x650. */
@@ -946,11 +985,31 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   }
   .reserva-widget{ position:relative; }
   .reserva-widget .reserva-prueba{ margin:0 0 6px; font-size:0.88rem; }
+  /* Los tres pasos lado a lado, 1 → 2 → 3, en tarjetas de igual alto (el
+     cliente: "con el calendario tienes un poco de espacio a jugar… en la
+     horizontal"). El calendario cede ancho, y la columna del pedido se
+     disuelve (display:contents) para que el paso 2 y el 3 sean columnas
+     propias. Las tres cierran parejas abajo, y en la tercera los botones
+     quedan al pie, a la altura del final del mes. */
   .reserva-cols{
-    display:grid; grid-template-columns: minmax(0,0.85fr) minmax(0,1.15fr);
-    gap:0 44px; align-items:start;
+    display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.08fr) minmax(0,1fr);
+    gap:0 16px; align-items:stretch;
   }
-  .reserva-col-pedido{ margin-top:0; }
+  .reserva-col-pedido{ display:contents; }
+  .reserva-col-pedido > .reserva-caja + .reserva-caja{ margin-top:0; }
+  .reserva-caja-pago{ display:flex; flex-direction:column; }
+  .reserva-caja-pago .btn-row.dos{ margin-top:auto; }
+  /* En una columna angosta el precio va bajo el nombre, como en el
+     celular: el nombre del menu no se dobla. */
+  .reserva-fila{
+    grid-template-columns: 1fr 128px; grid-template-areas: "quien contador" "valor contador";
+    gap:0 10px;
+  }
+  .reserva-fila .valor{ text-align:left; min-width:0; }
+  .reserva-caja-pago .reserva-total{ flex-wrap:wrap; }
+  .reserva-caja{ padding:12px 18px 14px; }
+  .reserva-caja > .reserva-paso,
+  .reserva-caja > .campo > .reserva-paso{ margin-bottom:8px; padding-bottom:8px; }
   /* Segunda pasada (2026-11-23, el cliente: "compactar otra vez un poco…
      tener todo en una vista en la pantalla, con los botones… juega un poco
      con los tamaños de la tipografía también, pero sin perder elegancia").
@@ -966,9 +1025,9 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   .cal-leyenda{ margin-top:8px; }
   .cal-etapa{ padding:3px 10px; font-size:0.82rem; }
   .reserva-widget .aviso{ margin:8px 0 0; font-size:0.9rem; }
-  .reserva-widget .reserva-paso{ margin-bottom:4px; font-size:0.85rem; }
+  .reserva-widget .reserva-paso{ font-size:0.85rem; }
   .reserva-paso .num{ width:26px; height:26px; font-size:0.95rem; }
-  .reserva-fila{ grid-template-columns: 1fr 128px auto; padding:6px 0; gap:12px; }
+  .reserva-fila{ padding:6px 0; }
   .reserva-fila + .reserva-upgrade{ margin-top:2px; }
   .reserva-fila .quien{ font-size:1.08rem; }
   .reserva-fila .quien small{ font-size:0.82rem; margin-top:1px; }
@@ -979,7 +1038,6 @@ button.btn{ font-family: var(--sans); cursor:pointer; }
   .reserva-upgrade b{ font-size:0.9rem; }
   .reserva-upgrade small{ margin-top:1px; }
   .reserva-upgrade input[type="checkbox"]{ width:18px; height:18px; }
-  .reserva-col-pedido > .reserva-paso:not(:first-child){ margin-top:10px; }
   .reserva-widget .reserva-total{ padding:7px 14px; margin-bottom:8px; }
   .resumen-fecha{ font-size:0.9rem; }
   .reserva-total b{ font-size:1.1rem; }

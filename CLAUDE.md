@@ -896,6 +896,21 @@ ahorro de pagar ahora había que restarlo a mano.
   vista (516px). En el celular el contador cede 12px —los botones quedan en
   44— para que el nombre quepa en una línea; *Menú A Brasas abiertas*, con
   la casilla marcada, se dobla en dos.
+- **Cada paso en su tarjeta, y en el computador los tres lado a lado**
+  (2026-11-23, el cliente: *"aplica un poco de nuestra regla del panel de
+  separar paso 1, 2, 3 de forma más lúdica, decente, elegante… con el
+  calendario tienes un poco de espacio a jugar en la horizontal"*). Es la
+  regla del marco del panel en el tono del sitio: la tarjeta es el marco que
+  manda, el título del paso va arriba con una línea fina, y lo de adentro
+  lleva un borde más suave. **Lo lúdico es el avance**: `marcarPasos()` en
+  `reserva.js` cambia el número del paso listo por un tic dorado relleno y
+  le pone el borde dorado al que sigue. Es solo dibujo; los botones los
+  sigue habilitando `pedidoUsable()`. En el computador el calendario cede
+  ancho y los tres pasos van en columnas de igual alto (`display:contents`
+  en la columna del pedido), con *Pagar ahora* al pie de la tercera: 482px
+  en 1280×650. **El paso 3 muestra el detalle del pedido como una boleta**
+  (*2 × Menú Tradiciones · $88.000*), con el precio de pagar ahora. La caja
+  blanca del tema diurno pasó de `.reserva-widget` a `.reserva-caja`.
 - **Todo *Reservar* del sitio llega al formulario** (lo pidió el cliente el
   mismo día): el del menú, el del pie y el de la portada apuntan a
   `reservas.html#reserva-en-linea`, como ya lo hacían los de las tarjetas y
