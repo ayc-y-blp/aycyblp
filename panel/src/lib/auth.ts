@@ -364,6 +364,9 @@ export const PERMISOS = {
    * por encima, el administrador también"*. **Y quien paga**, por las dos
    * reglas que ya estaban: pagos puede todo menos las cuentas y la mantención
    * (2026-11-01), y la gerencia puede, por ahora, lo mismo que pagos.
+   * **Desde el 2026-11-23 vale también para el arriendo mínimo**
+   * (`minimoDeArriendo()`): el mismo poder, las mismas tres cuentas. El
+   * nombre de la llave quedó por no tocar lo que ya la usa.
    */
   showBajoMinimo: [ROL.admin, ROL.pagos, ROL.gerencia],
   /**

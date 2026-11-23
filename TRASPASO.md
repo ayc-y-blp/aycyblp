@@ -154,6 +154,20 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **PR #308, mergeado el 22-11-2026** con el *"mergea"* del cliente: **✕ Se
   cayó…**, dar por perdida una cotización con su motivo, desde cualquier paso,
   la lista o *Esperando respuesta*. Ver `panel/CLAUDE.md`.
+- **PR #310, mergeado el 22-11-2026**: en Clientes, *Míos / Todos* se ve
+  siempre, también con *Míos (0)*.
+- **El arriendo mínimo en las cotizaciones** (PR #312, el cliente dijo
+  *"mergea"* el 23-11-2026): un día
+  que no está abierto al público con poca gente, o un exclusivo en un día
+  público, lleva arriendo sí o sí, con un mínimo por tramo de personas que
+  vive en Configuración → *Extras y arriendo*. Se revisa al guardar y al
+  ganar (también el show), y pasan por encima la gerencia, pagos y el
+  administrador. Salió del documento de costos de mayo a septiembre, en
+  versión agresiva. En el mismo PR: ganar en un sábado que todavía no está en
+  el calendario lo crea público si no es exclusivo, y el paso 3 de cotizar se
+  compactó (la nota del show sube a la fila de los extras). La presentación para la gerencia es un artifact privado
+  del cliente. Ver `panel/CLAUDE.md`, "El arriendo mínimo en las
+  cotizaciones".
 - **El periodo en un marco** (22-11-2026, PR #309, mergeado con el *"mergea"*
   del cliente): en
   Cotizaciones → *Lista*, en Estadísticas, en Vendedores y en el Informe, el periodo, ◀ ▶ y por qué fecha van juntos en
@@ -968,6 +982,11 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 - **El encargado de turno no ve cotizaciones; el vendedor ve todo y toca lo
   suyo; el contacto de los clientes se recorta por rol en el servidor**
   (`lib/privacidad.ts`).
+- **El arriendo mínimo cubre lo que cuesta el evento, no el costo fijo del
+  día** (23-11-2026, lo decidió el cliente: *"queremos ser un poco más
+  agresivos"*): tres filtros y dos tramos por caso en vez de la tabla del
+  documento; el costo fijo se paga con volumen. La temporada alta se maneja
+  subiendo los números en Configuración, sin lógica propia.
 
 ---
 
@@ -1101,6 +1120,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
 | 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA; **aclarar el tema del taller de queso** (lo pidió el cliente el 22-11-2026; hoy figura como actividad adicional en *Actividades* y en los tres landings de empresa); pintacaritas y castillo inflable en *Productos* (¿+ IVA o IVA incluido?). Los dos últimos, también en la guía *Traspaso a producción* | Cliente |
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
+| 15 | ~~Ganar en un sábado que todavía no está en el calendario~~ | **Hecho el 23-11-2026** (el cliente: *"sí, cambia lo del sábado"*): nace público si la cotización no es exclusiva (`diaParaGanar()`). Las reservas a mano y lo importado siguen creándolo privado | — |
 
 ---
 
@@ -1210,6 +1230,13 @@ PR, documentación—, con tuteo y sin voseo.
   y espera el *"mergea"* del cliente** (22-11-2026), también lo chico.
 - Si el PR de la rama ya se mergeó, lo nuevo va rebasado sobre `main` en un
   PR propio. Nunca commits nuevos sobre historia ya mergeada.
+- **Dos sesiones trabajan en paralelo desde el 22-11-2026**: una sigue con
+  Lo Pirque y otra con la Fase 5 (Calicanto / Asados y Corderos, notas en
+  `panel/FASE5.md`). Las dos en PR chicos desde el `main` del día. **Antes de
+  pedir el *"mergea"*, se trae `main` y se resuelve ahí lo que choque**,
+  sobre todo `TRASPASO.md`, `CLAUDE.md` y `lib/prueba.ts`, que son los que
+  tocan las dos. Cada una deja escrito acá lo suyo al cerrar cada etapa: es
+  por donde se enteran una de la otra.
 - **Cada cambio deja escrito en `CLAUDE.md` o `panel/CLAUDE.md` qué cambió y
   por qué**, con fecha y la frase del cliente.
 

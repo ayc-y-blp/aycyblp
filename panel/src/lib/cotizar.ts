@@ -16,6 +16,8 @@ import {
 } from './presupuestos.ts';
 import type { Cliente } from './clientes.ts';
 import type { FechaHabil } from './tipos.ts';
+import type { Config } from './config.ts';
+import { diaSemana } from './fechas.ts';
 
 /** El producto del catálogo que corresponde a una línea, si hay uno. */
 export function productoDe(concepto: string, catalogo: Menu[]): Menu | undefined {
@@ -111,6 +113,166 @@ export function showBajoMinimoDe(previa: string, pasaPorEncima: boolean, bajoMin
 }
 
 /**
+ * **El arriendo mínimo** (2026-11-23, lo pidió el cliente: *"tengo que evitar
+ * que un vendedor hace una reserva en un día cerrado, o sea, en un día privado
+ * o exclusivo, y no nos sale a costo, porque en verdad arrendó a 12 personas
+ * sin cobrar un ítem arriendo, y además prometió el show ecuestre a costo
+ * bajo"*). Los números salen del análisis de costos de mayo a septiembre, con
+ * una estrategia agresiva: el mínimo cubre lo que cuesta el evento, no el
+ * costo fijo del día. Ver "El arriendo mínimo" en `panel/CLAUDE.md`.
+ *
+ * Tres filtros, según el día:
+ *
+ * 1. **Un día público, sin exclusividad**: sin mínimo. El grupo entra como
+ *    público.
+ * 2. **Un día que no está abierto al público** (`privado`): el tramo según la
+ *    gente. **Si ese día ya tiene otras reservas, no hay mínimo**: la
+ *    apertura ya la pagó quien abrió el día.
+ * 3. **Exclusivo en un día público** (`exclusivo`): el tramo según la gente,
+ *    con sus propios números.
+ *
+ * Cada caso tiene dos tramos, *hasta N personas: mínimo $X* neto (+ IVA);
+ * desde el último, sin mínimo. Viven en Configuración (*Extras y arriendo*).
+ * La gerencia general, quien paga y el administrador pueden pasar por encima,
+ * como con el show (`showBajoMinimo`).
+ */
+export interface TramoArriendo {
+  /** Hasta cuántas personas rige (inclusive). */
+  hasta: number;
+  /** El mínimo, neto (+ IVA). */
+  minimo: number;
+}
+export interface ReglaArriendo {
+  privado: TramoArriendo[];
+  exclusivo: TramoArriendo[];
+}
+export type CasoArriendo = keyof ReglaArriendo;
+
+type ConfigArriendo = Pick<Config,
+  'arriendoPrivadoHasta1' | 'arriendoPrivadoMinimo1' | 'arriendoPrivadoHasta2' | 'arriendoPrivadoMinimo2'
+  | 'arriendoExclusivoHasta1' | 'arriendoExclusivoMinimo1' | 'arriendoExclusivoHasta2' | 'arriendoExclusivoMinimo2'>;
+
+/** Los tramos de la configuración, ordenados; un 0 apaga un tramo. `null` si no queda ninguno. */
+export function reglaArriendoDe(cfg: ConfigArriendo): ReglaArriendo | null {
+  const tramos = (pares: [number, number][]) => pares
+    .filter(([hasta, minimo]) => hasta > 0 && minimo > 0)
+    .map(([hasta, minimo]) => ({ hasta, minimo }))
+    .sort((a, b) => a.hasta - b.hasta);
+  const regla = {
+    privado: tramos([[cfg.arriendoPrivadoHasta1, cfg.arriendoPrivadoMinimo1],
+      [cfg.arriendoPrivadoHasta2, cfg.arriendoPrivadoMinimo2]]),
+    exclusivo: tramos([[cfg.arriendoExclusivoHasta1, cfg.arriendoExclusivoMinimo1],
+      [cfg.arriendoExclusivoHasta2, cfg.arriendoExclusivoMinimo2]])
+  };
+  return regla.privado.length || regla.exclusivo.length ? regla : null;
+}
+
+/**
+ * Si un día cuenta como **público para el arriendo**. Uno que está en el
+ * calendario, como siempre (`esDiaPublico()`). **Uno que todavía no está**
+ * cuenta como público si cae en un día de la semana que la regla diaria abre
+ * (sábado y domingo): si no, un vendedor podría arrendar en exclusiva un
+ * sábado de marzo al precio de un martes. Para todo lo demás —el show, la
+ * tarjeta— un día que no está en el calendario sigue contando como privado.
+ */
+export function esPublicoParaArriendo(fecha: string,
+  fechas: Pick<FechaHabil, 'fecha' | 'estado'>[], diasAbiertos: number[]): boolean {
+  if (fechas.some((f) => f.fecha === fecha)) return esDiaPublico(fecha, fechas);
+  return diasAbiertos.includes(diaSemana(fecha));
+}
+
+/** El mínimo que corre para una cotización: su caso, el monto y el tope del tramo. */
+export interface MinimoArriendo {
+  caso: CasoArriendo;
+  minimo: number;
+  hasta: number;
+}
+
+/**
+ * **El mínimo del arriendo de esta cotización**, o `null` si no tiene.
+ * `personas` es la gente de sus menús, o los invitados si todavía no tiene
+ * menús (como el show). `otrasReservas`: las reservas que ya ocupan lugar ese
+ * día, sin contar la de esta misma cotización.
+ */
+export function minimoDeArriendo(regla: ReglaArriendo | null | undefined,
+  dia: { publico: boolean; exclusivo: boolean; otrasReservas: number },
+  personas: number): MinimoArriendo | null {
+  if (!regla) return null;
+  let caso: CasoArriendo;
+  if (dia.publico) {
+    if (!dia.exclusivo) return null;
+    caso = 'exclusivo';
+  } else {
+    if (dia.otrasReservas > 0) return null;
+    caso = 'privado';
+  }
+  const tramo = regla[caso].find((t) => personas <= t.hasta);
+  return tramo ? { caso, minimo: tramo.minimo, hasta: tramo.hasta } : null;
+}
+
+/**
+ * **El mínimo del arriendo de un día**, como una función de la gente (el
+ * tramo depende de cuántos suman los menús, y eso se sabe al preparar las
+ * líneas). `null` sin fecha o sin regla. La misma en la ventana de cotizar,
+ * al guardar y al ganar: `exclusivo` es la respuesta de la cotización y
+ * `otrasReservas` las que ya ocupan lugar ese día sin contar la suya.
+ */
+export function arriendoDelDia(regla: ReglaArriendo | null, fecha: string,
+  fechas: Pick<FechaHabil, 'fecha' | 'estado'>[], diasAbiertos: number[],
+  exclusivo: boolean, otrasReservas: number): ((personas: number) => MinimoArriendo | null) | null {
+  if (!regla || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+  const dia = { publico: esPublicoParaArriendo(fecha, fechas, diasAbiertos), exclusivo, otrasReservas };
+  return (personas) => minimoDeArriendo(regla, dia, personas);
+}
+
+/** El producto de arriendo del catálogo: el primero activo, de tipo Arriendo, que se puede cotizar. */
+export function arriendoDe(catalogo: Menu[]): Menu | undefined {
+  return catalogo.find((m) => m.activo && m.cotizacion && m.tipo === TIPO_PRODUCTO.arriendo);
+}
+
+/** Lo que deja una línea sin IVA, con su descuento. */
+function netoDeLinea(l: Pick<LineaPresupuesto, 'precio' | 'cantidad' | 'descuento' | 'ivaIncluido'>): number {
+  const bruto = (l.precio || 0) * (l.cantidad || 0) * (1 - (Number(l.descuento) || 0) / 100);
+  return l.ivaIncluido === false ? bruto : bruto / (1 + IVA);
+}
+
+/** Un monto neto, escrito en la forma de su línea: tal cual si va *+ IVA*, con el IVA si va incluido. */
+export function enFormaDeLinea(neto: number, ivaIncluido: boolean): number {
+  return ivaIncluido === false ? Math.round(neto) : Math.round(neto * (1 + IVA));
+}
+
+/** Lo que suman, netas, las líneas de arriendo. Las líneas en UF no se miran: su precio sale de la UF. */
+function arriendoNeto(lineas: Pick<LineaPresupuesto, 'concepto' | 'precio' | 'cantidad' | 'descuento' | 'ivaIncluido' | 'precioUF'>[],
+  catalogo: Menu[]): { neto: number; hay: boolean; enUF: boolean } {
+  const suyas = lineas.filter((l) => productoDe(l.concepto, catalogo)?.tipo === TIPO_PRODUCTO.arriendo);
+  return {
+    neto: Math.round(suyas.reduce((n, l) => n + netoDeLinea(l), 0)),
+    hay: suyas.length > 0,
+    enUF: suyas.some((l) => l.precioUF > 0)
+  };
+}
+
+/**
+ * Si en estas líneas —ya preparadas— el arriendo queda **bajo su mínimo**: lo
+ * que hizo quien puede pasar por encima, para dejar la marca, y lo que mira
+ * `/convertir` antes de ganar. Un arriendo en UF no se mide.
+ */
+export function arriendoQuedaBajoMinimo(
+  lineas: Pick<LineaPresupuesto, 'concepto' | 'precio' | 'cantidad' | 'descuento' | 'ivaIncluido' | 'precioUF'>[],
+  catalogo: Menu[], minimo: MinimoArriendo | null
+): boolean {
+  if (!minimo) return false;
+  const a = arriendoNeto(lineas, catalogo);
+  return !a.enUF && a.neto < minimo.minimo;
+}
+
+/** La gente que cuenta para los mínimos: la de los menús, o los invitados si todavía no hay menús. */
+export function personasParaMinimos(lineas: { personas: number }[], invitados: number): number {
+  const enMenus = lineas.reduce((n, l) => n + (l.personas || 0), 0);
+  return enMenus > 0 ? enMenus : invitados;
+}
+
+/**
  * Deja las líneas listas para guardar, con las reglas del negocio:
  *
  * - **La gente sale del tipo del producto**: una línea de un producto de
@@ -145,7 +307,17 @@ export function prepararLineas(
    * ve y lo que se guarda salen de acá, y una llamada directa a la API no lo
    * esquiva.
    */
-  reglaShow: ReglaShow | null = null
+  reglaShow: ReglaShow | null = null,
+  /**
+   * El mínimo del arriendo (`minimoDeArriendo()`), o `null` para quien puede
+   * pasar por encima o si no corre. **Sin arriendo, se agrega** el producto de
+   * arriendo del catálogo con el mínimo; **con arriendo bajo el mínimo, la
+   * primera línea sube** hasta cubrirlo y pierde su descuento. Igual que el
+   * show: una llamada directa a la API no lo esquiva. Puede venir como una
+   * función de la gente, porque el tramo depende de cuántos suman los menús,
+   * y eso se sabe recién acá.
+   */
+  arriendoPedido: MinimoArriendo | ((personas: number) => MinimoArriendo | null) | null = null
 ): Omit<LineaPresupuesto, 'fila'>[] {
   const show = showDe(catalogo);
   const lineas = normalizarLineas(entrantes).map((l) => {
@@ -179,6 +351,30 @@ export function prepararLineas(
         l.precio = minimo;
         l.descuento = 0;
       }
+    }
+  }
+  const arriendo = typeof arriendoPedido === 'function'
+    ? arriendoPedido(enMenus > 0 ? enMenus : invitados) : arriendoPedido;
+  if (arriendo && arriendo.minimo > 0) {
+    const actual = arriendoNeto(lineas, catalogo);
+    if (!actual.hay) {
+      const prod = arriendoDe(catalogo);
+      if (prod) {
+        const incluido = prod.iva !== IVA_PRECIO.mas;
+        lineas.push({
+          presupuesto: lineas[0]?.presupuesto ?? '', concepto: prod.nombre, cantidad: 1,
+          precio: enFormaDeLinea(arriendo.minimo, incluido), personas: 0, descuento: 0,
+          ivaIncluido: incluido, sigue: false, precioUF: 0
+        });
+      }
+    } else if (!actual.enUF && actual.neto < arriendo.minimo) {
+      const suyas = lineas.filter((l) => productoDe(l.concepto, catalogo)?.tipo === TIPO_PRODUCTO.arriendo);
+      const primera = suyas[0];
+      const resto = suyas.slice(1).reduce((n, l) => n + netoDeLinea(l), 0);
+      const falta = Math.max(0, arriendo.minimo - resto);
+      const cantidad = Math.max(1, primera.cantidad || 1);
+      primera.precio = Math.ceil(enFormaDeLinea(falta, primera.ivaIncluido) / cantidad);
+      primera.descuento = 0;
     }
   }
   if (diaPublico && show && !lineas.some((l) => l.concepto === show.nombre)) {

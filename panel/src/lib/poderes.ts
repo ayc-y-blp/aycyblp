@@ -39,7 +39,7 @@ export const PODER: Record<Accion, { icono: string; corto: string }> = {
   links: { icono: '🔗', corto: 'Links personales' },
   sueldos: { icono: '🧾', corto: 'Sueldos y cuentas' },
   presupuestos: { icono: '💼', corto: 'Cotizar' },
-  showBajoMinimo: { icono: '🐎', corto: 'Show bajo el mínimo' },
+  showBajoMinimo: { icono: '🐎', corto: 'Bajo el mínimo: show y arriendo' },
   clientes: { icono: '👤', corto: 'Fichas de clientes' },
   aprobar: { icono: '✅', corto: 'Aprobar descuentos' },
   vendedores: { icono: '🤝', corto: 'Ventas y comisiones' },

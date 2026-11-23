@@ -25,7 +25,8 @@ import { deDiasSemana, idDeDrive, type Config } from '@/lib/config';
  * tolerancia a tildes y abreviaturas vive en un solo lugar, el servidor, y
  * no duplicada acá.
  */
-type Cambio = Partial<Omit<Config, 'diasAbiertos'>> & { diasAbiertos?: string };
+type Cambio = Partial<Omit<Config, 'diasAbiertos' | 'fechasSinExclusivo'>>
+  & { diasAbiertos?: string; fechasSinExclusivo?: string };
 
 const ENTRADA =
   'w-full min-h-[44px] rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -136,6 +137,18 @@ export default function ConfigEditor() {
       {rango?.unidad && <span className="shrink-0 text-[14px] text-hueso/70">{rango.unidad}</span>}
     </div>
   );
+
+  /** Un tramo del arriendo mínimo: hasta cuántas personas y el mínimo, en la columna de los valores. */
+  type CampoNumero = 'arriendoPrivadoHasta1' | 'arriendoPrivadoMinimo1' | 'arriendoPrivadoHasta2'
+    | 'arriendoPrivadoMinimo2' | 'arriendoExclusivoHasta1' | 'arriendoExclusivoMinimo1'
+    | 'arriendoExclusivoHasta2' | 'arriendoExclusivoMinimo2';
+  const tramoArriendo = (nombre: string, titulo: string, ayuda: string, hasta: CampoNumero, minimo: CampoNumero) =>
+    campo(nombre, titulo, ayuda, (
+      <div className="grid gap-2">
+        {numerico(hasta, config![hasta], (n) => ({ [hasta]: n }) as Cambio, { min: 0, max: 100000, unidad: 'personas o menos' })}
+        {numerico(minimo, config![minimo], (n) => ({ [minimo]: n }) as Cambio, { min: 0, max: 1000000000, unidad: '+ IVA' })}
+      </div>
+    ));
 
   const textoLibre = (
     nombre: string, valor: string, aplicar: (t: string) => Cambio, ejemplo = ''
@@ -257,12 +270,12 @@ export default function ConfigEditor() {
     },
     {
       // **Extras y arriendo** (2026-11-20, lo pidió el cliente): las reglas de
-      // lo que se cotiza aparte del menú. Hoy, el show ecuestre en un día
-      // privado; el nombre deja lugar para lo que venga del arriendo.
+      // lo que se cotiza aparte del menú. El show ecuestre en un día privado
+      // y, desde el 2026-11-23, el arriendo mínimo.
       id: 'extras-arriendo', titulo: 'Extras y arriendo',
-      para: 'Reglas de lo que se cotiza aparte del menú. Rigen para el vendedor y el encargado ' +
-            'de operaciones; la gerencia general, el encargado de pagos y el administrador ' +
-            'pueden pasar por encima.',
+      para: 'Los mínimos del show ecuestre y del arriendo en las cotizaciones. Rigen para el ' +
+            'vendedor y el encargado de operaciones; la gerencia general, el encargado de pagos y ' +
+            'el administrador pueden pasar por encima.',
       cuerpo: <>
         {campo('showGratisDesde', 'Show ecuestre sin costo desde',
           'En un día privado o exclusivo, desde cuántas personas de la cotización se puede ' +
@@ -273,6 +286,34 @@ export default function ConfigEditor() {
           'Lo menos que se cobra por el show cuando son menos personas, neto: se le suma el ' +
           'IVA. Si el show no va en la cotización, no se cobra. En 0 no hay mínimo.',
           numerico('showMinimo', config.showMinimo, (n) => ({ showMinimo: n }), { min: 0, max: 100000000, unidad: '+ IVA' }))}
+        {/* **El arriendo mínimo** (2026-11-23, lo pidió el cliente). Cada tramo
+            en una fila: hasta cuántas personas y el mínimo, uno bajo el otro
+            en la columna de los valores. Ver `reglaArriendoDe()`. */}
+        {tramoArriendo('arriendoPrivado1', 'Día no público: 1er tramo',
+          'Un día que no está abierto al público —cerrado, privado o fuera del calendario, en la ' +
+          'práctica de lunes a viernes—: hasta esta gente, el arriendo cuesta al menos este monto, ' +
+          'neto. Cubre lo que cuesta abrir el día para el grupo. Si ese día ya tiene otras reservas, ' +
+          'no hay mínimo. En 0 se apaga el tramo.',
+          'arriendoPrivadoHasta1', 'arriendoPrivadoMinimo1')}
+        {tramoArriendo('arriendoPrivado2', 'Día no público: 2º tramo',
+          'El tramo siguiente, para un grupo un poco más grande. Desde aquí, sin mínimo. En 0 se apaga.',
+          'arriendoPrivadoHasta2', 'arriendoPrivadoMinimo2')}
+        {tramoArriendo('arriendoExclusivo1', 'Exclusivo en día público: 1er tramo',
+          'Un evento exclusivo en un sábado, domingo o feriado abierto al público: hasta esta ' +
+          'gente, el arriendo cuesta al menos este monto, neto. Repone lo que deja el público ese ' +
+          'día. Un grupo que se suma al público sin exclusividad no paga arriendo. En temporada ' +
+          'alta conviene subirlo. En 0 se apaga el tramo.',
+          'arriendoExclusivoHasta1', 'arriendoExclusivoMinimo1')}
+        {tramoArriendo('arriendoExclusivo2', 'Exclusivo en día público: 2º tramo',
+          'El tramo siguiente. Desde aquí, sin mínimo. En 0 se apaga.',
+          'arriendoExclusivoHasta2', 'arriendoExclusivoMinimo2')}
+        {campo('fechasSinExclusivo', 'Días sin arriendo exclusivo',
+          'Las fechas en que no se arrienda en exclusiva porque el público deja más que cualquier ' +
+          'arriendo: Día de la Madre, del Padre, Fiestas Patrias. Separadas por coma, como ' +
+          '2027-05-09 o 9-5-2027. Ahí el vendedor no puede marcar el evento exclusivo; lo decide la ' +
+          'gerencia, el encargado de pagos o el administrador.',
+          textoLibre('fechasSinExclusivo', config.fechasSinExclusivo.join(', '),
+            (t) => ({ fechasSinExclusivo: t }), '2027-05-09, 2027-06-20'))}
       </>
     },
     {

@@ -165,6 +165,7 @@ revisan antes de cada cambio en esta carpeta.
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
+  | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -212,6 +213,138 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El arriendo mínimo en las cotizaciones (2026-11-23)
+
+Lo pidió el cliente: *"tengo que evitar que un vendedor hace una reserva en un
+día cerrado, o sea, en un día privado o exclusivo, y no nos sale a costo,
+porque en verdad arrendó a 12 personas sin cobrar un ítem arriendo, y además
+prometió el show ecuestre a costo bajo"*. Antes de configurarlo *"a puro
+dedo"* pidió analizar el documento de costos de mayo a septiembre
+(*Comisiones, grupos mínimos y eventos por semana*, que no está en el repo), y
+después lo simplificó: *"a lo más 3 filtros… siendo agresivo"*, con dos tramos
+y *"los que se marcan como público tienen otro límite de mínimo para el
+arriendo exclusivo"*. Dijo *"ármalo así"*.
+
+**La regla, en tres filtros** (`minimoDeArriendo()` en `lib/cotizar.ts`, pura
+y con pruebas):
+
+| El día | Mínimo del arriendo, neto (+ IVA) |
+|---|---|
+| Público, sin exclusividad | Ninguno: el grupo entra como público |
+| No abierto al público (cerrado, privado o fuera del calendario) | Hasta 10 personas $400.000 · de 11 a 15 $200.000 · desde 16, ninguno |
+| Exclusivo en un día público (sábado, domingo o feriado abierto) | Hasta 20 personas $1.000.000 · de 21 a 37 $600.000 · desde 38, ninguno |
+
+- **De dónde salen los números**: abrir un día hábil para un grupo cuesta
+  $592.000 entre personal extra y show; los insumos son el 24,5% de la venta;
+  un día público de fin de semana deja $820.000 en meses normales. Con **Lo
+  Pirque a $50.000 + IVA** —el menú de empresa más barato; Tradiciones no se
+  cotiza a empresas— cada persona deja unos $37.750. El mínimo cubre **lo que
+  cuesta el evento**, no el costo fijo del día ($593.000): es la apuesta
+  agresiva, el costo fijo se paga con volumen. El documento pedía bastante
+  más ($850.000 hasta 15 personas en un día hábil).
+- **La gente** es la de los menús, o los invitados si todavía no hay menús
+  (`personasParaMinimos()`, la misma cuenta del show).
+- **Un día que ya tiene otras reservas no tiene mínimo**: la apertura ya la
+  pagó quien abrió el día. No cuenta la reserva de la misma cotización.
+- **Un sábado que todavía no está en el calendario cuenta como público** si
+  cae en un día de la semana que la regla diaria abre (`esPublicoParaArriendo()`,
+  con `dias_abiertos`): si no, se podría arrendar en exclusiva un sábado de
+  marzo al precio de un martes. **Solo para el arriendo**: para el show y la
+  tarjeta, un día fuera del calendario sigue contando como privado, como
+  decidió el cliente.
+- **Sin arriendo, se agrega solo** el producto de tipo Arriendo que se puede
+  cotizar (`arriendoDe()`), con el mínimo. **Bajo el mínimo, sube** —la
+  primera línea de arriendo hasta cubrirlo— **y pierde su descuento**. Se puede
+  subir; no bajar ni quitar (el botón *Quitar* no se dibuja). Un arriendo en UF
+  no se mide.
+- **El descuento sobre el total no se mira**, igual que con el show: el
+  mínimo es de la línea. Es parte del espacio para negociar.
+
+**Dónde corre**:
+
+- **En la ventana de cotizar**, con la misma función (`arriendoDelDia()`): la
+  línea aparece sola, con la caja *🏠 Día no abierto al público, 12 personas:
+  arriendo mínimo $200.000 + IVA. Va siempre, y no baja de ahí.* Es la misma
+  pieza que la del show (ver la tabla de piezas, arriba). Al abrir una
+  cotización de antes de la regla, en un día que la pide, se guarda en el acto
+  con el arriendo agregado (`arriendoSubio`, como `showSubio`).
+- **Al guardar** (`/api/presupuestos`, POST y PATCH): las líneas se preparan
+  con el mínimo. **También cuando cambia *¿exclusivo?***, porque de eso
+  depende el mínimo en un día público.
+- **Al ganar** (`/convertir`): se vuelven a mirar **el arriendo y el show**
+  con el día como está en ese momento —otro evento se cayó, el día pasó a
+  público—. Bajo el mínimo no se gana, con un mensaje que dice cuánto es y que
+  basta abrirla y guardarla.
+
+**Quién pasa por encima**: la gerencia general, el encargado de pagos y el
+administrador, con el mismo poder del show (`showBajoMinimo`, que ahora se
+llama *Cotizar bajo el mínimo: el show ecuestre y el arriendo*). Para ellos la
+línea no se fuerza y la caja sale en gris (*Tú puedes cobrar menos o
+sacarlo*). Si guardan bajo el mínimo, queda la marca **`Arriendo bajo el
+mínimo`** (*quién · cuándo*, columna nueva al final de `Presupuestos`) y en la
+bitácora *Dejó el arriendo bajo el mínimo*, con el día, la gente y el mínimo.
+**Mientras esté la marca, la regla no corre para esa cotización**, tampoco
+para el vendedor: igual que con el show.
+
+**Los días sin arriendo exclusivo** (`fechas_sin_exclusivo`): Día de la
+Madre, del Padre, Fiestas Patrias —el documento dice que ese día el público
+deja entre $5 y $7 millones—. El vendedor no puede marcar *Sí, exclusivo*: el
+botón se apaga con *🚫 Ese día no se arrienda en exclusiva*, y el servidor
+responde 409 si llega igual. Quien pasa por encima sí puede. Se escriben en
+Configuración separadas por coma, como `2027-05-09` o `9-5-2027` (`aFechas()`).
+
+**Configuración → Extras y arriendo**: las ocho cifras (dos tramos por caso,
+*hasta N personas* y *mínimo $X*) y las fechas, con su `?`. Un 0 apaga un
+tramo. **En temporada alta** (abril a junio y septiembre) el público deja el
+doble: se suben los montos ahí; no hay una lógica de temporadas, a propósito.
+**Cada planilla tiene su Configuración**, así que con la Fase 5 cada empresa
+tendrá sus propios números (Calicanto pide además una tabla de arriendo por
+día y temporada: ver `panel/FASE5.md`; esta regla es por dónde puede crecer).
+
+**Lo que conviene saber**:
+
+- **La ventana del paso 3 con arriendo no cabe del todo en 1280×650**: mide
+  699px (el pie queda 49px abajo). Ya no cabía con arriendo antes de este
+  cambio (696px), por la pregunta *¿El día es exclusivo?*, que aparece con él.
+  Con la caja del mínimo llegó a 735px, y se compactó lo que se podía sin
+  afear (lo pidió el cliente: *"compacta paso 3 pero solo si no se pone feo y
+  no entendible"*): **la nota *Día privado: el show va solo si lo agregas* sube
+  a la fila de *Extras y arriendo***, a la derecha, en vez de un renglón suelto
+  (en el celular sigue debajo), y las cajas del mínimo del show y del arriendo
+  tienen menos aire. Lo que queda es la fila de menús partida en dos —con seis
+  menús no entran en una— y la pregunta de exclusivo: achicarlas era bajar
+  botones o esconder precios, y no se hizo. La escena de `npm run ventanas`
+  (Andrés Pino, 80 personas) no tiene arriendo y sigue en 604px; un caso con
+  arriendo pide escribir una cotización, y una escena no escribe. Medido a mano
+  en el panel de ejemplo.
+- **Ganar en un sábado que todavía no está en el calendario lo crea público**
+  (cambió el mismo día, lo decidió el cliente: *"sí, cambia lo del sábado"*),
+  si la cotización no es exclusiva: como lo abriría la regla diaria
+  (`diaParaGanar()` en `lib/dias.ts`, usado por `/convertir` vía
+  `abrirElDiaSiHaceFalta(fecha, { exclusivo })`). Antes nacía privado y el
+  sábado salía del sitio por un grupo que no lo había arrendado entero. Uno
+  exclusivo sigue naciendo privado y queda exclusivo; un sábado que alguien
+  cerró se abre solo para nosotros; **las reservas anotadas a mano y lo
+  importado no cambian** (`diaParaReservaManual()`). Si la cotización se
+  cancela, el día se borra como siempre (*creado*) y la regla lo vuelve a abrir
+  cuando entre en sus días hacia adelante. El sitio no lo ofrece antes de
+  tiempo: `/api/publico/fechas` corta en los días hacia adelante.
+- **Un arriendo sin comida** (sin menús ni invitados) cae en el primer tramo.
+- **Lecturas de Google**: ninguna más. `/api/presupuestos` suma `Reservas` a
+  la tanda de POST y PATCH (la del GET ya la traía), y `/convertir` usa lo que
+  ya leía. **Ningún permiso nuevo**: el de siempre amplió lo que cubre, con
+  las mismas tres cuentas.
+- **Ayuda**: el `?` de Cotizaciones y el de Configuración, *Agregar
+  productos* y *¿Exclusivo?*. Ninguna foto de las misiones cambia: no muestran
+  un día no público con poca gente.
+- **Probado en el panel de ejemplo**: un martes con 12 personas agrega el
+  arriendo a $238.000 con IVA ($200.000 + IVA); con 8, $476.000; con 20,
+  nada; un sábado de enero que no está en el calendario, exclusivo y con 20
+  personas, pide $1.000.000 + IVA (el arriendo del catálogo, $2.500.000, ya lo
+  cubre). Por la API: el vendedor lo baja a $50.000 y vuelve a $238.000; la
+  gerencia lo baja y queda con la marca; y marcar exclusivo un día sin
+  exclusivo responde 409.
 
 ## El periodo en un marco: Cotizaciones → Lista, Estadísticas, Vendedores e Informe (2026-11-22)
 

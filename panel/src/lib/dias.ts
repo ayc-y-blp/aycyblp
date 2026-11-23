@@ -15,7 +15,7 @@
  * `null` si no hay nada que cambiar.
  */
 import { ESTADO_DIA, estaCerrado, esExclusiva } from './columnas.ts';
-import { diasAbiertosEntre, sumarDias, type Fecha } from './fechas.ts';
+import { diasAbiertosEntre, sumarDias, diaSemana, type Fecha } from './fechas.ts';
 import type { FechaHabil } from './tipos.ts';
 import type { Config } from './config.ts';
 
@@ -92,6 +92,31 @@ export function diaParaReservaManual(
 
   // Abierto y con cupo: no hay nada que hacerle.
   return null;
+}
+
+/**
+ * **El día de una cotización que se gana** (2026-11-23, lo decidió el cliente:
+ * *"sí, cambia lo del sábado"*). Igual que `diaParaReservaManual()`, con una
+ * diferencia: un día que **todavía no está en el calendario y cae en un día
+ * que la regla diaria abre** (sábado y domingo) nace **público**, como lo
+ * crearía la regla (`diaDeLaRegla()`), si la cotización no es exclusiva.
+ * Antes nacía privado y ese sábado salía del sitio por un grupo que no lo
+ * había arrendado entero; y la regla ya no lo tocaba, porque tenía fila. Para
+ * el arriendo mínimo ese día ya contaba como público
+ * (`esPublicoParaArriendo()`).
+ *
+ * Uno exclusivo sigue el camino de siempre —privado, y después
+ * `dejarExclusivo()`—, y uno que ya está en el calendario también: si alguien
+ * cerró ese sábado, fue a propósito, y se abre solo para nosotros. Las
+ * reservas anotadas a mano no cambian (`diaParaReservaManual()`).
+ */
+export function diaParaGanar(
+  actual: FechaHabil | undefined, fecha: string, cfg: Config, exclusivo: boolean
+): Omit<FechaHabil, 'fila'> | null {
+  if (!actual && !exclusivo && cfg.cupoNormal > 0 && cfg.diasAbiertos.includes(diaSemana(fecha))) {
+    return diaDeLaRegla(fecha, cfg);
+  }
+  return diaParaReservaManual(actual, fecha, cfg);
 }
 
 /**
