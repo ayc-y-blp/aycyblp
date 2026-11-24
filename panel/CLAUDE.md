@@ -176,7 +176,7 @@ revisan antes de cada cambio en esta carpeta.
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
-  | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` |
+  | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` o los que trae cada línea (`detalleDe()`); se edita con `TextoDeLinea` (el *📝* de cada línea, en el paso Productos) |
   | La promoción aplicada a una cotización y cómo elegirla | `AplicarPromocion` (*🎁 Promoción…*) y la pastilla *🎁 nombre −N%* al lado del descuento sobre el total (paso Productos) |
 | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total con *💬 Escribirle* (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa*, con los datos de la empresa, en `TablaCotizacion` (la cotización y el contrato) |
 | Una otra empresa y sus datos | `OtrasEmpresasEditor` (*Productos → 🤝 Otras empresas*), con `datosEnFrase()` / `datosDe()` de `lib/otrasEmpresas.ts` |
@@ -228,6 +228,89 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Qué incluye cada producto, escrito en su ficha (2026-11-24)
+
+Lo pidió el cliente: *"tengo que tener la posibilidad de agregar un producto y
+tener un campo de descripción en cual puedo dejar el detalle de lo que incluye
+este menú. Y si se rellena este campo, no se alimenta la descripción desde los
+textos estándares… sino creo un menú especial… Si se rellena, corre el campo.
+Si no se rellena, corre la descripción del menú estándar"*, y después: *"que
+reemplace las dos partes pero mejor aún que sean dos campos, uno para el menú y
+uno para bebestibles"*.
+
+- **Dos campos en la ficha de cada producto** (*Productos*, `MenusEditor`):
+  ***Qué incluye***, en todos, y ***Bebestibles***, en los de tipo Menú. Vacíos,
+  muestran de ejemplo el texto del sitio que va a salir; cada uno con su `?`
+  (`descripcionProducto`, `bebestiblesProducto`). Se guardan con *Guardar
+  cambios*, como el resto de la ficha.
+- **Cada campo reemplaza su parte** en la caja *Qué incluye* de la cotización
+  y del contrato (`detalleDe()` en `lib/detalle.ts`, pura y con pruebas):
+  - ***Qué incluye***: en un menú de adulto, reemplaza **el menú de la casa**
+    (los cuatro tiempos, que van arriba): ese producto ya no lo lleva y muestra
+    lo suyo. En otro producto, reemplaza su texto del sitio.
+  - ***Bebestibles***: reemplazan los del sitio. Van con *Bebestibles:*
+    adelante si no lo traen.
+  - **En blanco, el texto del sitio de siempre.** Se puede cambiar solo una
+    parte —los bebestibles, y que siga el menú de la casa—.
+  - Un producto que el sitio no describe (un menú especial nuevo) lleva lo
+    que se le escriba; sin nada, sigue sin detalle.
+- **Un renglón por parte** (*Entrada: …*, *Postre: …*) se lee en dos columnas,
+  como el texto del sitio (`partes()`).
+- **Dos columnas nuevas al final de `Menús`: `Descripción` y `Bebestibles`**
+  (`textoLargo()`: renglones limpios, hasta 1.500 letras). Una planilla vieja
+  se lee igual.
+- **Lo del producto es la propuesta; el texto queda fijo en cada cotización**
+  (cambió el mismo día, lo pidió el cliente: *"que este texto solo
+  corresponde a esta cotización. Y si uso el producto en otra cotización de
+  nuevo, me puede mantener el texto propuesto, pero si lo cambio para esta
+  cotización, lo guarda con el texto correspondiente a esta cotización"*, y
+  *"lo tengo que poder cambiar dentro de la cotización"*). Ver la sección
+  siguiente. La primera versión leía el catálogo al abrir la cotización, así
+  que cambiar el producto cambiaba las cotizaciones ya mandadas: se fue.
+- **Ningún permiso cambió**: lo escribe quien cambia el catálogo
+  (`configurar`).
+- **Ayuda**: el `?` de Productos y los dos nuevos. **Ventanas**:
+  `ficha-producto` mide 616px (era 495) y `ficha-producto-nuevo` 538 (era 417).
+
+### Y en cada cotización, su propio texto (2026-11-24)
+
+- **Cada línea guarda su *Qué incluye* y sus *Bebestibles***: dos columnas
+  nuevas al final de `Presupuesto Líneas`, `Descripción` y `Bebestibles`
+  (`textoLargo()`). **Nacen con lo que propone el producto**
+  (`textosDelProducto()`) en cada lugar donde nace una línea: agregarlo a mano
+  (`lineaDeProducto()`), una promoción, el arriendo y el show que se agregan
+  solos (`prepararLineas()`), el cotizador del sitio (`cotizarPromocion()`) y
+  el importador. Desde ahí son de esa cotización: **cambiar el producto no
+  toca las cotizaciones que ya lo tienen**, y una alternativa nueva copia las
+  líneas con su texto.
+- **En blanco, el texto del sitio de siempre** (`detalleDe()`), como antes.
+  Las cotizaciones de antes de este cambio tienen las dos columnas en blanco:
+  se ven igual que siempre.
+- **Se cambia en la cotización**: en el paso Productos, cada línea trae
+  ***📝*** —en el computador solo el ícono, de 36px: con *Qué incluye* escrito,
+  la fila de un nombre largo como *A Brasas abiertas* se doblaba; en el
+  celular, *📝 Qué incluye*, en el renglón de *Quitar*—. ***📝 ✎***, en
+  dorado, si la línea ya no dice
+  lo del producto (`igualAlProducto()`). Abre `TextoDeLinea`: *Qué incluye*
+  y, en un menú, *Bebestibles*, con el texto que va a salir (lo de la línea, o
+  el de siempre si va en blanco). Lo escrito pasa a la línea y **se guarda con
+  la cotización** (autoguardado). Escrito igual al de siempre se guarda en
+  blanco (`propioOVacio()`): así el menú de la casa sigue arriba, en común.
+  ***↺ El texto del producto*** (o *de siempre*, si el producto no trae uno)
+  vuelve a lo que propone el producto hoy. Lo que cobra otra empresa no lo
+  trae: no va en el desglose. Mide 471px a 1280×650 (escena
+  `v-texto-de-linea`).
+- **La cotización y el contrato leen el texto de cada línea**
+  (`desglose()` recibe las líneas): ya no leen `Menús`. Si la A y la B llevan
+  el mismo producto con distinto texto, va en cada alternativa y no arriba.
+- **En una ganada de un día cerrado**, la lista de lo que cambió dice
+  *Lo Pirque: cambió qué incluye*, sin el texto (`cambiosDeLaCotizacion()`).
+- **Lecturas de Google**: ninguna más; la cotización y el contrato leen una
+  pestaña menos que en la primera versión. **Ningún permiso cambió**: lo
+  cambia quien puede tocar esa cotización. **Ayuda**: el `?` de Cotizaciones,
+  *Agregar productos*, el de Productos, *Qué incluye* del producto y uno
+  nuevo, `textoDeLinea`.
 
 ## Traer los datos de producción a la prueba (2026-11-24)
 
@@ -544,7 +627,10 @@ cotización de producción: *"la cotización aún se ve igual"*.
   `eventos.html`, `dossier.html`), en `DETALLE_DEL_SITIO` de **`lib/detalle.ts`**
   (puro, con pruebas). **No se inventa nada**: un producto que el sitio no
   describe —el arriendo, un extra nuevo— va sin detalle. **Si cambia el texto
-  en el sitio, se cambia también ahí.** Sommelier lleva la lista entera del
+  en el sitio, se cambia también ahí.** Desde el mismo día, **cada producto
+  puede llevar su propio texto** en *Productos* (*Qué incluye* y
+  *Bebestibles*), que reemplaza al del sitio: ver "Qué incluye cada producto,
+  escrito en su ficha". Sommelier lleva la lista entera del
   bar abierto: en el sitio dice *"misma libertad que Brasas"*, y una
   cotización puede no traer Brasas.
 - **Un nombre que no calza exacto, calza igual** (`textoDelSitio()`): en

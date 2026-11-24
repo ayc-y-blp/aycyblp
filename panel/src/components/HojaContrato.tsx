@@ -42,8 +42,8 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas
   // **Qué incluye, también en el contrato** (2026-11-24, lo pidió el cliente):
   // la misma pieza de la cotización, con lo que se contrató. Lo que cobra
   // otra empresa no entra: ya va aparte, bajo la tabla.
-  const incluye = desglose([{ id: p.id,
-    conceptos: lineas.filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) }]);
+  // Cada línea con su texto, el que se escribió para esta cotización.
+  const incluye = desglose([{ id: p.id, lineas: lineas.filter((l) => !String(l.loCobra ?? '').trim()) }]);
   const ficha = clientes.find((c) => c.id === p.idCliente);
   const cliente = {
     nombre: ficha?.nombre ?? p.cliente,

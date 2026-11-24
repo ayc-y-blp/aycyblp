@@ -108,7 +108,7 @@ import { ocupaLugar } from './ocupacion.ts';
 import { desglosarMenu, componerMenu } from './shopify.ts';
 import { telefonoNormal, correoNormal } from './contacto.ts';
 import { marcasDePago } from './plata.ts';
-import { TIPO_PRODUCTO, type Menu } from './menus.ts';
+import { TIPO_PRODUCTO, textosDelProducto, type Menu } from './menus.ts';
 import type { Usuario } from './usuarios.ts';
 import type { Config } from './config.ts';
 import type { FechaHabil, Reserva } from './tipos.ts';
@@ -554,13 +554,14 @@ export function planDeImportacion(e: {
     // —también cuando allá se llama un poco distinto—: desde acá es ese producto.
     const productos = (estado === ESTADO_PRESUPUESTO.candidato ? [] : productosDeLaCelda(f.productos)).map((x) => {
       const prod = productoParecido(x.concepto, e.menus);
-      return { ...x, escrito: x.concepto, concepto: prod?.nombre ?? x.concepto, esta: !!prod };
+      return { ...x, escrito: x.concepto, concepto: prod?.nombre ?? x.concepto, esta: !!prod, prod };
     });
     // Las mismas reglas de una cotización hecha a mano: solo los menús suman
     // personas, un producto de monto fijo va una vez, el show va incluido en
     // un día público.
     const entrantes: LineaEntrante[] = productos.map((p) => ({
-      presupuesto: id, concepto: p.concepto, cantidad: p.cantidad, precio: p.precio, personas: 0, ivaIncluido: p.ivaIncluido
+      presupuesto: id, concepto: p.concepto, cantidad: p.cantidad, precio: p.precio, personas: 0, ivaIncluido: p.ivaIncluido,
+      ...textosDelProducto(p.prod)
     }));
     const suyas = entrantes.length ? prepararLineas(entrantes, e.menus, invitados, !!fecha && esDiaPublico(fecha, e.fechas)) : [];
     const v = f.vendedor ? vendedor(f.vendedor) : null;

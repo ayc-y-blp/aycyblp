@@ -84,8 +84,9 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   // **Qué incluye** (2026-11-24, `lib/detalle.ts`): lo común arriba y lo
   // propio de cada alternativa en su caja. Lo que cobra otra empresa ya va
   // aparte, con su detalle, en la tabla.
+  // Cada línea trae su texto, el que se escribió para esta cotización.
   const des = desglose(alts.map((a) => ({ id: a.id,
-    conceptos: lineasDe(todas, a.id).filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) })));
+    lineas: lineasDe(todas, a.id).filter((l) => !String(l.loCobra ?? '').trim()) })));
   const vencido = estado === 'Vencida';
   // **Los datos de las otras empresas** (2026-11-24): se leen solo si alguna
   // alternativa trae algo que cobra otra empresa.

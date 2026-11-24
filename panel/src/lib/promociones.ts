@@ -24,7 +24,7 @@
  * de acá salen el cotizador y sus precios.
  */
 import { normalizar, indices, ESTADO_DIA } from './columnas.ts';
-import { TIPO_PRODUCTO, COBRO, IVA_PRECIO, MONEDA, precioParaCotizar, canonizar, type Menu } from './menus.ts';
+import { TIPO_PRODUCTO, COBRO, IVA_PRECIO, MONEDA, precioParaCotizar, canonizar, textosDelProducto, type Menu } from './menus.ts';
 import {
   prepararLineas, productoDe, esDiaPublico, arriendoDelDia, personasParaMinimos, lineaDeProducto,
   type ReglaShow, type ReglaArriendo
@@ -496,7 +496,9 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   }
   const entrantes: LineaEntrante[] = productos.map(([p, cantidad]) => ({
     presupuesto: '', concepto: p!.nombre, cantidad: p!.cobro === COBRO.fijo ? 1 : cantidad,
-    precio: precioParaCotizar(p), personas: 0, ivaIncluido: p!.iva !== IVA_PRECIO.mas
+    precio: precioParaCotizar(p), personas: 0, ivaIncluido: p!.iva !== IVA_PRECIO.mas,
+    // Lo que incluye, el del producto (2026-11-24): queda escrito en la cotización.
+    ...textosDelProducto(p)
   }));
 
   const publico = esDiaPublico(e.fecha, ctx.fechas);

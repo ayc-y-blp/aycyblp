@@ -9,7 +9,7 @@
  * reglas que un clic.
  */
 import { normalizar, estaCerrado, esPrivada } from './columnas.ts';
-import { canonizar, TIPO_PRODUCTO, IVA_PRECIO, MONEDA, COBRO, type Menu } from './menus.ts';
+import { canonizar, TIPO_PRODUCTO, IVA_PRECIO, MONEDA, COBRO, textosDelProducto, type Menu } from './menus.ts';
 import {
   normalizarLineas, ESTADO_PRESUPUESTO, estadoNormal, IVA,
   type LineaEntrante, type LineaPresupuesto, type Presupuesto
@@ -390,7 +390,7 @@ export function prepararLineas(
         lineas.push({
           presupuesto: lineas[0]?.presupuesto ?? '', concepto: prod.nombre, cantidad: 1,
           precio: enFormaDeLinea(arriendo.minimo, incluido), personas: 0, descuento: 0,
-          ivaIncluido: incluido, sigue: false, precioUF: 0, loCobra: ''
+          ivaIncluido: incluido, sigue: false, precioUF: 0, loCobra: '', ...textosDelProducto(prod)
         });
       }
     } else if (!actual.enUF && actual.neto < arriendo.minimo) {
@@ -407,7 +407,7 @@ export function prepararLineas(
     lineas.push({
       presupuesto: lineas[0]?.presupuesto ?? '', concepto: show.nombre,
       cantidad: 1, precio: 0, personas: 0, descuento: 0, ivaIncluido: true, sigue: false,
-      precioUF: 0, loCobra: ''
+      precioUF: 0, loCobra: '', ...textosDelProducto(show)
     });
   }
   return lineas;
@@ -453,7 +453,10 @@ export function lineaDeProducto(
     personas: m.tipo === TIPO_PRODUCTO.menu ? cantidad : 0,
     descuento: 0, ivaIncluido: m.iva !== IVA_PRECIO.mas, sigue,
     // En UF, la línea guarda su precio en UF y lo convierte `prepararLineas()`.
-    precioUF: m.moneda === MONEDA.uf ? m.precioCotizacion : 0
+    precioUF: m.moneda === MONEDA.uf ? m.precioCotizacion : 0,
+    // **Lo que incluye nace con el texto del producto** (2026-11-24) y desde
+    // acá es de esta cotización: se cambia en la línea, no en el producto.
+    ...textosDelProducto(m)
   };
 }
 

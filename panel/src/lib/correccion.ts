@@ -214,7 +214,11 @@ export const cambioDeBorrarReserva = (r: ReservaEnCorreccion) =>
  *   bitácora. Cada uno es la frase que se dice si cambió y una huella para
  *   compararlo.
  */
-export type LineaEnCorreccion = { concepto: string; cantidad: number; precio: number; descuento: number };
+export type LineaEnCorreccion = {
+  concepto: string; cantidad: number; precio: number; descuento: number;
+  /** Qué incluye y sus bebestibles, juntos (2026-11-24): se nombra sin su valor, como las notas. */
+  texto?: string;
+};
 export type CotizacionEnCorreccion = {
   cliente: string; fecha: string; invitados: number; total: number;
   lineas: LineaEnCorreccion[];
@@ -244,6 +248,7 @@ export function cambiosDeLaCotizacion(antes: CotizacionEnCorreccion, despues: Co
     if (a.cantidad !== l.cantidad) de.push(`cantidad de ${a.cantidad} a ${l.cantidad}`);
     if (Math.round(a.precio) !== Math.round(l.precio)) de.push(`precio de ${pesos(a.precio)} a ${pesos(l.precio)}`);
     if ((a.descuento || 0) !== (l.descuento || 0)) de.push(`descuento de ${a.descuento || 0}% a ${l.descuento || 0}%`);
+    if ((a.texto ?? '').trim() !== (l.texto ?? '').trim()) de.push('cambió qué incluye');
     if (de.length) c.push(`${l.concepto}: ${de.join(', ')}`);
   }
   for (const a of antes.lineas) if (!es.has(llano(a.concepto))) c.push(`se quitó ${a.concepto} (${lineaEnPalabras(a)})`);
