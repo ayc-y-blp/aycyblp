@@ -320,8 +320,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *Visitas · Eventos*, y va en la fila de *Volver* para que el marco del
   periodo quepa en una) y en la página del día, al lado de *Mías*. Ver
   `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
-- **Las promociones del sitio y su cotizador** (23 y 24-11-2026, PR #338
-  abierto, espera el *"mergea"*): *Productos → 🎁 Promociones* (una promoción es
+- **Las promociones del sitio y su cotizador** (23 y 24-11-2026, PR #338,
+  mergeado el 24-11-2026 con el *"prepara todo en PR y mergea"* del cliente;
+  todo lo de abajo hasta *🤝 Otras empresas* va en ese PR): *Productos → 🎁 Promociones* (una promoción es
   una receta de productos, con su descuento, y se conecta a un bloque de
   `promociones.html`), *Lo cobra otra empresa* en el catálogo (el karting va
   aparte del total, con su detalle, y la vendedora lo ve *🤝 por coordinar*),
