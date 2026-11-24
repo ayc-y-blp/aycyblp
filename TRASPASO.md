@@ -349,6 +349,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   su página muestra su trato renglón por renglón, lo que ganó con el sueldo
   fijo, lo que viene, lo que se le pagó y el bruto que escribe en la boleta.
   Ver `panel/CLAUDE.md`, "El link personal del vendedor".
+- **Turnos dice lo que cuesta el equipo de cada día** (24-11-2026, en el
+  mismo PR #338, lo pidió el cliente): una pastilla con el monto al lado de
+  *👥 8 en el equipo*, y arriba de la ventana del día; el mismo número de la
+  tarjeta de Reservas, sin la propina. Ver `panel/CLAUDE.md`, "Turnos: lo que
+  cuesta el equipo de cada día".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

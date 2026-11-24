@@ -144,7 +144,7 @@ revisan antes de cada cambio en esta carpeta.
   | La fecha de un día, y *hoy* / *esta semana* | `FechaDia` + `MarcaAhora` (*HOY* relleno) y `MARCO_HOY` alrededor de la tarjeta o celda de hoy, con el fondo apenas iluminado (`.fondo-hoy`) |
   | El estado del día (público, privado, exclusivo, cerrado…) | `PuntoDia` / `PuntoYPalabra` y `COLOR_TARJETA` |
   | Lo cotizado (solo lo mandado) y la gente posible, ganadas, esperando, lo tuyo sin mandar | `Pastilla` / `PastillaCotizado` |
-  | En las celdas de Turnos y Extras: el equipo del día (👥, dorado) y las actividades y su costo (🎠, añil) | `Pastilla` tipo `equipo` / `extras` |
+  | En las celdas de Turnos y Extras: el equipo del día y lo que cuesta (👥, dorado; el costo también arriba de la ventana del día) y las actividades y su costo (🎠, añil) | `Pastilla` tipo `equipo` / `extras` |
   | Lo que le falta a una ficha para poder pagarle: *falta su cuenta*, *falta su factura* | `Pastilla` tipo `falta`: un aviso fino, nunca con forma de botón (Informe, Vendedores, Equipo y Extras) |
   | Cómo va el pago de una reserva | `PastillaPago`; la pastilla sola, para ponerla en una línea de texto, `EstadoDelPago` (la bandeja de lo que revisa pagos) |
   | Lo de la cuenta y lo de todos | `BotonMias` / `BotonTodos` |
@@ -223,6 +223,30 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Turnos: lo que cuesta el equipo de cada día (2026-11-24)
+
+Lo pidió el cliente: *"agregar en la ficha de equipo, en turnos, agregar
+también el monto total del costo de sueldos del equipo, como lo tienes en
+reservas"*. La tarjeta del día en Reservas ya decía cuánto cuesta el equipo
+(arriba a la derecha); en Turnos solo salía cuánta gente había.
+
+- **En cada día del calendario de Turnos**, al lado de *👥 8 en el equipo*,
+  una segunda pastilla dorada con el monto (*$268.000*): la misma forma que
+  el costo de las actividades en Extras (dos pastillas, gente y plata).
+- **Arriba de la ventana del día**, al lado de *Hay 34 personas reservadas*,
+  la misma pastilla, que se mueve mientras se arma el día.
+- **Es el mismo número de Reservas** (`costoPlanificado()`): la jornada, las
+  horas extra y los ajustes; cuenta a quien todavía no se marcó y deja afuera
+  a quien no vino. **Sin la propina**, que no es sueldo.
+- **Quién lo ve**: quien ve Turnos. No es un dato nuevo para nadie: son los
+  montos de cada turno, que el encargado ya escribe y ya ve en la ventana del
+  día (*"cuánto costó el equipo de un día es algo que conviene que todos
+  tengan claro"*, 2026-11-05).
+- **En el computador** las dos pastillas no caben en una fila de la celda
+  (264px): el monto va debajo, en todas las celdas con equipo por igual.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el
+  `?` de Turnos. Las ventanas del equipo miden lo mismo (614 y 853px).
 
 ## El link personal del vendedor (2026-11-24)
 

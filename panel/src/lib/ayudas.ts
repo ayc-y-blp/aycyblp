@@ -121,7 +121,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Arriba aparecen los días que ya pasaron y a los que les falta algo '
       + 'para poder cerrarse. Entrar acá es que la pantalla te diga qué '
       + 'queda pendiente.',
-      'En cada día del mes, la pastilla 👥 dice cuánta gente hay en el equipo.'
+      'En cada día del mes, la pastilla 👥 dice cuánta gente hay en el equipo, '
+      + 'y la de al lado cuánto cuestan sus sueldos, sin la propina: la '
+      + 'jornada, las horas extra y los ajustes. Cuenta a quien todavía no se '
+      + 'marcó y deja afuera a quien no vino, igual que la tarjeta del día en '
+      + 'Reservas. La ventana del día lo dice arriba.'
     ],
     pasos: [
       'Apreta cualquier día del mes para abrir su ventana.',

@@ -30,6 +30,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Ayuda from './Ayuda';
 import FechaDia, { MARCO_HOY } from './FechaDia';
 import { Pastilla, PastillaCotizado } from './Pastilla';
+import { enPesos } from '@/lib/ocupacion';
 import BandaSeccion, { TONO } from './BandaSeccion';
 import { Aviso } from './CalendarView';
 import EquipoDialogo from './EquipoDialogo';
@@ -317,12 +318,25 @@ export default function CalendarioEquipo({ dia }: { dia?: string } = {}) {
               {/* El equipo del día en su pastilla dorada (2026-11-13): la
                   misma pieza que las actividades en Extras y lo cotizado. */}
               {res.total > 0 && (
-                <span className="mt-1 block">
+                <span className="mt-1 flex flex-wrap gap-1">
                   <Pastilla tipo="equipo" className="max-w-full flex-wrap !whitespace-normal" title={`${res.total} en el equipo`}>
                     <span aria-hidden>👥</span><b className="font-bold tabular-nums">{res.total}</b>
                     {/* En la celda angosta del celular, solo el número: el 👥 ya dice qué es. */}
                     <span className="sr-only sm:not-sr-only">en el equipo</span>
                   </Pastilla>
+                  {/* **Lo que cuesta el equipo del día** (2026-11-24, lo pidió
+                      el cliente: *"agregar también el monto total del costo de
+                      sueldos del equipo, como lo tienes en reservas"*). El mismo
+                      número de la tarjeta de Reservas (`costoPlanificado()`:
+                      cuenta a quien todavía no está marcado, sin los que no
+                      vinieron) y la misma forma que el costo en Extras: su
+                      propia pastilla, al lado de la gente. Sin propina: no es
+                      sueldo. */}
+                  {res.costo > 0 && (
+                    <Pastilla tipo="equipo" title="Lo que cuesta el equipo del día, sin la propina">
+                      <span className="tabular-nums">{enPesos(res.costo)}</span>
+                    </Pastilla>
+                  )}
                 </span>
               )}
               {res.faltan > 0 && (
