@@ -1170,7 +1170,7 @@ export default function EquipoEditor() {
                   return (
                     <li key={p.antes}>
                       Al guardar, <strong>{p.antes}</strong> pasa a llamarse <strong>{p.nombre.trim()}</strong>
-                      {n > 0 ? <>, con sus {n === 1 ? 'turno' : `${n} turnos`} y las fichas que lo tienen de puesto habitual.</> : '.'}
+                      {n > 0 ? <>, con {n === 1 ? 'su turno' : `sus ${n} turnos`} y las fichas que lo tienen de puesto habitual.</> : '.'}
                     </li>
                   );
                 })}

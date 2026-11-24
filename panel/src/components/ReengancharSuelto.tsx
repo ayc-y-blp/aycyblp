@@ -48,6 +48,8 @@ export default function ReengancharSuelto({ tipo, de, veces, opciones, onListo }
   const [repetidos, setRepetidos] = useState<string[] | null>(null);
   const elegido = opciones.find((o) => o.id === a);
   const esPuesto = tipo === 'puesto';
+  /** *Su turno* / *Sus 6 turnos*. */
+  const sus = veces === 1 ? `Su ${PALABRA[tipo][0]}` : `Sus ${cuantos(tipo, veces)}`;
 
   const cerrar = () => {
     setAbierto(false); setA(''); setError('');
@@ -112,9 +114,9 @@ export default function ReengancharSuelto({ tipo, de, veces, opciones, onListo }
               )}
               {elegido && (
                 <p className="mt-3 text-[15px]" role="status">
-                  {tipo === 'puesto' && <>Sus {cuantos(tipo, veces)} y las fichas que lo tienen de puesto habitual pasan a <strong>{elegido.nombre}</strong>.</>}
-                  {tipo === 'trabajador' && <>Sus {cuantos(tipo, veces)}, y sus pagos, boletas y ajustes si los tiene, pasan a <strong>{elegido.nombre}</strong>.</>}
-                  {tipo === 'colaborador' && <>Sus {cuantos(tipo, veces)}, y sus pagos y boletas si los tiene, pasan a <strong>{elegido.nombre}</strong>.</>}
+                  {tipo === 'puesto' && <>{sus} y las fichas que lo tienen de puesto habitual pasan a <strong>{elegido.nombre}</strong>.</>}
+                  {tipo === 'trabajador' && <>{sus}, y sus pagos, boletas y ajustes si los tiene, pasan a <strong>{elegido.nombre}</strong>.</>}
+                  {tipo === 'colaborador' && <>{sus}, y sus pagos y boletas si los tiene, pasan a <strong>{elegido.nombre}</strong>.</>}
                   {' '}{de} deja de aparecer suelto.
                 </p>
               )}
