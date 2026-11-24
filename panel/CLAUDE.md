@@ -290,7 +290,8 @@ uno para bebestibles"*.
 - **Se cambia en la cotización**: en el paso Productos, cada línea trae
   ***📝*** —en el computador solo el ícono, de 36px: con *Qué incluye* escrito,
   la fila de un nombre largo como *A Brasas abiertas* se doblaba; en el
-  celular, *📝 Qué incluye*—. ***📝 ✎***, en dorado, si la línea ya no dice
+  celular, *📝 Qué incluye*, en el renglón de *Quitar*—. ***📝 ✎***, en
+  dorado, si la línea ya no dice
   lo del producto (`igualAlProducto()`). Abre `TextoDeLinea`: *Qué incluye*
   y, en un menú, *Bebestibles*, con el texto que va a salir (lo de la línea, o
   el de siempre si va en blanco). Lo escrito pasa a la línea y **se guarda con

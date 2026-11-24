@@ -894,7 +894,7 @@ export default function CotizacionDialogo({
         className={`boton min-h-[36px] !px-2 text-[13px] font-normal lg:min-w-[36px] ${clase}
                     ${cambiado ? 'border-oro/70 font-semibold text-oro' : ''}`}>
         <span aria-hidden="true">📝{cambiado ? ' ✎' : ''}</span>
-        <span aria-hidden="true" className="lg:hidden">{cambiado ? 'Qué incluye · cambiado' : 'Qué incluye'}</span>
+        <span aria-hidden="true" className="lg:hidden">Qué incluye</span>
       </button>
     );
   };
@@ -2476,8 +2476,8 @@ export default function CotizacionDialogo({
                             de *Quitar* (`botonTexto`, más abajo). */}
                         {botonTexto(l, prod, i, 'hidden lg:inline-flex')}
                         </span>
-                        <span className="flex-1 lg:hidden" />
                         {botonTexto(l, prod, i, 'lg:hidden')}
+                        <span className="flex-1 lg:hidden" />
                         {esShowIncluido ? (
                           <span className="rounded-full border border-verde-fuerte/60 px-2 py-0.5
                                            text-[13px] font-semibold text-verde-texto lg:col-start-2 lg:col-end-7
