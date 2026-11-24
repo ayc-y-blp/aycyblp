@@ -528,9 +528,13 @@
       else if (r.arriendo > 0) boleta.appendChild(el('p', 'cot-nota', T.arriendo + ' ' + pesos(r.arriendo) + ' ' + T.masIva + '.'));
     }
 
-    /** Lo sumado como lo lee el panel: `Karting:15`, o el nombre solo si es un monto fijo. */
-    function sumados() {
-      return estado.suma.map(function (n) { return estado.cuantos[n] ? n + ':' + estado.cuantos[n] : n; });
+    /**
+     * Para cuántos va cada extra sumado, en el orden de `suma`; 0 es para todo
+     * el grupo (un monto fijo). Va aparte de `suma`: un panel de antes lo
+     * ignora y cobra para todos, en vez de no reconocer el extra.
+     */
+    function cuantos() {
+      return estado.suma.map(function (n) { return estado.cuantos[n] || 0; });
     }
 
     function calcular() {
@@ -545,7 +549,7 @@
       reloj = setTimeout(function () {
         var q = new URLSearchParams({
           promo: promo.sitio, adultos: String(estado.adultos), ninos: estado.ninos.join(','),
-          menu: estado.menu, suma: sumados().join('|'), fecha: estado.fecha
+          menu: estado.menu, suma: estado.suma.join('|'), cuantos: cuantos().join('|'), fecha: estado.fecha
         });
         fetch(panel + '/api/publico/cotizar?' + q.toString())
           .then(function (r) { return r.json(); })
@@ -564,7 +568,7 @@
       fetch(panel + '/api/publico/cotizar', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          promo: promo.sitio, adultos: estado.adultos, ninos: estado.ninos, menu: estado.menu, suma: sumados(),
+          promo: promo.sitio, adultos: estado.adultos, ninos: estado.ninos, menu: estado.menu, suma: estado.suma, cuantos: cuantos(),
           fecha: estado.fecha, nombre: nombre, empresa: fEmpresa.value.trim(), telefono: telefono, correo: correo,
           web: trampa.value, idioma: idioma, prueba: !esReal
         })

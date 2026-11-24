@@ -1326,10 +1326,14 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   todos.
   - El nombre y el precio van en un renglón, como los menús, y *lo cobra …*
     debajo.
-  - **Al panel viaja como `Karting:15`** en `suma` (`sumadoDe()` en
-    `panel/src/lib/promociones.ts`); el nombre solo, como lo manda un
-    `cotizador.js` de antes, es para todos. La cotización que llega trae la
-    línea con esa cantidad, y la boleta del sitio dice *15 × Karting: $…,
+  - **Al panel viaja en `cuantos`, aparte de `suma`**: `suma=Karting` y
+    `cuantos=15`, en el mismo orden (`Eleccion.cuantos` en
+    `panel/src/lib/promociones.ts`); 0 o sin el dato es para todo el grupo.
+    **Aparte a propósito**: un panel de antes lo ignora y cobra para todos,
+    en vez de no reconocer el extra. Así no importa cuál de los dos proyectos
+    de Vercel se publica primero, y la versión de prueba del sitio, que le
+    habla al panel de producción, no se rompe. La cotización que llega trae
+    la línea con esa cantidad, y la boleta del sitio dice *15 × Karting: $…,
     aparte*.
   - **Medidas con un extra marcado** (sin marcar, igual que antes): 460px en
     1262×573, que cabe. Pasa del margen seguro mientras está marcado: en

@@ -7397,16 +7397,13 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'un martes con 12: el arriendo mínimo del tramo y el show con su precio, como en una cotización de vendedor');
   ok(!mar.ok || mar.otras.length === 0, 'sin sumar el karting no hay nada aparte');
   // Lo que se suma, para cuántos (2026-11-24: de 22, solo 15 andan en karting).
-  ok(PR.sumadoDe('Karting:15').nombre === 'Karting' && PR.sumadoDe('Karting:15').cantidad === 15
-     && PR.sumadoDe(' Karting ').cantidad === 0 && PR.sumadoDe('Tabla 2:1').nombre === 'Tabla 2',
-     'un extra sumado trae para cuántos, o nada (todos)');
-  const kart = (suma: string[]) => {
-    const r = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma, fecha: '2026-11-28' }, ctx);
+  const kart = (cuantos?: number[]) => {
+    const r = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: ['karting'], cuantos, fecha: '2026-11-28' }, ctx);
     return r.ok ? r.lineas.find((l) => l.concepto === 'Karting')?.cantidad : -1;
   };
-  ok(kart(['Karting:5']) === 5 && kart(['Karting']) === 12 && kart(['karting:40']) === 12 && kart(['Karting:0']) === 12,
-     'el karting sumado va para los que dijo el cliente, sin pasar del grupo; sin número, para todos');
-  const kart5 = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: ['Karting:5'], fecha: '2026-11-28' }, ctx);
+  ok(kart([5]) === 5 && kart() === 12 && kart([40]) === 12 && kart([0]) === 12,
+     'el karting sumado va para los que dijo el cliente, sin pasar del grupo; sin el dato, para todos');
+  const kart5 = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: ['Karting'], cuantos: [5], fecha: '2026-11-28' }, ctx);
   ok(kart5.ok && sab.ok && kart5.cuentas.total === sab.cuentas.total && kart5.otras[0].total === 208250,
      'sumarlo para menos cambia solo lo aparte: el total y el por persona no se mueven');
   const comb = PR.cotizarPromocion(combate, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], fecha: '2026-12-01' }, ctx);

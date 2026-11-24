@@ -66,6 +66,10 @@ function eleccionDe(x: Record<string, unknown>): Eleccion & { promo: string } {
     ninos: (Array.isArray(x.ninos) ? x.ninos : String(x.ninos ?? '').split(',')).slice(0, 5).map((n) => Number(n) || 0),
     menu: String(x.menu ?? '').trim().slice(0, 80),
     suma: suma.map((s) => s.trim()).filter(Boolean).slice(0, 20),
+    // Para cuántos va cada uno de `suma` (2026-11-24): `15|` en la dirección,
+    // una lista en el cuerpo; vacío es para todo el grupo.
+    cuantos: (Array.isArray(x.cuantos) ? x.cuantos : String(x.cuantos ?? '').split('|'))
+      .slice(0, 20).map((n) => Number(n) || 0),
     fecha: String(x.fecha ?? '').trim().slice(0, 10)
   };
 }

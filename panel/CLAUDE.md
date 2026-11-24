@@ -983,8 +983,11 @@ eso lo conversa el vendedor.
 
 **Lo que se suma va para cuántos lo pidió el cliente** (2026-11-24, lo pidió
 el cliente: *"de los 22 que quieren menú, solo 15 quieren andar en
-go-kart"*): el sitio manda `Karting:15` y `sumadoDe()` lo lee; sin número
-—un `cotizador.js` de antes—, para todo el grupo, y nunca más que el grupo.
+go-kart"*): el sitio manda `cuantos`, en el orden de `suma`
+(`Eleccion.cuantos`); 0 o sin el dato —un `cotizador.js` de antes—, para
+todo el grupo, y nunca más que el grupo. Va aparte de `suma` para que un
+panel de antes lo ignore y cobre para todos, en vez de no reconocer el
+extra.
 Lo *Incluido* sigue yendo para todos. La línea de la cotización que llega
 trae esa cantidad, y lo aparte que vuelve al sitio dice *15 × Karting*. En
 la cotización del vendedor no cambia nada: la cantidad de una línea ya se
