@@ -450,7 +450,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   propuesta y se copia a la línea al agregarlo; en la cotización se cambia con
   el 📝 de cada línea, y cambiar el producto no toca las cotizaciones hechas.
   Dos columnas nuevas al final de `Presupuesto Líneas`. **PR #343, mergeado
-  el 24-11-2026** con el *"mergea"* del cliente. Ver `panel/CLAUDE.md`, "Qué
+  el 24-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
+  después. Ver `panel/CLAUDE.md`, "Qué
   incluye cada producto, escrito en su ficha" y "Y en cada cotización, su
   propio texto".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
