@@ -726,6 +726,14 @@ export default function EquipoDialogo({
                 </span>
               </span>
             </div>
+            {/* **Un puesto que ya no está en la lista** (2026-11-24): pasa si
+                se corrigió en la planilla. Se dice, para que no parezca que
+                la persona se perdió, y se arregla en Equipo. */}
+            {l.suelto && l.puesto !== 'Sin puesto' && (
+              <p className="px-1 text-[13px] text-ambar-texto">
+                No está en la lista de puestos: <a href="/equipo" className="underline">pásalo en Equipo</a>
+              </p>
+            )}
 
             {l.asignados.length > 0 ? (
               <ul className={`mt-2 ${LISTA_TARJETAS}`}>

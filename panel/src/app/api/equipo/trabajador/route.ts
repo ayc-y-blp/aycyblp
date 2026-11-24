@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { cambiosDePlata, porConfirmarDespues } from '@/lib/plata';
 import { conLecturas } from '@/lib/sheets';
-import { leerTrabajadores, guardarTrabajadores, leerTurnos, anotar } from '@/lib/datos';
+import { leerTrabajadores, guardarTrabajadores, leerTurnos, anotar, renombrarEnPlanilla } from '@/lib/datos';
+import { cuentaDeCambios, fraseDeCambios } from '@/lib/renombrar';
 import { aEntero, esContratado, esSi, MODALIDAD, type Trabajador } from '@/lib/equipo';
 import { normalizar } from '@/lib/columnas';
 import { exigir, quienEs } from '@/lib/permisos';
@@ -114,10 +115,9 @@ export const POST = conLecturas([], async function POST(req: Request) {
  * completan sin salir de lo que se está haciendo. Misma razón que el POST
  * de arriba, y misma forma: una fila, no la lista entera.
  *
- * **El nombre no se cambia por acá**: los turnos guardados apuntan a la
- * persona por su nombre, y renombrarla desde la ventana de un día dejaría
- * los turnos de los otros días huérfanos. Eso se hace en `/equipo`, que es
- * donde el panel avisa del daño.
+ * **El nombre se cambia con `nuevoNombre`**, desde `/equipo` y confirmado:
+ * desde el 2026-11-24 arrastra sus turnos, ajustes, pagos y boletas al nombre
+ * nuevo (`lib/renombrar.ts`). Antes quedaban con el de antes, sin ficha.
  */
 export const PATCH = conLecturas([], async function PATCH(req: Request) {
   const no = await exigir(req, 'equipo');
@@ -143,8 +143,8 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
     // camino de todos los días, y quien paga perdía sus cambios callado.
     const esAdmin = puede((await quienEs(req)).rol as Rol, 'sueldos');
     // **Renombrar es aparte y se confirma** (`nuevoNombre`, 2026-11-12): el
-    // nombre es la identidad de la ficha, y sus turnos guardados siguen con
-    // el nombre anterior. La pantalla lo pregunta antes.
+    // nombre es la identidad de la ficha. Desde el 2026-11-24 sus turnos,
+    // ajustes, pagos y boletas pasan al nombre nuevo (abajo).
     const nuevoNombre = String(b?.nuevoNombre ?? '').trim();
     if (b?.nuevoNombre !== undefined) {
       if (!nuevoNombre) return NextResponse.json({ error: 'El nombre no puede quedar vacío.' }, { status: 400 });
@@ -195,11 +195,23 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
     await guardarTrabajadores(
       gente.map((t) => (normalizar(t.nombre) === normalizar(nombre) ? nueva : t))
     );
+    // **Lo guardado sigue a la persona** (2026-11-24, lo pidió el cliente:
+    // *"en equipo sale correcto con Christopher Acevedo pero en los turnos me
+    // aparece como Christipher"*). Después de la ficha: si esto falla, la
+    // ficha ya tiene el nombre nuevo y lo que quedó con el viejo se
+    // reengancha con *Es…* en `/equipo`.
+    let frase = '';
+    if (nueva.nombre !== antes.nombre) {
+      const { celdas } = await renombrarEnPlanilla('trabajador', [{ de: antes.nombre, a: nueva.nombre }]);
+      frase = fraseDeCambios(cuentaDeCambios(celdas));
+    }
     await anotar({ ...(await quienEs(req)),
       accion: nueva.nombre !== antes.nombre ? 'Renombró a un trabajador' : 'Editó la ficha de un trabajador',
-      detalle: nueva.nombre !== antes.nombre ? `${antes.nombre} → ${nueva.nombre}` : nueva.nombre });
+      detalle: nueva.nombre !== antes.nombre
+        ? `${antes.nombre} → ${nueva.nombre}${frase ? ` · pasaron ${frase}` : ''}` : nueva.nombre });
 
     return NextResponse.json({
+      arrastrados: frase,
       trabajador: esAdmin ? { ...nueva, token: '' }
                           : { ...nueva, token: '', banco: bancoVacio() }
     });

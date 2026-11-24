@@ -12,7 +12,9 @@
 import { conEmpresa, empresaActual, laCasa, porEmpresa } from './empresa.ts';
 import { leerHoja, agregarFila, agregarFilas, escribirFila, borrarFila, borrarFilas,
          escribirBloque, asegurarEncabezado, asegurarColumna, asegurarHoja, leerEncabezado,
-         esPestanaQueNoExiste } from './sheets.ts';
+         esPestanaQueNoExiste, escribirCeldas } from './sheets.ts';
+import { hojasDe, cambiosDeRenombre, repetidosDespues, DONDE_FECHA,
+         type CeldaNueva, type QueSeRenombra, type Renombre } from './renombrar.ts';
 import {
   HOJA_RESERVAS, HOJA_FECHAS, COL_RESERVAS, COL_FECHAS,
   indices, faltantes, esManual, ESTADO_DIA, esExclusiva, esPrivada, estaCerrado
@@ -429,6 +431,35 @@ export async function leerPuestos(): Promise<Puesto[]> {
 
 export async function guardarPuestos(puestos: Puesto[]): Promise<void> {
   await escribirBloque(HOJA_PUESTOS, aFilasPuestos(puestos));
+}
+
+/**
+ * **Cambia un nombre en todo lo guardado** (2026-11-24, `lib/renombrar.ts`):
+ * los turnos, los ajustes, los pagos y las boletas de una persona, o los
+ * turnos y las fichas de un puesto. Lee esas pestañas en una tanda —frescas,
+ * porque busca en qué fila escribir— y escribe solo las celdas que cambian,
+ * en una llamada. Todos los cambios a la vez: *A → B* y *B → C* no terminan
+ * los dos en C. Devuelve las celdas (para contar con `cuentaDeCambios()`) y
+ * los días en que alguien quedó dos veces.
+ */
+export async function renombrarEnPlanilla(
+  tipo: QueSeRenombra, renombres: Renombre[]
+): Promise<{ celdas: CeldaNueva[]; repetidos: string[] }> {
+  if (!renombres.length) return { celdas: [], repetidos: [] };
+  const hojas = hojasDe(tipo);
+  const leidas = await Promise.all(hojas.map((h) => leerHoja(h, true).catch((e) => {
+    if (esPestanaQueNoExiste(e)) return [] as string[][];
+    throw e;
+  })));
+  const tablas = Object.fromEntries(hojas.map((h, i) => [h, leidas[i]]));
+  const celdas = cambiosDeRenombre(tablas, tipo, renombres);
+  await escribirCeldas(celdas);
+  const fecha = DONDE_FECHA[tipo];
+  const repetidos = fecha
+    ? repetidosDespues(tablas[fecha.hoja] ?? [], fecha.fecha, fecha.nombre,
+        celdas.filter((c) => c.hoja === fecha.hoja))
+    : [];
+  return { celdas, repetidos };
 }
 
 /**

@@ -447,6 +447,43 @@ export async function agregarFilaEnOtraPlanilla(
   }
 }
 
+/** La letra de una columna desde 0: 0 → A, 25 → Z, 26 → AA. */
+export function letraDeColumna(n: number): string {
+  let s = '';
+  for (let k = n + 1; k > 0; k = Math.floor((k - 1) / 26)) s = String.fromCharCode(65 + ((k - 1) % 26)) + s;
+  return s;
+}
+
+/**
+ * **Escribe celdas sueltas, en varias pestañas, en una sola llamada**
+ * (2026-11-24, para renombrar: `lib/renombrar.ts`). Solo toca las celdas que
+ * cambian, no la fila entera: lo que otra persona haya escrito en las demás
+ * columnas de esa fila, entre la lectura y esta escritura, no se pisa.
+ * `fila` es 1-based, como la ve la planilla; `col`, desde 0.
+ */
+export async function escribirCeldas(cambios: { hoja: string; fila: number; col: number; valor: unknown }[]): Promise<void> {
+  if (!cambios.length) return;
+  const hojas = [...new Set(cambios.map((c) => c.hoja))];
+  hojas.forEach(olvidar);
+  try {
+    const titulos = new Map<string, string>();
+    for (const h of hojas) titulos.set(h, await nombreReal(h));
+    await conReintento(async () => sheets().spreadsheets.values.batchUpdate({
+      spreadsheetId: idPlanilla(),
+      requestBody: {
+        valueInputOption: 'USER_ENTERED',
+        data: cambios.map((c) => ({
+          range: `'${titulos.get(c.hoja)!.replace(/'/g, "''")}'!${letraDeColumna(c.col)}${c.fila}`,
+          values: [celdas([c.valor])]
+        }))
+      }
+    }));
+  } catch (e) {
+    if (esLimiteDeGoogle(e)) throw new Error(MENSAJE_LIMITE);
+    throw e;
+  } finally { hojas.forEach(olvidar); }
+}
+
 /** Reescribe una fila completa. `fila` es 1-based, como la ve la planilla. */
 export async function escribirFila(hoja: string, fila: number, valores: unknown[]): Promise<void> {
   // Lo leído de esta pestaña deja de valer, antes y después de escribir.

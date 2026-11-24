@@ -161,7 +161,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Si cambias la cuenta bancaria o lo que se le paga a alguien y no haces '
       + 'los pagos, queda por confirmar hasta que el encargado de pagos lo mire.',
       'Administrar puestos abre la lista de puestos, donde también se ordenan '
-      + 'con las flechas.'
+      + 'con las flechas.',
+      'Cambiarle el nombre a una persona o a un puesto se confirma, y sus '
+      + 'turnos van con él: los de una persona, con sus pagos, boletas y '
+      + 'ajustes; los de un puesto, con las fichas que lo tienen de habitual.',
+      'Si un nombre se corrigió directo en la planilla, arriba sale "Hay '
+      + 'turnos con un nombre que no está en la lista": con Es… (o Pasar a… '
+      + 'para un puesto) le dices a quién corresponde.'
     ],
     ojo: 'A quien ya trabajó alguna vez se le desactiva, no se le quita: sus '
        + 'turnos son el registro de quién trabajó qué día.'
@@ -221,7 +227,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Abajo, la lista de colaboradores guarda a los que se repiten, con su '
       + 'monto habitual y su cuenta. Si cambias una cuenta o un monto y no '
       + 'haces los pagos, queda por confirmar hasta que el encargado de pagos '
-      + 'lo mire.'
+      + 'lo mire.',
+      'Cambiarle el nombre a un colaborador se confirma, y sus días, pagos y '
+      + 'boletas van con él. Si un nombre se corrigió en la planilla y quedó '
+      + 'suelto, Es… le dice a quién corresponde.'
     ],
     ojo: 'Una actividad sin confirmar no suma: agendar no es pagar.'
   },
@@ -633,6 +642,15 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Lo que se contrata aparte del equipo: jinetes, pintacaritas, el castillo inflable.',
       'Una actividad sin confirmar no suma: agendar no es pagar. Se marca Vino o No vino desde el mismo día.',
       'El monto se propone de la ficha y se puede corregir: lo que queda es lo que se le pagó ese día. Una diferencia por un acuerdo aparte va como ajuste, con su motivo.'
+    ]
+  },
+  // ---------- Un nombre suelto (2026-11-24) ----------
+  nombreSuelto: {
+    titulo: 'Un nombre que no está en la lista',
+    texto: [
+      'Los turnos guardan el nombre de la persona y del puesto tal como estaba escrito. Este aviso sale cuando uno de esos nombres ya no está en la lista: se corrigió directo en la planilla, o se cambió antes de que el panel lo arrastrara (desde el 24 de noviembre de 2026, cambiar un nombre en el panel lleva sus turnos).',
+      'Es… te pide de quién es, de la lista: sus turnos, pagos, boletas y ajustes pasan a esa ficha. Pasar a… hace lo mismo con los turnos de un puesto y las fichas que lo tienen de habitual.',
+      'Si esa persona ya estaba con su ficha un mismo día, ese día queda dos veces: el panel te dice cuál, y la sacas de uno en la ventana del equipo del día.'
     ]
   },
   linkColaborador: {

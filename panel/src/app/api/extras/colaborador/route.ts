@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { cambiosDePlata, porConfirmarDespues } from '@/lib/plata';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { conLecturas } from '@/lib/sheets';
-import { leerColaboradores, guardarColaboradores, anotar } from '@/lib/datos';
+import { leerColaboradores, guardarColaboradores, anotar, renombrarEnPlanilla } from '@/lib/datos';
+import { cuentaDeCambios, fraseDeCambios } from '@/lib/renombrar';
 import { aEntero, esSi } from '@/lib/equipo';
 import { normalizar } from '@/lib/columnas';
 import { exigir, quienEs } from '@/lib/permisos';
@@ -99,9 +100,9 @@ export const POST = conLecturas([], async function POST(req: Request) {
  * del comprobante o la cuenta bancaria en la misma pasada en que se agenda
  * —que es cuando alguien tiene esos datos a mano—.
  *
- * **El nombre no se cambia por acá.** Las actividades ya guardadas apuntan a
- * la persona por su nombre; renombrarla desde la ventana de un día dejaría
- * las de los otros días apuntando a nadie. Eso se hace en `/extras`.
+ * **El nombre se cambia con `nuevoNombre`**, desde `/extras` y confirmado:
+ * desde el 2026-11-24 arrastra sus días, pagos y boletas al nombre nuevo
+ * (`lib/renombrar.ts`). Antes quedaban con el de antes, sin ficha.
  */
 export const PATCH = conLecturas([], async function PATCH(req: Request) {
   const no = await exigir(req, 'extras');
@@ -158,11 +159,20 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
     await guardarColaboradores(
       gente.map((c) => (normalizar(c.nombre) === normalizar(nombre) ? nueva : c))
     );
+    // **Sus días, pagos y boletas siguen a la persona** (2026-11-24, como en
+    // el equipo: `lib/renombrar.ts`).
+    let frase = '';
+    if (nueva.nombre !== antes.nombre) {
+      const { celdas } = await renombrarEnPlanilla('colaborador', [{ de: antes.nombre, a: nueva.nombre }]);
+      frase = fraseDeCambios(cuentaDeCambios(celdas));
+    }
     await anotar({ ...(await quienEs(req)),
       accion: nueva.nombre !== antes.nombre ? 'Renombró a un colaborador' : 'Editó la ficha de un colaborador',
-      detalle: nueva.nombre !== antes.nombre ? `${antes.nombre} → ${nueva.nombre}` : nueva.nombre });
+      detalle: nueva.nombre !== antes.nombre
+        ? `${antes.nombre} → ${nueva.nombre}${frase ? ` · pasaron ${frase}` : ''}` : nueva.nombre });
 
     return NextResponse.json({
+      arrastrados: frase,
       colaborador: { ...(esAdmin ? nueva : { ...nueva, banco: bancoVacio() }), token: '' }
     });
   } catch (e) {

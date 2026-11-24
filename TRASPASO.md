@@ -332,8 +332,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   vivo*). En el mismo PR: mientras no haya promociones conectadas en el panel
   de producción, la página queda igual que hoy. Ver `panel/CLAUDE.md`, "Las
   promociones del sitio", y `CLAUDE.md`, "El cotizador de promociones".
-  **Por decidir**: si una promoción nueva (*Karting*) puede crear su propio
-  bloque desde el panel, o cada bloque nuevo sigue siendo un PR del sitio.
+  **Decidido el 24-11-2026**: un bloque nuevo (como *Karting*) es un PR chico
+  del sitio, no se crea desde el panel. Los precios y datos de verdad los
+  llena el cliente después, cuando se decidan.
+- **Cambiar un nombre arrastra lo guardado** (24-11-2026, en el mismo PR
+  #338, lo encontró el cliente: un puesto renombrado dejaba a su gente en un
+  recuadro aparte, y *Christipher* seguía en los turnos después de corregir
+  la ficha). Los turnos guardan el nombre escrito, no un número de ficha:
+  ahora renombrar una persona, un colaborador o un puesto reescribe sus
+  turnos, días, pagos, boletas, ajustes y puestos habituales, y lo que ya
+  quedó suelto se reengancha con *Es…* / *Pasar a…* en Equipo y Extras. **Lo
+  que se corrige directo en la planilla no se entera**: para eso es *Es…*.
+  Ver `panel/CLAUDE.md`, "Cambiar un nombre arrastra lo guardado".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

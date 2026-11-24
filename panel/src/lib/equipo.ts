@@ -899,6 +899,12 @@ export interface LineaDePlan {
   sugeridos: number;
   /** Cuántos faltan para llegar a la sugerencia. 0 si alcanza o si no hay regla. */
   faltan: number;
+  /**
+   * El puesto está en los turnos y no en la lista (2026-11-24): se corrigió
+   * en la planilla, o se cambió antes de que renombrar arrastrara los turnos.
+   * La ventana del día lo dice, y se reengancha en Equipo.
+   */
+  suelto?: boolean;
 }
 
 /** Cuántos hacen falta en un puesto para tanta gente. 0 = sin regla puesta. */
@@ -951,7 +957,8 @@ export function planDelDia(
       puesto: t.puesto || 'Sin puesto',
       asignados: porPuesto.get(clave) ?? [],
       sugeridos: 0,
-      faltan: 0
+      faltan: 0,
+      suelto: true
     });
   }
   return salida;

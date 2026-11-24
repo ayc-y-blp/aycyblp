@@ -176,6 +176,7 @@ revisan antes de cada cambio en esta carpeta.
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
   | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
   | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
+  | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -222,6 +223,96 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Cambiar un nombre arrastra lo guardado: personas, puestos y colaboradores (2026-11-24)
+
+Lo encontró el cliente dos veces el mismo día: *"cambié jefe de turno a
+encargado de turno / caja y luego ya no aparece en el turno… se tiene que
+poder cambiar el nombre independiente… avísame si hay complicaciones
+respecto a cómo guardas datos en cada turno"*, y *"en equipo sale correcto
+con Christopher Acevedo pero en los turnos me aparece como Christipher
+Acevedo"*.
+
+**La causa, que es de cómo se guarda**: un turno guarda **el nombre escrito**
+de la persona y del puesto, no un número de ficha. Lo mismo los días de un
+colaborador, los pagos, las boletas y los ajustes sueltos. Cambiar un nombre
+cambiaba solo la ficha o la lista de puestos, y lo guardado seguía con el de
+antes: el puesto nuevo salía vacío con *Falta 1*, la persona quedaba en un
+recuadro aparte con el nombre viejo al final de la ventana del día, su link
+personal y el informe no la juntaban, y en el buscador volvía a salir libre
+—se la podía agregar dos veces el mismo día—.
+
+**Qué hace ahora** (`lib/renombrar.ts`, puro y con pruebas):
+
+- **Cambiar un nombre reescribe las celdas que dicen el de antes**, en todas
+  las pestañas donde vive (`DONDE`), en **una lectura y una escritura**
+  (`renombrarEnPlanilla()` en `datos.ts`, `escribirCeldas()` en `sheets.ts`,
+  que manda solo esas celdas con `values.batchUpdate`: lo que otro escribió
+  en el resto de la fila no se pisa).
+
+  | Se cambia | Arrastra |
+  |---|---|
+  | Una persona (`PATCH /api/equipo/trabajador`) | sus turnos, ajustes sueltos, pagos y boletas |
+  | Un colaborador (`PATCH /api/extras/colaborador`) | sus días, pagos y boletas |
+  | Un puesto (la ventana de puestos, `PUT /api/equipo`) | sus turnos y el puesto habitual de las fichas |
+
+- **Calza sin mayúsculas ni tildes**, como el resto del panel. Varios puestos
+  a la vez se aplican juntos: *A → B* y *B → C* dejan lo de A en B y lo de B
+  en C. Un nombre que pasa a ser el de otro puesto **junta** sus turnos.
+- **Los puestos llevan `antes`**: cada fila de la ventana viaja con el nombre
+  con que se cargó, y el servidor compara (`renombresDeLista()`). Antes de
+  guardar, la ventana dice *Al guardar, Jefe de turno pasa a llamarse
+  Encargado de turno / caja, con sus 14 turnos y las fichas…*.
+- **La confirmación de una persona lo dice** (*Sus 8 turnos pasan al nombre
+  nuevo, con sus pagos, boletas y ajustes*) y el aviso de después dice cuánto
+  pasó. La bitácora: *Renombró un puesto · Jefe de turno → … · pasaron 14
+  turnos y 3 fichas*.
+- **Un día cerrado también se reescribe**: es el nombre, no la plata. Queda en
+  la bitácora.
+
+**Lo que ya quedó suelto se reengancha** (`ReengancharSuelto`, una pieza
+para Equipo y Extras, y `POST /api/equipo/renombrar`): un nombre corregido
+**directo en la planilla** —el panel no puede saber que fue un cambio— o uno
+cambiado antes de este arreglo.
+
+- **En Equipo**, el aviso *Hay turnos con un nombre que no está en la lista*
+  —antes, una lista de nombres y la instrucción de corregir la planilla a
+  mano— trae cada uno con cuántos turnos y **Es…** (una persona: el
+  buscador, `BuscarEnLista`) o **Pasar a…** (un puesto: un botón por puesto).
+  La ventana dice qué pasa antes de *Pasar a Christopher Acevedo*. **En
+  Extras**, lo mismo con los colaboradores. Lo dan `sueltos()` y el campo
+  `sueltos` de `GET /api/equipo` (de lo que ya leía).
+- **Lo suelto tiene que estar suelto y el destino en la lista**: si el nombre
+  de antes es de otra ficha, responde 409 —juntar dos fichas no se hace por
+  acá—. Permisos: `equipo` para una persona, `extras` para un colaborador,
+  `puestos` para un puesto (el mismo que lo cambia). **Ninguno nuevo.**
+- **Si la persona ya estaba con su ficha un mismo día**, ese día queda dos
+  veces: la ventana lo dice con el día y un link (`repetidosDespues()`). No
+  se borra solo: cada fila puede traer su asistencia o un ajuste.
+- **En la ventana del día**, un puesto que no está en la lista dice *No está
+  en la lista de puestos: pásalo en Equipo* (`LineaDePlan.suelto`).
+
+**Por qué no un número de ficha en cada fila**: el nombre ya es la identidad
+en todo el panel y en la planilla que el cliente lee; cambiarlo es migrar
+cinco pestañas y que la planilla deje de leerse sola. Arrastrar el nombre
+cuesta una lectura y una escritura, y solo al renombrar. **La complicación
+que queda**: si alguien corrige un nombre **en la planilla**, lo guardado no
+se entera; para eso está *Es…*. Conviene cambiar los nombres desde el panel.
+
+- **Lecturas de Google**: ninguna más en las pantallas. Renombrar o
+  reenganchar, una tanda (las pestañas de `DONDE`) y una escritura.
+- **Ayuda**: el `?` de Equipo y el de Extras, y uno nuevo, `nombreSuelto`.
+- **Ventanas**: `v-reenganchar` (273px a 1280×650). **El panel de ejemplo**
+  trae un turno de octubre de *Matias Peres* (suelto): en octubre no sale en
+  las fotos de la ayuda.
+- **Probado en el panel de ejemplo**: *Barra → Encargado de turno / caja*
+  arrastra 9 turnos y una ficha, y en la ventana del sábado Catalina Vergara
+  queda en el puesto nuevo sin *Falta 1*; *Rosa Espinoza → Rosa Espinosa*,
+  8 turnos y 2 pagos; con turnos de *Diego Moralez* y un puesto *Jefe de
+  turno* puestos a mano en la planilla, *Es…* y *Pasar a…* los reenganchan y
+  avisan el sábado 14, donde quedó dos veces. Por la API: lo que no está
+  suelto responde 409, un destino que no existe 404, el vendedor y el
+  encargado (con un puesto) 403.
 
 ## Las promociones del sitio, su cotizador y lo que cobra otra empresa (2026-11-23)
 
@@ -3500,8 +3591,9 @@ fichas que todavía tenían botón *Guardar*: **Equipo, Extras y Clientes**.
   *Guardando… / ✓ Guardado* donde estaba el botón.
 - **El nombre se confirma**: se escribe, aparece *Cambiaste el nombre ·
   Guardar el nombre · Deshacer*, y pregunta antes —en Equipo y Extras
-  avisa que los turnos o días guardados siguen con el nombre anterior; en
-  Clientes, que se corrige en sus cotizaciones y reservas—. Va por
+  dice que sus turnos o días pasan al nombre nuevo (desde el 2026-11-24,
+  ver "Cambiar un nombre arrastra lo guardado"; antes seguían con el de
+  antes); en Clientes, que se corrige en sus cotizaciones y reservas—. Va por
   `nuevoNombre` en el `PATCH`, que rechaza un nombre vacío o repetido.
 - **Agregar pide el nombre y crea la ficha en el acto** (`POST`), y la abre
   para completarla; lo demás se guarda solo.

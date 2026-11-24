@@ -420,6 +420,12 @@ for (const n of ['Antonia Reyes', 'Felipe Cortés', 'Luis Contreras', 'Catalina 
 for (const n of ['Matías Pérez', 'Diego Morales', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Catalina Vergara']) turno('2026-11-13', n);
 for (const n of ['Matías Pérez', 'Javiera Tapia', 'Diego Morales', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Hernán Bravo', 'Catalina Vergara']) turno('2026-11-14', n);
 for (const n of ['Matías Pérez', 'Javiera Tapia', 'Antonia Reyes', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Catalina Vergara']) turno('2026-11-15', n);
+// **Un turno suelto** (2026-11-24): octubre, con el nombre mal escrito, como
+// si la ficha se hubiera corregido en la planilla. Para medir el aviso de
+// Equipo y la ventana *Es…* (`ReengancharSuelto`). En octubre no sale en las
+// fotos de la ayuda, que miran noviembre.
+TURNOS.push({ fecha: '2026-10-24', trabajador: 'Matias Peres', puesto: 'Garzón', asistencia: 'Sí', modalidad: 'Por turno',
+  pagoJornada: 35000, horasExtra: 0, valorHora: 5000, ajustes: [], propina: 0 });
 const encT = eq.ENCABEZADO_TURNOS;
 H['Turnos'] = [encT, ...TURNOS.map((x) => eq.filaTurno(encT, x))];
 

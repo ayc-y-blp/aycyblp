@@ -7300,5 +7300,58 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'el sitio recibe las conectadas, desde cuánto por persona y sin costos; una con un producto sin precio no sale');
 }
 
+/* ---------- Renombrar arrastra lo guardado (2026-11-24) ---------- */
+{
+  const RN = await import('./renombrar.ts');
+  const turnosT = [['Fecha', 'Trabajador', 'Puesto', 'Asistencia'],
+    ['2026-11-14', 'Christipher Acevedo', 'Jefe de turno', ''],
+    ['2026-11-15', 'christipher acevedo', 'jefe de turno', 'Sí'],
+    ['2026-11-15', 'Rosa Espinoza', 'Cocina', 'Sí'],
+    ['2026-11-21', 'Christopher Acevedo', 'Barra', '']];
+  const fichasT = [['Nombre', 'Teléfono', 'Puesto habitual'], ['Christopher Acevedo', '', 'Jefe de turno'], ['Rosa Espinoza', '', 'Cocina']];
+  const pagosT = [['ID', 'Fecha de pago', 'Trabajador'], ['P-1', '2026-11-16', 'Christipher Acevedo']];
+  const tablas = { Turnos: turnosT, Trabajadores: fichasT, Pagos: pagosT };
+
+  const deLista = RN.renombresDeLista([{ nombre: 'Garzón', antes: 'Garzón' }, { nombre: 'Encargado de turno / caja', antes: 'Jefe de turno' },
+    { nombre: 'Runner' }, { nombre: '', antes: 'Barra' }]);
+  ok(deLista.length === 1 && deLista[0].de === 'Jefe de turno' && deLista[0].a === 'Encargado de turno / caja',
+     'de la lista de puestos sale solo lo que cambió de nombre: ni lo igual, ni lo nuevo, ni lo vacío');
+
+  const puesto = RN.cambiosDeRenombre(tablas, 'puesto', deLista);
+  ok(puesto.length === 3 && puesto.filter((c) => c.que === 'turnos').length === 2 && puesto.some((c) => c.hoja === 'Trabajadores' && c.fila === 2)
+     && puesto.every((c) => c.valor === 'Encargado de turno / caja'),
+     'renombrar un puesto: sus turnos (sin importar mayúsculas) y el puesto habitual de las fichas');
+  ok(RN.fraseDeCambios(RN.cuentaDeCambios(puesto)) === '2 turnos y 1 ficha', 'la frase dice cuánto arrastró');
+
+  const persona = RN.cambiosDeRenombre(tablas, 'trabajador', [{ de: 'Christipher Acevedo', a: 'Christopher Acevedo' }]);
+  ok(persona.length === 3 && persona.filter((c) => c.que === 'turnos').length === 2 && persona.some((c) => c.hoja === 'Pagos')
+     && persona.every((c) => c.col === (c.hoja === 'Pagos' ? 2 : 1)),
+     'renombrar a una persona: sus turnos y sus pagos, en la columna que dice el encabezado');
+  ok(RN.repetidosDespues(turnosT, 'Fecha', 'Trabajador', persona.filter((c) => c.hoja === 'Turnos')).length === 0,
+     'sin días repetidos cuando no estaba dos veces');
+  const conDoble = [...turnosT, ['2026-11-14', 'Christopher Acevedo', 'Garzón', '']];
+  const doble = RN.cambiosDeRenombre({ Turnos: conDoble }, 'trabajador', [{ de: 'Christipher Acevedo', a: 'Christopher Acevedo' }]);
+  ok(RN.repetidosDespues(conDoble, 'Fecha', 'Trabajador', doble).join() === '2026-11-14',
+     'si el mismo día ya tenía la ficha nueva, se avisa ese día');
+
+  const cadena = RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Trabajador', 'Puesto'], ['d', 'x', 'A'], ['d', 'y', 'B']] }, 'puesto',
+    [{ de: 'A', a: 'B' }, { de: 'B', a: 'C' }]);
+  ok(cadena.map((c) => c.valor).join() === 'B,C', 'A → B y B → C a la vez: lo de A queda en B y lo de B en C');
+  ok(RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Trabajador'], ['d', 'Ana']] }, 'trabajador', [{ de: 'ana', a: 'Ana' }]).length === 0,
+     'una celda que ya dice el nombre nuevo no se reescribe');
+  ok(RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Otra']] }, 'trabajador', [{ de: 'A', a: 'B' }]).length === 0,
+     'sin la columna, no toca nada');
+
+  const suelt = RN.sueltos(turnosT.slice(1).map((f) => ({ nombre: f[1] })), ['Christopher Acevedo', 'Rosa Espinoza']);
+  ok(suelt.length === 1 && suelt[0].nombre === 'Christipher Acevedo' && suelt[0].veces === 2,
+     'lo suelto: el nombre que no está en la lista, con cuántos turnos');
+  ok(RN.sueltos([{ nombre: '' }, { nombre: 'Cocina' }], ['cocina']).length === 0, 'lo vacío y lo que está (sin mayúsculas) no es suelto');
+  ok(RN.fraseDeCambios({}) === '' && RN.fraseDeCambios({ turnos: 1 }) === '1 turno'
+     && RN.fraseDeCambios({ turnos: 6, pagos: 2, boletas: 1 }) === '6 turnos, 2 pagos y 1 boleta', 'la frase en singular y plural');
+  const S = await import('./sheets.ts');
+  ok(S.letraDeColumna(0) === 'A' && S.letraDeColumna(25) === 'Z' && S.letraDeColumna(26) === 'AA' && S.letraDeColumna(27) === 'AB',
+     'la letra de la columna');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

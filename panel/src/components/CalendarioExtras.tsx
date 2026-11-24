@@ -18,7 +18,7 @@
  * evidente.
  */
 import AvisoFijo from './AvisoFijo';
-import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } from './TarjetaLista';
+import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, TITULO_GRUPO, marcoGrupo, marcoTarjeta } from './TarjetaLista';
 import AvisoGuardado from './AvisoGuardado';
 import { usarGuardadoPorFicha } from './usarGuardadoPorFicha';
 import { avisar, copiarConAviso } from './AvisoFlotante';
@@ -27,6 +27,8 @@ import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
+import ReengancharSuelto, { cuantos } from './ReengancharSuelto';
+import { sueltos as nombresSueltos } from '@/lib/renombrar';
 import { Aviso } from './CalendarView';
 import ExtrasDialogo from './ExtrasDialogo';
 import { COLOR_TARJETA } from './TarjetaDia';
@@ -182,14 +184,14 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
     setColaboradores((lista) => (lista ?? []).map((x, k) => (k === i ? { ...x, activo } : x)));
   }
 
-  /** Renombrar: pregunta, porque sus días guardados siguen con el nombre de antes. */
+  /** Renombrar: pregunta, y sus días, pagos y boletas van con el nombre nuevo (2026-11-24). */
   async function renombrar(i: number) {
     const c = (colaboradores ?? [])[i];
     const nuevo = (nombreEscrito[i] ?? '').trim();
     if (!nuevo || nuevo === c.nombre) return;
     const dias = extras.filter((e) => normalizar(e.colaborador) === normalizar(c.nombre)).length;
     if (!confirm(`¿Cambiar el nombre de ${c.nombre} a ${nuevo}?`
-      + (dias > 0 ? `\n\nSus ${dias} días guardados siguen con el nombre ${c.nombre}.` : ''))) return;
+      + (dias > 0 ? `\n\nSus ${dias} ${dias === 1 ? 'día pasa' : 'días pasan'} al nombre nuevo, con sus pagos y boletas.` : ''))) return;
     await fichas.forzar();
     const r = await fetch('/api/extras/colaborador', {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -200,7 +202,9 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
     fichas.renombrar(c.nombre, nuevo);
     setColaboradores((lista) => (lista ?? []).map((x, k) => (k === i ? { ...x, nombre: nuevo } : x)));
     setNombreEscrito(({ [i]: _x, ...resto }) => resto);
-    avisar(`Ahora se llama ${nuevo}`);
+    avisar(`Ahora se llama ${nuevo}${d.arrastrados ? `: pasaron ${d.arrastrados}` : ''}`);
+    // Sus días cambiaron de nombre: se vuelven a leer, para que no salga suelto.
+    if (d.arrastrados) void cargar();
   }
 
   /** Agregar: con su nombre, en el acto. Lo demás se guarda solo. */
@@ -293,12 +297,11 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
     fichas.programar(copia[i].nombre, { [campo]: copia[i][campo] } as Partial<Colaborador>);
   };
 
-  // Quién tiene días contratados y no está en la lista. Pasa al renombrar a
-  // alguien que ya tenía actividades; mismo mecanismo que `sinFicha()`.
-  const conocidos = new Set((colaboradores ?? []).map((c) => normalizar(c.nombre)));
-  const huerfanos = [...new Set(
-    extras.map((e) => e.colaborador).filter((n) => !conocidos.has(normalizar(n)))
-  )];
+  // Quién tiene días contratados y no está en la lista, con cuántos: se
+  // corrigió en la planilla, o se cambió antes de que renombrar arrastrara lo
+  // guardado (2026-11-24). Se reengancha con *Es…*.
+  const huerfanos = nombresSueltos(extras.map((e) => ({ nombre: e.colaborador })),
+    (colaboradores ?? []).map((c) => c.nombre));
 
   if (error && !colaboradores) return <Aviso error={error} permiso={sinPermiso} />;
   if (!colaboradores) return <p className="text-hueso/50">Cargando…</p>;
@@ -464,21 +467,24 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
         conviene ver antes de hacerlo.
       </AvisoFijo>
 
+      {/* **Lo suelto, con su botón** (2026-11-24): la misma pieza de Equipo
+          (`ReengancharSuelto`). */}
       {huerfanos.length > 0 && (
-        <div className="mt-6 rounded border border-ambar/50 bg-ambar/5 p-4">
-          <p className="flex items-center text-[15px] font-semibold text-ambar-texto">
-            Hay actividades contratadas a nombre de alguien que no está en la lista.
-            <AyudaCorta titulo="Un nombre que no está en la lista">
-              Pasa al renombrar a alguien que ya tenía días: los días viejos
-              siguen con el nombre anterior. Agrégalo con ese nombre
-              exacto, o corrige el nombre en la pestaña{' '}
-              <code>Actividades</code> de la planilla.
-            </AyudaCorta>
+        <div className={`mt-6 ${marcoGrupo('ambar')} p-3`}>
+          <p className={`flex items-center ${TITULO_GRUPO}`}>
+            Hay actividades a nombre de alguien que no está en la lista
+            <AyudaCorta tema="nombreSuelto" />
           </p>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {huerfanos.map((n) => (
-              <li key={n} className="rounded bg-hueso/10 px-2 py-1 font-mono text-[13px]">
-                {n}
+          <ul className="mt-2 space-y-2">
+            {huerfanos.map((x) => (
+              <li key={x.nombre} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[15px] font-semibold">🎠 {x.nombre}</span>
+                <span className="text-[14px] text-hueso/70">{cuantos('colaborador', x.veces)}</span>
+                {!soloMira && (
+                  <ReengancharSuelto tipo="colaborador" de={x.nombre} veces={x.veces} onListo={() => void cargar()}
+                    opciones={[...(colaboradores ?? [])].sort(porNombre).map((c) => ({ id: c.nombre, nombre: c.nombre,
+                      detalle: [c.actividad, c.activo ? '' : 'desactivado'].filter(Boolean).join(' · ') }))} />
+                )}
               </li>
             ))}
           </ul>

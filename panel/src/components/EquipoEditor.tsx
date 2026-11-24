@@ -37,15 +37,28 @@ import Dialogo from './Dialogo';
 import CampoTelefono from './CampoTelefono';
 import Campo from './Campo';
 import { copiarConAviso } from './AvisoFlotante';
+import ReengancharSuelto, { cuantos } from './ReengancharSuelto';
+import { TITULO_GRUPO, marcoGrupo } from './TarjetaLista';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-2 py-1 text-sm ' +
   'focus:border-oro focus:outline-none';
 
 export default function EquipoEditor() {
-  const [puestos, setPuestos] = useState<Puesto[] | null>(null);
+  /**
+   * Los puestos, cada uno con **`antes`**: el nombre con que se cargó
+   * (2026-11-24). Al guardar, el servidor compara y, si un puesto cambió de
+   * nombre, sus turnos y las fichas que lo tienen de habitual pasan al nuevo.
+   * Viaja dentro de cada fila, así que mover o quitar otra no lo descuadra.
+   */
+  const [puestos, setPuestos] = useState<(Puesto & { antes?: string })[] | null>(null);
   const [gente, setGente] = useState<Trabajador[]>([]);
-  const [sinFicha, setSinFicha] = useState<string[]>([]);
+  /**
+   * **Lo suelto** (2026-11-24): personas y puestos que están en los turnos y
+   * no en las listas, con cuántos turnos. Se reengancha con *Es…* / *Pasar a…*.
+   */
+  const [sueltos, setSueltos] = useState<{ personas: { nombre: string; veces: number }[];
+    puestos: { nombre: string; veces: number }[] }>({ personas: [], puestos: [] });
   /**
    * Cuántos turnos guardados tiene cada persona.
    *
@@ -54,6 +67,8 @@ export default function EquipoEditor() {
    * leyó al abrir sigue siendo cierto.
    */
   const [turnosDe, setTurnosDe] = useState<Map<string, number>>(new Map());
+  /** Cuántos turnos tiene cada puesto, para decir qué arrastra un cambio de nombre. */
+  const [turnosPuesto, setTurnosPuesto] = useState<Map<string, number>>(new Map());
   // Lo manda el servidor; la interfaz no lo adivina. Los puestos, los links
   // personales y los sueldos son del administrador y de quien paga, y si el
   // encargado viera esos controles el panel le estaría mintiendo: la ruta se
@@ -125,27 +140,35 @@ export default function EquipoEditor() {
    */
   const comoEstaba = useRef<Trabajador[]>([]);
 
-  useEffect(() => {
-    fetch('/api/equipo').then((r) => r.json())
+  /** Lee la pantalla entera. Al abrir, y después de algo que cambia los turnos (renombrar). */
+  const cargar = () => fetch('/api/equipo').then((r) => r.json())
       .then((d) => {
         if (d.error) return setError(d.error);
-        setPuestos(d.puestos);
+        setPuestos((d.puestos as Puesto[]).map((p) => ({ ...p, antes: p.nombre })));
+        setSucio(false);
         setGente(d.trabajadores);
         comoEstaba.current = d.trabajadores;
-        setSinFicha(d.sinFicha ?? []);
+        setSueltos(d.sueltos ?? { personas: [], puestos: [] });
         const cuenta = new Map<string, number>();
         for (const t of (d.turnos ?? []) as { trabajador: string }[]) {
           const k = normalizar(t.trabajador);
           cuenta.set(k, (cuenta.get(k) ?? 0) + 1);
         }
         setTurnosDe(cuenta);
+        const porPuesto = new Map<string, number>();
+        for (const t of (d.turnos ?? []) as { puesto: string }[]) {
+          const k = normalizar(t.puesto ?? '');
+          porPuesto.set(k, (porPuesto.get(k) ?? 0) + 1);
+        }
+        setTurnosPuesto(porPuesto);
         setVerSueldos(!!d.verSueldos);
         setVerLinks(!!d.verLinks);
         setQuitarLinks(!!d.quitarLinks);
         setEditarPuestos(!!d.editarPuestos);
       })
       .catch((e) => setError(String(e)));
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { void cargar(); }, []);
 
   async function guardar() {
     setGuardando(true);
@@ -169,10 +192,18 @@ export default function EquipoEditor() {
         // `puestos` en `undefined` y la pantalla entera caía al "Cargando…"
         // del primer `return`, como si se hubiera roto. Un guardado que sale
         // bien no puede verse peor que uno que falla.
-        if (d.puestos) setPuestos(d.puestos);
+        if (d.puestos) setPuestos((d.puestos as Puesto[]).map((p) => ({ ...p, antes: p.nombre })));
         if (d.trabajadores) { setGente(d.trabajadores); comoEstaba.current = d.trabajadores; }
         setError('');
         setSucio(false);
+        // **Un puesto renombrado arrastró sus turnos y fichas** (2026-11-24):
+        // se dice cuánto y se vuelve a leer, para que los puestos habituales
+        // de la lista digan el nombre nuevo.
+        const renombrados = (d.renombrados ?? []) as { de: string; a: string; frase: string }[];
+        if (renombrados.length) {
+          avisar(renombrados.map((x) => `${x.de} → ${x.a}${x.frase ? `: pasaron ${x.frase}` : ''}`).join(' · '));
+          void cargar();
+        }
       }
     } finally { setGuardando(false); }
   }
@@ -355,8 +386,9 @@ export default function EquipoEditor() {
     const nuevo = (nombreEscrito[i] ?? '').trim();
     if (!nuevo || nuevo === t.nombre) return;
     const turnos = turnosDe.get(normalizar(t.nombre)) ?? 0;
+    // **Lo guardado sigue a la persona** (2026-11-24): se dice antes.
     if (!confirm(`¿Cambiar el nombre de ${t.nombre} a ${nuevo}?`
-      + (turnos > 0 ? `\n\nSus ${turnos} turnos guardados siguen con el nombre ${t.nombre}: quedarán sin ficha hasta corregirlos en la planilla.` : ''))) return;
+      + (turnos > 0 ? `\n\nSus ${turnos} ${turnos === 1 ? 'turno pasa' : 'turnos pasan'} al nombre nuevo, con sus pagos, boletas y ajustes.` : ''))) return;
     await fichas.forzar();
     const r = await fetch('/api/equipo/trabajador', {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -369,7 +401,9 @@ export default function EquipoEditor() {
     comoEstaba.current = comoEstaba.current.map((x) =>
       normalizar(x.nombre) === normalizar(t.nombre) ? { ...x, nombre: nuevo } : x);
     setNombreEscrito(({ [i]: _x, ...resto }) => resto);
-    avisar(`Ahora se llama ${nuevo}`);
+    avisar(`Ahora se llama ${nuevo}${d.arrastrados ? `: pasaron ${d.arrastrados}` : ''}`);
+    // Sus turnos cambiaron de nombre: la cuenta de turnos y lo suelto, al día.
+    if (d.arrastrados) void cargar();
   }
 
   /** Agregar a alguien: con su nombre, en el acto. Lo demás se guarda solo. */
@@ -527,23 +561,41 @@ export default function EquipoEditor() {
       </p>
       </div>
 
-      {sinFicha.length > 0 && (
-        <div className="mb-6 rounded border border-ambar/50 bg-ambar/5 p-4">
-          <p className="flex items-center text-[15px] font-semibold text-ambar-texto">
-            Hay {sinFicha.length === 1 ? 'alguien asignado' : 'gente asignada'} a
-            turnos que no está en esta lista.
-            <AyudaCorta titulo="Un nombre que no está en la lista">
-              Pasa al renombrar a una persona que ya tenía turnos: los turnos
-              viejos siguen con el nombre anterior. Agrégala con ese
-              nombre exacto, o corrige el nombre en la pestaña{' '}
-              <code>Turnos</code> de la planilla.
-            </AyudaCorta>
+      {/* **Lo suelto, con su botón** (2026-11-24, lo pidió el cliente:
+          *"en equipo sale correcto con Christopher Acevedo pero en los turnos
+          me aparece como Christipher"*). Antes era una lista de nombres y el
+          arreglo era editar la planilla a mano; ahora cada uno se reengancha
+          ahí mismo. Cambiar un nombre desde el panel ya lleva lo guardado:
+          esto queda para lo que se corrigió en la planilla. */}
+      {(sueltos.personas.length > 0 || sueltos.puestos.length > 0) && (
+        <div className={`mb-6 ${marcoGrupo('ambar')} p-3 lg:mb-4`}>
+          <p className={`flex items-center ${TITULO_GRUPO}`}>
+            Hay turnos con un nombre que no está en la lista
+            <AyudaCorta tema="nombreSuelto" />
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {sinFicha.map((n) => (
-              <code key={n} className="rounded bg-hueso/10 px-2 py-1 text-sm">{n}</code>
+          <ul className="mt-2 space-y-2">
+            {sueltos.personas.map((x) => (
+              <li key={'p' + x.nombre} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[15px] font-semibold">👤 {x.nombre}</span>
+                <span className="text-[14px] text-hueso/70">{cuantos('trabajador', x.veces)}</span>
+                {!soloMira && (
+                  <ReengancharSuelto tipo="trabajador" de={x.nombre} veces={x.veces} onListo={() => void cargar()}
+                    opciones={[...gente].sort(porNombre).map((t) => ({ id: t.nombre, nombre: t.nombre,
+                      detalle: [t.puesto, t.activo ? '' : 'desactivado'].filter(Boolean).join(' · ') }))} />
+                )}
+              </li>
             ))}
-          </div>
+            {sueltos.puestos.map((x) => (
+              <li key={'q' + x.nombre} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-[15px] font-semibold">🧩 {x.nombre}</span>
+                <span className="text-[14px] text-hueso/70">puesto · {cuantos('puesto', x.veces)}</span>
+                {editarPuestos && !soloMira && (
+                  <ReengancharSuelto tipo="puesto" de={x.nombre} veces={x.veces} onListo={() => void cargar()}
+                    opciones={(puestos ?? []).filter((p) => p.nombre).map((p) => ({ id: p.nombre, nombre: p.nombre }))} />
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -1105,6 +1157,26 @@ export default function EquipoEditor() {
               </tbody>
             </table>
           </div>
+
+          {/* **Qué arrastra el cambio de nombre** (2026-11-24): antes de
+              guardar se dice, porque cambia los turnos ya guardados. */}
+          {editarPuestos && (() => {
+            const cambian = puestos.filter((p) => p.antes && p.nombre.trim() && p.antes !== p.nombre.trim());
+            if (!cambian.length) return null;
+            return (
+              <ul className="mt-3 space-y-1 text-[14px] text-ambar-texto" role="status">
+                {cambian.map((p) => {
+                  const n = turnosPuesto.get(normalizar(p.antes!)) ?? 0;
+                  return (
+                    <li key={p.antes}>
+                      Al guardar, <strong>{p.antes}</strong> pasa a llamarse <strong>{p.nombre.trim()}</strong>
+                      {n > 0 ? <>, con sus {n === 1 ? 'turno' : `${n} turnos`} y las fichas que lo tienen de puesto habitual.</> : '.'}
+                    </li>
+                  );
+                })}
+              </ul>
+            );
+          })()}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             {editarPuestos && (

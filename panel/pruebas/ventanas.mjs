@@ -222,6 +222,13 @@ export const ESCENAS = {
   'v-extras-del-dia': async () => { await diaDe('/extras', /14 de noviembre/); await lineaDelDia(); },
   'v-ficha-colaborador': async () => { await diaDe('/extras', /14 de noviembre/); await lineaDelDia(); await clic(ventana().getByRole('button', { name: 'Ficha' })); },
   'v-puestos': async () => { await ir('/equipo'); await clic(p.locator('main button', { hasText: /puestos/i })); },
+  // **Reenganchar un nombre suelto** (2026-11-24, `ReengancharSuelto`): el
+  // turno de octubre de *Matias Peres*, con la ficha elegida. La escena no pasa.
+  'v-reenganchar': async () => {
+    await ir('/equipo'); await clic(boton('Es…', true));
+    await ventana().getByLabel('Buscar trabajador').fill('Matías');
+    await clic(ventana().getByRole('button', { name: /Matías Pérez/ }));
+  },
   // Cotizaciones.
   'v-cotizar-1-cliente': async () => { await ir('/presupuestos'); await clic(boton('+ Cotizar', true)); },
   'v-cotizar-1-cliente-nuevo': async () => {

@@ -61,6 +61,18 @@ const sheetsApi = {
         for (const f of requestBody.values) { while (t.length < n) t.push([]); t[n - 1] = f.map(comoSheets); n++; }
         return { data: {} };
       },
+      batchUpdate: async ({ requestBody }) => {
+        for (const { range, values } of requestBody.data ?? []) {
+          escrituras.push('celda:' + nombre(range));
+          const m = String(range).match(/!([A-Z]+)(\d+)$/); if (!m) continue;
+          const col = [...m[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+          const t = hoja(range); const fila = +m[2];
+          while (t.length < fila) t.push([]);
+          const f = t[fila - 1]; while (f.length <= col) f.push('');
+          f[col] = comoSheets(values?.[0]?.[0] ?? '');
+        }
+        return { data: {} };
+      },
       clear: async () => ({ data: {} })
     }
   }
