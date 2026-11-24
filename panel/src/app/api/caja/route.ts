@@ -4,6 +4,7 @@ import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import {
   HOJA_CAJA, saldosDeCaja, limpiarMovimiento, llevaFoto, sePuedeBorrar, fraseMovimiento, porRecibirDe,
+  quienesRecibenCaja,
   type Movimiento
 } from '@/lib/caja';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
@@ -25,17 +26,16 @@ export const maxDuration = 60;
  */
 
 /**
- * Las cuentas que pueden recibir la caja, sin la propia. **Se nombran por su
- * nombre**, que es lo que trae la sesión (`/api/sesion`) y lo que queda en
- * *Quién* y *Para*: así quien recibe se reconoce en su entrega.
+ * Las cuentas a las que se puede entregar la caja (`quienesRecibenCaja()`:
+ * operaciones y gerencia, sin la propia), y el nombre de cada cuenta para
+ * mostrar *Quién* y *Para*.
  */
 async function destinos(yo: string) {
   const cuentas = await leerUsuarios();
   const nombre = (c: { nombre: string; usuario: string }) => c.nombre || c.usuario;
   return {
     nombres: Object.fromEntries(cuentas.flatMap((c) => [[c.usuario, nombre(c)], [nombre(c), nombre(c)]])),
-    destinos: cuentas.filter((c) => c.activo && puede(c.rol as Rol, 'recibirCaja') && nombre(c) !== yo && c.usuario !== yo)
-      .map((c) => ({ usuario: nombre(c), nombre: nombre(c), rol: c.rol }))
+    destinos: quienesRecibenCaja(cuentas, yo)
   };
 }
 

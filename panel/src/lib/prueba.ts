@@ -7103,6 +7103,22 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ];
   const movs = K.leerCajaDe(filas);
   ok(movs.length === 6 && movs[1].tipo === 'Cobro' && movs[1].monto === 50000, 'la caja se lee: sin id o con un tipo raro, no cuenta');
+  // A quién se le entrega (2026-11-24): operaciones y gerencia, sin la propia.
+  const cuentasK = [
+    { usuario: 'vero', nombre: 'Verónica Lagos', rol: 'pagos', activo: true },
+    { usuario: 'admin', nombre: 'Admin', rol: 'admin', activo: true },
+    { usuario: 'rodrigo', nombre: 'Rodrigo Vera', rol: 'gerencia', activo: true },
+    { usuario: 'cris', nombre: 'Cristóbal Cornejo', rol: 'gerente', activo: true },
+    { usuario: 'ana', nombre: 'Ana Ruiz', rol: 'gerencia', activo: true },
+    { usuario: 'viejo', nombre: 'Pedro Antiguo', rol: 'gerente', activo: false },
+    { usuario: 'tomas', nombre: 'Tomás Herrera', rol: 'encargado', activo: true }
+  ];
+  ok(JSON.stringify(K.quienesRecibenCaja(cuentasK, 'Tomás Herrera').map((d) => d.nombre))
+     === JSON.stringify(['Cristóbal Cornejo', 'Ana Ruiz', 'Rodrigo Vera']),
+     'la caja se entrega a operaciones (primero) y a la gerencia: ni pagos, ni el administrador, ni una cuenta apagada');
+  ok(!K.quienesRecibenCaja(cuentasK, 'Cristóbal Cornejo').some((d) => d.nombre === 'Cristóbal Cornejo')
+     && !K.quienesRecibenCaja(cuentasK, 'cris').some((d) => d.nombre === 'Cristóbal Cornejo'),
+     'y nunca a uno mismo, por nombre o por usuario');
   const s = K.saldosDeCaja(movs);
   ok(s.enCaja === 7000 + 50000 - 3000 - 40000 - 5000 && s.porRecibir === 5000,
      'en la caja: lo que entró menos los gastos y las entregas; lo entregado sin confirmar, por recibir');

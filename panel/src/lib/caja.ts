@@ -29,6 +29,7 @@
 import { indices } from './columnas.ts';
 import { esFecha, type Fecha } from './fechas.ts';
 import { marcaPlata, partesMarca } from './plata.ts';
+import { ROL } from './auth.ts';
 
 export const HOJA_CAJA = 'Caja chica';
 
@@ -291,4 +292,42 @@ export const efectivoDelDia = (movs: Movimiento[], fecha: string) =>
 export function fraseMovimiento(m: Pick<Movimiento, 'tipo' | 'monto' | 'detalle' | 'para'>): string {
   const que = m.tipo === TIPO_CAJA.entrega ? `Entrega a ${m.para}` : m.tipo;
   return `${ICONO_CAJA[m.tipo]} ${que} · ${pesos(m.monto)}${m.detalle ? ` · ${m.detalle}` : ''}`;
+}
+
+/* ---------- A quién se le entrega la caja (2026-11-24) ---------- */
+
+/**
+ * **Quién recibe la plata de la caja: el encargado de operaciones y la
+ * gerencia** (2026-11-24, lo pidió el cliente: *"tiene que ser el encargado de
+ * operaciones y la gerencia que puede recibir plata. Y eso de la forma más
+ * simple posible y elegible sin enredar al usuario"*). Hasta ese día la lista
+ * salía del permiso `recibirCaja`, que también tienen pagos y el
+ * administrador, y se elegía con un buscador detrás de *Otra persona…*.
+ *
+ * **El permiso `recibirCaja` no cambió**, a propósito: pagos puede todo
+ * menos las cuentas y la mantención (regla del 2026-11-01), y la gerencia,
+ * por ahora, lo mismo que pagos; quitarle un permiso rompía las dos. Lo que
+ * cambia es a quién se le puede entregar algo nuevo, que valida el servidor
+ * contra esta misma lista. Quien ya tenía una entrega por recibir la sigue
+ * confirmando.
+ */
+export const RECIBEN_CAJA: readonly string[] = [ROL.operaciones, ROL.gerencia];
+
+export interface Destino { usuario: string; nombre: string; rol: string }
+
+/**
+ * Las cuentas a las que se puede entregar la caja, **sin la propia**: activas,
+ * de operaciones o gerencia, **primero operaciones** —es el habitual, *"entregar
+ * este dinero a Cristóbal"*— y después por nombre. Se nombran por su nombre,
+ * que es lo que queda en *Para* y lo que trae la sesión de quien recibe.
+ */
+export function quienesRecibenCaja(
+  cuentas: { usuario: string; nombre: string; rol: string; activo: boolean }[], yo: string
+): Destino[] {
+  const nombre = (c: { nombre: string; usuario: string }) => c.nombre || c.usuario;
+  const orden = (rol: string) => RECIBEN_CAJA.indexOf(rol);
+  return cuentas
+    .filter((c) => c.activo && orden(c.rol) >= 0 && nombre(c) !== yo && c.usuario !== yo)
+    .map((c) => ({ usuario: nombre(c), nombre: nombre(c), rol: c.rol }))
+    .sort((a, b) => orden(a.rol) - orden(b.rol) || a.nombre.localeCompare(b.nombre, 'es'));
 }

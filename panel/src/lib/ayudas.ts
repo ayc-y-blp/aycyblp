@@ -316,7 +316,7 @@ export const AYUDAS: Record<string, Ayuda> = {
     pasos: [
       'La primera vez, 🏁 Saldo inicial: con cuánto parte la caja.',
       '🧾 Anotar un gasto: el monto, en qué y la foto de la boleta.',
-      '📤 Entregar…: a quién (de partida, el encargado de operaciones) y cuánto. Queda por recibir hasta que esa '
+      '📤 Entregar…: a quién —el encargado de operaciones o la gerencia; de partida, operaciones— y cuánto. Queda por recibir hasta que esa '
       + 'persona apriete ✓ Recibí, acá o en su bandeja. Si recibió otro monto, lo escribe y queda marcado para pagos.',
       'Quien recibió anota qué hizo con la plata: 🏦 Depósito, con la foto del comprobante, o 🛒 Compra, con la boleta.',
       'Pagos revisa cada movimiento con ✓ Revisado (Por revisar deja solo esos). No frena a nadie.',

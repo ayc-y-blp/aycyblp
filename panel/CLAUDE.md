@@ -674,9 +674,23 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   manos de* cada persona que recibió (lo recibido menos lo depositado o
   comprado). No se puede gastar ni entregar más de lo que hay, ni depositar más
   de lo que se tiene.
-- **Entregar** propone al encargado de operaciones (el habitual: *"entregar
-  este dinero a Cristóbal"*) y los demás con el buscador (`BuscarEnLista`), y
-  el monto de partida es todo lo de la caja. Queda **por recibir** hasta que
+- **Entregar** muestra **un botón por cada encargado de operaciones y cada
+  cuenta de gerencia**, con su nombre y su rol, y deja elegido al encargado de
+  operaciones (el habitual: *"entregar este dinero a Cristóbal"*). El monto de
+  partida es todo lo de la caja. **Cambió el 2026-11-24** (lo pidió el cliente:
+  *"el botón entregar en Caja no me gusta… tiene que ser mucho más flexible.
+  Tiene que ser el encargado de operaciones y la gerencia que puede recibir
+  plata. Y eso de la forma más simple posible y elegible sin enredar al
+  usuario"*): antes salía el habitual y los demás detrás de *Otra persona…*,
+  con un buscador, y la lista era todo el que tuviera `recibirCaja` —también
+  pagos y el administrador—. Ahora la lista es `quienesRecibenCaja()`
+  (`RECIBEN_CAJA` en `lib/caja.ts`, con pruebas): activas, de operaciones o
+  gerencia, sin la propia, primero operaciones. Son pocas, así que van a la
+  vista y sin buscador. El servidor valida contra la misma lista. **El permiso
+  `recibirCaja` no cambió, a propósito**: pagos puede todo menos las cuentas y
+  la mantención (regla del 2026-11-01), y la gerencia, por ahora, lo mismo
+  que pagos; quitárselo rompía las dos. Pagos sigue confirmando lo que ya
+  tenía por recibir; lo nuevo ya no se le entrega. Queda **por recibir** hasta que
   esa persona aprieta ***✓ Recibí $X*** —en *Te entregaron* de la caja o en su
   bandeja—; si recibió otro monto, *Recibí otro monto…* lo escribe y queda
   marcado para pagos (*⚠ recibió $X*, y *Recibidas con otro monto* arriba).
@@ -722,8 +736,8 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   encargado *La recepción y qué cobrar*. Lo que puede cada rol sale solo de
   `PERMISOS` (`roles.ts`, `poderes.ts`: los dos poderes nuevos van en *La
   plata*).
-- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` y
-  `ficha-caja-entregar` (262px); la pantalla `caja` entra en la prueba de
+- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` (262px) y
+  `ficha-caja-entregar` (262px; 265 desde que lleva un botón por persona); la pantalla `caja` entra en la prueba de
   espacio. *Dejar la base en cero* suma la fila *Caja chica* y no cabía (676px):
   sus dos listas van con 2px entre filas en el computador, y mide 627px.
 - **El panel de ejemplo**: la caja con su historia (saldo inicial de $7.000,
