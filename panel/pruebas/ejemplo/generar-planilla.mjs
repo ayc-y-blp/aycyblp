@@ -100,15 +100,16 @@ H['Otras empresas'] = otr.aFilasOtrasEmpresas([
 const PR = prm.nuevaPromocion;
 H['Promociones'] = prm.aFilasPromociones([
   PR({ id: 'PR-01', nombre: 'Fin de año', sitio: 'fin-de-ano', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
-    minimo: 22, descuento: 11, arriendo: prm.ARRIENDO_PROMO.semana }),
+    minimo: 22, descuento: 11, arriendo: prm.ARRIENDO_PROMO.semana, mostrar: true }),
+  // Combate, solo con su link (2026-11-24): no sale en la lista de la página.
   PR({ id: 'PR-02', nombre: 'Combate de Parrillas', sitio: 'combate', menus: ['A Brasas abiertas'],
-    incluye: ['Clase de parrilla'], minimo: 22 }),
+    incluye: ['Clase de parrilla'], minimo: 22, mostrar: false }),
   PR({ id: 'PR-03', nombre: 'Gran Premio de Fin de Año', sitio: 'gran-premio', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
     incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 22, descuento: 10,
     // Un tramo sobre el tope del vendedor (15%): Andrés Pino, con 80, lleva el 20%.
-    tramos: [{ desde: 60, descuento: 20 }] }),
+    tramos: [{ desde: 60, descuento: 20 }], mostrar: true }),
   PR({ id: 'PR-04', nombre: 'Día de Campo en Familia', sitio: 'dia-de-campo', menus: ['Lo Pirque'], ninos: ['Niños', 'Pequeños'],
-    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30 }),
+    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30, mostrar: true }),
   PR({ id: 'PR-05', nombre: 'Mesa de Directorio', menus: ['Sommelier'], minimo: 8, activa: false })
 ]);
 

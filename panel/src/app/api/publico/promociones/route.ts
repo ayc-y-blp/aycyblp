@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { leerMenus, leerPromociones } from '@/lib/datos';
 import { HOJA_MENUS } from '@/lib/menus';
-import { HOJA_PROMOCIONES, promocionesParaElSitio } from '@/lib/promociones';
+import { HOJA_PROMOCIONES, promocionesParaElSitio, bloquesDelSitio } from '@/lib/promociones';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +18,10 @@ export const dynamic = 'force-dynamic';
  * minuto para todo el panel. Un precio que cambia en *Productos* tarda hasta
  * cinco minutos en verse en el sitio; la cotización que se guarda se calcula
  * de nuevo, sin esa espera.
+ *
+ * **`bloques` dice cuáles salen en la página** (2026-11-24, `bloquesDelSitio()`):
+ * `lista` los marcados con *Mostrar en el sitio*, `link` los que solo se ven
+ * con su link. Marcar o desmarcar también tarda hasta cinco minutos.
  */
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +36,9 @@ export async function OPTIONS() {
 export const GET = conLecturas([HOJA_PROMOCIONES, HOJA_MENUS], async function GET() {
   try {
     const [promos, menus] = await Promise.all([leerPromociones(), leerMenus()]);
-    return NextResponse.json({ promociones: promocionesParaElSitio(promos, menus) }, { headers: CORS });
+    return NextResponse.json({
+      promociones: promocionesParaElSitio(promos, menus), bloques: bloquesDelSitio(promos)
+    }, { headers: CORS });
   } catch (e) {
     console.error('[publico/promociones]', e);
     return NextResponse.json({ error: 'No pudimos cargar las promociones.' },

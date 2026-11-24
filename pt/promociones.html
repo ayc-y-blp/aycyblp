@@ -335,6 +335,20 @@
     max-width:1180px; width:100%; margin:0 auto; padding: 0 32px 34px;
   }
   .promo-pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  /* Qué promociones salen (2026-11-24): las decide cotizador.js con lo que
+     marca el panel (Mostrar en el sitio). Mientras tanto la fila no se ve, para
+     que no aparezcan y desaparezcan; con una sola, no hay nada que elegir. Sin
+     JavaScript queda la primera, sin fila. Una pastilla oculta lleva [hidden],
+     que el display de arriba pisaría. En una versión de prueba, la marca de
+     las que en el sitio no salen en la lista. */
+  .promo-nav{ visibility:hidden; }
+  .promo-nav.promo-lista{ visibility:visible; }
+  .promo-nav.promo-sola{ visibility:hidden; }
+  .promo-pill[hidden]{ display:none !important; }
+  .promo-pill.promo-solo-link, .promo-pill.promo-no-sale{ border-style:dashed; }
+  .promo-pill.promo-no-sale{ opacity:0.65; }
+  .promo-oculta{ margin-left:6px; font-size:13px; }
+  .promo-oculta-texto{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
   .promo-pill, .promo-flecha{
     display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
     min-height:40px; border:1px solid rgba(244,240,230,0.55); border-radius:999px;
@@ -907,7 +921,7 @@
 <link rel="stylesheet" href="../assets/css/tema.css?v=8bedec7b">
 <script src="../assets/js/tema.js?v=9398876b"></script>
 <script src="../assets/js/idioma.js?v=30e2a7c2" defer></script>
-<script src="../assets/js/cotizador.js?v=3eb1be69" defer></script>
+<script src="../assets/js/cotizador.js?v=0ab5e546" defer></script>
 </head>
 <body>
   <div class="topbar">
