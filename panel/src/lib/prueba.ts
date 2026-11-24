@@ -1132,7 +1132,7 @@ const filasMenus = aFilasMenus(POR_DEFECTO_MENUS);
 ok(filasMenus[0].slice(0, 3).join('|') === 'Menú|Precio en línea|Precio en el local',
    'las tres columnas de siempre van primero y en el mismo orden: una planilla vieja se sigue leyendo');
 ok(filasMenus[0].slice(3).join('|')
-     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo',
+     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo|Lo cobra',
    'y las del catálogo van al final');
 ok(filasMenus.length === POR_DEFECTO_MENUS.length + 1, 'una fila por menu, mas el encabezado');
 ok(JSON.stringify(leerMenusDe(filasMenus)) === JSON.stringify(POR_DEFECTO_MENUS),
@@ -7145,6 +7145,44 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'la bandeja de pagos dice lo cobrado en la mesa y cómo, no el total de la reserva');
   ok(A.pendientesDeCaja(movs, { usuario: 'fernanda' }, { recibe: false, revisa: false }).length === 0,
      'quien no recibe ni revisa no ve nada de la caja en la bandeja');
+}
+
+{
+  // --- Lo cobra otra empresa (2026-11-23): el karting va aparte del total ---
+  const M = await import('./menus.ts');
+  const P = await import('./presupuestos.ts');
+  const C = await import('./cotizar.ts');
+  const F = await import('./fudo.ts');
+  const kart = M.nuevoProducto({ nombre: 'Karting', tipo: 'Extra', sitioPublico: false, cotizacion: true,
+    precioCotizacion: 35000, iva: '+ IVA', loCobra: 'Karting Pirque' });
+  const brasasC = M.nuevoProducto({ nombre: 'Brasas', sitioPublico: false, cotizacion: true,
+    precioCotizacion: 70000, iva: '+ IVA' });
+  const cat = [kart, brasasC];
+  const vueltaM = M.leerMenusDe(M.aFilasMenus(cat));
+  ok(vueltaM[0].loCobra === 'Karting Pirque' && vueltaM[1].loCobra === '',
+     'quién cobra un producto se escribe y se vuelve a leer');
+  ok(M.limpiarProducto({ nombre: 'X', tipo: 'Menú', loCobra: 'Otra' }).loCobra === ''
+     && M.limpiarProducto({ nombre: 'X', tipo: 'Extra', loCobra: ' Otra ' }).loCobra === 'Otra',
+     'solo un extra lo cobra otra empresa: un menú es nuestro');
+  const lineasK = C.prepararLineas([
+    { presupuesto: 'P1', concepto: 'Brasas', cantidad: 10, precio: 70000, personas: 0, ivaIncluido: false },
+    { presupuesto: 'P1', concepto: 'karting', cantidad: 10, precio: 35000, personas: 0, ivaIncluido: false }
+  ], cat, 10, false);
+  ok(lineasK[1].loCobra === 'Karting Pirque' && lineasK[0].loCobra === '',
+     'al preparar las líneas, quién cobra sale del catálogo');
+  ok(P.cuentasDe(lineasK).total === 833000,
+     'el total deja fuera lo que cobra otra empresa');
+  const otrasK = P.otrasEmpresas(lineasK);
+  ok(otrasK.length === 1 && otrasK[0].empresa === 'Karting Pirque' && otrasK[0].total === 416500
+     && otrasK[0].conceptos[0] === 'Karting',
+     'lo de otras empresas se suma aparte, con IVA, por empresa');
+  const encLK = P.ENCABEZADO_LINEAS;
+  const vueltaK = P.leerLineasDe([encLK, ...lineasK.map((l) => P.filaLinea(encLK, l))]);
+  ok(vueltaK[1].loCobra === 'Karting Pirque' && vueltaK[0].loCobra === '',
+     'una línea de otra empresa se escribe y se vuelve a leer así');
+  const acordadoK = F.acordadoDe({ id: 'P1', descuento: 0 }, vueltaK, cat);
+  ok(acordadoK.lineas.length === 1 && acordadoK.total === 833000,
+     'lo que cobra otra empresa no va a la caja de Fudo');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

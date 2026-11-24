@@ -376,7 +376,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'a mano; el precio de cotización es el que propone una cotización, y '
       + 'ahí se puede cambiar.',
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
-      + 'esto: el total viene con el pedido.'
+      + 'esto: el total viene con el pedido.',
+      'Un extra que cobra otra empresa, como el karting, lleva su nombre en '
+      + '*Lo cobra otra empresa*: en una cotización va aparte del total.'
     ],
     ojo: 'Si acá aparece un menú en amarillo es que alguna reserva usa un '
        + 'nombre que no está en esta lista, y conviene revisarlo.'
@@ -1273,6 +1275,15 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Se usan para el monto sugerido al anotar una reserva a mano.',
       'No cambian el precio del sitio público ni el de Shopify: esos se cambian aparte.'
+    ]
+  },
+  loCobra: {
+    titulo: 'Lo cobra otra empresa',
+    texto: [
+      'Para un extra que no cobramos nosotros, como el karting: escribe el nombre de la empresa. '
+      + 'En una cotización va aparte del total, con “lo cobra …”: no entra en nuestra boleta o '
+      + 'factura, el anticipo ni la comisión. Debajo se dice cuánto queda el día completo.',
+      'En blanco, lo cobramos nosotros.'
     ]
   },
   cobro: {

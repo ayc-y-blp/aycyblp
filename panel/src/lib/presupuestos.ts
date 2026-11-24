@@ -294,7 +294,13 @@ export const COL_LINEAS = {
    * `Precio unitario` es su conversión a pesos con la UF de la cotización;
    * en blanco, la línea es en pesos como siempre.
    */
-  precioUF: 'Precio UF'
+  precioUF: 'Precio UF',
+  /**
+   * La empresa que cobra esta línea, si no somos nosotros (2026-11-23): el
+   * karting. Sale del catálogo (`Menu.loCobra`) cada vez que se preparan las
+   * líneas. En blanco es nuestra. **Va aparte del total** (`cuentasDe()`).
+   */
+  loCobra: 'Lo cobra'
 } as const;
 
 export const ENCABEZADO_PRESUPUESTOS: string[] = Object.values(COL_PRESUPUESTOS);
@@ -378,6 +384,8 @@ export interface LineaPresupuesto {
   sigue: boolean;
   /** El precio en UF, o 0 si la línea es en pesos. */
   precioUF: number;
+  /** La empresa que la cobra, si no somos nosotros. Ver `COL_LINEAS.loCobra`. */
+  loCobra?: string;
   fila: number;
 }
 
@@ -572,10 +580,14 @@ export interface Cuentas {
 
 export function cuentasDe(
   lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio'> &
-           { descuento?: number; ivaIncluido?: boolean })[],
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
   descuentoTotal = 0,
   tasa = IVA
 ): Cuentas {
+  // **Lo que cobra otra empresa no es nuestro** (2026-11-23): el karting va
+  // aparte, así que no entra en el total, el anticipo, la comisión ni la
+  // reserva, que salen todos de acá. Se muestra con `otrasEmpresas()`.
+  lineas = lineas.filter((l) => !String(l.loCobra ?? '').trim());
   // **Se suma en bruto y se baja a neto una sola vez.** Llevar cada línea a
   // neto, redondear y después volver a subir el IVA descuadra por un peso:
   // 44 menús a $64.000 con IVA son $2.816.000 y así salían $2.816.001. Una
@@ -589,10 +601,34 @@ export function cuentasDe(
   return { subtotal, descuento: subtotal - neto, neto, iva: total - neto, total };
 }
 
+/**
+ * **Lo que cobran otras empresas**, por empresa (2026-11-23): el karting del
+ * Gran Premio. Cada una con su total como se cobra —con IVA, igual que el
+ * nuestro— y la lista de sus líneas. No lleva el descuento sobre el total:
+ * ese es nuestro. Vacío si todo lo cobramos nosotros.
+ */
+export function otrasEmpresas(
+  lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio' | 'concepto'> &
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
+  tasa = IVA
+): { empresa: string; total: number; conceptos: string[] }[] {
+  const por = new Map<string, { empresa: string; total: number; conceptos: string[] }>();
+  for (const l of lineas) {
+    const empresa = String(l.loCobra ?? '').trim();
+    if (!empresa) continue;
+    const clave = normalizar(empresa);
+    const g = por.get(clave) ?? { empresa, total: 0, conceptos: [] };
+    g.total += Math.round(netoDeLinea(l, tasa) * (1 + tasa));
+    g.conceptos.push(l.concepto);
+    por.set(clave, g);
+  }
+  return [...por.values()];
+}
+
 /** El total con IVA de una cotización: lo que se cobra. */
 export const totalDe = (
   lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio'> &
-           { descuento?: number; ivaIncluido?: boolean })[],
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
   descuentoTotal = 0
 ) => cuentasDe(lineas, descuentoTotal).total;
 
@@ -1174,6 +1210,7 @@ export function leerLineasDe(filas: string[][]): LineaPresupuesto[] {
       ivaIncluido: !/\+\s*iva/i.test(en(f, i.iva)),
       sigue: /^s[ií]$/i.test(en(f, i.sigue).trim()),
       precioUF: aPrecio(en(f, i.precioUF)),
+      loCobra: en(f, i.loCobra).trim(),
       fila: n + 1
     });
   }
@@ -1198,6 +1235,7 @@ export function filaLinea(
   poner(i.iva, l.ivaIncluido ? 'Incluido' : '+ IVA');
   poner(i.sigue, l.sigue ? 'sí' : '');
   poner(i.precioUF, l.precioUF ? String(l.precioUF) : '');
+  poner(i.loCobra, l.loCobra ?? '');
   return fila;
 }
 
@@ -1215,7 +1253,7 @@ export function filaLinea(
  * negativas, que solo podrían restar de un total que una persona va a leer.
  */
 export type LineaEntrante = Omit<LineaPresupuesto, 'fila' | 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF'>
-  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF'>>;
+  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF' | 'loCobra'>>;
 
 export function normalizarLineas(
   lineas: LineaEntrante[]
@@ -1233,7 +1271,8 @@ export function normalizarLineas(
       descuento: Math.min(100, Math.max(0, aEntero(l.descuento))),
       ivaIncluido: l.ivaIncluido !== false,
       sigue: !!l.sigue,
-      precioUF: aPrecio(l.precioUF)
+      precioUF: aPrecio(l.precioUF),
+      loCobra: String(l.loCobra ?? '').trim()
     });
   }
   return salida;

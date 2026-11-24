@@ -244,6 +244,10 @@ export default function MenusEditor() {
                   <span className="rounded-full border border-oro/60 px-2 py-0.5 text-[13px]
                                    font-semibold text-oro">★ bono vendedor</span>
                 )}
+                {m.loCobra && (
+                  <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px]
+                                   font-semibold text-ambar-texto">lo cobra {m.loCobra}</span>
+                )}
                 {m.cotizacion && (
                   <span className="rounded-full border border-rosa/50 px-2 py-0.5 text-[13px]
                                    font-semibold text-rosa-texto">
@@ -417,6 +421,15 @@ export default function MenusEditor() {
                             defaultValue={m.costo ? String(m.costo) : ''} placeholder="sin IVA"
                             aria-label="Costo del producto"
                             onBlur={(e) => cambiar(i, { costo: Math.max(0, Math.round(Number(e.target.value.replace(/[^\d]/g, '')) || 0)) })} />
+                        </Campo>
+                      )}
+                      {/* **Lo cobra otra empresa** (2026-11-23): el karting. Solo
+                          un extra: un menú, el arriendo o el show son nuestros. */}
+                      {m.tipo === TIPO_PRODUCTO.extra && (
+                        <Campo etiqueta="Lo cobra otra empresa" ancho="w-full sm:w-[16rem]" ayuda="loCobra">
+                          <input type="text" className={ENTRADA} maxLength={60}
+                            defaultValue={m.loCobra} placeholder="En blanco: nosotros"
+                            onBlur={(e) => cambiar(i, { loCobra: e.target.value.trim() })} />
                         </Campo>
                       )}
                     </div>

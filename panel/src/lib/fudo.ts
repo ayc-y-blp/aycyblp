@@ -114,13 +114,15 @@ function lineasAgregados(agregados: string | undefined, menus: Menu[]): string[]
  *   quedó fija el día que se cotizó; se dice el precio en pesos acordado.
  * - El total es el de la cotización (`cuentasDe()`), con el descuento sobre
  *   el total y el IVA: el mismo número del documento que firmó el cliente.
+ * - **Lo que cobra otra empresa no va** (2026-11-23): el karting no pasa por
+ *   nuestra caja.
  */
 export function acordadoDe(
   p: Pick<Presupuesto, 'id' | 'descuento'>,
   lineas: LineaPresupuesto[],
   menus: Menu[]
 ): Acordado {
-  const propias = lineas.filter((l) => l.presupuesto === p.id);
+  const propias = lineas.filter((l) => l.presupuesto === p.id && !String(l.loCobra ?? '').trim());
   const salida: LineaAcordada[] = propias.map((l) => {
     const m = enCarta(l.concepto, menus);
     const fijo = m?.cobro === COBRO.fijo;

@@ -34,7 +34,7 @@ import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
 import {
-  cuentasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
+  cuentasDe, otrasEmpresas, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
   DOCUMENTO, documentoDe, numeroONulo, montoONulo, estaMandada, totalDe, estadoNormal, lineasDe, type Documento, type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import {
@@ -549,6 +549,8 @@ export default function CotizacionDialogo({
   /** El mínimo del arriendo de esta cotización, para decirlo; también a quien puede pasar por encima. */
   const minimoArriendo = arriendoDelDiaFn ? arriendoDelDiaFn(personasParaMinimos(vistas, invitados)) : null;
   const cuentas = cuentasDe(vistas, descuento);
+  // Lo que cobra otra empresa (el karting): fuera del total, dicho debajo.
+  const otras = otrasEmpresas(vistas);
   /** Cuánta gente suman los menús: tiene que calzar con los invitados. */
   const enMenus = vistas.reduce((n, l) => n + l.personas, 0);
   /** Si en esta cotización el show tiene mínimo: día no público y poca gente. */
@@ -2331,6 +2333,10 @@ export default function CotizacionDialogo({
                           <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px]
                                            text-hueso/70">{prod.tipo}</span>
                         )}
+                        {l.loCobra && (
+                          <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px]
+                                           font-semibold text-ambar-texto">lo cobra {l.loCobra} · aparte</span>
+                        )}
                         </span>
                         <span className="flex-1 lg:hidden" />
                         {esShowIncluido ? (
@@ -2540,6 +2546,17 @@ export default function CotizacionDialogo({
                   <dt>Total</dt><dd className="text-oro">{enPesos(cuentas.total)}</dd>
                 </div>
               </dl>
+              {otras.length > 0 && (
+                <p className="w-full text-right text-[14px] text-hueso/80 lg:basis-full">
+                  {otras.map((o) => (
+                    <span key={o.empresa} className="mr-3 inline-block">
+                      Aparte, lo cobra <strong>{o.empresa}</strong>: {enPesos(o.total)}
+                    </span>
+                  ))}
+                  <span className="inline-block">· el día completo, <strong>
+                    {enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</strong></span>
+                </p>
+              )}
             </div>
             </div>
 

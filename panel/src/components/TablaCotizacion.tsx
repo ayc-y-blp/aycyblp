@@ -5,7 +5,7 @@
  * distinto del que el cliente aprobó — que es justo lo que pasaba en el CRM
  * del socio, que perdía el descuento al armar el contrato.
  */
-import { netoDeLinea, IVA, type Cuentas, type LineaPresupuesto } from '@/lib/presupuestos';
+import { netoDeLinea, otrasEmpresas, IVA, type Cuentas, type LineaPresupuesto } from '@/lib/presupuestos';
 import { enUF } from '@/lib/uf';
 import { enPesos } from '@/lib/ocupacion';
 
@@ -21,6 +21,11 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
   const precioNeto = (precio: number, ivaIncluido: boolean) =>
     Math.round(ivaIncluido ? precio / (1 + IVA) : precio);
   const p = { descuento, uf, fechaUF };
+  // **Lo que cobra otra empresa va aparte** (2026-11-23): el karting no está
+  // en nuestro total, así que tampoco en estas líneas. Va debajo, con quién
+  // lo cobra y cuánto queda el día entero.
+  const otras = otrasEmpresas(lineas);
+  lineas = lineas.filter((l) => !String(l.loCobra ?? '').trim());
   return (
     <>
       {/* **La tabla se desplaza de lado dentro de su caja**, como las del
@@ -125,6 +130,23 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
       <p className="mt-3 text-[13px] font-semibold text-hueso/70">
         Los precios de cada línea son netos: el IVA se suma al final.
       </p>
+      {otras.length > 0 && (
+        <div className="mt-4 rounded border border-hueso/25 px-3 py-2 text-sm">
+          <p className="text-[13px] font-semibold uppercase tracking-wide text-hueso/60">
+            Aparte: lo cobra otra empresa
+          </p>
+          {otras.map((o) => (
+            <p key={o.empresa} className="mt-1 flex flex-wrap justify-between gap-x-4">
+              <span>{o.conceptos.join(' · ')} · <strong>lo cobra {o.empresa}</strong></span>
+              <span className="tabular-nums">{enPesos(o.total)} con IVA</span>
+            </p>
+          ))}
+          <p className="mt-1 flex justify-between gap-x-4 border-t border-hueso/15 pt-1 font-semibold">
+            <span>El día completo, con lo de otras empresas</span>
+            <span className="tabular-nums">{enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</span>
+          </p>
+        </div>
+      )}
       {p.uf > 0 && lineas.some((l) => l.precioUF > 0) && (
         <p className="mt-1 text-[13px] text-hueso/70">
           Los valores en UF se convirtieron con la UF del {p.fechaUF}: {enPesos(p.uf)}.
