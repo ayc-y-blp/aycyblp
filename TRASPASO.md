@@ -363,8 +363,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   #338, lo pidió el cliente): en el Informe, *📋 Sueldo* y *📋 Propina* copian
   solo el monto, y *🏦 Datos bancarios* la cuenta con el nombre de cada campo,
   para el ✨ del formulario de cuenta nueva. Ver `panel/CLAUDE.md`, "Copiar,
-  en dos botones". **El cliente iba a mandar otro pantallazo del formulario**:
-  si sus campos u orden son otros, se ajusta `NOMBRE_COLUMNA_TRANSFERENCIA`.
+  en dos botones". **El formulario es el correcto** (lo confirmó el cliente el
+  24-11-2026): los campos y su orden quedan como están.
 - **Caja → Entregar, a la vista** (24-11-2026, en el mismo PR #338, lo pidió
   el cliente: *"tienen que estar el encargado de operaciones y los tres
   gerentes… todos estos nombres tengo que poder elegir"*): un botón por cada
