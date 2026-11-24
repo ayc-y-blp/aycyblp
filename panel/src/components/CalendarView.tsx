@@ -392,7 +392,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
       {/* También está en la vista de cada día, pero ahí hay que entrar
           primero. Una reserva que llega por teléfono se anota sin saber
           todavía de qué día es: la fecha se elige en el formulario. */}
-      <div className="mb-6 flex flex-wrap gap-3 lg:mb-3">
+      <div className="mb-6 lg:mb-3">
+      <div className="flex flex-wrap gap-3">
         {puede(rol as Rol, 'anotar') ? (
           <button onClick={() => setCreando(true)}
             className="boton boton-relleno min-h-[48px] text-[15px] lg:min-h-[44px]">
@@ -420,33 +421,34 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         {puedeVer(rol as Rol, 'estadisticas', gerencia) && (
           <a href="/estadisticas" className="tecla boton inline-flex items-center">📊 Estadísticas</a>
         )}
+      </div>
         {/* **De dónde viene** (2026-11-24): los mismos botones de la página
-            del día, con cuántas reservas hay de cada uno en lo que se ve. */}
-        <span role="group" aria-label="De dónde viene" className="flex flex-wrap items-center gap-2 lg:border-l-2 lg:border-hueso/15 lg:pl-3">
-          {QUE_RESERVAS.filter(([k]) => k !== 'todo').map(([k, t]) => {
-            const n = porOrigen[k] ?? 0;
-            const elegido = deDonde === k;
-            return (
-              <button key={k} type="button" aria-pressed={elegido} disabled={!n && !elegido}
-                onClick={() => setDeDonde(elegido ? '' : k as Exclude<Tipo, 'todo'>)}
-                className={`boton rounded-full disabled:opacity-40 ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
-                {t} <span className="tabular-nums text-hueso/65">{n}</span>
-              </button>
-            );
-          })}
-        </span>
-        {/* Solo en el computador: el rango y *Al día*, **juntos**. Con los
-            filtros de origen (2026-11-24) ya no caben en la fila de los
-            botones: pasan los dos a la de abajo, el rango a la izquierda y
-            *Al día* a la derecha, en vez de dejar *Al día* solo en su fila. */}
-        <span className="hidden items-center gap-3 lg:flex lg:flex-auto">
-          <p className="text-[14px] text-hueso/60">
+            del día, con cuántas reservas hay de cada uno en lo que se ve. **En
+            su propio renglón**, justo encima de las semanas que filtran, con
+            el rango y *Al día* a la derecha en el computador: en la fila de
+            los botones no cabían todos. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 lg:mt-2">
+          <span role="group" aria-label="De dónde viene" className="flex flex-wrap items-center gap-2">
+            {QUE_RESERVAS.filter(([k]) => k !== 'todo').map(([k, t]) => {
+              const n = porOrigen[k] ?? 0;
+              const elegido = deDonde === k;
+              return (
+                <button key={k} type="button" aria-pressed={elegido} disabled={!n && !elegido}
+                  onClick={() => setDeDonde(elegido ? '' : k as Exclude<Tipo, 'todo'>)}
+                  className={`boton rounded-full disabled:opacity-40 ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
+                  {t} <span className="tabular-nums text-hueso/65">{n}</span>
+                </button>
+              );
+            })}
+          </span>
+          <span className="hidden flex-1 lg:block" />
+          {/* Solo en el computador: el rango y *Al día*, a la derecha de los filtros. */}
+          <p className="hidden text-[14px] text-hueso/60 lg:block">
             {dias.length > 0 && <>{dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}</>}
             <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
           </p>
-          <span className="flex-1" />
-          <BarraAlDia {...alDia} className="" />
-        </span>
+          <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
+        </div>
       </div>
 
       {avisoPlanilla && (
