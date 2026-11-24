@@ -28,6 +28,7 @@ const TOPE = {
   'config': 1,
   'menus': 2,                      // Productos: la lista y lo que ya se usó
   'promociones': 1,                // Productos → Promociones (2026-11-23)
+  'otras-empresas': 1,             // Productos → Otras empresas (2026-11-24)
   'informe': 1,
   'recepcion': 1,                  // la anfitriona, cada minuto
   'publico/fechas': 1,             // el sitio público: lo llama cada visitante

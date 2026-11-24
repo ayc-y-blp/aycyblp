@@ -177,7 +177,8 @@ revisan antes de cada cambio en esta carpeta.
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
   | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` |
   | La promoción aplicada a una cotización y cómo elegirla | `AplicarPromocion` (*🎁 Promoción…*) y la pastilla *🎁 nombre −N%* al lado del descuento sobre el total (paso Productos) |
-| Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
+| Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total con *💬 Escribirle* (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa*, con los datos de la empresa, en `TablaCotizacion` (la cotización y el contrato) |
+| Una otra empresa y sus datos | `OtrasEmpresasEditor` (*Productos → 🤝 Otras empresas*), con `datosEnFrase()` / `datosDe()` de `lib/otrasEmpresas.ts` |
   | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -226,6 +227,64 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## *🤝 Otras empresas*: el karting, el taller de queso, un transfer (2026-11-24)
+
+Lo pidió el cliente: *"tal vez hasta se puede tener que ingresar la otra
+cuenta, la otra empresa y poder elegirla, porque el karting va a quedar ahí al
+lado… con sus datos y con etcétera, para mostrarlo bien en la cotización o en
+el contrato también, que es igual que el taller de queso"*. Contestó lo que se
+le preguntó: *"no paga comisión, sí va en una línea del contrato"*.
+
+- **La lista** (`lib/otrasEmpresas.ts`, pestaña nueva **`Otras empresas`**:
+  `Nombre`, `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa`),
+  en ***Productos → 🤝 Otras empresas*** (`OtrasEmpresasEditor`): una tarjeta
+  por empresa, con sus campos en dos columnas en el computador. Se guarda con
+  su botón —el nombre lo usan otros— y la cambia quien cambia el catálogo
+  (`configurar`). Ruta `/api/otras-empresas`.
+- **El nombre es la identidad**, como en todo el panel: el producto y la línea
+  de la cotización guardan el nombre escrito (`Lo cobra`). **Cambiarlo lo
+  arrastra** (`DONDE.empresa` en `lib/renombrar.ts`: `Menús` y `Presupuesto
+  Líneas`), y la tarjeta lo dice antes de guardar. Lo que no arrastra: la
+  marca *🤝 Ya lo coordiné* de una cotización, que queda con el nombre de
+  antes y vuelve a pedir coordinar.
+- **Los nombres que un producto ya usa y no están en la lista** (el *Karting
+  Pirque* escrito a mano antes de la lista) salen arriba, con *+ Agregar*
+  (`sinFicha()`).
+- **En el producto**, *Lo cobra*: ***Nosotros*** (el directo) u ***Otra
+  empresa…***, que abre la lista con buscador (`BuscarEnLista`), con *+
+  Agregar en 🤝 Otras empresas* al pie. Una apagada ya no se ofrece.
+- **En la cotización que ve el cliente** (`TablaCotizacion`): bajo lo que
+  cobra cada empresa, su RUT, contacto, teléfono y correo. La página lee la
+  lista solo si la cotización trae algo de otra empresa.
+- **En el contrato**, la cláusula ***Servicios de otras empresas***, después
+  de la forma de pago (así la Tercera y la Cuarta, que se citan, no cambian
+  de número): *"no forman parte del Servicio ni del Precio Total: los presta y
+  los cobra directamente la empresa que se indica, a quien el Cliente se los
+  paga. Brasas de Lo Pirque coordina con ella su realización el día del
+  Evento"*, y un renglón por empresa con lo suyo, su RUT y cuánto
+  (`puntosDelContrato()`). **Dice solo los hechos**: quién responde por qué
+  es del negocio y de su abogado.
+- **No paga comisión** (lo decidió el cliente): ya era así, porque sus líneas
+  no entran en el total (`cuentasDe()`), que es la base de la comisión. Una
+  prueba lo fija.
+- **Coordinar**: en la ventana de cotizar, al lado de *🤝 Ya lo coordiné*,
+  ***💬 Escribirle*** abre WhatsApp con el teléfono de la empresa y un mensaje
+  con el día, la gente y lo pedido (`mensajeParaCoordinar()`). Sin teléfono,
+  no sale.
+- **Lecturas de Google**: `/api/otras-empresas` una tanda (Productos la pide
+  aparte, para el buscador); `/api/presupuestos` la suma a la tanda del `GET`
+  (ninguna lectura más); la cotización y el contrato la leen solo si hace
+  falta. **Ningún permiso nuevo.** *Dejar la base en cero* la **conserva**.
+- **Ayuda**: el `?` de Productos, `loCobra` y uno nuevo, `otrasEmpresas`.
+- **El panel de ejemplo**: *Karting Pirque*, con datos inventados.
+- **Ventanas**: `ficha-otra-empresa`; la pantalla `productos-empresas` entra
+  en la prueba de espacio.
+- **Probado en el panel de ejemplo**: la tarjeta, elegir quién cobra el
+  karting, *💬 Escribirle* en la cotización de Ignacia Rojas, sus datos en el
+  documento (también en el celular) y la cláusula *QUINTO* en el contrato.
+  Renombrar *Karting Pirque* arrastra 1 producto y 1 línea; el vendedor
+  recibe 403.
 
 ## *🎁 Promoción…*: el vendedor aplica una promoción en su cotización (2026-11-24)
 

@@ -30,6 +30,8 @@ import { HOJA_TURNOS, HOJA_TRABAJADORES, HOJA_AJUSTES_SUELTOS,
          COL_TURNOS, COL_TRABAJADORES, COL_AJUSTES_SUELTOS } from './equipo.ts';
 import { HOJA_ACTIVIDADES, COL_ACTIVIDADES } from './extras.ts';
 import { HOJA_PAGOS, HOJA_BOLETAS, COL_PAGOS, COL_BOLETAS } from './remuneraciones.ts';
+import { HOJA_MENUS, COL_MENUS } from './menus.ts';
+import { HOJA_LINEAS, COL_LINEAS } from './presupuestos.ts';
 
 /** Un nombre que pasa a ser otro. */
 export interface Renombre { de: string; a: string }
@@ -37,7 +39,7 @@ export interface Renombre { de: string; a: string }
 /** Una columna de una pestaña donde vive un nombre. */
 export interface Donde { hoja: string; columna: string; que: string }
 
-export type QueSeRenombra = 'trabajador' | 'colaborador' | 'puesto';
+export type QueSeRenombra = 'trabajador' | 'colaborador' | 'puesto' | 'empresa';
 
 /**
  * **Dónde vive cada nombre.** Lo que no está acá no se arrastra: una columna
@@ -63,6 +65,12 @@ export const DONDE: Record<QueSeRenombra, Donde[]> = {
   puesto: [
     { hoja: HOJA_TURNOS, columna: COL_TURNOS.puesto, que: 'turnos' },
     { hoja: HOJA_TRABAJADORES, columna: COL_TRABAJADORES.puesto, que: 'fichas' }
+  ],
+  // **Otra empresa** (2026-11-24): el producto que cobra y las líneas de las
+  // cotizaciones guardan su nombre escrito (`Lo cobra`).
+  empresa: [
+    { hoja: HOJA_MENUS, columna: COL_MENUS.loCobra, que: 'productos' },
+    { hoja: HOJA_LINEAS, columna: COL_LINEAS.loCobra, que: 'líneas' }
   ]
 };
 
@@ -74,7 +82,8 @@ export const DONDE: Record<QueSeRenombra, Donde[]> = {
 export const DONDE_FECHA: Record<QueSeRenombra, { hoja: string; fecha: string; nombre: string } | null> = {
   trabajador: { hoja: HOJA_TURNOS, fecha: COL_TURNOS.fecha, nombre: COL_TURNOS.trabajador },
   colaborador: { hoja: HOJA_ACTIVIDADES, fecha: COL_ACTIVIDADES.fecha, nombre: COL_ACTIVIDADES.colaborador },
-  puesto: null
+  puesto: null,
+  empresa: null
 };
 
 /** Las pestañas que hay que leer para renombrar algo de ese tipo. */
@@ -189,7 +198,7 @@ export function repetidosDespues(
  */
 export function fraseDeCambios(cuenta: Record<string, number>): string {
   const UNO: Record<string, string> = { turnos: 'turno', pagos: 'pago', boletas: 'boleta',
-    ajustes: 'ajuste', fichas: 'ficha', 'días': 'día' };
+    ajustes: 'ajuste', fichas: 'ficha', 'días': 'día', productos: 'producto', 'líneas': 'línea' };
   const partes = Object.entries(cuenta).filter(([, n]) => n > 0)
     .map(([que, n]) => `${n} ${n === 1 ? (UNO[que] ?? que) : que}`);
   if (partes.length <= 1) return partes.join('');

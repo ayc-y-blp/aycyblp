@@ -42,6 +42,7 @@ import { HOJA_USUARIOS } from './usuarios.ts';
 import { HOJA_CONFIG } from './config.ts';
 import { HOJA_MENUS } from './menus.ts';
 import { HOJA_PROMOCIONES } from './promociones.ts';
+import { HOJA_OTRAS_EMPRESAS } from './otrasEmpresas.ts';
 import { HOJA_VENDEDORES } from './vendedores.ts';
 import { HOJA_CAJA } from './caja.ts';
 
@@ -76,6 +77,8 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
   { hoja: HOJA_CONFIG, que: 'Configuración' },
   { hoja: HOJA_MENUS, que: 'Productos y precios' },
   { hoja: HOJA_PROMOCIONES, que: 'Promociones' },
+  // Las otras empresas (2026-11-24): son configuración, como los productos.
+  { hoja: HOJA_OTRAS_EMPRESAS, que: 'Otras empresas' },
   { hoja: HOJA_COLABORADORES, que: 'Fichas de los extras' },
   { hoja: HOJA_VENDEDORES, que: 'Fichas de vendedores y socios' }
 ];

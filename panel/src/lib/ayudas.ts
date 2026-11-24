@@ -394,8 +394,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ahí se puede cambiar.',
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
       + 'esto: el total viene con el pedido.',
-      'Un extra que cobra otra empresa, como el karting, lleva su nombre en '
-      + '*Lo cobra otra empresa*: en una cotización va aparte del total.',
+      'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
+      + 'en una cotización va aparte del total y no paga comisión.',
+      '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '
+      + 'vende con el evento —el karting, el taller de queso, un transfer—, con su '
+      + 'RUT, contacto, teléfono y correo. Sus datos salen en la cotización y en '
+      + 'una cláusula del contrato, y en la cotización hay *💬 Escribirle* para '
+      + 'coordinar. Cambiarle el nombre arrastra sus productos y cotizaciones.',
       '*🎁 Promociones* son las de la página de promociones del sitio: cada una '
       + 'es una receta de estos productos —el menú, lo que incluye, lo que se '
       + 'puede sumar, desde cuántas personas y su descuento— y se conecta a su '
@@ -1385,10 +1390,23 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   loCobra: {
     titulo: 'Lo cobra otra empresa',
     texto: [
-      'Para un extra que no cobramos nosotros, como el karting: escribe el nombre de la empresa. '
-      + 'En una cotización va aparte del total, con “lo cobra …”: no entra en nuestra boleta o '
-      + 'factura, el anticipo ni la comisión. Debajo se dice cuánto queda el día completo.',
-      'En blanco, lo cobramos nosotros.'
+      'Para un extra que no cobramos nosotros, como el karting: "Otra empresa…" la elige de la '
+      + 'lista de *🤝 Otras empresas*. En una cotización va aparte del total, con “lo cobra …”: '
+      + 'no entra en nuestra boleta o factura, el anticipo ni la comisión. Debajo se dice cuánto '
+      + 'queda el día completo.',
+      'Sus datos salen en la cotización y en una cláusula del contrato. "Nosotros": lo cobramos nosotros.'
+    ]
+  },
+  otrasEmpresas: {
+    titulo: 'Otras empresas',
+    texto: [
+      'Las que prestan y cobran directamente algo que se vende con el evento: el karting, el taller '
+      + 'de queso, un transfer. Su plata no pasa por nosotros: no entra en el total, la boleta ni la '
+      + 'comisión.',
+      'Se eligen en un producto (*Lo cobra*). Su RUT, contacto, teléfono y correo salen bajo lo que '
+      + 'cobran en la cotización, en una cláusula del contrato y en *💬 Escribirle* para coordinar.',
+      'Se guardan con su botón. Cambiar el nombre lo cambia también en sus productos y cotizaciones; '
+      + 'una apagada ya no se ofrece al elegir.'
     ]
   },
   cobro: {

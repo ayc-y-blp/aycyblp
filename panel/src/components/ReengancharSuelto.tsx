@@ -24,7 +24,8 @@ import { TITULO_GRUPO, marcoGrupo } from './TarjetaLista';
 import type { QueSeRenombra } from '@/lib/renombrar';
 
 const PALABRA: Record<QueSeRenombra, [string, string]> = {
-  trabajador: ['turno', 'turnos'], puesto: ['turno', 'turnos'], colaborador: ['día', 'días']
+  trabajador: ['turno', 'turnos'], puesto: ['turno', 'turnos'], colaborador: ['día', 'días'],
+  empresa: ['producto', 'productos']
 };
 
 export const cuantos = (tipo: QueSeRenombra, n: number) => `${n} ${PALABRA[tipo][n === 1 ? 0 : 1]}`;

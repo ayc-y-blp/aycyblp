@@ -27,6 +27,7 @@ const not = await import(L + 'notas.ts');
 const caj = await import(L + 'caja.ts');
 const prm = await import(L + 'promociones.ts');
 const pla = await import(L + 'plata.ts');
+const otr = await import(L + 'otrasEmpresas.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -87,6 +88,12 @@ H['Menús'] = men.aFilasMenus([
   // que lo cobra otra empresa y va aparte del total.
   P({ nombre: 'Clase de parrilla', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 15000, iva: '+ IVA', costo: 6000 }),
   P({ nombre: 'Karting', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 35000, iva: '+ IVA', loCobra: 'Karting Pirque' })
+]);
+
+/* ---------- Otras empresas (2026-11-24): la del karting, con datos inventados ---------- */
+H['Otras empresas'] = otr.aFilasOtrasEmpresas([
+  otr.limpiarOtraEmpresa({ nombre: 'Karting Pirque', rut: '76.111.222-3', contacto: 'Pedro Soto',
+    telefono: '+56 9 5555 1234', correo: 'reservas@karting.example', que: 'Karting en la pista de al lado' })
 ]);
 
 /* ---------- Promociones del sitio (2026-11-23) ---------- */
@@ -540,7 +547,7 @@ H['Importar reservas'] = [
 
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones', 'Otras empresas'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

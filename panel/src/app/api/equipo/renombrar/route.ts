@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { HOJA_PUESTOS, HOJA_TRABAJADORES } from '@/lib/equipo';
 import { HOJA_COLABORADORES } from '@/lib/extras';
-import { leerPuestos, leerTrabajadores, leerColaboradores, renombrarEnPlanilla, anotar } from '@/lib/datos';
+import { leerPuestos, leerTrabajadores, leerColaboradores, renombrarEnPlanilla, anotar, leerOtrasEmpresas } from '@/lib/datos';
 import { cuentaDeCambios, fraseDeCambios, type QueSeRenombra } from '@/lib/renombrar';
 import { normalizar } from '@/lib/columnas';
 import { exigir, quienEs } from '@/lib/permisos';
@@ -14,11 +14,12 @@ export const dynamic = 'force-dynamic';
 const PERMISO: Record<QueSeRenombra, Accion> = {
   trabajador: 'equipo',
   colaborador: 'extras',
-  puesto: 'puestos'
+  puesto: 'puestos',
+  empresa: 'configurar'
 };
 
 const QUE: Record<QueSeRenombra, string> = {
-  trabajador: 'el equipo', colaborador: 'los colaboradores', puesto: 'los puestos'
+  trabajador: 'el equipo', colaborador: 'los colaboradores', puesto: 'los puestos', empresa: 'las otras empresas'
 };
 
 /**
@@ -52,6 +53,7 @@ export const POST = conLecturas([HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_COLABORAD
 
       const lista = tipo === 'puesto' ? (await leerPuestos()).map((p) => p.nombre)
         : tipo === 'trabajador' ? (await leerTrabajadores()).map((t) => t.nombre)
+        : tipo === 'empresa' ? (await leerOtrasEmpresas()).map((e) => e.nombre)
         : (await leerColaboradores()).map((c) => c.nombre);
       if (lista.some((n) => normalizar(n) === normalizar(de))) {
         return NextResponse.json({

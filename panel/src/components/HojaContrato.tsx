@@ -3,8 +3,10 @@
  * recibe los datos ya leídos, así que se puede dibujar con datos de prueba.
  * Ver `app/contrato/[token]/page.tsx` y `lib/contrato.ts`.
  */
-import { gentePosible, cuentasDe, folioDe,
+import { gentePosible, cuentasDe, folioDe, otrasEmpresas,
          type Presupuesto, type LineaPresupuesto } from '@/lib/presupuestos';
+import { puntosDelContrato, type OtraEmpresa } from '@/lib/otrasEmpresas';
+import { enPesos } from '@/lib/ocupacion';
 import { grupoDe, letraDe } from '@/lib/cotizar';
 import { condicionesDe } from '@/lib/cobros';
 import { tranquilidadDeCotizacion } from '@/lib/cancelacion';
@@ -24,7 +26,7 @@ function Texto({ t }: { t: Parrafo }) {
   return <>{t.split('**').map((pedazo, i) => (i % 2 ? <strong key={i}>{pedazo}</strong> : pedazo))}</>;
 }
 
-export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
+export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas = [] }: {
   p: Presupuesto;
   /** Todas las cotizaciones, para la letra de la alternativa. */
   lista: Presupuesto[];
@@ -32,6 +34,8 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
   lineas: LineaPresupuesto[];
   clientes: Cliente[];
   cfg: Config;
+  /** Las otras empresas (2026-11-24): su RUT va en la cláusula de lo que cobran ellas. */
+  empresas?: OtraEmpresa[];
 }) {
   const negocio = negocioDe(cfg.empresa);
   const cuentas = cuentasDe(lineas, p.descuento);
@@ -67,7 +71,10 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
     tranquilidad: tranquilidadDeCotizacion(p, cfg),
     // **El contrato se lee con la fecha de su firma** (2026-11-23): o la de
     // hoy, si todavía no se firma. Ver `fechaDelContrato()`.
-    fechaRef: fechaDelContrato(p, hoy())
+    fechaRef: fechaDelContrato(p, hoy()),
+    // **Lo que cobra otra empresa, en su cláusula** (2026-11-24, lo decidió el
+    // cliente: *"sí va en una línea del contrato"*).
+    terceros: puntosDelContrato(otrasEmpresas(lineas), empresas, enPesos)
   };
   const clausulas = clausulasDe(datos);
 
@@ -108,7 +115,7 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
           {c.tabla && (
             <div className="mt-3 text-sm">
               <TablaCotizacion lineas={lineas} cuentas={cuentas} descuento={p.descuento}
-                uf={p.uf} fechaUF={p.fechaUF} />
+                uf={p.uf} fechaUF={p.fechaUF} empresas={empresas} />
               <QueIncluye casa={incluye.casa} comunes={incluye.comunes} varias={false} />
             </div>
           )}

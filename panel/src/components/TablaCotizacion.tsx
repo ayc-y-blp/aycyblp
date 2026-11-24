@@ -8,9 +8,12 @@
 import { netoDeLinea, otrasEmpresas, IVA, type Cuentas, type LineaPresupuesto } from '@/lib/presupuestos';
 import { enUF } from '@/lib/uf';
 import { enPesos } from '@/lib/ocupacion';
+import { empresaDe, datosDe, type OtraEmpresa } from '@/lib/otrasEmpresas';
 
-export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaUF }: {
+export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaUF, empresas = [] }: {
   lineas: LineaPresupuesto[];
+  /** Las otras empresas (2026-11-24): sus datos van bajo lo que cobra cada una. */
+  empresas?: OtraEmpresa[];
   cuentas: Cuentas;
   /** El descuento sobre el total, en %. */
   descuento: number;
@@ -155,6 +158,19 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
               <span className="tabular-nums">{enPesos(Math.round(netoDeLinea(l) * (1 + IVA)))} con IVA</span>
             </p>
           ))}
+          {/* **Sus datos** (2026-11-24, de *Productos → 🤝 Otras empresas*): con
+              quién se habla y a quién se le paga. */}
+          {otras.map((o) => {
+            const datos = datosDe(empresaDe(empresas, o.empresa));
+            return datos.length ? (
+              <p key={o.empresa} className="mt-1 text-[13px] text-hueso/75">
+                <strong>{empresaDe(empresas, o.empresa)?.nombre ?? o.empresa}</strong>:{' '}
+                {datos.map((d, k) => (
+                  <span key={k} className="whitespace-nowrap">{k ? ' · ' : ''}{d}</span>
+                )).reduce<React.ReactNode[]>((acc, x) => [...acc, x, ' '], [])}
+              </p>
+            ) : null;
+          })}
           <p className="mt-1 flex justify-between gap-x-4 border-t border-hueso/15 pt-1 font-semibold">
             <span>El día completo, con lo de otras empresas</span>
             <span className="tabular-nums">{enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</span>

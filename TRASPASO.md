@@ -403,6 +403,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   el cliente) y su arriendo se perdona como diga, también al ganar. Columna
   nueva `Promoción` en `Presupuestos`; las del sitio nacen con la suya. Ver
   `panel/CLAUDE.md`, "*🎁 Promoción…*".
+- **🤝 Otras empresas** (24-11-2026, en el mismo PR #338, lo pidió el
+  cliente; *"no paga comisión, sí va en una línea del contrato"*): una lista
+  en *Productos* con RUT, contacto, teléfono y correo; se eligen en el
+  producto (*Lo cobra*); salen en la cotización, en la cláusula *Servicios de
+  otras empresas* del contrato y en *💬 Escribirle* para coordinar. Cambiar
+  el nombre arrastra productos y cotizaciones. Pestaña nueva `Otras
+  empresas`. Ver `panel/CLAUDE.md`, "*🤝 Otras empresas*".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -575,6 +582,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
 | `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento` (el primer tramo), `Arriendo`, `Cotizador`, `Más tramos` (`50:15 \| 80:20`) | `Menús` por nombre |
+| `Otras empresas` | una empresa que cobra directo algo del evento (desde el 24-11-2026) | `Nombre` (la identidad: lo usan `Menús.Lo cobra` y `Presupuesto Líneas.Lo cobra`), `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa` | `Menús` y `Presupuesto Líneas` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |

@@ -18,8 +18,10 @@ import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerPresupuestos, leerLineasPresupuesto, guardarPresupuesto, guardarLineas,
   borrarPresupuesto, leerMenus, leerConfig, leerClientes, leerFechas, anotar, leerCobros,
-  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres, leerNotasOCrear, leerPromociones
+  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres, leerNotasOCrear, leerPromociones,
+  leerOtrasEmpresas
 } from '@/lib/datos';
+import { HOJA_OTRAS_EMPRESAS, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { HOJA_CIERRES } from '@/lib/cierres';
 import { HOJA_NOTAS, notasVisibles } from '@/lib/notas';
 import { fechaDeAgenda } from '@/lib/agenda';
@@ -57,16 +59,16 @@ export const dynamic = 'force-dynamic';
  * nombre y el contacto ya puestos. Las de antes de las fichas siguen
  * mostrando lo que tenían escrito.
  */
-export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES, HOJA_NOTAS, HOJA_PROMOCIONES], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES, HOJA_NOTAS, HOJA_PROMOCIONES, HOJA_OTRAS_EMPRESAS], async function GET(req: Request) {
   const no = await exigirVer(req, 'presupuestos');
   if (no) return no;
   try {
     const quien = await quienEs(req);
-    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres, notas, promos] = await Promise.all([
+    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres, notas, promos, otrasEmpresas] = await Promise.all([
       leerPresupuestos(), leerLineasPresupuesto(), leerMenus(), leerConfig(),
       leerClientes(), leerFechas(), leerCobros().catch(() => []), leerReservas().catch(() => []),
       leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => []), leerNotasOCrear().catch(() => []),
-      leerPromociones().catch(() => [] as Promocion[])
+      leerPromociones().catch(() => [] as Promocion[]), leerOtrasEmpresas().catch(() => [] as OtraEmpresa[])
     ]);
     // **Los días que se pasaron del cupo** (2026-11-12): un pago entró sobre
     // reservas sin pagar. Va en la misma lectura —la tanda ya trae
@@ -170,7 +172,9 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // **Las promociones, para aplicarlas en una cotización** (2026-11-24):
       // las activas, y las que ya están aplicadas en alguna aunque se hayan
       // apagado (para decir su nombre). `Promociones` va en la misma tanda.
-      promociones: promos.filter((x) => x.activa || presupuestos.some((p) => p.promocion === x.id))
+      promociones: promos.filter((x) => x.activa || presupuestos.some((p) => p.promocion === x.id)),
+      // **Las otras empresas** (2026-11-24): para *💬 Escribirle* al coordinar.
+      otrasEmpresas
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

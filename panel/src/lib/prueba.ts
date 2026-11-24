@@ -4929,6 +4929,12 @@ console.log('\nCotizaciones, fase 2');
      'la Ley 20.393 y los acuerdos van solo si corresponde, y la numeración se corre sola');
   ok(clausulasDe({ ...datos, acuerdos: 'Torta.' })[8].titulo === 'NOVENO: Acuerdos adicionales',
      'sin la Ley 20.393, los acuerdos son la novena');
+  // Lo que cobra otra empresa, en su cláusula (2026-11-24).
+  const conTerceros = clausulasDe({ ...datos, terceros: ['Karting: Karting Pirque, RUT 76.111.222-3, por **$833.000** (IVA incluido).'] });
+  ok(conTerceros[4].titulo === 'QUINTO: Servicios de otras empresas' && conTerceros[3].titulo.startsWith('CUARTO: Forma de pago')
+     && !!conTerceros[4].puntos?.[0].includes('Karting Pirque') && texto(conTerceros).includes('no forman parte del Servicio ni del Precio Total')
+     && !clausulasDe(datos).some((c) => c.titulo.includes('otras empresas')),
+     'lo que cobra otra empresa va en su cláusula después de la forma de pago, y sin nada de otra, no hay cláusula');
   ok(comparecencia(datos, 'Pirque').includes('**Juan Soto**, RUT 12.345.678-9')
      && comparecencia(datos, 'Pirque').startsWith(`En Pirque, a ${RAYA}`),
      'una persona firma por sí misma; la fecha de firma queda para escribirla a mano');
@@ -7221,6 +7227,39 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
 }
 
 {
+  console.log('\nLas otras empresas (2026-11-24)');
+  const OE = await import('./otrasEmpresas.ts');
+  const filasOE = OE.aFilasOtrasEmpresas([
+    OE.limpiarOtraEmpresa({ nombre: ' Karting Pirque ', rut: '76.111.222-3', contacto: 'Pedro Soto', telefono: '+56 9 5555 1234' }),
+    OE.limpiarOtraEmpresa({ nombre: 'Quesería', activa: 'no' })
+  ]);
+  const leidasOE = OE.leerOtrasEmpresasDe([...filasOE, ['karting pirque', 'otro']]);
+  ok(leidasOE.length === 2 && leidasOE[0].nombre === 'Karting Pirque' && leidasOE[0].activa && !leidasOE[1].activa
+     && leidasOE[0].rut === '76.111.222-3',
+     'una empresa se escribe y se vuelve a leer igual; una repetida (sin mayúsculas) cuenta una vez');
+  ok(OE.empresaDe(leidasOE, 'KARTING PIRQUE')?.contacto === 'Pedro Soto'
+     && OE.sinFicha(['Karting Pirque', '', 'Transfer Sur', 'transfer sur'], leidasOE).join() === 'Transfer Sur',
+     'se encuentra por nombre sin mayúsculas, y los nombres que un producto usa sin estar en la lista salen una vez');
+  ok(OE.datosEnFrase(leidasOE[0]) === 'RUT 76.111.222-3 · Pedro Soto · +56 9 5555 1234' && OE.datosEnFrase(undefined) === '',
+     'sus datos en una frase, solo lo que tiene');
+  const puntosOE = OE.puntosDelContrato([{ empresa: 'karting pirque', total: 833000, conceptos: ['Karting'] }], leidasOE,
+    (n) => '$' + n.toLocaleString('es-CL'));
+  ok(puntosOE[0] === 'Karting: Karting Pirque, RUT 76.111.222-3, por **$833.000** (IVA incluido).',
+     'la línea del contrato: lo suyo, la empresa con su RUT y cuánto');
+  const msgOE = OE.mensajeParaCoordinar({ empresa: leidasOE[0], negocio: 'Brasas de Lo Pirque', dia: 'sábado 28 de noviembre',
+    invitados: 80, conceptos: [{ concepto: 'Karting', cantidad: 20 }] });
+  ok(msgOE === 'Hola Pedro, te escribo de Brasas de Lo Pirque. Tenemos un evento el sábado 28 de noviembre con 80 personas y quieren Karting para 20. ¿Lo coordinamos?',
+     'el mensaje para coordinar dice el día, la gente y lo que se pidió');
+  {
+    // No pagan comisión: lo de otra empresa no entra en el total, que es la base de la comisión.
+    const PP = await import('./presupuestos.ts');
+    const base = PP.cuentasDe([
+      { cantidad: 10, precio: 50000, descuento: 0, ivaIncluido: false, loCobra: '' },
+      { cantidad: 10, precio: 35000, descuento: 0, ivaIncluido: false, loCobra: 'Karting Pirque' }
+    ], 0);
+    ok(base.subtotal === 500000, 'lo que cobra otra empresa no entra en nuestro neto: no paga comisión ni va en nuestra boleta');
+  }
+
   console.log('\nLas promociones del sitio (2026-11-23)');
   const M = await import('./menus.ts');
   const PR = await import('./promociones.ts');
@@ -7393,6 +7432,15 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      && puesto.every((c) => c.valor === 'Encargado de turno / caja'),
      'renombrar un puesto: sus turnos (sin importar mayúsculas) y el puesto habitual de las fichas');
   ok(RN.fraseDeCambios(RN.cuentaDeCambios(puesto)) === '2 turnos y 1 ficha', 'la frase dice cuánto arrastró');
+
+  // Otra empresa (2026-11-24): sus productos y las líneas de las cotizaciones.
+  const empresaR = RN.cambiosDeRenombre({
+    'Menús': [['Menú', 'Lo cobra'], ['Karting', 'Karting pirque'], ['Desayuno', '']],
+    'Presupuesto Líneas': [['ID Presupuesto', 'Concepto', 'Lo cobra'], ['P1', 'Karting', 'Karting Pirque'], ['P1', 'Lo Pirque', '']]
+  }, 'empresa', [{ de: 'Karting Pirque', a: 'Karting Los Andes' }]);
+  ok(empresaR.length === 2 && empresaR.every((c) => c.valor === 'Karting Los Andes')
+     && RN.fraseDeCambios(RN.cuentaDeCambios(empresaR)) === '1 producto y 1 línea',
+     'renombrar otra empresa arrastra su producto y las líneas de las cotizaciones');
 
   const persona = RN.cambiosDeRenombre(tablas, 'trabajador', [{ de: 'Christipher Acevedo', a: 'Christopher Acevedo' }]);
   ok(persona.length === 3 && persona.filter((c) => c.que === 'turnos').length === 2 && persona.some((c) => c.hoja === 'Pagos')

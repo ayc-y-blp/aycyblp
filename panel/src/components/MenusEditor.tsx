@@ -31,6 +31,9 @@ import {
 import Campo from './Campo';
 import MostrarDesactivados from './MostrarDesactivados';
 import PromocionesEditor from './PromocionesEditor';
+import OtrasEmpresasEditor from './OtrasEmpresasEditor';
+import BuscarEnLista from './BuscarEnLista';
+import { datosEnFrase, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
 import { enPesos } from '@/lib/ocupacion';
@@ -107,6 +110,8 @@ const nombreRepetido = (lista: Editable[], i: number) => {
   return !!n && lista.some((x, k) => k !== i && normalizar(x.nombre) === n);
 };
 
+type Vista = 'catalogo' | 'promociones' | 'empresas';
+
 export default function MenusEditor() {
   const [menus, setMenus] = useState<Editable[] | null>(null);
   const [reservas, setReservas] = useState<Reserva[]>([]);
@@ -132,16 +137,29 @@ export default function MenusEditor() {
    * pantalla, para que las promociones no se mezclen con los productos. Se
    * llega directo con `?ver=promociones`.
    */
-  const [vista, setVista] = useState<'catalogo' | 'promociones'>('catalogo');
+  const [vista, setVista] = useState<Vista>('catalogo');
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('ver') === 'promociones') setVista('promociones');
+    const ver = new URLSearchParams(window.location.search).get('ver');
+    if (ver === 'promociones' || ver === 'empresas') setVista(ver);
   }, []);
-  const verVista = (v: 'catalogo' | 'promociones') => {
+  const verVista = (v: Vista) => {
     setVista(v); setAbierta(null);
     const url = new URL(window.location.href);
-    if (v === 'promociones') url.searchParams.set('ver', 'promociones'); else url.searchParams.delete('ver');
+    if (v !== 'catalogo') url.searchParams.set('ver', v); else url.searchParams.delete('ver');
     window.history.replaceState(null, '', url);
   };
+  /**
+   * **Las otras empresas** (2026-11-24), para elegir quién cobra un extra.
+   * Las lee su propia ruta: si la cuenta no puede verlas, el campo queda como
+   * estaba.
+   */
+  const [otrasEmpresas, setOtrasEmpresas] = useState<OtraEmpresa[]>([]);
+  const [eligiendoEmpresa, setEligiendoEmpresa] = useState<number | null>(null);
+  useEffect(() => {
+    fetch('/api/otras-empresas').then((r) => r.json())
+      .then((d) => { if (Array.isArray(d.empresas)) setOtrasEmpresas(d.empresas); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/menus').then((r) => r.json())
@@ -209,7 +227,7 @@ export default function MenusEditor() {
           Productos<Ayuda tema="menus" />
         </h1>
         <div role="tablist" aria-label="Qué mirar" className="flex flex-wrap gap-2">
-          {([['catalogo', '📦 Catálogo'], ['promociones', '🎁 Promociones']] as const).map(([v, texto]) => (
+          {([['catalogo', '📦 Catálogo'], ['promociones', '🎁 Promociones'], ['empresas', '🤝 Otras empresas']] as const).map(([v, texto]) => (
             <button key={v} type="button" role="tab" aria-selected={vista === v} onClick={() => verVista(v)}
               className={`boton min-h-[44px] ${vista === v ? 'border-oro bg-oro/15 font-semibold text-hueso' : ''}`}>
               {texto}
@@ -217,7 +235,8 @@ export default function MenusEditor() {
           ))}
         </div>
       </div>
-      {vista === 'promociones' ? <PromocionesEditor catalogo={menus} soloMira={soloMira} /> : <>
+      {vista === 'empresas' ? <OtrasEmpresasEditor soloMira={soloMira} onGuardar={setOtrasEmpresas} />
+        : vista === 'promociones' ? <PromocionesEditor catalogo={menus} soloMira={soloMira} /> : <>
       <AvisoFijo clave="menus-intro" className="mb-6 max-w-2xl lg:mb-4">
         Todo lo que se vende y se cotiza. <strong>El nombre de un menú tiene que
         ser exactamente el mismo acá y en Shopify</strong>: solo se perdonan
@@ -452,11 +471,36 @@ export default function MenusEditor() {
                       )}
                       {/* **Lo cobra otra empresa** (2026-11-23): el karting. Solo
                           un extra: un menú, el arriendo o el show son nuestros. */}
+                      {/* **Quién lo cobra se elige de la lista** (2026-11-24,
+                          *Productos → 🤝 Otras empresas*): el directo
+                          (*Nosotros*) y el que abre la lista con buscador. */}
                       {m.tipo === TIPO_PRODUCTO.extra && (
-                        <Campo etiqueta="Lo cobra otra empresa" ancho="w-full sm:w-[16rem]" ayuda="loCobra">
-                          <input type="text" className={ENTRADA} maxLength={60}
-                            defaultValue={m.loCobra} placeholder="En blanco: nosotros"
-                            onBlur={(e) => cambiar(i, { loCobra: e.target.value.trim() })} />
+                        <Campo etiqueta="Lo cobra" ancho="w-full sm:w-[22rem]" ayuda="loCobra">
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" aria-pressed={!m.loCobra}
+                              onClick={() => { cambiar(i, { loCobra: '' }); setEligiendoEmpresa(null); }}
+                              className={`boton min-h-[40px] ${!m.loCobra ? 'border-oro bg-oro/15 font-semibold text-hueso' : ''}`}>
+                              Nosotros
+                            </button>
+                            <button type="button" aria-pressed={!!m.loCobra}
+                              onClick={() => setEligiendoEmpresa(eligiendoEmpresa === i ? null : i)}
+                              className={`boton min-h-[40px] ${m.loCobra ? 'border-oro bg-oro/15 font-semibold text-hueso' : ''}`}>
+                              {m.loCobra ? `🤝 ${m.loCobra}` : 'Otra empresa…'}
+                            </button>
+                          </div>
+                          {eligiendoEmpresa === i && (
+                            <div className="mt-2">
+                              <BuscarEnLista etiqueta="La cobra" vacia="Todavía no hay otras empresas en la lista."
+                                elegido={m.loCobra}
+                                opciones={otrasEmpresas.filter((e) => e.activa || e.nombre === m.loCobra)
+                                  .map((e) => ({ id: e.nombre, nombre: e.nombre, detalle: e.que || datosEnFrase(e) }))}
+                                onElegir={(nombre) => { cambiar(i, { loCobra: nombre }); setEligiendoEmpresa(null); }}
+                                onCerrar={() => setEligiendoEmpresa(null)}
+                                pie={<button type="button" className="boton min-h-[40px]" onClick={() => verVista('empresas')}>
+                                  + Agregar en 🤝 Otras empresas
+                                </button>} />
+                            </div>
+                          )}
                         </Campo>
                       )}
                     </div>

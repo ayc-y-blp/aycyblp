@@ -80,6 +80,7 @@ import NotasCotizacion from './NotasCotizacion';
 import { puedeVerNotas, iconoDeMedio, type Nota } from '@/lib/notas';
 import { agendaDe, fraseDe } from '@/lib/agenda';
 import AplicarPromocion from './AplicarPromocion';
+import { empresaDe, mensajeParaCoordinar, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import {
   promocionDe, beneficioDePromocion, rigePromocion, aplicarALineas, type Promocion
 } from '@/lib/promociones';
@@ -132,6 +133,8 @@ export interface DatosCotizar {
   vigencia?: number;
   /** Las promociones (2026-11-24): las activas, para aplicarlas, y las ya aplicadas en alguna. */
   promociones?: Promocion[];
+  /** Las otras empresas (2026-11-24): su teléfono, para coordinar por WhatsApp. */
+  otrasEmpresas?: OtraEmpresa[];
   hoy: string;
   usuario: string;
   rol: string;
@@ -2682,9 +2685,23 @@ export default function CotizacionDialogo({
                 <div className="w-full space-y-1 text-[14px] text-hueso/80 lg:basis-full">
                   {otras.map((o) => {
                     const hecha = coordinadasDe(coordinadas).get(normalizar(o.empresa));
+                    // **Escribirle para coordinar** (2026-11-24): con el teléfono
+                    // de *Productos → 🤝 Otras empresas* y un mensaje con el día,
+                    // la gente y lo que se pidió.
+                    const ficha = empresaDe(datos.otrasEmpresas ?? [], o.empresa);
+                    const wa = ficha?.telefono ? enlaceWhatsApp(ficha.telefono, mensajeParaCoordinar({
+                      empresa: ficha, negocio: datos.empresa || 'Brasas de Lo Pirque',
+                      dia: esFecha(fechaReal) ? enPalabras(fechaReal) : '', invitados,
+                      conceptos: vistas.filter((l) => normalizar(l.loCobra ?? '') === normalizar(o.empresa))
+                        .map((l) => ({ concepto: l.concepto, cantidad: l.cantidad }))
+                    })) : '';
                     return (
                       <p key={o.empresa} className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                         <span>Aparte, lo cobra <strong>{o.empresa}</strong> ({o.conceptos.join(', ')}): {enPesos(o.total)}</span>
+                        {p && wa && (
+                          <button type="button" className="boton min-h-[36px] border-verde-fuerte/60 font-semibold text-verde-texto"
+                            onClick={() => abrirWhatsApp(wa)}>💬 Escribirle</button>
+                        )}
                         {p && (hecha ? (
                           <span className="flex items-center gap-2">
                             <span className="font-semibold text-verde-texto">✓ coordinado · {hecha.quien}</span>

@@ -110,7 +110,8 @@ export const PANTALLAS = [
   // La caja chica (2026-11-23, `caja.ts`).
   ['caja', '/caja'],
   // Las promociones del sitio (2026-11-23), en Productos.
-  ['productos-promociones', '/menus?ver=promociones']
+  ['productos-promociones', '/menus?ver=promociones'],
+  ['productos-empresas', '/menus?ver=empresas']
 ];
 
 const b = await chromium.launch();
@@ -189,6 +190,10 @@ export const ESCENAS = {
   // con su link de campaña, el karting para sumar y el arriendo.
   'ficha-promocion': async () => {
     await ir('/menus?ver=promociones'); await clic(boton(/Gran Premio de Fin de Año/));
+  },
+  // Otra empresa abierta (2026-11-24): Productos → 🤝 Otras empresas.
+  'ficha-otra-empresa': async () => {
+    await ir('/menus?ver=empresas'); await clic(boton(/Karting Pirque/));
   },
   // La ventana que le avisa a la vendedora de las cotizaciones del sitio: sale sola al entrar.
   'v-aviso-sitio': async () => { await comoVendedora(async () => { await ir('/'); await p.getByRole('dialog').waitFor(); }); },

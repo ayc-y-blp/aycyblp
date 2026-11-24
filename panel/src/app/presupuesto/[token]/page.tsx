@@ -23,7 +23,8 @@
  * cliente responde por WhatsApp y el encargado lo marca en el panel.
  */
 import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
-import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig } from '@/lib/datos';
+import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig, leerOtrasEmpresas } from '@/lib/datos';
+import type { OtraEmpresa } from '@/lib/otrasEmpresas';
 import { desglose, type ProductoDetallado } from '@/lib/detalle';
 import QueIncluye, { Producto } from '@/components/QueIncluye';
 import { porToken, lineasDe, gentePosible, cuentasDe,
@@ -86,6 +87,10 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   const des = desglose(alts.map((a) => ({ id: a.id,
     conceptos: lineasDe(todas, a.id).filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) })));
   const vencido = estado === 'Vencida';
+  // **Los datos de las otras empresas** (2026-11-24): se leen solo si alguna
+  // alternativa trae algo que cobra otra empresa.
+  const empresas: OtraEmpresa[] = alts.some((a) => lineasDe(todas, a.id).some((l) => String(l.loCobra ?? '').trim()))
+    ? await leerOtrasEmpresas().catch(() => []) : [];
 
   return (
     <section className="documento mx-auto max-w-2xl">
@@ -173,7 +178,7 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
 
       {alts.map((a) => (
         <Alternativa key={a.id} p={a} letra={varias ? letraDe(a, lista) : ''} propios={des.propios[a.id] ?? []}
-          lineas={lineasDe(todas, a.id)} cfg={cfg} distintaFecha={varias && a.fecha !== q.fecha} />
+          lineas={lineasDe(todas, a.id)} cfg={cfg} distintaFecha={varias && a.fecha !== q.fecha} empresas={empresas} />
       ))}
 
       <div className="mt-7 border-t border-hueso/20 pt-5 text-[13px] text-hueso/70">
@@ -208,8 +213,9 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
  * varias lleva su letra y su total arriba, para que el cliente pueda decir
  * "la B" sin tener que sumar nada.
  */
-function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios }: {
+function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios, empresas }: {
   p: Presupuesto; letra: string; lineas: LineaPresupuesto[]; cfg: Config; distintaFecha: boolean;
+  empresas: OtraEmpresa[];
   /** Lo que tiene esta alternativa y las otras no, con su detalle. */
   propios: ProductoDetallado[];
 }) {
@@ -243,7 +249,7 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios }: {
         </div>
       )}
       <TablaCotizacion lineas={lineas} cuentas={cuentas} descuento={p.descuento}
-        uf={p.uf} fechaUF={p.fechaUF} />
+        uf={p.uf} fechaUF={p.fechaUF} empresas={empresas} />
 
       {/* **Las condiciones de pago**, de la misma función que usa la
           pantalla (y el contrato después): no pueden decir cosas distintas. */}
