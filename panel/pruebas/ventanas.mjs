@@ -94,6 +94,9 @@ export const PANTALLAS = [
   // Un mes pasado en el calendario de Reservas (2026-11-24): el marco del periodo con sus flechas.
   ['calendario-mes', '/?ver=mes&en=2026-10'],
   ['cotizaciones', '/presupuestos'],
+  // El calendario de Cotizaciones en un mes (2026-11-24): el marco del periodo con sus flechas.
+  ['cotizaciones-mes', '/presupuestos', async (p) => {
+    await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes' }).click(); await p.waitForTimeout(400); }],
   ['cotizaciones-lista', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); }],
   // La Lista abre en *Mes* desde el 2026-11-22: la otra vista que se mide es *Todo*,
   // la que trae *Ganado mes a mes*.

@@ -7752,5 +7752,28 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'la línea guarda su texto, con sus renglones, en la planilla');
 }
 
+{
+  console.log('\nEl periodo de los calendarios (2026-11-24)');
+  const P = await import('./periodoCalendario.ts');
+  const sem = P.cambiarModo(P.LO_QUE_VIENE, 'semana', '2026-11-24');
+  ok(sem.modo === 'semana' && sem.en === '2026-11-23' && P.tituloDelPeriodo(sem) === '23 – 29 de noviembre',
+     'Semana parte en la semana en curso, con su título');
+  ok(P.moverPeriodo(sem, -1).en === '2026-11-16' && P.moverPeriodo(P.moverPeriodo(sem, -1), 1).en === sem.en,
+     '◀ ▶ mueven una semana');
+  const mes = P.cambiarModo(sem, 'mes', '2026-11-24');
+  ok(mes.en === '2026-11' && P.moverPeriodo(mes, -1).en === '2026-10' && P.tituloDelPeriodo(P.moverPeriodo(mes, -1)) === 'octubre 2026',
+     'Mes parte en el de la semana, y ◀ va al anterior');
+  ok(P.cambiarModo({ modo: 'mes', en: '2026-10' }, 'semana', '2026-11-24').en === '2026-09-28'
+     && P.cambiarModo({ modo: 'mes', en: '2026-11' }, 'semana', '2026-11-24').en === '2026-11-23',
+     'de un mes pasado a Semana, su primera semana; del mes en curso, esta semana');
+  const r = P.rangoDelPeriodo({ modo: 'mes', en: '2026-02' });
+  ok(r?.desde === '2026-02-01' && r?.hasta === '2026-02-28' && P.rangoDelPeriodo(P.LO_QUE_VIENE) === null
+     && P.tituloDelPeriodo(P.LO_QUE_VIENE) === undefined && P.moverPeriodo(P.LO_QUE_VIENE, 1) === P.LO_QUE_VIENE,
+     'el rango de un mes; lo que viene no tiene rango, título ni flechas');
+  ok(P.lunesDelPeriodo({ modo: 'mes', en: '2026-11' }).join() === '2026-10-26,2026-11-02,2026-11-09,2026-11-16,2026-11-23,2026-11-30'
+     && P.lunesDelPeriodo(sem).join() === '2026-11-23',
+     'los lunes de las semanas que toca un mes, también la que empieza en el anterior');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

@@ -164,7 +164,7 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
-  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, el calendario de Reservas: *Lo que viene · Semana · Mes*) |
+  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, los calendarios de Reservas y de Cotizaciones: *Lo que viene · Semana · Mes*, con la cuenta de `lib/periodoCalendario.ts`) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
@@ -228,6 +228,31 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El calendario de Cotizaciones también va al pasado (2026-11-24)
+
+Lo pidió el cliente con una foto del marco de Reservas: *"aplícalo para
+cotizaciones también"*.
+
+- **El mismo marco** (`ElegirPeriodo`, *Lo que viene · Semana · Mes* con ◀ ▶)
+  en el calendario de Cotizaciones, en la fila de *+ Cotizar*, donde en la
+  Lista va *← Volver al calendario*. En el celular, a todo el ancho.
+- **La cuenta es una sola para los dos calendarios**:
+  `lib/periodoCalendario.ts` (`cambiarModo()`, `moverPeriodo()`,
+  `rangoDelPeriodo()`, `tituloDelPeriodo()`, `lunesDelPeriodo()`), pura y con
+  pruebas. El calendario de Reservas la usa desde el mismo PR: antes tenía su
+  copia.
+- *Lo que viene* es lo de siempre (desde esta semana, con *Ver 8 semanas
+  más*). En *Semana* y *Mes*, **un día que ya pasó sale solo si tiene algo que
+  se vea en su tarjeta** —lo mandado, una ganada o lo tuyo sin mandar—, y **no
+  lleva *+ Cotizar este día***: se mira, no se cotiza. Si no hubo nada, dice
+  *No hubo cotizaciones ese mes*.
+- La ocupación se pide con las fechas del periodo (`/api/ocupacion?desde&hasta`).
+  **No va en la dirección**: el calendario de Cotizaciones se abre en su
+  ventana, sin página del día a la que ir y volver.
+- **Lecturas de Google**: una tanda por cada cambio de periodo (la ocupación).
+  **Ningún permiso cambió.** **Ayuda**: el `?` de Cotizaciones. **Ventanas**:
+  la pantalla `cotizaciones-mes` entra en la prueba de espacio.
 
 ## El bloque *Equipo* de la página del día, reorganizado (2026-11-24)
 

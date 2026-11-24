@@ -504,6 +504,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   ancho y, al pie, lo que costó, lo que falta, *Equipo y cuentas del día* y la
   propina. Ver `panel/CLAUDE.md`. **PR #348, mergeado el 24-11-2026** con el
   *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después.
+- **El calendario de Cotizaciones también va al pasado** (24-11-2026, lo pidió
+  el cliente): el mismo marco *Lo que viene · Semana · Mes*, con la cuenta
+  compartida en `lib/periodoCalendario.ts`. Un día pasado se mira y no se
+  cotiza. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

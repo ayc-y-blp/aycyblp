@@ -282,6 +282,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'vendedor y la gerencia).',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
+      'Lo que viene · Semana · Mes, en el marco dorado del calendario: Lo que '
+      + 'viene muestra desde esta semana, como siempre; Semana y Mes, con ◀ ▶, '
+      + 'van también a las que pasaron, para revisar lo que se cotizó y se '
+      + 'ganó. Un día que ya pasó se mira y no se cotiza.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
       + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
       + 'que esperan que alguien las siga y lo que falta cobrar. Parte en el mes '
