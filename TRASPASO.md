@@ -470,6 +470,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   hay que crearlas en *Productos → 🎁 Promociones* de producción, conectarlas
   a su bloque y marcarlas. Ver `CLAUDE.md`, "El cotizador de promociones", y
   `panel/CLAUDE.md`.
+- **Lo que se suma, para cuántos** (24-11-2026, lo pidió el cliente: *"de los
+  22 que quieren menú, solo 15 quieren andar en go-kart"*): en el cotizador
+  de `promociones.html`, un extra por persona que se suma muestra *¿Cuántos?*
+  al marcarlo, con el grupo entero, y se baja; viaja al panel como
+  `Karting:15` (`sumadoDe()`). Lo *Incluido* sigue para todos. **Lo que el
+  cliente vio ese día —el karting desapareció al pasarlo a *Se suma*— era la
+  respuesta guardada 5 minutos en Vercel**: al rato ya salía. PR en preview.
+  Ver `CLAUDE.md`, "El cotizador de promociones".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

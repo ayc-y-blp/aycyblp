@@ -441,7 +441,11 @@ export interface Eleccion {
   ninos: number | number[];
   /** El menú elegido; con uno solo, se ignora. */
   menu: string;
-  /** Lo que sumó, de `suma`. */
+  /**
+   * Lo que sumó, de `suma`. **`Karting:15` lo suma para 15 personas**
+   * (2026-11-24: *"de los 22 que piden menú, solo 15 quieren andar en
+   * go-kart"*); sin número, como antes, para todos (`sumadoDe()`).
+   */
   suma: string[];
   /** `AAAA-MM-DD`. */
   fecha: string;
@@ -481,6 +485,17 @@ export interface Cotizada {
   publico: boolean;
   /** El arriendo mínimo que corrió (neto), o 0. */
   arriendo: number;
+}
+
+/**
+ * Un extra sumado en el sitio: `Karting:15` es el karting para 15 personas;
+ * `Karting` solo, para todos (`cantidad` 0), que es lo que manda un
+ * `cotizador.js` de antes. Un monto fijo va una vez igual.
+ */
+export function sumadoDe(texto: string): { nombre: string; cantidad: number } {
+  const t = String(texto ?? '').trim();
+  const m = /^(.*\S)\s*:\s*(\d{1,4})$/.exec(t);
+  return m ? { nombre: m[1], cantidad: Number(m[2]) } : { nombre: t, cantidad: 0 };
 }
 
 const neto = (m: Menu) => {
@@ -527,8 +542,11 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   const productos: [Menu | undefined, number][] = [[menu, adultos]];
   promo.ninos.forEach((n, k) => { if (porMenuNinos[k] > 0) productos.push([productoDe(n, ctx.catalogo), porMenuNinos[k]]); });
   for (const n of promo.incluye) productos.push([productoDe(n, ctx.catalogo), invitados]);
-  const sumados = promo.suma.filter((n) => (e.suma ?? []).some((s) => normalizar(s) === normalizar(n)));
-  for (const n of sumados) productos.push([productoDe(n, ctx.catalogo), invitados]);
+  // Lo sumado, para cuántos lo pidió el cliente: nunca más que el grupo.
+  for (const n of promo.suma) {
+    const pedido = (e.suma ?? []).map(sumadoDe).find((s) => normalizar(s.nombre) === normalizar(n));
+    if (pedido) productos.push([productoDe(n, ctx.catalogo), Math.min(invitados, pedido.cantidad || invitados)]);
+  }
   if (productos.some(([p]) => !p || p.moneda === MONEDA.uf || !(precioParaCotizar(p) > 0))) {
     return { ok: false, codigo: 'sinPrecio' };
   }

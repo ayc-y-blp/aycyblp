@@ -455,6 +455,20 @@
   .cot-incluye{ margin:0; font-size:0.92rem; color: var(--ink-dim); }
   .cot-incluye .cot-rotulo{ margin-bottom:2px; }
   .cot-rotulo-suelto{ margin:0; }
+  /* Un extra que se suma (2026-11-24): la casilla y, si se cobra por persona,
+     *¿Cuántos?* debajo, en el mismo marco. El número parte con todo el grupo. */
+  .cot-extra{ border:1px solid var(--line); border-radius:2px; padding:0 12px; }
+  .cot-extra:has(input[type=checkbox]:checked){ border-color: var(--gold); background: rgba(201,162,39,0.10); }
+  .cot-extra > .cot-opcion, .cot-extra > .cot-opcion:has(input:checked){ border:0; padding:5px 0; background:none; align-items:flex-start; }
+  .cot-extra > .cot-opcion input{ margin-top:2px; }
+  .cot-extra .cot-opcion-texto{ flex:1; display:grid; grid-template-columns:1fr auto; align-items:baseline; gap:0 10px; }
+  .cot-extra .cot-cobra{ grid-column:1 / -1; font-size:0.85rem; color: var(--ink-dim); }
+  .cot-cuantos{ padding:0 0 6px; flex-wrap:wrap; row-gap:6px; }
+  .cot-cuantos .cot-teclas{ margin-left:auto; }
+  .cot-cuantos .cot-numero{ width:56px; }
+  /* Donde hay ancho, *¿Cuántos?* parte bajo el nombre; si igual no cabe, las teclas bajan a la derecha. */
+  @media (min-width: 1200px){ .cot-cuantos{ padding-left:28px; } }
+  .cot-cuantos[hidden]{ display:none; }
   .cot-boleta{ min-height:96px; }
   .cot-aviso{ margin:0; color: var(--ink-dim); font-size:0.95rem; }
   .cot-aviso-alerta{ color: var(--gold); font-weight:700; }
@@ -921,7 +935,7 @@
 <link rel="stylesheet" href="../assets/css/tema.css?v=8bedec7b">
 <script src="../assets/js/tema.js?v=9398876b"></script>
 <script src="../assets/js/idioma.js?v=30e2a7c2" defer></script>
-<script src="../assets/js/cotizador.js?v=0ab5e546" defer></script>
+<script src="../assets/js/cotizador.js?v=35d9b0c0" defer></script>
 </head>
 <body>
   <div class="topbar">

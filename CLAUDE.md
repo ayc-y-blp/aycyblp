@@ -1315,6 +1315,28 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   computador, los tres lado a lado: **433px, y 452 con los datos, en el
   notebook del cliente (1262×573)**; en portugués, con los textos más largos,
   unos 470.
+- **Lo que se suma, para cuántos** (2026-11-24, lo pidió el cliente: *"de
+  los 22 personas que quieren menú, solo 15 quieren andar en go-kart… el
+  karting tiene un campo propio de cuántas personas quieren usar este
+  extra"*). Un extra que se cobra por persona, al marcarlo, muestra
+  ***¿Cuántos?*** con − y +, en el mismo marco: **parte con el grupo
+  entero**, se baja, y no pasa del grupo. Mientras no se toque, sigue al
+  grupo; tocado, se queda (y baja si el grupo queda más chico). Uno de monto
+  fijo, solo la casilla. Lo *Incluido* en la promoción sigue yendo para
+  todos.
+  - El nombre y el precio van en un renglón, como los menús, y *lo cobra …*
+    debajo.
+  - **Al panel viaja como `Karting:15`** en `suma` (`sumadoDe()` en
+    `panel/src/lib/promociones.ts`); el nombre solo, como lo manda un
+    `cotizador.js` de antes, es para todos. La cotización que llega trae la
+    línea con esa cantidad, y la boleta del sitio dice *15 × Karting: $…,
+    aparte*.
+  - **Medidas con un extra marcado** (sin marcar, igual que antes): 460px en
+    1262×573, que cabe. Pasa del margen seguro mientras está marcado: en
+    inglés 479 y en portugués 504 en ese notebook (con el precio de ejemplo
+    *+ IVA*, que dobla un renglón), y a 1024×600, 534, porque ahí *¿Cuántos?*
+    no cabe al lado de sus teclas y bajan a otro renglón. En el celular las
+    teclas bajan igual, a la derecha.
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde

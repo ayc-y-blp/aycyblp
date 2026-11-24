@@ -981,6 +981,16 @@ un producto sin precio; dice por qué con **un código** (`minimo`, `fecha`,
 `tomado`, `menu`, `sinPrecio`), que el sitio traduce. No pregunta *¿exclusivo?*:
 eso lo conversa el vendedor.
 
+**Lo que se suma va para cuántos lo pidió el cliente** (2026-11-24, lo pidió
+el cliente: *"de los 22 que quieren menú, solo 15 quieren andar en
+go-kart"*): el sitio manda `Karting:15` y `sumadoDe()` lo lee; sin número
+—un `cotizador.js` de antes—, para todo el grupo, y nunca más que el grupo.
+Lo *Incluido* sigue yendo para todos. La línea de la cotización que llega
+trae esa cantidad, y lo aparte que vuelve al sitio dice *15 × Karting*. En
+la cotización del vendedor no cambia nada: la cantidad de una línea ya se
+escribe. **Ninguna lectura más, ningún permiso ni columna.** **Ayuda**:
+`promoSuma`.
+
 ### Lo que cobra otra empresa (`Menu.loCobra`)
 
 - **En el catálogo**, un extra lleva *Lo cobra otra empresa* (columna nueva

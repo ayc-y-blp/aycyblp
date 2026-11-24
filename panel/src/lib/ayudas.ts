@@ -1398,7 +1398,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Los extras',
     texto: [
       'Cada extra, una vez: No, Incluido (va siempre en la promoción) o Se suma (el cliente lo elige en el sitio).',
-      'Va por persona, o una vez si es un monto fijo. Lo que cobra otra empresa, como el karting, va aparte del total.'
+      'Incluido va para todo el grupo. Lo que se suma y va por persona, el cliente elige para cuántos: al marcarlo sale ¿Cuántos?, con el grupo entero, y lo baja (de 22, el karting para 15). Un monto fijo va una vez.',
+      'Lo que cobra otra empresa, como el karting, va aparte del total.'
     ]
   },
   promoShow: {

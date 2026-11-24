@@ -93,7 +93,14 @@ function respuesta(r: Cotizada) {
       neto: Math.round(l.cantidad * l.precio * (1 - (l.descuento || 0) / 100) / (l.ivaIncluido === false ? 1 : 1.19)),
       incluido: l.precio === 0
     })),
-    cuentas: r.cuentas, otras: r.otras, porPersona: r.porPersona, invitados: r.invitados,
+    // Lo aparte dice para cuántos (2026-11-24): *15 × Karting*, que el
+    // cliente puede sumarlo solo para una parte del grupo.
+    cuentas: r.cuentas, porPersona: r.porPersona, invitados: r.invitados,
+    otras: r.otras.map((o) => ({
+      ...o,
+      conceptos: r.lineas.filter((l) => normalizar(l.loCobra ?? '') === normalizar(o.empresa))
+        .map((l) => (l.cantidad > 1 ? `${l.cantidad} × ` : '') + l.concepto)
+    })),
     publico: r.publico, arriendo: r.arriendo, descuento: r.descuento
   };
 }
