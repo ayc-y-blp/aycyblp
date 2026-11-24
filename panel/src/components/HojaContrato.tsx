@@ -19,14 +19,14 @@ import type { Cliente } from '@/lib/clientes';
 import BotonImprimir from '@/components/BotonImprimir';
 import TablaCotizacion from '@/components/TablaCotizacion';
 import QueIncluye from '@/components/QueIncluye';
-import { desglose } from '@/lib/detalle';
+import { desglose, type DetallePropio } from '@/lib/detalle';
 
 /** Lo que va entre `**` sale en negrita: los montos y los nombres. */
 function Texto({ t }: { t: Parrafo }) {
   return <>{t.split('**').map((pedazo, i) => (i % 2 ? <strong key={i}>{pedazo}</strong> : pedazo))}</>;
 }
 
-export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas = [] }: {
+export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas = [], catalogo = [] }: {
   p: Presupuesto;
   /** Todas las cotizaciones, para la letra de la alternativa. */
   lista: Presupuesto[];
@@ -36,6 +36,8 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas
   cfg: Config;
   /** Las otras empresas (2026-11-24): su RUT va en la cláusula de lo que cobran ellas. */
   empresas?: OtraEmpresa[];
+  /** Lo que cada producto dice que incluye, si se lo escribieron (2026-11-24, `detalleDe()`). */
+  catalogo?: ({ nombre: string } & DetallePropio)[];
 }) {
   const negocio = negocioDe(cfg.empresa);
   const cuentas = cuentasDe(lineas, p.descuento);
@@ -43,7 +45,7 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas
   // la misma pieza de la cotización, con lo que se contrató. Lo que cobra
   // otra empresa no entra: ya va aparte, bajo la tabla.
   const incluye = desglose([{ id: p.id,
-    conceptos: lineas.filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) }]);
+    conceptos: lineas.filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) }], catalogo);
   const ficha = clientes.find((c) => c.id === p.idCliente);
   const cliente = {
     nombre: ficha?.nombre ?? p.cliente,

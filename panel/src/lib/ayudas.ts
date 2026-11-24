@@ -405,6 +405,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'no queda.',
       'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
       + 'en una cotización va aparte del total y no paga comisión.',
+      '*Qué incluye* y *Bebestibles* son lo que dice la cotización y el contrato '
+      + 'de ese producto. En blanco va el texto del sitio, que se ve de muestra; '
+      + 'escritos, lo reemplazan: así se arma un menú especial con su propio '
+      + 'detalle. Cada campo cambia solo su parte.',
       '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '
       + 'vende con el evento —el karting, el taller de queso, un transfer—, con su '
       + 'RUT, contacto, teléfono y correo. Sus datos salen en la cotización y en '
@@ -1399,6 +1403,24 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       '*Como siempre*: un día que no abrimos al público, con poca gente, lleva el arriendo mínimo de Configuración. '
       + 'Las otras dos lo perdonan: siempre, o solo de lunes a viernes.',
       'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.'
+    ]
+  },
+  descripcionProducto: {
+    titulo: 'Qué incluye',
+    texto: [
+      'Lo que sale en la cotización y en el contrato, en «Qué incluye», para este producto. '
+      + 'En blanco va el texto del sitio, que se ve de muestra en el campo.',
+      'En un menú de adulto, lo que escribas reemplaza el menú de la casa (entrada, plato principal, '
+      + 'acompañamientos y postre): sirve para un menú especial. Un renglón por parte, como '
+      + '«Entrada: ceviche de reineta», se lee en dos columnas.'
+    ]
+  },
+  bebestiblesProducto: {
+    titulo: 'Bebestibles',
+    texto: [
+      'Los bebestibles de este menú, en la cotización y el contrato. Reemplazan los del sitio; '
+      + 'en blanco van los de siempre. Se pueden cambiar solo los bebestibles y dejar el menú de la '
+      + 'casa, o al revés.'
     ]
   },
   loCobra: {

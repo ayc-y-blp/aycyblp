@@ -53,7 +53,12 @@ export const COL_MENUS = {
   costo: 'Costo',
   // 2026-11-23. El nombre de la empresa que lo cobra, si no lo cobramos
   // nosotros (el karting). En blanco es nuestro. Ver `Menu.loCobra`.
-  loCobra: 'Lo cobra'
+  loCobra: 'Lo cobra',
+  // 2026-11-24. Lo que incluye, escrito para este producto: si está, la
+  // cotización y el contrato lo usan en vez del texto del sitio
+  // (`lib/detalle.ts`). En blanco, el de siempre.
+  descripcion: 'Descripción',
+  bebestibles: 'Bebestibles'
 } as const;
 
 /**
@@ -146,6 +151,31 @@ export interface Menu {
    * sumarlo como el show.
    */
   loCobra: string;
+  /**
+   * **Lo que incluye, escrito para este producto** (2026-11-24, lo pidió el
+   * cliente: *"tener un campo de descripción en cual puedo dejar el detalle de
+   * lo que incluye este menú. Y si se rellena este campo, no se alimenta la
+   * descripción desde los textos estándares… si no se rellena, corre la
+   * descripción del menú estándar"*, y *"que sean dos campos, uno para el menú
+   * y uno para bebestibles"*). Cada uno reemplaza su parte del texto estándar
+   * en la cotización y el contrato (`detalleDe()` en `lib/detalle.ts`): la
+   * descripción, la comida —en un menú de adulto, el menú de la casa—; los
+   * bebestibles, los suyos. En blanco, el texto del sitio de siempre.
+   */
+  descripcion: string;
+  /** Los bebestibles de este producto. Ver `descripcion`. */
+  bebestibles: string;
+}
+
+/**
+ * **Un texto de varios renglones, limpio**: cada renglón sin espacios de más,
+ * sin renglones vacíos repetidos y con un tope, para que una celda no crezca
+ * sin fin. Los saltos de línea se conservan: cada renglón es una parte del
+ * detalle (*Entrada: …*, *Postre: …*).
+ */
+export function textoLargo(v: unknown, max = 1500): string {
+  return String(v ?? '').replace(/\r/g, '').split('\n').map((r) => r.replace(/\s+/g, ' ').trim())
+    .join('\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
 }
 
 /**
@@ -163,7 +193,7 @@ export function nuevoProducto(p: Partial<Menu> & { nombre: string }): Menu {
     tipo: TIPO_PRODUCTO.menu, sitioPublico: true, cotizacion: false,
     cobro: COBRO.porPersona, precioCotizacion: 0,
     iva: IVA_PRECIO.incluido, moneda: MONEDA.pesos, activo: true, bonoVendedor: false, costo: 0,
-    loCobra: '',
+    loCobra: '', descripcion: '', bebestibles: '',
     ...resto
   };
 }
@@ -259,7 +289,9 @@ export function leerMenusDe(filas: string[][]): Menu[] {
       activo: blanco(10) ? base.activo : esSiCelda(f[10]),
       bonoVendedor: blanco(11) ? base.bonoVendedor : esSiCelda(f[11]),
       costo: aMonto(f[12]),
-      loCobra: String(f[13] ?? '').trim()
+      loCobra: String(f[13] ?? '').trim(),
+      descripcion: textoLargo(f[14]),
+      bebestibles: textoLargo(f[15])
     });
   }
   return salida;
@@ -276,7 +308,8 @@ export function aFilasMenus(menus: Menu[]): string[][] {
     ...menus.map((m) => [
       m.nombre, monto(m.precioEnLinea), monto(m.precioEnLocal),
       m.tipo, siNo(m.sitioPublico), siNo(m.cotizacion), m.cobro,
-      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : '', monto(m.costo), m.loCobra
+      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : '', monto(m.costo), m.loCobra,
+      m.descripcion, m.bebestibles
     ])
   ];
 }
@@ -415,7 +448,9 @@ export function limpiarProducto(m: Partial<Record<keyof Menu, unknown>>): Menu {
     // son nuestros. Así un nombre que quedó escrito al cambiar el tipo no
     // saca del total algo que sí cobramos.
     loCobra: unoDe(m?.tipo, Object.values(TIPO_PRODUCTO), base.tipo) === TIPO_PRODUCTO.extra
-      ? String(m?.loCobra ?? '').trim().slice(0, 60) : ''
+      ? String(m?.loCobra ?? '').trim().slice(0, 60) : '',
+    descripcion: textoLargo(m?.descripcion),
+    bebestibles: textoLargo(m?.bebestibles)
   };
 }
 

@@ -37,6 +37,7 @@ import EmpresaNueva from './EmpresaNueva';
 import { datosEnFrase, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
+import { textoDelSitio, MENU_CASA_DEL_SITIO } from '@/lib/detalle';
 import { enPesos } from '@/lib/ocupacion';
 import { menusConocidos } from '@/lib/shopify';
 import type { Reserva } from '@/lib/tipos';
@@ -563,6 +564,39 @@ export default function MenusEditor() {
                 )}
                 </div>
                 )}
+
+                {/* **Qué incluye, escrito para este producto** (2026-11-24, lo
+                    pidió el cliente: un menú especial con su propio detalle). Dos
+                    campos, cada uno reemplaza su parte del texto del sitio en la
+                    cotización y el contrato (`detalleDe()`); en blanco, el de
+                    siempre, que se ve de muestra. Bebestibles, solo en un menú. */}
+                {(() => {
+                  const delSitio = textoDelSitio(m.nombre);
+                  const esMenu = m.tipo === TIPO_PRODUCTO.menu;
+                  const muestraComida = delSitio?.casa ? MENU_CASA_DEL_SITIO : delSitio?.detalle ?? '';
+                  return (
+                    <div className={`grid grid-cols-1 gap-3 ${esMenu ? 'lg:grid-cols-2' : ''}`}>
+                      <Campo etiqueta="Qué incluye" ayuda="descripcionProducto">
+                        <textarea rows={3} className={`${ENTRADA} resize-y leading-snug`} value={m.descripcion}
+                          aria-label="Qué incluye" maxLength={1500}
+                          placeholder={muestraComida
+                            ? `En blanco va el texto del sitio:\n${muestraComida}`
+                            : 'En blanco, la cotización no lo detalla. Ej.: Entrada: … · Plato principal: …'}
+                          onChange={(e) => cambiar(i, { descripcion: e.target.value })} />
+                      </Campo>
+                      {esMenu && (
+                        <Campo etiqueta="Bebestibles" ayuda="bebestiblesProducto">
+                          <textarea rows={3} className={`${ENTRADA} resize-y leading-snug`} value={m.bebestibles}
+                            aria-label="Bebestibles" maxLength={1500}
+                            placeholder={delSitio?.casa
+                              ? `En blanco va el texto del sitio:\n${delSitio.detalle}`
+                              : 'En blanco, sin bebestibles aparte. Ej.: bebidas, jugos naturales y agua.'}
+                            onChange={(e) => cambiar(i, { bebestibles: e.target.value })} />
+                        </Campo>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {m.nuevo ? (!soloMira && (
                   <div className="flex flex-wrap items-center justify-end gap-2 border-t border-hueso/15 pt-3 lg:pt-2">

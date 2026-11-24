@@ -15,7 +15,7 @@
  * puede decir un precio distinto del que el cliente aprobó.
  */
 import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
-import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig, leerOtrasEmpresas } from '@/lib/datos';
+import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig, leerOtrasEmpresas, leerMenus } from '@/lib/datos';
 import { porToken, lineasDe } from '@/lib/presupuestos';
 import HojaContrato from '@/components/HojaContrato';
 import { vistaPrevia } from '@/lib/vistaPrevia';
@@ -26,9 +26,10 @@ export const metadata = vistaPrevia('Contrato', 'El contrato del evento, para re
 export const dynamic = 'force-dynamic';
 
 async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
-  const [lista, todas, clientes, cfg] = await Promise.all([
+  // El catálogo, en la misma tanda: lo que cada producto dice que incluye (2026-11-24).
+  const [lista, todas, clientes, cfg, catalogo] = await Promise.all([
     leerPresupuestos(), leerLineasPresupuesto(),
-    leerClientes().catch(() => []), leerConfig()
+    leerClientes().catch(() => []), leerConfig(), leerMenus().catch(() => [])
   ]);
   const p = porToken(lista, decodeURIComponent(params.token ?? ''));
 
@@ -49,7 +50,8 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   const lineas = lineasDe(todas, p.id);
   // Las otras empresas (2026-11-24): solo si el contrato trae algo que cobra otra.
   const empresas = lineas.some((l) => String(l.loCobra ?? '').trim()) ? await leerOtrasEmpresas().catch(() => []) : [];
-  return <HojaContrato p={p} lista={lista} lineas={lineas} clientes={clientes} cfg={cfg} empresas={empresas} />;
+  return <HojaContrato p={p} lista={lista} lineas={lineas} clientes={clientes} cfg={cfg} empresas={empresas}
+    catalogo={catalogo.map((m) => ({ nombre: m.nombre, descripcion: m.descripcion, bebestibles: m.bebestibles }))} />;
 }
 
 /** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */

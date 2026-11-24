@@ -93,6 +93,41 @@ export function textoDelSitio(nombre: string): { detalle: string; casa?: boolean
   return DETALLE_DEL_SITIO[candidatos[0].k];
 }
 
+/** Lo que un producto trae escrito para sí (`Menu.descripcion` y `Menu.bebestibles`). */
+export interface DetallePropio { descripcion?: string; bebestibles?: string }
+
+/**
+ * **El detalle de un producto: lo propio si está, el del sitio si no**
+ * (2026-11-24, lo pidió el cliente: *"si se rellena, corre el campo. Si no se
+ * rellena, corre la descripción del menú estándar"*, en dos campos: *"uno
+ * para el menú y uno para bebestibles"*). Cada campo reemplaza **su parte**:
+ *
+ * - **La descripción** reemplaza la comida. En un menú de adulto la comida
+ *   estándar es el menú de la casa (los cuatro tiempos, que van arriba,
+ *   `casa`): con descripción propia, ese producto ya no lo lleva. En otro
+ *   producto, reemplaza su texto entero.
+ * - **Los bebestibles** reemplazan los del menú (en uno de adulto, su texto del
+ *   sitio son justamente los bebestibles). Van con *Bebestibles:* adelante si
+ *   no lo traen.
+ *
+ * Sin nada propio y sin texto en el sitio, no hay detalle.
+ */
+export function detalleDe(nombre: string, propio?: DetallePropio): { detalle: string; casa: boolean } | undefined {
+  const delSitio = textoDelSitio(nombre);
+  const descripcion = String(propio?.descripcion ?? '').trim();
+  const bebestibles = String(propio?.bebestibles ?? '').trim();
+  if (!descripcion && !bebestibles) return delSitio ? { detalle: delSitio.detalle, casa: !!delSitio.casa } : undefined;
+  const conCasa = !!delSitio?.casa;
+  // La comida: la propia; si no, en un menú con casa va arriba, y en otro, su texto del sitio.
+  const comida = descripcion || (conCasa ? '' : delSitio?.detalle ?? '');
+  const bebidas = bebestibles
+    ? (/^bebestibles?\s*:/i.test(bebestibles) ? bebestibles : `Bebestibles: ${bebestibles}`)
+    : (conCasa ? delSitio!.detalle : '');
+  const detalle = [comida, bebidas].filter(Boolean).join('\n');
+  const casa = !descripcion && conCasa;
+  return detalle || casa ? { detalle, casa } : undefined;
+}
+
 /** Un renglón *"Nombre: texto"* partido en dos, para dibujarlo en columnas. */
 export function partes(renglon: string): { que: string; dice: string } {
   const m = renglon.match(/^([^:]{2,30}):\s*(.+)$/);
@@ -108,24 +143,31 @@ export interface ProductoDetallado { nombre: string; detalle: string }
  * todo va arriba. Un producto sin texto en el sitio no aparece.
  */
 export function desglose(
-  alternativas: { id: string; conceptos: string[] }[]
+  alternativas: { id: string; conceptos: string[] }[],
+  /**
+   * El catálogo, para lo que cada producto trae escrito (2026-11-24). Se busca
+   * por nombre, sin tildes ni mayúsculas. Sin catálogo, solo el texto del sitio.
+   */
+  catalogo: ({ nombre: string } & DetallePropio)[] = []
 ): { casa: boolean; comunes: ProductoDetallado[]; propios: Record<string, ProductoDetallado[]> } {
+  const propioDe = (n: string) => catalogo.find((m) => normalizar(m.nombre) === normalizar(n));
+  const detalle = (n: string) => detalleDe(n, propioDe(n));
   const todas = alternativas.map((a) => [...new Set(a.conceptos.map((n) => n.trim()).filter(Boolean))]);
   const enTodas = (n: string) => todas.every((lista) => lista.some((x) => normalizar(x) === normalizar(n)));
   const vistos = new Set<string>();
   const comunes: ProductoDetallado[] = [];
   let casa = false;
   for (const lista of todas) for (const n of lista) {
-    const t = textoDelSitio(n);
+    const t = detalle(n);
     if (t?.casa) casa = true;
-    if (!t || !enTodas(n) || vistos.has(normalizar(n))) continue;
+    if (!t?.detalle || !enTodas(n) || vistos.has(normalizar(n))) continue;
     vistos.add(normalizar(n));
     comunes.push({ nombre: n, detalle: t.detalle });
   }
   const propios: Record<string, ProductoDetallado[]> = {};
   alternativas.forEach((a, i) => {
     propios[a.id] = todas[i].filter((n) => !enTodas(n))
-      .flatMap((n) => { const t = textoDelSitio(n); return t ? [{ nombre: n, detalle: t.detalle }] : []; });
+      .flatMap((n) => { const t = detalle(n); return t?.detalle ? [{ nombre: n, detalle: t.detalle }] : []; });
   });
   return { casa, comunes, propios };
 }

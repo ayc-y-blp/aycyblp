@@ -1158,7 +1158,7 @@ const filasMenus = aFilasMenus(POR_DEFECTO_MENUS);
 ok(filasMenus[0].slice(0, 3).join('|') === 'Menú|Precio en línea|Precio en el local',
    'las tres columnas de siempre van primero y en el mismo orden: una planilla vieja se sigue leyendo');
 ok(filasMenus[0].slice(3).join('|')
-     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo|Lo cobra',
+     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo|Lo cobra|Descripción|Bebestibles',
    'y las del catálogo van al final');
 ok(filasMenus.length === POR_DEFECTO_MENUS.length + 1, 'una fila por menu, mas el encabezado');
 ok(JSON.stringify(leerMenusDe(filasMenus)) === JSON.stringify(POR_DEFECTO_MENUS),
@@ -7648,6 +7648,28 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'y en cada una, lo que la distingue');
   ok(D.partes('Entrada: Tabla campestre').que === 'Entrada' && D.partes('De 4 a 12 años.').que === '',
      'un renglón con nombre se parte en dos; uno sin nombre va entero');
+
+  // La descripción propia de cada producto (2026-11-24): cada campo reemplaza su parte.
+  const pirque = D.textoDelSitio('Lo Pirque')!;
+  ok(JSON.stringify(D.detalleDe('Lo Pirque')) === JSON.stringify({ detalle: pirque.detalle, casa: true })
+     && JSON.stringify(D.detalleDe('Lo Pirque', { descripcion: ' ', bebestibles: '' })) === JSON.stringify({ detalle: pirque.detalle, casa: true }),
+     'sin nada propio, el texto del sitio de siempre');
+  const especial = D.detalleDe('Lo Pirque', { descripcion: 'Entrada: ceviche\nPlato principal: cordero al palo' })!;
+  ok(!especial.casa && especial.detalle === `Entrada: ceviche\nPlato principal: cordero al palo\n${pirque.detalle}`,
+     'con descripción propia, reemplaza el menú de la casa y quedan los bebestibles del sitio');
+  const conBebidas = D.detalleDe('Lo Pirque', { bebestibles: 'jugos naturales y agua' })!;
+  ok(conBebidas.casa && conBebidas.detalle === 'Bebestibles: jugos naturales y agua',
+     'con bebestibles propios, reemplazan los del sitio y el menú de la casa sigue arriba');
+  ok(D.detalleDe('Lo Pirque', { descripcion: 'Cóctel', bebestibles: 'Bebestibles: espumante' })!.detalle === 'Cóctel\nBebestibles: espumante',
+     'con los dos, solo lo propio; y Bebestibles: no se repite si ya viene');
+  ok(D.detalleDe('Menú especial matrimonio', { descripcion: 'Cóctel y cena de tres tiempos' })!.detalle === 'Cóctel y cena de tres tiempos'
+     && !D.detalleDe('Menú especial matrimonio') && D.detalleDe('Karting', { descripcion: 'Pista de 400 m' })!.detalle === 'Pista de 400 m',
+     'un producto que el sitio no describe lleva lo propio; otro producto, su descripción en vez del texto del sitio');
+  const conCatalogo = D.desglose([{ id: 'P-2', conceptos: ['Lo Pirque', 'Menú especial matrimonio', 'Arriendo'] }],
+    [{ nombre: 'lo pirque', descripcion: 'Entrada: ceviche' }, { nombre: 'Menú especial matrimonio', descripcion: 'Cena de tres tiempos' }]);
+  ok(!conCatalogo.casa && conCatalogo.comunes.map((x) => x.nombre).join() === 'Lo Pirque,Menú especial matrimonio'
+     && conCatalogo.comunes[0].detalle.startsWith('Entrada: ceviche'),
+     'el desglose busca lo propio en el catálogo por nombre; sin menú de la casa si ninguno lo lleva');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
