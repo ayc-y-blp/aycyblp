@@ -496,7 +496,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   (cerrada o abierta), para el encargado de turno hacia arriba, desde la
   apertura; en un día cerrado, con la casilla de la corrección. Y al abrir una
   reserva, **lo acordado en Fudo y la mesa lado a lado** en el computador.
-  Ver "Quién vino, también desde la página del día".
+  Ver "Quién vino, también desde la página del día". **PR #347, mergeado el
+  24-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
+  después.
+- **El bloque *Equipo* de la página del día, reorganizado** (24-11-2026, lo
+  pidió el cliente con una foto): los puestos en tres columnas a todo el
+  ancho y, al pie, lo que costó, lo que falta, *Equipo y cuentas del día* y la
+  propina. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

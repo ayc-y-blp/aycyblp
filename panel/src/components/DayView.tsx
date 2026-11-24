@@ -885,20 +885,25 @@ export default function DayView(
           dejaba un "Nadie asignado todavía" sobre un día que sí tiene
           equipo, que no es que falte: es que ese dato no es suyo. */}
       {conEquipo && (
-      /* En el computador el equipo y la propina comparten la fila; lo que
-         costó el día va debajo, a todo el ancho (2026-11-21, el computador
-         más compacto: eran tres filas). */
-      <div className={`${BLOQUE} lg:flex lg:flex-wrap lg:items-center lg:gap-x-4`}>
-        {/* En el computador esta fila no se parte: los nombres ocupan lo que
-            sobra y se doblan adentro, y el botón queda a su derecha. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 lg:min-w-0 lg:flex-1 lg:flex-nowrap">
+      /* **La gente arriba, lo que se hace y lo que costó abajo** (2026-11-24,
+         lo pidió el cliente con una foto: *"en esa vista puedes aprovechar un
+         montón de espacio reorganizando"*). Los puestos iban en una columna
+         angosta —nueve renglones con su equipo—, apretados por los botones de
+         la derecha, y la fila de lo que costó el día quedaba con media
+         pantalla vacía. Ahora, en el computador: *Equipo* con los puestos en
+         tres columnas a todo el ancho, y al pie, en una fila, lo que costó, lo
+         que falta, *Equipo y cuentas del día* y la propina. En el celular, el
+         mismo orden apilado. */
+      <div className={BLOQUE}>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <RotuloBloque>Equipo</RotuloBloque>
           {conGente.length === 0 ? (
             <span className="text-sm text-hueso/55">Nadie asignado todavía.</span>
           ) : (
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:min-w-0 lg:flex-1">
+            /* Cada puesto no se parte entre dos columnas, y sus nombres se doblan adentro. */
+            <ul className="w-full space-y-1 text-sm lg:w-auto lg:min-w-0 lg:flex-1 lg:columns-3 lg:gap-x-6 lg:space-y-0">
               {conGente.map((l) => (
-                <li key={l.puesto}>
+                <li key={l.puesto} className="break-inside-avoid lg:pb-1">
                   <span className="text-hueso/50">{l.puesto}:</span>{' '}
                   {l.asignados.map((nombre, k) => {
                     const t = turnosDelDia.find((x) => x.trabajador === nombre);
@@ -918,7 +923,28 @@ export default function DayView(
               ))}
             </ul>
           )}
-          <span className={`flex-1 ${conGente.length > 0 ? 'lg:hidden' : ''}`} />
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] lg:border-t lg:border-hueso/10 lg:pt-2">
+          {/* Lo que costó el día. Aparece solo cuando se pasó lista por
+              alguien: antes de eso el total sería cero y se leería como "no
+              se pagó nada", que es otra cosa que "todavía no se sabe". */}
+          {turnosDelDia.length > 0 && sinMarcar < turnosDelDia.length && (
+            <p className="w-full border-t border-hueso/10 pt-2 lg:w-auto lg:border-0 lg:pt-0">
+              <strong className="text-base tabular-nums text-oro">{enPesos(costo)}</strong>
+              <span className="text-hueso/65"> en el equipo de este día · </span>
+              <span className="text-hueso/65">{vinieron} vinieron</span>
+              {faltaron > 0 && (
+                <span className="text-rojo-texto">
+                  {' '}· {faltaron} {faltaron === 1 ? 'no llegó' : 'no llegaron'}
+                </span>
+              )}
+              {sinMarcar > 0 && (
+                <span className="text-ambar-texto"> · {sinMarcar} sin marcar</span>
+              )}
+            </p>
+          )}
+          <span className="hidden flex-1 lg:block" />
           {faltan > 0 && (
             <Pendiente>
               <span className="whitespace-nowrap">{faltan === 1 ? 'Falta' : 'Faltan'} {faltan}:</span>{' '}
@@ -931,59 +957,39 @@ export default function DayView(
               derecho. Relleno no va, porque el único de esta pantalla es
               *Agregar reserva*, que es a lo que se entra. */}
           <button onClick={() => setPlanificando('equipo')} disabled={!equipo}
-            className={ACCION_BLOQUE}>
+            className={`${ACCION_BLOQUE} text-[14px]`}>
             {turnosDelDia.length > 0 ? 'Equipo y cuentas del día' : 'Planificar equipo'}
           </button>
-        </div>
 
-        {/* Lo que costó el día. Aparece solo cuando se pasó lista por alguien:
-            antes de eso el total sería cero y se leería como "no se pagó
-            nada", que es otra cosa que "todavía no se sabe". */}
-        {turnosDelDia.length > 0 && sinMarcar < turnosDelDia.length && (
-          <p className="mt-2 border-t border-hueso/10 pt-2 text-[13px] lg:order-last lg:basis-full">
-            <strong className="text-base tabular-nums text-oro">{enPesos(costo)}</strong>
-            <span className="text-hueso/65"> en el equipo de este día · </span>
-            <span className="text-hueso/65">{vinieron} vinieron</span>
-            {faltaron > 0 && (
-              <span className="text-rojo-texto">
-                {' '}· {faltaron} {faltaron === 1 ? 'no llegó' : 'no llegaron'}
-              </span>
-            )}
-            {sinMarcar > 0 && (
-              <span className="text-ambar-texto"> · {sinMarcar} sin marcar</span>
-            )}
-          </p>
-        )}
-
-        {/* La propina, a la vista desde que hay alguien asignado y no solo
-            cuando ya se pasó lista: es el dato que se olvida, y a este día se
-            llega tanto para cerrar el turno como para anotarla sola. Va
-            aparte del costo, no sumada: esa plata no sale del negocio, pasa
-            por él. */}
-        {turnosDelDia.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1
-                          border-t border-hueso/10 pt-2 text-[13px]
-                          lg:mt-0 lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
-            <span className="text-hueso/65">Propina del día:</span>
-            {propina > 0 ? (
-              <span>
-                <strong className="text-base tabular-nums text-hueso">{enPesos(propina)}</strong>
-                <span className="text-hueso/65">
-                  , repartidos entre {reciben}{' '}
-                  {reciben === 1 ? 'persona' : 'personas'}
+          {/* La propina, a la vista desde que hay alguien asignado y no solo
+              cuando ya se pasó lista: es el dato que se olvida, y a este día
+              se llega tanto para cerrar el turno como para anotarla sola. Va
+              aparte del costo, no sumada: esa plata no sale del negocio, pasa
+              por él. */}
+          {turnosDelDia.length > 0 && (
+            <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 border-t border-hueso/10 pt-2
+                            lg:w-auto lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0">
+              <span className="text-hueso/65">Propina del día:</span>
+              {propina > 0 ? (
+                <span>
+                  <strong className="text-base tabular-nums text-hueso">{enPesos(propina)}</strong>
+                  <span className="text-hueso/65">
+                    , repartidos entre {reciben}{' '}
+                    {reciben === 1 ? 'persona' : 'personas'}
+                  </span>
                 </span>
-              </span>
-            ) : (
-              /* "Sin anotar" en ámbar y con borde: es lo que falta hacer,
-                 no un dato gris más. */
-              <Pendiente>sin anotar</Pendiente>
-            )}
-            <span className="flex-1" />
-            <button onClick={() => setPlanificando('propina')} className={ACCION_BLOQUE}>
-              {propina > 0 ? 'Editar propina' : 'Agregar propina'}
-            </button>
-          </div>
-        )}
+              ) : (
+                /* "Sin anotar" en ámbar y con borde: es lo que falta hacer,
+                   no un dato gris más. */
+                <Pendiente>sin anotar</Pendiente>
+              )}
+              <span className="flex-1 lg:hidden" />
+              <button onClick={() => setPlanificando('propina')} className={`${ACCION_BLOQUE} text-[14px]`}>
+                {propina > 0 ? 'Editar propina' : 'Agregar propina'}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       )}
 
