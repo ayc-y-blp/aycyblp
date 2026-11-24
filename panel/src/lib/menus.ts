@@ -161,6 +161,13 @@ export interface Menu {
    * en la cotización y el contrato (`detalleDe()` en `lib/detalle.ts`): la
    * descripción, la comida —en un menú de adulto, el menú de la casa—; los
    * bebestibles, los suyos. En blanco, el texto del sitio de siempre.
+   *
+   * **Es la propuesta** (cambió el mismo día, lo pidió el cliente: *"este
+   * texto solo corresponde a esta cotización… si lo cambio para esta
+   * cotización, lo guarda con el texto correspondiente a esta cotización"*):
+   * se copia a la línea al agregar el producto a una cotización
+   * (`textosDelProducto()`), y desde ahí es de esa cotización. Cambiarlo acá
+   * no toca las cotizaciones que ya lo tienen.
    */
   descripcion: string;
   /** Los bebestibles de este producto. Ver `descripcion`. */
@@ -176,6 +183,22 @@ export interface Menu {
 export function textoLargo(v: unknown, max = 1500): string {
   return String(v ?? '').replace(/\r/g, '').split('\n').map((r) => r.replace(/\s+/g, ' ').trim())
     .join('\n').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+}
+
+/**
+ * **Lo que el producto propone que incluye, para copiarlo a una línea**
+ * (2026-11-24): la descripción y, en un menú, los bebestibles. Se llama en
+ * cada lugar donde nace una línea de un producto —agregarlo a mano, la
+ * promoción, el arriendo o el show que se agregan solos, el cotizador del
+ * sitio y el importador—: desde ahí el texto es de esa cotización.
+ */
+export function textosDelProducto(m?: Pick<Menu, 'tipo' | 'descripcion' | 'bebestibles'> | null): {
+  descripcion: string; bebestibles: string;
+} {
+  return {
+    descripcion: textoLargo(m?.descripcion),
+    bebestibles: m?.tipo === TIPO_PRODUCTO.menu ? textoLargo(m?.bebestibles) : ''
+  };
 }
 
 /**

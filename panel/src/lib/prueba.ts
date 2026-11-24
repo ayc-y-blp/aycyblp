@@ -6732,6 +6732,9 @@ console.log('\nLas estadísticas del equipo');
     'Documento de Factura a Boleta',
     'Socio comercial de sin definir a Turismo Sur'
   ].join(' / '), 'corrección de una cotización: el cliente, el día, un producto nuevo y los datos cortos');
+  ok(C.cambiosDeLaCotizacion(q0, { ...q0, lineas: q0.lineas.map((l, k) => (k ? l : { ...l, texto: 'Entrada: ceviche|' })) })
+     .join() === `${q0.lineas[0].concepto}: cambió qué incluye`,
+     'cambiar qué incluye de una línea se nombra, sin el texto');
   ok(C.cambiosDeLaCotizacion(q0, { ...q0, lineas: [...q0.lineas, { concepto: 'Show ecuestre', cantidad: 1, precio: 0, descuento: 0 }] })
        .join() === 'Se agregó Show ecuestre: sin costo',
      'corrección de una cotización: lo que va incluido se dice sin costo, no "1 × $0"');
@@ -7634,13 +7637,14 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(!D.textoDelSitio('Sommelier')!.detalle.includes('misma libertad'),
      'Sommelier trae la lista del bar abierto: la cotización puede no traer Brasas');
   // La cotización de una sola alternativa: todo va arriba.
-  const una = D.desglose([{ id: 'P-1', conceptos: ['Sommelier', 'Desayuno', 'Arriendo'] }]);
+  const conceptos = (...n: string[]) => n.map((concepto) => ({ concepto }));
+  const una = D.desglose([{ id: 'P-1', lineas: conceptos('Sommelier', 'Desayuno', 'Arriendo') }]);
   ok(una.casa && una.comunes.map((x) => x.nombre).join() === 'Sommelier,Desayuno' && una.propios['P-1'].length === 0,
      'con una alternativa: el menú de la casa y cada producto con texto, arriba; el arriendo, sin detalle');
   // Dos alternativas: lo común arriba, lo distinto en su caja.
   const dos = D.desglose([
-    { id: 'A', conceptos: ['Lo Pirque', 'Menú Niños', 'Show ecuestre'] },
-    { id: 'B', conceptos: ['Sommelier', 'Menú Niños', 'Show ecuestre', 'Karting'] }
+    { id: 'A', lineas: conceptos('Lo Pirque', 'Menú Niños', 'Show ecuestre') },
+    { id: 'B', lineas: conceptos('Sommelier', 'Menú Niños', 'Show ecuestre', 'Karting') }
   ]);
   ok(dos.casa && dos.comunes.map((x) => x.nombre).join() === 'Menú Niños,Show ecuestre',
      'con alternativas: arriba lo que está en todas');
@@ -7665,11 +7669,43 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(D.detalleDe('Menú especial matrimonio', { descripcion: 'Cóctel y cena de tres tiempos' })!.detalle === 'Cóctel y cena de tres tiempos'
      && !D.detalleDe('Menú especial matrimonio') && D.detalleDe('Karting', { descripcion: 'Pista de 400 m' })!.detalle === 'Pista de 400 m',
      'un producto que el sitio no describe lleva lo propio; otro producto, su descripción en vez del texto del sitio');
-  const conCatalogo = D.desglose([{ id: 'P-2', conceptos: ['Lo Pirque', 'Menú especial matrimonio', 'Arriendo'] }],
-    [{ nombre: 'lo pirque', descripcion: 'Entrada: ceviche' }, { nombre: 'Menú especial matrimonio', descripcion: 'Cena de tres tiempos' }]);
-  ok(!conCatalogo.casa && conCatalogo.comunes.map((x) => x.nombre).join() === 'Lo Pirque,Menú especial matrimonio'
-     && conCatalogo.comunes[0].detalle.startsWith('Entrada: ceviche'),
-     'el desglose busca lo propio en el catálogo por nombre; sin menú de la casa si ninguno lo lleva');
+  // El texto de cada línea: el que se escribió para esta cotización (2026-11-24).
+  const propio = D.desglose([{ id: 'P-2', lineas: [
+    { concepto: 'Lo Pirque', descripcion: 'Entrada: ceviche' },
+    { concepto: 'Menú especial matrimonio', descripcion: 'Cena de tres tiempos' }, { concepto: 'Arriendo' }] }]);
+  ok(!propio.casa && propio.comunes.map((x) => x.nombre).join() === 'Lo Pirque,Menú especial matrimonio'
+     && propio.comunes[0].detalle.startsWith('Entrada: ceviche'),
+     'el desglose usa el texto de cada línea; sin menú de la casa si ninguno lo lleva');
+  const distinto = D.desglose([
+    { id: 'A', lineas: [{ concepto: 'Lo Pirque' }, { concepto: 'Menú Niños' }] },
+    { id: 'B', lineas: [{ concepto: 'Lo Pirque', bebestibles: 'espumante' }, { concepto: 'Menú Niños' }] }
+  ]);
+  ok(distinto.comunes.map((x) => x.nombre).join() === 'Menú Niños'
+     && distinto.propios.A.map((x) => x.nombre).join() === 'Lo Pirque'
+     && distinto.propios.B[0]?.detalle === 'Bebestibles: espumante',
+     'el mismo producto con distinto texto en la A y la B va en cada una, no arriba');
+
+  // El texto nace con el del producto y queda en la línea (2026-11-24).
+  const M = await import('./menus.ts');
+  const especialProd = M.nuevoProducto({ nombre: 'Lo Pirque', descripcion: 'Entrada: ceviche', bebestibles: 'espumante' });
+  const extraProd = M.nuevoProducto({ nombre: 'Karting', tipo: M.TIPO_PRODUCTO.extra, descripcion: 'Pista de 400 m', bebestibles: 'agua' });
+  ok(JSON.stringify(M.textosDelProducto(especialProd)) === JSON.stringify({ descripcion: 'Entrada: ceviche', bebestibles: 'espumante' })
+     && JSON.stringify(M.textosDelProducto(extraProd)) === JSON.stringify({ descripcion: 'Pista de 400 m', bebestibles: '' })
+     && JSON.stringify(M.textosDelProducto(undefined)) === JSON.stringify({ descripcion: '', bebestibles: '' }),
+     'lo que el producto propone: la descripción, y los bebestibles solo en un menú');
+  const C = await import('./cotizar.ts');
+  const nueva = C.lineaDeProducto(especialProd, 'P-9', 20, 50000);
+  ok(nueva.descripcion === 'Entrada: ceviche' && nueva.bebestibles === 'espumante',
+     'una línea nueva nace con el texto del producto');
+  const P = await import('./presupuestos.ts');
+  const [lp] = C.prepararLineas([{ ...nueva, descripcion: 'Entrada: empanadas' }], [{ ...especialProd, descripcion: 'Otra cosa' }], 20, false);
+  ok(lp.descripcion === 'Entrada: empanadas' && lp.bebestibles === 'espumante',
+     'lo escrito en la cotización se queda: el producto cambiado no lo toca');
+  const enc = P.ENCABEZADO_LINEAS;
+  const fila = P.filaLinea(enc, { ...lp, descripcion: 'Entrada: empanadas\nPostre: mote' });
+  const [leida] = P.leerLineasDe([enc, fila]);
+  ok(leida.descripcion === 'Entrada: empanadas\nPostre: mote' && leida.bebestibles === 'espumante',
+     'la línea guarda su texto, con sus renglones, en la planilla');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

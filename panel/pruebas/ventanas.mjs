@@ -63,7 +63,9 @@ export const NO_CABEN = {
   // eficiencia del espacio y poner las alternativas en una segunda fila abajo…
   // y un botón grande de las notas"*). La fila de las alternativas suma unos
   // 50px; en el paso 3, además, *Fuera del local* le quita ancho a los extras.
-  'v-cotizar-3-productos': 698,
+  // Con el 📝 de cada línea (2026-11-24, qué incluye en esta cotización), la
+  // del show, que solo tenía su pastilla, crece 2px: 700.
+  'v-cotizar-3-productos': 700,
   'v-cotizar-4-envio': 665,
   'v-cotizar-4-envio-vendedor': 665,
   'v-cotizar-5-contrato': 681,
@@ -286,6 +288,12 @@ export const ESCENAS = {
     await clic(p.getByRole('radio', { name: /Gran Premio de Fin de Año/ }));
     await clic(p.getByRole('radio', { name: 'A Brasas abiertas' }));
   }),
+  // Qué incluye un producto en esta cotización (2026-11-24, `TextoDeLinea`): el
+  // primer menú de adulto, que es el que lleva los dos campos y el más alto.
+  'v-texto-de-linea': async () => {
+    await cotizacion(/Productos/);
+    await clic(ventana().getByRole('button', { name: /^Qué incluye / }).first());
+  },
   // El simulador de evento (2026-11-23): solo calcula, no guarda nada.
   'v-simulador': async () => {
     await cotizacion(/Productos/);

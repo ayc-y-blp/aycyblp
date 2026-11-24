@@ -128,6 +128,38 @@ export function detalleDe(nombre: string, propio?: DetallePropio): { detalle: st
   return detalle || casa ? { detalle, casa } : undefined;
 }
 
+/**
+ * **El texto de siempre de cada parte**, para mostrarlo al editar lo que
+ * incluye una línea (2026-11-24): en un menú de adulto, el menú de la casa y
+ * sus bebestibles (sin *Bebestibles:* adelante, que lo pone `detalleDe()`); en
+ * otro producto, su texto del sitio. Vacío si el sitio no lo describe.
+ */
+export function textoDeSiempre(nombre: string): { descripcion: string; bebestibles: string } {
+  const s = textoDelSitio(nombre);
+  if (!s) return { descripcion: '', bebestibles: '' };
+  if (s.casa) return { descripcion: MENU_CASA_DEL_SITIO, bebestibles: s.detalle.replace(/^bebestibles?\s*:\s*/i, '') };
+  return { descripcion: s.detalle, bebestibles: '' };
+}
+
+/** Dos textos iguales sin mirar espacios, mayúsculas, tildes ni *Bebestibles:* adelante. */
+const llano = (t: string) => normalizar(String(t ?? '')).replace(/^bebestibles?\s*:\s*/, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * **Lo que se guarda en la línea**: en blanco si es el texto de siempre, así
+ * sigue al sitio y el menú de la casa va arriba, en común; si no, lo escrito.
+ */
+export function propioOVacio(nombre: string, parte: 'descripcion' | 'bebestibles', valor: string): string {
+  const siempre = textoDeSiempre(nombre)[parte];
+  return siempre && llano(valor) === llano(siempre) ? '' : String(valor ?? '');
+}
+
+/** Si una línea dice lo mismo que propone el producto (o el sitio, si el producto no trae). */
+export function igualAlProducto(nombre: string, linea: DetallePropio, producto: DetallePropio): boolean {
+  const parte = (k: 'descripcion' | 'bebestibles') =>
+    llano(propioOVacio(nombre, k, linea[k] ?? '')) === llano(propioOVacio(nombre, k, producto[k] ?? ''));
+  return parte('descripcion') && parte('bebestibles');
+}
+
 /** Un renglón *"Nombre: texto"* partido en dos, para dibujarlo en columnas. */
 export function partes(renglon: string): { que: string; dice: string } {
   const m = renglon.match(/^([^:]{2,30}):\s*(.+)$/);
@@ -139,35 +171,47 @@ export interface ProductoDetallado { nombre: string; detalle: string }
 /**
  * **El desglose de la cotización**: arriba, lo que tienen todas las
  * alternativas (el menú de la casa si algún menú lo lleva, y cada producto que
- * está en todas); en cada alternativa, solo lo que la distingue. Con una sola,
- * todo va arriba. Un producto sin texto en el sitio no aparece.
+ * está en todas **con el mismo texto**); en cada alternativa, solo lo que la
+ * distingue. Con una sola, todo va arriba. Un producto sin texto no aparece.
+ *
+ * **El texto es el de cada línea** (2026-11-24, lo pidió el cliente: *"este
+ * texto solo corresponde a esta cotización"*): lo que se escribió para esta
+ * cotización, o el del sitio si la línea no trae (`detalleDe()`). Ya no se
+ * mira el catálogo: cambiar un producto no cambia una cotización hecha. Si la
+ * A y la B llevan el mismo producto con distinto texto, va en cada una.
  */
 export function desglose(
-  alternativas: { id: string; conceptos: string[] }[],
-  /**
-   * El catálogo, para lo que cada producto trae escrito (2026-11-24). Se busca
-   * por nombre, sin tildes ni mayúsculas. Sin catálogo, solo el texto del sitio.
-   */
-  catalogo: ({ nombre: string } & DetallePropio)[] = []
+  alternativas: { id: string; lineas: ({ concepto: string } & DetallePropio)[] }[]
 ): { casa: boolean; comunes: ProductoDetallado[]; propios: Record<string, ProductoDetallado[]> } {
-  const propioDe = (n: string) => catalogo.find((m) => normalizar(m.nombre) === normalizar(n));
-  const detalle = (n: string) => detalleDe(n, propioDe(n));
-  const todas = alternativas.map((a) => [...new Set(a.conceptos.map((n) => n.trim()).filter(Boolean))]);
-  const enTodas = (n: string) => todas.every((lista) => lista.some((x) => normalizar(x) === normalizar(n)));
+  // Cada alternativa: sus productos una vez cada uno, con su texto.
+  const todas = alternativas.map((a) => {
+    const vistos = new Set<string>();
+    const lista: { nombre: string; t: ReturnType<typeof detalleDe> }[] = [];
+    for (const l of a.lineas) {
+      const nombre = String(l.concepto ?? '').trim();
+      if (!nombre || vistos.has(normalizar(nombre))) continue;
+      vistos.add(normalizar(nombre));
+      lista.push({ nombre, t: detalleDe(nombre, l) });
+    }
+    return lista;
+  });
+  const llave = (x: { nombre: string; t: ReturnType<typeof detalleDe> }) =>
+    `${normalizar(x.nombre)}\n${x.t?.detalle ?? ''}`;
+  const enTodas = (x: { nombre: string; t: ReturnType<typeof detalleDe> }) =>
+    todas.every((lista) => lista.some((y) => llave(y) === llave(x)));
   const vistos = new Set<string>();
   const comunes: ProductoDetallado[] = [];
   let casa = false;
-  for (const lista of todas) for (const n of lista) {
-    const t = detalle(n);
-    if (t?.casa) casa = true;
-    if (!t?.detalle || !enTodas(n) || vistos.has(normalizar(n))) continue;
-    vistos.add(normalizar(n));
-    comunes.push({ nombre: n, detalle: t.detalle });
+  for (const lista of todas) for (const x of lista) {
+    if (x.t?.casa) casa = true;
+    if (!x.t?.detalle || !enTodas(x) || vistos.has(llave(x))) continue;
+    vistos.add(llave(x));
+    comunes.push({ nombre: x.nombre, detalle: x.t.detalle });
   }
   const propios: Record<string, ProductoDetallado[]> = {};
   alternativas.forEach((a, i) => {
-    propios[a.id] = todas[i].filter((n) => !enTodas(n))
-      .flatMap((n) => { const t = detalle(n); return t?.detalle ? [{ nombre: n, detalle: t.detalle }] : []; });
+    propios[a.id] = todas[i].filter((x) => !enTodas(x))
+      .flatMap((x) => (x.t?.detalle ? [{ nombre: x.nombre, detalle: x.t.detalle }] : []));
   });
   return { casa, comunes, propios };
 }

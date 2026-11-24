@@ -443,8 +443,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   menú y uno para bebestibles"*): *Qué incluye* y *Bebestibles* en *Productos*;
   cada uno reemplaza su parte del texto del sitio en la cotización y el
   contrato (en un menú de adulto, *Qué incluye* reemplaza el menú de la casa).
-  Dos columnas nuevas al final de `Menús`. En un PR abierto. Ver
-  `panel/CLAUDE.md`, "Qué incluye cada producto, escrito en su ficha".
+  Dos columnas nuevas al final de `Menús`. **El texto queda fijo en cada
+  cotización** (lo pidió el cliente el mismo día: *"este texto solo
+  corresponde a esta cotización… si lo cambio para esta cotización, lo guarda
+  con el texto correspondiente a esta cotización"*): lo del producto es la
+  propuesta y se copia a la línea al agregarlo; en la cotización se cambia con
+  el 📝 de cada línea, y cambiar el producto no toca las cotizaciones hechas.
+  Dos columnas nuevas al final de `Presupuesto Líneas`. En un PR abierto
+  (#343). Ver `panel/CLAUDE.md`, "Qué incluye cada producto, escrito en su
+  ficha" y "Y en cada cotización, su propio texto".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -602,7 +609,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor`, `Costo`, `Lo cobra`, `Descripción`, `Bebestibles` | Reservas (por nombre), líneas de cotización |
 | `Clientes` | una ficha | `ID` (`C-0001`), `Nombre`, `Empresa del cliente`, `RUT`, `Domicilio`, `Teléfono`, `Correo`, `Giro`, `Creado por` | `Presupuestos.ID Cliente` |
 | `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Origen` (*Sitio · …*), `Aviso del sitio visto`, `Otras empresas coordinadas`, `Promoción` (la aplicada, su ID), `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
-| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF`, `Lo cobra` (otra empresa: va aparte del total) | `Presupuestos` |
+| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF`, `Lo cobra` (otra empresa: va aparte del total), `Descripción` y `Bebestibles` (qué incluye en esta cotización; en blanco, el texto del sitio) | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |
 | `Trabajadores` | una ficha | `Nombre` (es la identidad), `Puesto habitual`, `Activo`, `Token de acceso`, `Modalidad` (*por turno / contratado*), `Pago por jornada`, `Valor hora extra`, `Participa en propina` (en blanco = sí), `Nota de pago` (datos bancarios), `Por confirmar`, `Pago jornada preparación` | `Turnos.Trabajador` por nombre |

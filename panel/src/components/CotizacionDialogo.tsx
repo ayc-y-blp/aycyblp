@@ -44,7 +44,8 @@ import {
   MOTIVOS_PERDIDA, aplicaReglaShow, minimoShowEnLinea, enCarrera, type ReglaShow,
   arriendoDelDia, personasParaMinimos, enFormaDeLinea, conMinimoShow, conMinimoArriendo, type ReglaArriendo
 } from '@/lib/cotizar';
-import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, type Menu } from '@/lib/menus';
+import { paraCotizar, precioParaCotizar, aPrecio, TIPO_PRODUCTO, MONEDA, COBRO, textosDelProducto, type Menu } from '@/lib/menus';
+import { igualAlProducto } from '@/lib/detalle';
 import {
   condicionesDe, estadoCobros, montoCobro, CONCEPTO_COBRO, ganaSinRespaldo, type Cobro
 } from '@/lib/cobros';
@@ -80,6 +81,7 @@ import NotasCotizacion from './NotasCotizacion';
 import { puedeVerNotas, iconoDeMedio, type Nota } from '@/lib/notas';
 import { agendaDe, fraseDe } from '@/lib/agenda';
 import AplicarPromocion from './AplicarPromocion';
+import TextoDeLinea from './TextoDeLinea';
 import { empresaDe, mensajeParaCoordinar, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import {
   promocionDe, beneficioDePromocion, rigePromocion, aplicarALineas, type Promocion
@@ -330,6 +332,8 @@ export default function CotizacionDialogo({
   /** **La promoción aplicada** (2026-11-24): su ID, o vacío. */
   const [promocion, setPromocion] = useState(p?.promocion ?? '');
   const [aplicandoPromo, setAplicandoPromo] = useState(false);
+  /** La línea cuyo *Qué incluye* se está editando (2026-11-24), por su posición. */
+  const [textoDe, setTextoDe] = useState<number | null>(null);
   /** `''` es por definir. Ver `DOCUMENTO`. */
   const [documento, setDocumento] = useState<Documento>(p?.documento ?? '');
   /**
@@ -788,7 +792,8 @@ export default function CotizacionDialogo({
   /** Lo que se manda al guardar, en palabras: con qué se compara lo guardado (`cambiosDeLaCotizacion()`). */
   const enCorreccion: CotizacionEnCorreccion = {
     cliente: cliente?.nombre ?? '', fecha: fechaReal, invitados, total: cuentas.total,
-    lineas: vistas.map((l) => ({ concepto: l.concepto, cantidad: l.cantidad, precio: l.precio, descuento: l.descuento })),
+    lineas: vistas.map((l) => ({ concepto: l.concepto, cantidad: l.cantidad, precio: l.precio, descuento: l.descuento,
+      texto: [l.descripcion ?? '', l.bebestibles ?? ''].join('|') })),
     datos: [
       ['tipo de evento', tipoEvento],
       ['descuento sobre el total', `${descuento || 0}%`],
@@ -871,6 +876,28 @@ export default function CotizacionDialogo({
 
   const cambiarLinea = (i: number, cambio: Partial<Linea>) =>
     setLineas(vistas.map((l, k) => (k === i ? { ...l, ...cambio } : l)));
+
+  /**
+   * **📝 Qué incluye de una línea** (2026-11-24): nace con el texto del producto
+   * y se cambia en `TextoDeLinea`, solo para esta cotización. En el computador,
+   * solo el ícono: con *Qué incluye* escrito, la fila de un nombre largo se
+   * doblaba. *✎* y el dorado dicen que ya no dice lo del producto. Lo que cobra
+   * otra empresa no va en el desglose: no lo trae.
+   */
+  const botonTexto = (l: Linea, prod: Menu | undefined, i: number, clase: string) => {
+    if (l.loCobra) return null;
+    const cambiado = !igualAlProducto(l.concepto, l, textosDelProducto(prod));
+    return (
+      <button type="button" onClick={() => setTextoDe(i)}
+        aria-label={`Qué incluye ${l.concepto}${cambiado ? ', cambiado para esta cotización' : ''}`}
+        title={cambiado ? 'Qué incluye: cambiado para esta cotización' : 'Qué incluye'}
+        className={`boton min-h-[36px] !px-2 text-[13px] font-normal lg:min-w-[36px] ${clase}
+                    ${cambiado ? 'border-oro/70 font-semibold text-oro' : ''}`}>
+        <span aria-hidden="true">📝{cambiado ? ' ✎' : ''}</span>
+        <span aria-hidden="true" className="lg:hidden">{cambiado ? 'Qué incluye · cambiado' : 'Qué incluye'}</span>
+      </button>
+    );
+  };
 
   const agregar = (m: Menu) => {
     // Una sola vez por cotización: ver `yaEstaEnLaCotizacion()`.
@@ -2444,8 +2471,13 @@ export default function CotizacionDialogo({
                           <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px]
                                            font-semibold text-ambar-texto">lo cobra {l.loCobra} · aparte</span>
                         )}
+                        {/* **Qué incluye, en esta cotización** (2026-11-24): en el
+                            computador, al lado del nombre; en el celular, en el renglón
+                            de *Quitar* (`botonTexto`, más abajo). */}
+                        {botonTexto(l, prod, i, 'hidden lg:inline-flex')}
                         </span>
                         <span className="flex-1 lg:hidden" />
+                        {botonTexto(l, prod, i, 'lg:hidden')}
                         {esShowIncluido ? (
                           <span className="rounded-full border border-verde-fuerte/60 px-2 py-0.5
                                            text-[13px] font-semibold text-verde-texto lg:col-start-2 lg:col-end-7
@@ -3773,6 +3805,16 @@ export default function CotizacionDialogo({
           onCancelarEvento={() => { setCorrigiendo(false); setCancelando(true); }}
           onListo={(hacia) => { setCorrigiendo(false); onCambio(); if (onAbrir) onAbrir(hacia || p.id, 4); else onCerrar(); }} />
       )}
+      {textoDe !== null && vistas[textoDe] && (() => {
+        const l = vistas[textoDe];
+        const prod = productoDe(l.concepto, datos.menus);
+        return (
+          <TextoDeLinea concepto={l.concepto} esMenu={prod?.tipo === TIPO_PRODUCTO.menu}
+            linea={{ descripcion: l.descripcion ?? '', bebestibles: l.bebestibles ?? '' }}
+            producto={textosDelProducto(prod)}
+            onCambio={(c) => cambiarLinea(textoDe, c)} onCerrar={() => setTextoDe(null)} />
+        );
+      })()}
       {aplicandoPromo && (
         <AplicarPromocion promociones={datos.promociones ?? []} catalogo={datos.menus} invitados={invitados}
           fecha={fechaReal} yaEstan={vistas} onCerrar={() => setAplicandoPromo(false)} onAplicar={aplicarPromocion} />

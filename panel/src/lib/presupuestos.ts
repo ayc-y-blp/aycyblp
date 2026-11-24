@@ -36,7 +36,7 @@
  * porque mañana cambie una tarifa.
  */
 import { normalizar, indices, ESTADO_PAGO } from './columnas.ts';
-import { canonizar, aPrecio, type Menu } from './menus.ts';
+import { canonizar, aPrecio, textoLargo, type Menu } from './menus.ts';
 import { componerMenu } from './shopify.ts';
 import { esFecha, sumarDias, type Fecha } from './fechas.ts';
 
@@ -332,7 +332,20 @@ export const COL_LINEAS = {
    * karting. Sale del catálogo (`Menu.loCobra`) cada vez que se preparan las
    * líneas. En blanco es nuestra. **Va aparte del total** (`cuentasDe()`).
    */
-  loCobra: 'Lo cobra'
+  loCobra: 'Lo cobra',
+  /**
+   * **Qué incluye este producto en ESTA cotización** (2026-11-24, lo pidió el
+   * cliente: *"que este texto solo corresponde a esta cotización. Y si uso el
+   * producto en otra cotización de nuevo, me puede mantener el texto
+   * propuesto, pero si lo cambio para esta cotización, lo guarda con el texto
+   * correspondiente a esta cotización"*). Nace con lo que el producto trae
+   * escrito en *Productos* (`textosDelProducto()`) y se cambia en la ventana
+   * de cotizar. **Queda fijo**: cambiar el producto después no lo toca. En
+   * blanco, el texto del sitio (`detalleDe()`).
+   */
+  descripcion: 'Descripción',
+  /** Los bebestibles de este menú en esta cotización. Igual que `descripcion`. */
+  bebestibles: 'Bebestibles'
 } as const;
 
 export const ENCABEZADO_PRESUPUESTOS: string[] = Object.values(COL_PRESUPUESTOS);
@@ -418,6 +431,10 @@ export interface LineaPresupuesto {
   precioUF: number;
   /** La empresa que la cobra, si no somos nosotros. Ver `COL_LINEAS.loCobra`. */
   loCobra?: string;
+  /** Qué incluye, escrito para esta cotización. Ver `COL_LINEAS.descripcion`. */
+  descripcion?: string;
+  /** Sus bebestibles, escritos para esta cotización. */
+  bebestibles?: string;
   fila: number;
 }
 
@@ -1290,6 +1307,8 @@ export function leerLineasDe(filas: string[][]): LineaPresupuesto[] {
       sigue: /^s[ií]$/i.test(en(f, i.sigue).trim()),
       precioUF: aPrecio(en(f, i.precioUF)),
       loCobra: en(f, i.loCobra).trim(),
+      descripcion: textoLargo(en(f, i.descripcion)),
+      bebestibles: textoLargo(en(f, i.bebestibles)),
       fila: n + 1
     });
   }
@@ -1315,6 +1334,8 @@ export function filaLinea(
   poner(i.sigue, l.sigue ? 'sí' : '');
   poner(i.precioUF, l.precioUF ? String(l.precioUF) : '');
   poner(i.loCobra, l.loCobra ?? '');
+  poner(i.descripcion, textoLargo(l.descripcion));
+  poner(i.bebestibles, textoLargo(l.bebestibles));
   return fila;
 }
 
@@ -1332,7 +1353,7 @@ export function filaLinea(
  * negativas, que solo podrían restar de un total que una persona va a leer.
  */
 export type LineaEntrante = Omit<LineaPresupuesto, 'fila' | 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF'>
-  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF' | 'loCobra'>>;
+  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF' | 'loCobra' | 'descripcion' | 'bebestibles'>>;
 
 export function normalizarLineas(
   lineas: LineaEntrante[]
@@ -1351,7 +1372,9 @@ export function normalizarLineas(
       ivaIncluido: l.ivaIncluido !== false,
       sigue: !!l.sigue,
       precioUF: aPrecio(l.precioUF),
-      loCobra: String(l.loCobra ?? '').trim()
+      loCobra: String(l.loCobra ?? '').trim(),
+      descripcion: textoLargo(l.descripcion),
+      bebestibles: textoLargo(l.bebestibles)
     });
   }
   return salida;

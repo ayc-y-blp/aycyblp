@@ -8,7 +8,7 @@ import { HOJA_FECHAS, HOJA_RESERVAS } from '@/lib/columnas';
 import { ocupacionDeTodos } from '@/lib/ocupacion';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
 import { HOJA_CONFIG } from '@/lib/config';
-import { HOJA_MENUS, sinCostos } from '@/lib/menus';
+import { HOJA_MENUS, sinCostos, textoLargo } from '@/lib/menus';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { vendedoresParaAsignar } from '@/lib/asignar';
@@ -194,7 +194,10 @@ function lineasDelCuerpo(crudo: unknown, id: string): LineaEntrante[] {
       personas: aEntero(l.personas),
       descuento: aEntero(l.descuento),
       ivaIncluido: l.ivaIncluido !== false,
-      sigue: l.sigue === true
+      sigue: l.sigue === true,
+      // Lo que incluye, escrito para esta cotización (2026-11-24): texto, limpio.
+      descripcion: textoLargo(l.descripcion),
+      bebestibles: textoLargo(l.bebestibles)
     };
   });
 }

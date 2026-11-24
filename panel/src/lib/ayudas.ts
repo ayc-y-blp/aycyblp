@@ -256,9 +256,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cotización.',
       'Un candidato es alguien que preguntó: se anota con cliente, fecha e '
       + 'invitados, y se cotiza después.',
-      'La cotización que recibe el cliente dice qué incluye cada producto, con los textos del '
-      + 'sitio: arriba el menú de la casa y lo que tienen todas las alternativas, y en cada una, '
-      + 'lo que la distingue. Un producto que el sitio no describe, como el arriendo, va sin detalle.',
+      'La cotización que recibe el cliente dice qué incluye cada producto: arriba el menú de la '
+      + 'casa y lo que tienen todas las alternativas, y en cada una, lo que la distingue. El texto '
+      + 'nace con el del producto (o el del sitio) y se cambia con el 📝 de cada línea, '
+      + 'solo para esa cotización. Un producto sin texto, como el arriendo, va sin detalle.',
       'Si el cliente dice que no va, "✕ Se cayó…" la da por perdida con su motivo: '
       + 'está en cada paso de la cotización y al lado de cada fila de la lista. '
       + 'Una ganada no se cae: se cancela, con su devolución.',
@@ -405,10 +406,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'no queda.',
       'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
       + 'en una cotización va aparte del total y no paga comisión.',
-      '*Qué incluye* y *Bebestibles* son lo que dice la cotización y el contrato '
-      + 'de ese producto. En blanco va el texto del sitio, que se ve de muestra; '
-      + 'escritos, lo reemplazan: así se arma un menú especial con su propio '
-      + 'detalle. Cada campo cambia solo su parte.',
+      '*Qué incluye* y *Bebestibles* son lo que propone ese producto para la '
+      + 'cotización y el contrato. En blanco va el texto del sitio, que se ve de '
+      + 'muestra; escritos, lo reemplazan: así se arma un menú especial con su '
+      + 'propio detalle. Cada campo cambia solo su parte. Se copian a la cotización '
+      + 'al agregar el producto, y ahí se pueden cambiar solo para esa: cambiarlos '
+      + 'acá no toca las cotizaciones que ya lo tienen.',
       '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '
       + 'vende con el evento —el karting, el taller de queso, un transfer—, con su '
       + 'RUT, contacto, teléfono y correo. Sus datos salen en la cotización y en '
@@ -793,6 +796,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Aparecen los productos marcados "Se puede cotizar" en Productos, con el precio que proponen: arriba los menús, abajo los extras y el arriendo.',
       'Cada producto va una sola vez: ya agregado, su botón queda apagado con un ✓ y la cantidad se cambia en su línea.',
       'El precio se cambia en la línea: es parte de la negociación. "Otra línea" es para algo que no está en el catálogo.',
+      '📝, en cada línea: qué incluye ese producto, lo que dicen la cotización y el contrato. Nace con el texto del producto y se cambia ahí, solo para esta cotización. 📝 ✎, en dorado, es que ya se cambió.',
       'En un día privado con poca gente, el show ecuestre tiene un precio mínimo (Configuración → Extras y arriendo). Si no va, quítalo.',
       'El arriendo también: en un día que no está abierto al público con poca gente, o en un evento exclusivo en un día público, la línea de arriendo aparece sola con su mínimo. Se puede subir, no bajar ni quitar. Si ese día ya hay otro evento, no tiene mínimo.'
     ]
@@ -1412,7 +1416,21 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       + 'En blanco va el texto del sitio, que se ve de muestra en el campo.',
       'En un menú de adulto, lo que escribas reemplaza el menú de la casa (entrada, plato principal, '
       + 'acompañamientos y postre): sirve para un menú especial. Un renglón por parte, como '
-      + '«Entrada: ceviche de reineta», se lee en dos columnas.'
+      + '«Entrada: ceviche de reineta», se lee en dos columnas.',
+      'Es la propuesta: se copia a cada cotización al agregar el producto. Cambiarlo acá no toca '
+      + 'las cotizaciones que ya lo tienen; en una cotización se cambia con el 📝 de su línea.'
+    ]
+  },
+  textoDeLinea: {
+    titulo: 'Qué incluye, en esta cotización',
+    texto: [
+      'Es lo que dice la cotización y el contrato de este producto. Nació con el texto del producto '
+      + '(o el del sitio, si el producto no trae uno) y lo que escribas acá vale solo para esta '
+      + 'cotización: el producto y las otras cotizaciones no cambian. Se guarda solo.',
+      'En un menú de adulto, si cambias «Qué incluye» ese menú deja de llevar el menú de la casa y '
+      + 'muestra lo tuyo. Un renglón por parte, como «Entrada: ceviche de reineta», se lee en dos '
+      + 'columnas. ↺ vuelve a lo que propone el producto.',
+      'En una cotización ganada de un día cerrado, el cambio entra en la lista de lo que cambió.'
     ]
   },
   bebestiblesProducto: {
