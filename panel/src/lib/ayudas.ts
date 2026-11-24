@@ -51,6 +51,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Apreta Equipo al pie de la tarjeta para planificar quién trabaja: la '
       + 'tarjeta se da vuelta y muestra el resumen.',
       'Agregar reserva anota a alguien que llamó o escribió por WhatsApp.',
+      'Lo que viene · Semana · Mes, en el marco dorado: Lo que viene muestra '
+      + 'desde hoy, como siempre; Semana y Mes, con ◀ ▶, van a las semanas y '
+      + 'los meses que pasaron para revisar sus reservas. Del pasado salen los '
+      + 'días que se abrieron o que tuvieron reservas. ← Calendario, en un día, '
+      + 'vuelve al mismo periodo.',
       '🛒 Shopify · ✍ A mano · 🤝 Cotización dejan ver solo las reservas que '
       + 'vienen de ahí: la gente, la barra y lo que falta cobrar de cada día '
       + 'cuentan solo esas, y el cupo y el color siguen siendo los del día '

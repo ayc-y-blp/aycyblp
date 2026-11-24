@@ -487,6 +487,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   karting. **Ninguna promoción de producción tiene días de anticipación
   todavía**: los pone el cliente en *⏳ Anticipación*. Ver `CLAUDE.md`, "El
   cotizador de promociones", y `panel/CLAUDE.md`.
+- **El calendario de Reservas va al pasado** (24-11-2026, lo pidió el
+  cliente): *Lo que viene · Semana · Mes* con ◀ ▶ (`ElegirPeriodo`), en el
+  computador y en el celular; del pasado salen los días que se abrieron o
+  tuvieron reservas, y *← Calendario* vuelve al mismo periodo. Ver
+  `panel/CLAUDE.md`, "El calendario de Reservas va al pasado".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

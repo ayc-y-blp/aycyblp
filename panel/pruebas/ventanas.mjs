@@ -90,7 +90,10 @@ export const ESPACIO_ACEPTADO = {
  * agrega acá en el mismo PR que la crea.**
  */
 export const PANTALLAS = [
-  ['calendario', '/'], ['cotizaciones', '/presupuestos'],
+  ['calendario', '/'],
+  // Un mes pasado en el calendario de Reservas (2026-11-24): el marco del periodo con sus flechas.
+  ['calendario-mes', '/?ver=mes&en=2026-10'],
+  ['cotizaciones', '/presupuestos'],
   ['cotizaciones-lista', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); }],
   // La Lista abre en *Mes* desde el 2026-11-22: la otra vista que se mide es *Todo*,
   // la que trae *Ganado mes a mes*.

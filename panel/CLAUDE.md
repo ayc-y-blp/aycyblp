@@ -164,7 +164,7 @@ revisan antes de cada cambio en esta carpeta.
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
-  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
+  | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, el calendario de Reservas: *Lo que viene · Semana · Mes*) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
@@ -228,6 +228,46 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El calendario de Reservas va al pasado (2026-11-24)
+
+Lo pidió el cliente: *"igual se tiene que poder revisar las reservas del
+pasado. Entonces, tanto en vista calendario como en la vista de lista,
+agrégame por favor flechas para moverse a semanas anteriores. O una buena
+forma de hacerlo bajo nuestras reglas"*. El calendario partía siempre en hoy:
+un sábado que ya pasó solo se veía escribiendo su dirección.
+
+- **El marco del periodo** (`ElegirPeriodo`, la pieza de Cotizaciones →
+  *Lista*, Estadísticas, Vendedores e Informe), en la fila de los filtros de
+  origen: ***Lo que viene · Semana · Mes***.
+  - *Lo que viene* es lo de siempre: desde hoy, los días de Configuración,
+    con las dos primeras semanas completas y las demás en chico. Es la que
+    abre.
+  - *Semana* y *Mes* llevan ◀ ▶, hacia atrás y hacia adelante, sin tope, y se
+    ven completos. *Semana* parte en la semana en curso (o en la primera del
+    mes que se miraba); *Mes*, en el mes en curso (o en el de la semana).
+- **Es la misma pantalla en el computador y en el celular** (la "vista de
+  lista" del cliente es el celular, donde los días van uno debajo del otro):
+  en el celular el marco ocupa el ancho.
+- **Del pasado salen solo los días que se abrieron o que tuvieron reservas**
+  (o algo cotizado): un sábado de la regla que nunca se abrió es ruido. Si no
+  hubo ninguno, lo dice. El encabezado del mes cuenta los que se ven.
+- **El periodo va en la dirección** (`/?ver=mes&en=2026-10`,
+  `/?ver=semana&en=2026-11-02`) y en `sessionStorage`
+  (`VOLVER_CALENDARIO`): ***← Calendario* de la página del día vuelve a la
+  misma semana o mes**. Entrar por el menú abre *Lo que viene* y lo olvida.
+- **Cambiar de periodo pide solo la ocupación** de esas fechas
+  (`/api/ocupacion?desde=…&hasta=…`, que ya existía para Turnos y Extras): las
+  reservas, las fechas y el equipo ya venían enteros. Con dos flechas
+  seguidas vale la respuesta de la última. Mientras llega, las semanas se ven
+  apagadas.
+- *Agregar reserva* propone el primer día abierto desde hoy, nunca uno
+  pasado, aunque se esté mirando octubre.
+- **Lecturas de Google**: una tanda por cada cambio de periodo (la de
+  `/api/ocupacion`, la misma de abrir la pantalla). **Ningún permiso
+  cambió**: lo pasado lo ve quien ya veía el calendario. **Ayuda**: el `?`
+  del calendario. **Ventanas**: la pantalla `calendario-mes` (octubre) entra
+  en la prueba de espacio.
 
 ## Qué incluye cada producto, escrito en su ficha (2026-11-24)
 

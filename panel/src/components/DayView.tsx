@@ -24,7 +24,7 @@ import { cuentaEnElCalendario, estadoVisible, lineasDe, totalDe, personasDe,
          folioDe, gentePosible, type Presupuesto, type LineaPresupuesto } from '@/lib/presupuestos';
 import { aCSV } from '@/lib/csv';
 import { ocupaLugar, faltaCobrar, estaAbonada, enPesos } from '@/lib/ocupacion';
-import { Aviso } from './CalendarView';
+import { Aviso, VOLVER_CALENDARIO } from './CalendarView';
 import ReservaForm from './ReservaForm';
 import Dialogo from './Dialogo';
 import { PieCorreccion } from './Correccion';
@@ -178,6 +178,15 @@ export default function DayView(
   // Llevar el día —pedir cupo, soltar, avisar—, no editar la fecha (2026-11-12).
   const conDias = puede(rol as Rol, 'operarDia');
   const [todas, setTodas] = useState<Reserva[] | null>(null);
+  // *← Calendario* vuelve a la semana o al mes que se estaba mirando
+  // (2026-11-24): lo anota el calendario al cambiar de periodo.
+  const [volverA, setVolverA] = useState('/');
+  useEffect(() => {
+    try {
+      const a = sessionStorage.getItem(VOLVER_CALENDARIO);
+      if (a && a.startsWith('/?ver=')) setVolverA(a);
+    } catch { /* sin sessionStorage, vuelve a lo que viene */ }
+  }, []);
   /** El cupo de este día, para el bloque de sobrecupo (2026-11-12). */
   const [cupoDia, setCupoDia] = useState<CupoDelDia | null>(null);
   const [capacidadMaxima, setCapacidadMaxima] = useState(900);
@@ -595,7 +604,7 @@ export default function DayView(
                 se aprieta en esta página, así que va en 44px, con borde de 2px
                 y letra de 15px en negrita. Sigue sin relleno: el único dorado
                 de la pantalla es *Agregar reserva*. */}
-            <a href="/" className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
+            <a href={volverA} className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
               ← Calendario
             </a>
             <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0 lg:text-lg">
