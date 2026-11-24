@@ -101,7 +101,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       + '(🛒 Shopify · ✍ A mano · 🤝 Cotización), que se aprieta otra vez para '
       + 'soltar; si lo elegiste en el calendario, el día abre con él puesto. '
       + 'Exportar CSV baja lo que se ve.',
-      'La columna Asistencia dice quién vino; se marca en Turnos.',
+      'Asistencia, al abrir una reserva, dice si vino. Desde la apertura del '
+      + 'día la marcan ahí mismo el encargado de turno, operaciones, pagos, la '
+      + 'gerencia y el administrador, con ✓ Vino o ✕ No vino; apretar el '
+      + 'marcado la deja sin marcar. En un día cerrado es corregirlo: se '
+      + 'confirma con la casilla. La anfitriona la marca en la Recepción.',
       'Editar abre la reserva para corregir un teléfono, un menú o el estado '
       + 'del pago. Marcarla Pagada o Abonada le avisa al encargado de pagos, '
       + 'que la revisa.',

@@ -531,6 +531,11 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         {puedeVer(rol as Rol, 'estadisticas', gerencia) && (
           <a href="/estadisticas" className="tecla boton inline-flex items-center">📊 Estadísticas</a>
         )}
+        {/* **En el computador, *Al día* a la derecha de los botones**
+            (2026-11-24): con el marco del periodo, en la fila de los filtros
+            ya no cabía y bajaba solo a otra fila. */}
+        <span className="hidden flex-1 lg:block" />
+        <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
       </div>
         {/* **De dónde viene** (2026-11-24): los mismos botones de la página
             del día, con cuántas reservas hay de cada uno en lo que se ve. **En
@@ -563,7 +568,6 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
               <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
             </p>
           )}
-          <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
         </div>
       </div>
 

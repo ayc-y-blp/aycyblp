@@ -229,6 +229,34 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Quién vino, también desde la página del día (2026-11-24)
+
+Lo pidió el cliente con una foto de una reserva abierta en la página del día:
+*"necesito poder marcar la asistencia en esta vista también, como encargado
+de turno para arriba"*. El azulejo *Asistencia* solo se leía, y quién vino se
+marcaba en la Recepción, que es de hoy.
+
+- **En el azulejo *Asistencia* de la reserva abierta, ✓ Vino y ✕ No vino**
+  (`DayView`): el marcado va relleno, en verde o en rojo, y apretarlo otra vez
+  lo deja sin marcar (el rótulo dice *asistencia · sin marcar*). Son los
+  colores y las palabras de la Recepción.
+- **Quién**: el permiso `asistencia` —encargado de turno, operaciones, pagos,
+  la gerencia y el administrador, y la anfitriona—, **desde la hora de
+  apertura del día**. Los demás ven la pastilla de siempre. **Ningún permiso
+  cambió.**
+- **La misma llamada de la Recepción** (`PATCH /api/reservas/<fila>` con
+  `asistencia`), que ya hacía cumplir lo mismo: que el día haya llegado y
+  abierto, y que la anfitriona solo marque hoy. *No vino* y *sin marcar*
+  borran cuántos llegaron, como en la Recepción.
+- **En un día cerrado es corregirlo** (regla *autoguardado*: se confirma a
+  mano lo que corrige un día): se abre la lista con la línea
+  *Reserva de Mónica Lillo: asistencia de vino a no vino*
+  (`cambioDeAsistencia()` en `lib/correccion.ts`, con prueba), su casilla y
+  *Guardar corrección*, y esa línea queda en la bitácora. Solo quien corrige
+  (`corregir`): la anfitriona no ve los botones en un día cerrado.
+- **Lecturas de Google**: ninguna más. **Ayuda**: el `?` de la página del día
+  —decía que la asistencia *se marca en Turnos*, que no era cierto—.
+
 ## El calendario de Reservas va al pasado (2026-11-24)
 
 Lo pidió el cliente: *"igual se tiene que poder revisar las reservas del

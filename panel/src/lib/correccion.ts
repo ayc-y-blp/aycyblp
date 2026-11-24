@@ -192,6 +192,16 @@ export function cambiosDeLaReserva(antes: ReservaEnCorreccion | null, despues: R
   return c.map((x) => `Reserva de ${quienDe(antes)}: ${x}`);
 }
 
+/**
+ * **Marcar quién vino en un día cerrado** (2026-11-24, desde la página del
+ * día): un solo cambio, de lo que estaba a lo que queda. En blanco es *sin
+ * marcar*.
+ */
+export function cambioDeAsistencia(r: Pick<ReservaEnCorreccion, 'nombre'>, antes: string, despues: string): string {
+  const palabra = (a: string) => (a === 'Sí' ? 'vino' : a === 'No' ? 'no vino' : 'sin marcar');
+  return `Reserva de ${quienDe(r as ReservaEnCorreccion)}: asistencia de ${palabra(antes)} a ${palabra(despues)}`;
+}
+
 /** Borrar una reserva de un día cerrado: un solo cambio, con lo que era. */
 export const cambioDeBorrarReserva = (r: ReservaEnCorreccion) =>
   `Se borra la reserva de ${quienDe(r)}: ${reservaEnPalabras(r)}`;
