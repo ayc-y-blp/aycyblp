@@ -492,9 +492,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   computador y en el celular; del pasado salen los días que se abrieron o
   tuvieron reservas, y *← Calendario* vuelve al mismo periodo. Ver
   `panel/CLAUDE.md`, "El calendario de Reservas va al pasado". En el mismo
-  PR, **✓ Vino / ✕ No vino en la reserva abierta de la página del día**, para
-  el encargado de turno hacia arriba; en un día cerrado, con la casilla de la
-  corrección. Ver "Quién vino, también desde la página del día".
+  PR, **✓ Vino / ✕ No vino en la línea de cada reserva de la página del día**
+  (cerrada o abierta), para el encargado de turno hacia arriba, desde la
+  apertura; en un día cerrado, con la casilla de la corrección. Y al abrir una
+  reserva, **lo acordado en Fudo y la mesa lado a lado** en el computador.
+  Ver "Quién vino, también desde la página del día".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

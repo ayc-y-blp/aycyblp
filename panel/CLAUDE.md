@@ -236,10 +236,14 @@ Lo pidió el cliente con una foto de una reserva abierta en la página del día:
 de turno para arriba"*. El azulejo *Asistencia* solo se leía, y quién vino se
 marcaba en la Recepción, que es de hoy.
 
-- **En el azulejo *Asistencia* de la reserva abierta, ✓ Vino y ✕ No vino**
-  (`DayView`): el marcado va relleno, en verde o en rojo, y apretarlo otra vez
-  lo deja sin marcar (el rótulo dice *asistencia · sin marcar*). Son los
-  colores y las palabras de la Recepción.
+- **✓ Vino y ✕ No vino, en la línea de cada reserva** (`BotonesAsistencia`
+  en `DayView`): **cerrada o abierta** —lo pidió el cliente el mismo día:
+  *"y también colapsado"*—, a la derecha de la línea en el computador y debajo
+  del nombre en el celular. El marcado va relleno, en verde o en rojo, y
+  apretarlo otra vez lo deja sin marcar. Son los colores y las palabras de la
+  Recepción. El azulejo *Asistencia* de la reserva abierta solo lo lee: un
+  solo lugar para marcar. La línea pasó a ser una caja con el botón que abre y
+  los dos de la asistencia al lado (un botón no va dentro de otro).
 - **Quién**: el permiso `asistencia` —encargado de turno, operaciones, pagos,
   la gerencia y el administrador, y la anfitriona—, **desde la hora de
   apertura del día**. Los demás ven la pastilla de siempre. **Ningún permiso
@@ -254,6 +258,15 @@ marcaba en la Recepción, que es de hoy.
   (`cambioDeAsistencia()` en `lib/correccion.ts`, con prueba), su casilla y
   *Guardar corrección*, y esa línea queda en la bitácora. Solo quien corrige
   (`corregir`): la anfitriona no ve los botones en un día cerrado.
+- **Lo acordado y lo que pasó, lado a lado** (lo pidió el cliente el mismo
+  día: *"al lado de la información que viene desde la cotización, agregar el
+  mismo campo, pero para ingresar la realidad… el total de Fudo, pagó
+  diferencia por transferencia, efectivo o tarjeta"*): en el computador, la
+  reserva abierta lleva *Cómo ingresarla en Fudo* (`IngresoFudo`) a la
+  izquierda y *La mesa* (`MesaReserva`: lo sumado, el valor final y el cobro
+  de lo que falta) a la derecha. En el celular, una debajo de la otra. **La
+  Recepción no cambia**: sus tarjetas van de a dos por fila y no hay ancho
+  para dos columnas adentro.
 - **Lecturas de Google**: ninguna más. **Ayuda**: el `?` de la página del día
   —decía que la asistencia *se marca en Turnos*, que no era cierto—.
 

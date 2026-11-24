@@ -155,6 +155,34 @@ function PartesSinCortar({ texto, separador }: { texto: string; separador: strin
  */
 type Filtro = 'todas' | 'pagadas' | 'abonadas' | 'sinPagar';
 
+/**
+ * **✓ Vino / ✕ No vino** de una reserva (2026-11-24): el marcado va relleno,
+ * en verde o en rojo, como en la Recepción; apretarlo otra vez lo deja sin
+ * marcar. Va en la línea de la reserva, cerrada o abierta.
+ */
+function BotonesAsistencia({ nombre, asistencia, ocupado, onMarcar }: {
+  nombre: string; asistencia: string; ocupado: boolean; onMarcar: (a: string) => void;
+}) {
+  return (
+    <span role="group" aria-label={`Asistencia de ${nombre || 'la reserva'}`} className="flex w-full gap-1.5 lg:w-auto">
+      <button type="button" aria-pressed={asistencia === ASISTENCIA.vino} disabled={ocupado}
+        onClick={() => onMarcar(ASISTENCIA.vino)}
+        className={`tecla min-h-[40px] flex-1 whitespace-nowrap rounded-xl border-2 px-3 text-[15px] font-bold lg:flex-none ${
+          asistencia === ASISTENCIA.vino ? 'border-verde-fuerte bg-verde-fuerte text-tinta'
+          : 'border-verde-fuerte/70 text-verde-texto hover:bg-verde/10'}`}>
+        ✓ Vino
+      </button>
+      <button type="button" aria-pressed={asistencia === ASISTENCIA.noVino} disabled={ocupado}
+        onClick={() => onMarcar(ASISTENCIA.noVino)}
+        className={`tecla min-h-[40px] flex-1 whitespace-nowrap rounded-xl border-2 px-3 text-[15px] font-bold lg:flex-none ${
+          asistencia === ASISTENCIA.noVino ? 'border-rojo-fuerte bg-rojo-fuerte text-white'
+          : 'border-rojo-fuerte/70 text-rojo-texto hover:bg-rojo/10'}`}>
+        ✕ No vino
+      </button>
+    </span>
+  );
+}
+
 export default function DayView(
   { fecha, rol, usuario, gerencia = false }: { fecha: string; rol: string; usuario: string; gerencia?: boolean }
 ) {
@@ -1267,11 +1295,16 @@ export default function DayView(
                     el ícono) y cuánta gente. Lo que no puede quedar escondido
                     —un aviso de la recepción, un pedido repetido— lleva su
                     marca también acá. */}
+                {/* **Quién vino, en la línea** (2026-11-24, lo pidió el cliente:
+                    *"también colapsado… vino o no vino, a partir de las 13
+                    horas"*): al lado de la línea en el computador, debajo en
+                    el celular; se ve cerrada y abierta. */}
+                <div className={`flex flex-wrap items-center lg:flex-nowrap ${abierta ? 'bg-oro/10' : ''}`}>
                 <button type="button" aria-expanded={abierta}
                   onClick={() => setReservaAbierta(abierta ? '' : r.id)}
-                  className={`tecla flex min-h-[56px] w-full items-center gap-3 px-3 py-2 text-left
+                  className={`tecla flex min-h-[56px] w-full min-w-0 items-center gap-3 px-3 py-2 text-left lg:w-auto lg:flex-1
                               focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oro
-                              ${abierta ? 'bg-oro/10' : 'hover:bg-hueso/5'}`}>
+                              ${abierta ? '' : 'hover:bg-hueso/5'}`}>
                   <SignoAbrir abierta={abierta} />
                   <span className="min-w-0 flex-1">
                     <span className={`block break-words text-[16px] font-bold leading-tight ${libera ? 'line-through' : ''}`}>
@@ -1303,6 +1336,13 @@ export default function DayView(
                     <span className="ml-1 text-[13px] font-normal text-hueso/65">pers.</span>
                   </span>
                 </button>
+                {puedeAsistencia && !libera && (
+                  <div className="w-full px-3 pb-2 lg:w-auto lg:py-2 lg:pl-0">
+                    <BotonesAsistencia nombre={r.nombre} asistencia={r.asistencia ?? ''} ocupado={asisGuardando}
+                      onMarcar={(a) => marcarAsistencia(r, a)} />
+                  </div>
+                )}
+                </div>
 
                 {/* **El aviso de la recepción, a la vista sin abrirla**
                     (2026-11-11; desde el 2026-11-13 fuera del detalle y en
@@ -1358,55 +1398,42 @@ export default function DayView(
                         <span className={ROTULO_AZULEJO}>pago</span>
                       </div>
                       <div className={`${AZULEJO} order-4 col-span-2 sm:col-span-1`}>
-                        {/* **Se marca acá también** (2026-11-24): para quien
-                            tiene `asistencia`, desde la apertura. Los dos
-                            botones dicen lo marcado —relleno— y lo cambian;
-                            apretar el marcado lo deja sin marcar. Para los
-                            demás, la pastilla de siempre. */}
-                        {puedeAsistencia ? (
-                          <span role="group" aria-label={`Asistencia de ${r.nombre || 'la reserva'}`} className="flex gap-1.5">
-                            <button type="button" aria-pressed={r.asistencia === VINO.si} disabled={asisGuardando}
-                              onClick={() => marcarAsistencia(r, ASISTENCIA.vino)}
-                              className={`tecla min-h-[40px] flex-1 rounded-xl border-2 px-2 text-[15px] font-bold ${
-                                r.asistencia === VINO.si ? 'border-verde-fuerte bg-verde-fuerte text-tinta'
-                                : 'border-verde-fuerte/70 text-verde-texto hover:bg-verde/10'}`}>
-                              ✓ Vino
-                            </button>
-                            <button type="button" aria-pressed={r.asistencia === VINO.no} disabled={asisGuardando}
-                              onClick={() => marcarAsistencia(r, ASISTENCIA.noVino)}
-                              className={`tecla min-h-[40px] flex-1 rounded-xl border-2 px-2 text-[15px] font-bold ${
-                                r.asistencia === VINO.no ? 'border-rojo-fuerte bg-rojo-fuerte text-white'
-                                : 'border-rojo-fuerte/70 text-rojo-texto hover:bg-rojo/10'}`}>
-                              ✕ No vino
-                            </button>
-                          </span>
-                        ) : (
-                          <span className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full
-                                            border-2 px-2.5 py-0.5 text-[14px] font-bold ${
-                            r.asistencia === VINO.si ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
-                            : r.asistencia === VINO.no ? 'border-rojo-fuerte/60 bg-rojo/10 text-rojo-texto'
-                            : 'border-hueso/25 text-hueso/70'}`}>
-                            {r.asistencia === VINO.si ? '✓ Vino'
-                              : r.asistencia === VINO.no ? '✕ No vino' : '○ Sin marcar'}
-                          </span>
-                        )}
-                        <span className={ROTULO_AZULEJO}>
-                          asistencia{puedeAsistencia && !r.asistencia ? ' · sin marcar' : ''}
+                        {/* Se lee: se marca en la línea de arriba (2026-11-24). */}
+                        <span className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full
+                                          border-2 px-2.5 py-0.5 text-[14px] font-bold ${
+                          r.asistencia === VINO.si ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
+                          : r.asistencia === VINO.no ? 'border-rojo-fuerte/60 bg-rojo/10 text-rojo-texto'
+                          : 'border-hueso/25 text-hueso/70'}`}>
+                          {r.asistencia === VINO.si ? '✓ Vino'
+                            : r.asistencia === VINO.no ? '✕ No vino' : '○ Sin marcar'}
                         </span>
+                        <span className={ROTULO_AZULEJO}>asistencia</span>
                       </div>
                     </div>
 
-                    {/* **Cómo ingresarla en Fudo, a todo el ancho**: es lo que
-                        se viene a mirar al abrir la mesa. */}
-                    {ocupaLugar(r) && <IngresoFudo ingreso={r.ingreso} />}
-
-                    {/* **La mesa** (2026-11-17): lo que se sumó y el valor
-                        final. La misma pieza de la recepción. */}
-                    {ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
-                      && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0) && (
-                      <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
-                        cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
-                    )}
+                    {/* **Lo acordado y lo que pasó, lado a lado** (2026-11-24,
+                        lo pidió el cliente: *"al lado de la información que
+                        viene desde la cotización, agregar el mismo campo, pero
+                        para ingresar la realidad… el total de Fudo, pagó
+                        diferencia por transferencia, efectivo o tarjeta"*): en
+                        el computador, cómo ingresarla en Fudo a la izquierda y
+                        la mesa —el valor final y cómo pagó lo que faltaba— a la
+                        derecha. En el celular, una debajo de la otra. Son las
+                        mismas piezas de la Recepción. */}
+                    {(() => {
+                      const conMesa = ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
+                        && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0);
+                      if (!ocupaLugar(r)) return null;
+                      return (
+                        <div className={conMesa ? 'space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3 lg:space-y-0' : ''}>
+                          <IngresoFudo ingreso={r.ingreso} />
+                          {conMesa && (
+                            <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
+                              cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* **La rectificación del día** (2026-11-12): qué cambió,
                         quién, cuándo y por qué; el descuento por aprobar con
