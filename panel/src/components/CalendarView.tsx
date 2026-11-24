@@ -5,6 +5,8 @@
  * El desglose online / en el local no es decoración: dice cuánta plata está
  * cobrada y cuánta hay que cobrar el mismo día.
  */
+import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
+import type { AvisoSitio } from '@/lib/promociones';
 import AyudaCorta from './AyudaCorta';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CRM_APAGADO } from '@/lib/crm';
@@ -164,6 +166,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [acuerdos, setAcuerdos] = useState<PendienteAcuerdos[]>([]);
   /** La caja chica (2026-11-23): lo que esta cuenta tiene que recibir y, para pagos, lo que falta revisar. */
   const [caja, setCaja] = useState<PendienteCaja[]>([]);
+  /** Las cotizaciones del sitio que esta cuenta no ha visto (2026-11-23): la ventana que avisa al entrar. */
+  const [delSitio, setDelSitio] = useState<AvisoSitio[]>([]);
   /** Las cuentas y tarifas que pagos tiene que confirmar: vienen solo para `pagar`. */
   const [cuentas, setCuentas] = useState<PendienteCuenta[]>([]);
   /** Qué reservas salieron de una cotización: su pago se revisa por sus cobros. */
@@ -206,6 +210,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         setCondiciones(d.condiciones ?? []);
         setAcuerdos(d.acuerdos ?? []);
         setCaja(d.caja ?? []);
+        setDelSitio(d.delSitio ?? []);
         setCuentas(d.cuentas ?? []);
       })
       .catch((e) => setError(String(e)));
@@ -327,6 +332,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
 
   return (
     <>
+      {/* Cambia la llave si llega otra: una que se cerró con *Después* no tapa a la nueva. */}
+      <AvisoCotizacionesSitio key={delSitio.map((a) => a.id).join()} avisos={delSitio} />
       {/* **La banda dorada de Reservas** (2026-11-13): el mismo formato que
           Cotizaciones (rosado) y Turnos (celeste), con su tono para saber
           dónde se está. Ver `BandaSeccion.tsx`. El `?` es el único que

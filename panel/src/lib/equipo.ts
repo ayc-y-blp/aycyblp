@@ -899,6 +899,12 @@ export interface LineaDePlan {
   sugeridos: number;
   /** Cuántos faltan para llegar a la sugerencia. 0 si alcanza o si no hay regla. */
   faltan: number;
+  /**
+   * El puesto está en los turnos y no en la lista (2026-11-24): se corrigió
+   * en la planilla, o se cambió antes de que renombrar arrastrara los turnos.
+   * La ventana del día lo dice, y se reengancha en Equipo.
+   */
+  suelto?: boolean;
 }
 
 /** Cuántos hacen falta en un puesto para tanta gente. 0 = sin regla puesta. */
@@ -951,7 +957,8 @@ export function planDelDia(
       puesto: t.puesto || 'Sin puesto',
       asignados: porPuesto.get(clave) ?? [],
       sugeridos: 0,
-      faltan: 0
+      faltan: 0,
+      suelto: true
     });
   }
   return salida;
@@ -1405,3 +1412,38 @@ export function escaleraDeSemanas(
  */
 export const esPeriodo = (p: string) =>
   /^\d{4}-(0[1-9]|1[0-2])$/.test(p) || esFecha(p);
+
+/**
+ * **El periodo con que abre un link personal: el mes en curso** (2026-11-24,
+ * lo pidió el cliente: *"en el link personal, tanto de los trabajadores como
+ * de los vendedores, quiero que por defecto se muestra el mes y con el valor
+ * de la boleta del mes. Y ahí por elección se puede bajar a semanal"*). Hasta
+ * ese día el de un trabajador abría en la semana pasada. Lo que llega en la
+ * URL manda, si es un periodo.
+ */
+export const periodoDelLink = (pedido: unknown, hoy: Fecha): string => {
+  const p = String(pedido ?? '');
+  return esPeriodo(p) ? p : hoy.slice(0, 7);
+};
+
+/**
+ * **La semana que se abre al pasar de un mes a *Semana***: la semana pasada
+ * si cae en ese mes (es la que se paga), si no la en curso, y en un mes que
+ * no es el de hoy, su última semana si ya pasó o la primera si viene. Así
+ * *Semana* nunca lleva fuera del mes que se estaba mirando.
+ */
+export function semanaParaElMes(mes: string, hoy: Fecha): Fecha {
+  const toca = (lunes: Fecha) => lunes.slice(0, 7) === mes || sumarDias(lunes, 6).slice(0, 7) === mes;
+  const pasada = semanaPorDefecto(hoy);
+  if (toca(pasada)) return pasada;
+  const actual = semanaDe(hoy);
+  if (toca(actual)) return actual;
+  if (mes < hoy.slice(0, 7)) {
+    const dias = rangoDelPeriodo(mes);
+    return semanaDe(dias.hasta);
+  }
+  return semanaDe(`${mes}-01`);
+}
+
+/** El mes de una semana, para volver de *Semana* a *Mes*: el de su lunes. */
+export const mesDeLaSemana = (lunes: Fecha): string => lunes.slice(0, 7);

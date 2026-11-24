@@ -22,7 +22,8 @@ import Ayuda from './Ayuda';
 import Dialogo from './Dialogo';
 import { AjustesDelDia, BotonNuevaPersona, BotonesDeLaLinea, CampoAlLado, COLUMNA_ROTULO, ENTRADA_DIA, ROTULO_LADO, TotalDelDia } from './LineaDelDia';
 import ConfirmarCierre, { type PuntoDeCierre } from './ConfirmarCierre';
-import { planDelDia, VINO, MODALIDAD, pagoDe, esContratado, jornadaPropuesta,
+import { Pastilla } from './Pastilla';
+import { planDelDia, VINO, MODALIDAD, pagoDe, esContratado, jornadaPropuesta, costoPlanificado,
          repartirPropina, propinaDelDia, porNombre, faltantesDe,
          type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { faltaParaCerrar, type Cierre, yaLlego } from '@/lib/cierres';
@@ -484,6 +485,8 @@ export default function EquipoDialogo({
    * Cuánta gente hay reservada y qué puestos faltan: bajo el título en el
    * celular, en su misma línea en el computador.
    */
+  // Lo que cuesta el equipo como está armado ahora (`costoPlanificado()`).
+  const costoDelEquipo = costoPlanificado(plan.map((t) => ({ ...t, fila: -1 })), fecha);
   const resumenDelDia = (clase: string) => (
     <p className={clase}>
         {personas > 0
@@ -491,6 +494,14 @@ export default function EquipoDialogo({
               {personas === 1 ? 'persona' : 'personas'} reservada{personas === 1 ? '' : 's'}{' '}
               este día.</>
           : <>Todavía no hay nadie reservado este día.</>}
+        {/* **Lo que cuesta este equipo** (2026-11-24): el mismo número y la
+            misma pastilla de la celda en Turnos, y se mueve mientras se arma
+            el día. */}
+        {costoDelEquipo > 0 && (
+          <> <Pastilla tipo="equipo" className="ml-1 align-middle" title="Lo que cuesta el equipo del día, sin la propina">
+            <span aria-hidden>👥</span><span className="tabular-nums">{enPesos(costoDelEquipo)}</span>
+          </Pastilla></>
+        )}
         {' '}
         {faltan > 0
           ? <span className="text-ambar-texto">
@@ -726,6 +737,14 @@ export default function EquipoDialogo({
                 </span>
               </span>
             </div>
+            {/* **Un puesto que ya no está en la lista** (2026-11-24): pasa si
+                se corrigió en la planilla. Se dice, para que no parezca que
+                la persona se perdió, y se arregla en Equipo. */}
+            {l.suelto && l.puesto !== 'Sin puesto' && (
+              <p className="px-1 text-[13px] text-ambar-texto">
+                No está en la lista de puestos: <a href="/equipo" className="underline">pásalo en Equipo</a>
+              </p>
+            )}
 
             {l.asignados.length > 0 ? (
               <ul className={`mt-2 ${LISTA_TARJETAS}`}>

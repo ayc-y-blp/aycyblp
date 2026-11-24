@@ -259,7 +259,39 @@ export const COL_PRESUPUESTOS = {
    * cumple al mandarla.
    */
   recontactar: 'Recontactar el',
-  redactarAntes: 'Redactar antes del'
+  redactarAntes: 'Redactar antes del',
+  /**
+   * **De dónde llegó** (2026-11-23): *Sitio · Gran Premio de Fin de Año* si
+   * la armó un cliente en el cotizador de promociones. En blanco, la hizo un
+   * vendedor. La escribe solo `/api/publico/cotizar`.
+   */
+  origen: 'Origen',
+  /**
+   * **Cuándo vio el aviso su vendedor** (2026-11-23, lo pidió el cliente:
+   * *"al vendedor hay que avisar con un popup cuando se mete la próxima vez
+   * al panel"*): *quién · cuándo*. Mientras esté en blanco, la ventana le
+   * aparece al entrar.
+   */
+  avisoVisto: 'Aviso del sitio visto',
+  /**
+   * **Lo coordinado con otras empresas** (2026-11-23, lo pidió el cliente:
+   * *"para que se pueda hacer buen seguimiento, saber, oye, tengo que
+   * organizar este karting, tengo que organizar el taller de queso"*). Una
+   * entrada por empresa, *empresa · quién · cuándo*, separadas por `|`.
+   * Mientras una empresa de sus líneas no esté acá, la vendedora lo ve como
+   * pendiente. La escribe solo `/api/presupuestos/coordinada`.
+   */
+  coordinadas: 'Otras empresas coordinadas',
+  /**
+   * **La promoción que el vendedor aplicó** (2026-11-24, lo pidió el cliente:
+   * *"el vendedor manualmente también tiene que poder elegir las promociones…
+   * con toda la posibilidad de editarlo dentro de la cotización según las
+   * reglas que permite la configuración"*): su ID (`PR-03`). Mientras esté, su
+   * descuento vale aunque pase el tope del vendedor (lo decidió el cliente:
+   * *"que valga el descuento de la promoción"*) y su arriendo se perdona como
+   * dice la promoción.
+   */
+  promocion: 'Promoción'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -294,7 +326,13 @@ export const COL_LINEAS = {
    * `Precio unitario` es su conversión a pesos con la UF de la cotización;
    * en blanco, la línea es en pesos como siempre.
    */
-  precioUF: 'Precio UF'
+  precioUF: 'Precio UF',
+  /**
+   * La empresa que cobra esta línea, si no somos nosotros (2026-11-23): el
+   * karting. Sale del catálogo (`Menu.loCobra`) cada vez que se preparan las
+   * líneas. En blanco es nuestra. **Va aparte del total** (`cuentasDe()`).
+   */
+  loCobra: 'Lo cobra'
 } as const;
 
 export const ENCABEZADO_PRESUPUESTOS: string[] = Object.values(COL_PRESUPUESTOS);
@@ -378,6 +416,8 @@ export interface LineaPresupuesto {
   sigue: boolean;
   /** El precio en UF, o 0 si la línea es en pesos. */
   precioUF: number;
+  /** La empresa que la cobra, si no somos nosotros. Ver `COL_LINEAS.loCobra`. */
+  loCobra?: string;
   fila: number;
 }
 
@@ -428,6 +468,13 @@ export interface Presupuesto {
   /** La agenda: ver `COL_PRESUPUESTOS.recontactar` y `redactarAntes`. `AAAA-MM-DD` o vacío. */
   recontactar?: string;
   redactarAntes?: string;
+  /** De dónde llegó y cuándo se vio su aviso. Ver `COL_PRESUPUESTOS.origen` y `avisoVisto`. */
+  origen?: string;
+  avisoVisto?: string;
+  /** Ver `COL_PRESUPUESTOS.coordinadas`. */
+  coordinadas?: string;
+  /** La promoción aplicada, su ID. Ver `COL_PRESUPUESTOS.promocion`. */
+  promocion?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -572,10 +619,14 @@ export interface Cuentas {
 
 export function cuentasDe(
   lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio'> &
-           { descuento?: number; ivaIncluido?: boolean })[],
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
   descuentoTotal = 0,
   tasa = IVA
 ): Cuentas {
+  // **Lo que cobra otra empresa no es nuestro** (2026-11-23): el karting va
+  // aparte, así que no entra en el total, el anticipo, la comisión ni la
+  // reserva, que salen todos de acá. Se muestra con `otrasEmpresas()`.
+  lineas = lineas.filter((l) => !String(l.loCobra ?? '').trim());
   // **Se suma en bruto y se baja a neto una sola vez.** Llevar cada línea a
   // neto, redondear y después volver a subir el IVA descuadra por un peso:
   // 44 menús a $64.000 con IVA son $2.816.000 y así salían $2.816.001. Una
@@ -589,10 +640,66 @@ export function cuentasDe(
   return { subtotal, descuento: subtotal - neto, neto, iva: total - neto, total };
 }
 
+/**
+ * **Lo que cobran otras empresas**, por empresa (2026-11-23): el karting del
+ * Gran Premio. Cada una con su total como se cobra —con IVA, igual que el
+ * nuestro— y la lista de sus líneas. No lleva el descuento sobre el total:
+ * ese es nuestro. Vacío si todo lo cobramos nosotros.
+ */
+export function otrasEmpresas(
+  lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio' | 'concepto'> &
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
+  tasa = IVA
+): { empresa: string; total: number; conceptos: string[] }[] {
+  const por = new Map<string, { empresa: string; total: number; conceptos: string[] }>();
+  for (const l of lineas) {
+    const empresa = String(l.loCobra ?? '').trim();
+    if (!empresa) continue;
+    const clave = normalizar(empresa);
+    const g = por.get(clave) ?? { empresa, total: 0, conceptos: [] };
+    g.total += Math.round(netoDeLinea(l, tasa) * (1 + tasa));
+    g.conceptos.push(l.concepto);
+    por.set(clave, g);
+  }
+  return [...por.values()];
+}
+
+/** Lo coordinado, por empresa (normalizada): quién y cuándo. */
+export function coordinadasDe(valor: string | undefined): Map<string, { empresa: string; quien: string; cuando: string }> {
+  const m = new Map<string, { empresa: string; quien: string; cuando: string }>();
+  for (const parte of String(valor ?? '').split('|')) {
+    const [empresa, quien = '', cuando = ''] = parte.split('·').map((x) => x.trim());
+    if (empresa) m.set(normalizar(empresa), { empresa, quien, cuando });
+  }
+  return m;
+}
+
+/** Marca o desmarca una empresa como coordinada. Devuelve el valor de la columna. */
+export function marcarCoordinada(valor: string | undefined, empresa: string, quien: string, cuando: string, hecho: boolean): string {
+  const m = coordinadasDe(valor);
+  if (hecho) m.set(normalizar(empresa), { empresa: empresa.trim(), quien, cuando });
+  else m.delete(normalizar(empresa));
+  return [...m.values()].map((x) => [x.empresa, x.quien, x.cuando].join(' · ')).join(' | ');
+}
+
+/**
+ * **Lo que falta coordinar con otras empresas** (2026-11-23): las de sus
+ * líneas que todavía no están marcadas. Vacío si no hay nada de otra empresa
+ * o ya se coordinó todo.
+ */
+export function porCoordinar(
+  p: Pick<Presupuesto, 'id' | 'coordinadas'>, lineas: LineaPresupuesto[]
+): { empresa: string; conceptos: string[] }[] {
+  const hechas = coordinadasDe(p.coordinadas);
+  return otrasEmpresas(lineasDe(lineas, p.id))
+    .filter((o) => !hechas.has(normalizar(o.empresa)))
+    .map(({ empresa, conceptos }) => ({ empresa, conceptos }));
+}
+
 /** El total con IVA de una cotización: lo que se cobra. */
 export const totalDe = (
   lineas: (Pick<LineaPresupuesto, 'cantidad' | 'precio'> &
-           { descuento?: number; ivaIncluido?: boolean })[],
+           { descuento?: number; ivaIncluido?: boolean; loCobra?: string })[],
   descuentoTotal = 0
 ) => cuentasDe(lineas, descuentoTotal).total;
 
@@ -1041,6 +1148,10 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       renovaciones: Math.max(0, aEntero(en(f, i.renovaciones))),
       recontactar: esFecha(en(f, i.recontactar).slice(0, 10)) ? en(f, i.recontactar).slice(0, 10) : '',
       redactarAntes: esFecha(en(f, i.redactarAntes).slice(0, 10)) ? en(f, i.redactarAntes).slice(0, 10) : '',
+      origen: en(f, i.origen).trim(),
+      avisoVisto: en(f, i.avisoVisto).trim(),
+      coordinadas: en(f, i.coordinadas).trim(),
+      promocion: en(f, i.promocion).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1123,6 +1234,10 @@ export function filaPresupuesto(
   poner(i.renovaciones, p.renovaciones ? String(p.renovaciones) : '');
   poner(i.recontactar, p.recontactar ?? '');
   poner(i.redactarAntes, p.redactarAntes ?? '');
+  poner(i.origen, p.origen ?? '');
+  poner(i.avisoVisto, p.avisoVisto ?? '');
+  poner(i.coordinadas, p.coordinadas ?? '');
+  poner(i.promocion, p.promocion ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');
@@ -1174,6 +1289,7 @@ export function leerLineasDe(filas: string[][]): LineaPresupuesto[] {
       ivaIncluido: !/\+\s*iva/i.test(en(f, i.iva)),
       sigue: /^s[ií]$/i.test(en(f, i.sigue).trim()),
       precioUF: aPrecio(en(f, i.precioUF)),
+      loCobra: en(f, i.loCobra).trim(),
       fila: n + 1
     });
   }
@@ -1198,6 +1314,7 @@ export function filaLinea(
   poner(i.iva, l.ivaIncluido ? 'Incluido' : '+ IVA');
   poner(i.sigue, l.sigue ? 'sí' : '');
   poner(i.precioUF, l.precioUF ? String(l.precioUF) : '');
+  poner(i.loCobra, l.loCobra ?? '');
   return fila;
 }
 
@@ -1215,7 +1332,7 @@ export function filaLinea(
  * negativas, que solo podrían restar de un total que una persona va a leer.
  */
 export type LineaEntrante = Omit<LineaPresupuesto, 'fila' | 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF'>
-  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF'>>;
+  & Partial<Pick<LineaPresupuesto, 'descuento' | 'ivaIncluido' | 'sigue' | 'precioUF' | 'loCobra'>>;
 
 export function normalizarLineas(
   lineas: LineaEntrante[]
@@ -1233,7 +1350,8 @@ export function normalizarLineas(
       descuento: Math.min(100, Math.max(0, aEntero(l.descuento))),
       ivaIncluido: l.ivaIncluido !== false,
       sigue: !!l.sigue,
-      precioUF: aPrecio(l.precioUF)
+      precioUF: aPrecio(l.precioUF),
+      loCobra: String(l.loCobra ?? '').trim()
     });
   }
   return salida;

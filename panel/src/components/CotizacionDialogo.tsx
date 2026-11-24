@@ -33,8 +33,9 @@ import { cambiosDeLaCotizacion, textoDeCambios, type CotizacionEnCorreccion } fr
 import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
+import { normalizar } from '@/lib/columnas';
 import {
-  cuentasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
+  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
   DOCUMENTO, documentoDe, numeroONulo, montoONulo, estaMandada, totalDe, estadoNormal, lineasDe, type Documento, type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import {
@@ -78,6 +79,11 @@ import ElegirFecha from './ElegirFecha';
 import NotasCotizacion from './NotasCotizacion';
 import { puedeVerNotas, iconoDeMedio, type Nota } from '@/lib/notas';
 import { agendaDe, fraseDe } from '@/lib/agenda';
+import AplicarPromocion from './AplicarPromocion';
+import { empresaDe, mensajeParaCoordinar, type OtraEmpresa } from '@/lib/otrasEmpresas';
+import {
+  promocionDe, beneficioDePromocion, rigePromocion, aplicarALineas, type Promocion
+} from '@/lib/promociones';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -125,6 +131,10 @@ export interface DatosCotizar {
   cambiosFechaDias?: number;
   /** Los días de vigencia de Configuración: los de una renovación. */
   vigencia?: number;
+  /** Las promociones (2026-11-24): las activas, para aplicarlas, y las ya aplicadas en alguna. */
+  promociones?: Promocion[];
+  /** Las otras empresas (2026-11-24): su teléfono, para coordinar por WhatsApp. */
+  otrasEmpresas?: OtraEmpresa[];
   hoy: string;
   usuario: string;
   rol: string;
@@ -317,6 +327,9 @@ export default function CotizacionDialogo({
   /** El pedido de liberar el día y su decisión: lo escribe el servidor. */
   const [marcaExcl, setMarcaExcl] = useState(p?.exclusividad ?? '');
   const [descuento, setDescuento] = useState(p?.descuento ?? 0);
+  /** **La promoción aplicada** (2026-11-24): su ID, o vacío. */
+  const [promocion, setPromocion] = useState(p?.promocion ?? '');
+  const [aplicandoPromo, setAplicandoPromo] = useState(false);
   /** `''` es por definir. Ver `DOCUMENTO`. */
   const [documento, setDocumento] = useState<Documento>(p?.documento ?? '');
   /**
@@ -533,12 +546,20 @@ export default function CotizacionDialogo({
    * día sin contar la de esta cotización, si está ganada.
    */
   const arriendoAutorizado = (p?.arriendoBajoMinimo ?? '').split(' · ')[0];
+  /**
+   * **Lo que da la promoción aplicada** (2026-11-24, `beneficioDePromocion()`,
+   * la misma cuenta del servidor): su descuento, que sube el tope, y si
+   * perdona el arriendo ese día. Bajo su mínimo de personas, nada.
+   */
+  const promoAplicada = promocionDe(datos.promociones ?? [], promocion);
+  const beneficio = beneficioDePromocion(promoAplicada, invitados, fechaReal);
   const otrasDelDia = Math.max(0, (datos.reservasPorDia?.[fechaReal] ?? 0)
     - (ganada && p?.fecha === fechaReal ? 1 : 0));
   const arriendoDelDiaFn = useMemo(
-    () => conMinimoArriendo(arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
+    () => beneficio.sinArriendo ? null : conMinimoArriendo(arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
       esExclusivo(exclusivo), otrasDelDia), minAprobados.arriendo),
-    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia, minAprobados.arriendo]);
+    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia, minAprobados.arriendo,
+      beneficio.sinArriendo]);
   /** Si la regla del arriendo corre para esta cuenta: no para quien pasa por encima, ni si ya se autorizó. */
   const arriendoForzado = !pasaPorEncima && !arriendoAutorizado;
   // **Lo que se ve es lo que se guarda**: la misma función del servidor.
@@ -549,6 +570,23 @@ export default function CotizacionDialogo({
   /** El mínimo del arriendo de esta cotización, para decirlo; también a quien puede pasar por encima. */
   const minimoArriendo = arriendoDelDiaFn ? arriendoDelDiaFn(personasParaMinimos(vistas, invitados)) : null;
   const cuentas = cuentasDe(vistas, descuento);
+  // Lo que cobra otra empresa (el karting): fuera del total, dicho debajo.
+  const otras = otrasEmpresas(vistas);
+  /**
+   * **Lo ya coordinado con cada empresa** (2026-11-23): *🤝 Ya lo coordiné*
+   * bajo el total. Vive acá y se guarda con su ruta, no con el autoguardado:
+   * es un seguimiento, queda a nombre de quien lo marca.
+   */
+  const [coordinadas, setCoordinadas] = useState(p?.coordinadas ?? '');
+  async function coordinar(empresa: string, hecho: boolean) {
+    if (!p) return;
+    const r = await fetch('/api/presupuestos/coordinada', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: p.id, empresa, hecho })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.error) avisar(d.error, 'atencion');
+    else { setCoordinadas(d.coordinadas ?? ''); onCambio(); }
+  }
   /** Cuánta gente suman los menús: tiene que calzar con los invitados. */
   const enMenus = vistas.reduce((n, l) => n + l.personas, 0);
   /** Si en esta cotización el show tiene mínimo: día no público y poca gente. */
@@ -569,11 +607,18 @@ export default function CotizacionDialogo({
     cambiosFecha: datos.contrato?.tranquilidad?.cambiosFecha ?? 2,
     cancelacionDias: datos.contrato?.tranquilidad?.cancelacionDias ?? 60,
     reembolsoPct: datos.contrato?.tranquilidad?.reembolsoPct ?? 20, descuentos: datos.descuentos });
-  const topes = topesConAprobadas(topesBase, aprobadasDe({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas }));
+  const aprobadasCond = aprobadasDe({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas });
+  /** Los topes sin la promoción: al quitarla, un descuento por encima de esto vuelve a cero. */
+  const topesSinPromo = topesConAprobadas(topesBase, aprobadasCond);
+  // **El descuento de la promoción vale aunque pase el tope** (2026-11-24): lo sube, como lo aprobado.
+  const topes = beneficio.descuento > topesSinPromo.descuento
+    ? { ...topesSinPromo, descuento: beneficio.descuento } : topesSinPromo;
   const marcaCond = condicionesEspecialesDe(condMarca);
-  /** Los botones de descuento: los de Configuración, y el aprobado si es más. */
-  const botonesDescuento = topes.descuento > Math.max(0, ...datos.descuentos)
-    ? [0, ...datos.descuentos, topes.descuento] : [0, ...datos.descuentos];
+  /** Los botones de descuento: los de Configuración, el aprobado si es más y el de la promoción. */
+  const botonesDescuento = [...new Set([0, ...datos.descuentos,
+    ...(topes.descuento > Math.max(0, ...datos.descuentos) ? [topes.descuento] : []),
+    // El de la promoción aplicada, aunque no sea uno de Configuración (el 11% de fin de año).
+    ...(beneficio.descuento ? [beneficio.descuento] : [])])].sort((a, b) => a - b);
   /** Al salir de un campo: si se pasa del tope, queda en él y se dice. El servidor hace lo mismo. */
   const toparCampo = (campo: CampoCondicion, txt: string, poner: (t: string) => void) => {
     if (pasaPorEncima || !txt.trim()) return;
@@ -702,7 +747,7 @@ export default function CotizacionDialogo({
     idCliente, fechaReal, periodo: sinFecha ? periodo : '', invitados, tipoEvento, notas,
     descuento, motivo, documento, anticipoTxt, anticipoMontoTxt, saldoTxt, uf, fechaUF, estado, lineas: vistas,
     horario, ley20393, acuerdos, fact: facturacion, cambiosTxt, cancelTxt, reembolsoTxt,
-    segTxt, avisoTxt, exclusivo, socio, redactarAntes
+    segTxt, avisoTxt, exclusivo, socio, redactarAntes, promocion
   });
   const [guardada, setGuardada] = useState<string | null>(null);
   useEffect(() => { if (p) setGuardada(firma); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -838,6 +883,26 @@ export default function CotizacionDialogo({
   };
   const hayUF = vistas.some((l) => l.precioUF > 0);
 
+  /**
+   * **Aplicar una promoción** (2026-11-24): su menú reemplaza a los otros de
+   * adulto, suma lo que incluye y pone su descuento sobre el total
+   * (`aplicarALineas()`). Todo queda editable.
+   */
+  const aplicarPromocion = (promo: Promocion, menu: string) => {
+    setLineas(aplicarALineas(promo, menu, invitados, p?.id ?? '', datos.menus, vistas).lineas);
+    setPromocion(promo.id);
+    const b = beneficioDePromocion(promo, invitados, fechaReal);
+    if (b.descuento) setDescuento(b.descuento);
+    setAplicandoPromo(false);
+    avisar(`Promoción aplicada: ${promo.nombre}`);
+  };
+  /** Quitarla deja los productos; su descuento, si pasa el tope de siempre, vuelve a cero. */
+  const quitarPromocion = () => {
+    setPromocion('');
+    if (!pasaPorEncima && descuento > topesSinPromo.descuento) setDescuento(0);
+    avisar('Se quitó la promoción: los productos quedan en la cotización');
+  };
+
   async function crearCliente(forzar = false) {
     if (!nuevoCliente) return;
     setError('');
@@ -888,6 +953,8 @@ export default function CotizacionDialogo({
         horario, ley20393, acuerdos,
         cambiosFecha: cambiosTxt, cancelacionDias: cancelTxt, reembolso: reembolsoTxt,
         seguimientoDias: segTxt, avisoEvento: avisoTxt, exclusivo, socio, redactarAntes,
+        // La promoción solo se edita en una cotización ya creada (el paso Productos).
+        ...(p ? { promocion } : {}),
         ...(uf ? { uf, fechaUF } : {}),
         estado: estadoForzado ?? estado,
         lineas: vistas,
@@ -1762,11 +1829,17 @@ export default function CotizacionDialogo({
           queden dentro de una pantalla"*). Desde 1024px la ventana es ancha:
           los pasos y las alternativas van en una fila, y cada paso reparte lo
           suyo en columnas. En el celular, lo de siempre. */}
-      <div className="lg:mb-2 lg:mt-1.5 lg:flex lg:items-stretch lg:gap-2">
+      {/* **Dos filas en el computador** (2026-11-24, lo pidió el cliente: *"los
+          pasos tienen que llegar en una fila y ahí comprometer un poco la
+          eficiencia del espacio y poner las alternativas en una segunda fila
+          abajo. Son igual cosas importantes… en otra fila veo las alternativas
+          y quizás un botón grande de las notas"*): arriba los cinco pasos, a lo
+          ancho; abajo las alternativas y *🗒 Notas*, grande, a la derecha. */}
+      <div className="lg:mb-2 lg:mt-1.5 lg:space-y-1.5">
       {/* Los cinco pasos, como botones: se ve dónde se está y se puede saltar.
           Desde el 2026-11-11 son cinco: el envío y el contrato son dos
           conversaciones con el cliente, cada una con su hito al final. */}
-      <nav ref={arriba} aria-label="Pasos" className="mb-4 grid grid-cols-5 gap-1 lg:mb-0 lg:min-w-0 lg:flex-1">
+      <nav ref={arriba} aria-label="Pasos" className="mb-4 grid grid-cols-5 gap-1 lg:mb-0 lg:gap-1.5">
         {PASOS.map((nombre, i) => (
           <button key={nombre} type="button" onClick={() => void irA(i + 1)}
             aria-current={paso === i + 1 ? 'step' : undefined}
@@ -1783,9 +1856,11 @@ export default function CotizacionDialogo({
       {/* ***🗒 Notas*** (2026-11-23, la agenda del vendedor): lo conversado
           con el cliente y cuándo volver a contactarlo, a la vista en los cinco
           pasos. Solo para su vendedor y la gerencia (`puedeVerNotas()`). */}
+      <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-2">
       {p && veNotas && (
         <button type="button" onClick={() => setNotasAbiertas(true)}
-          className="boton mb-4 min-h-[48px] w-full justify-center font-semibold sm:w-auto lg:mb-0 lg:min-h-[44px] lg:shrink-0">
+          className="boton mb-4 min-h-[48px] w-full justify-center text-[15px] font-semibold sm:w-auto lg:order-last lg:mb-0
+                     lg:min-h-[44px] lg:min-w-[15rem] lg:shrink-0">
           🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}
           {esFecha(recontactar) && <span className="ml-1 font-normal text-hueso/70">· 📞 {enCorto(recontactar)}</span>}
         </button>
@@ -1795,7 +1870,7 @@ export default function CotizacionDialogo({
           pestaña por alternativa y *+ Otra alternativa*, en vez de dos
           cotizaciones sueltas con dos números. */}
       {p && paso >= 2 && (
-        <div className="mb-4 rounded-xl border border-hueso/15 bg-panel p-2 lg:mb-0 lg:max-w-[58%] lg:shrink-0
+        <div className="mb-4 rounded-xl border border-hueso/15 bg-panel p-2 lg:mb-0 lg:min-w-0 lg:flex-1
                         lg:px-1.5 lg:py-[3px]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="flex items-center text-[13px] font-medium uppercase tracking-wide text-hueso/60">
@@ -1844,6 +1919,7 @@ export default function CotizacionDialogo({
           )}
         </div>
       )}
+      </div>
 
       {/* Para quién es, a la vista en los cuatro pasos. */}
       </div>
@@ -2205,7 +2281,7 @@ export default function CotizacionDialogo({
                   className="font-semibold text-oro underline">Productos</a>.
               </p>
             ) : (
-              <div>
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-x-2 lg:gap-y-1.5">
                 <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-hueso/60 lg:hidden">
                   Agregar <AyudaCorta tema="agregarProducto" />
                 </p>
@@ -2216,8 +2292,13 @@ export default function CotizacionDialogo({
                     de cada producto en Productos. */}
                 {[
                   { titulo: 'Menús', lista: cotizables.filter((m) => m.tipo === TIPO_PRODUCTO.menu), otra: false },
-                  { titulo: 'Extras y arriendo', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu), otra: true }
-                ].filter((g) => g.lista.length > 0 || g.otra).map((g, n) => (
+                  { titulo: 'Extras y arriendo', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu && !m.loCobra), otra: true },
+                  // **Fuera del local** (2026-11-24, lo pidió el cliente: *"segmentar
+                  // esto… y lo mismo para la cotización de un vendedor"*): lo que
+                  // cobra otra empresa —el karting, un transfer— en su grupo. Va
+                  // aparte del total, y cada botón dice quién lo cobra.
+                  { titulo: 'Fuera del local', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu && !!m.loCobra), otra: false }
+                ].filter((g) => g.lista.length > 0 || g.otra).map((g, n, grupos) => (
                   // En el computador, el nombre del grupo va a la izquierda, en
                   // su columna, y los botones a su derecha: dos filas en vez de
                   // seis. El `?` de *Agregar* va con el primer grupo.
@@ -2225,10 +2306,21 @@ export default function CotizacionDialogo({
                   // cliente: *"para distinguir mejor entre sección menú, sección
                   // extras"*): 3px y el nombre en negrita; los botones de
                   // adentro, con su borde fino de siempre.
-                  <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-2 lg:flex lg:items-start
-                                                  lg:gap-2 lg:px-3 lg:py-2`}>
-                    <p className={`mb-2 ${TITULO_GRUPO} lg:mb-0 lg:flex lg:min-h-[44px] lg:w-[9.5rem] lg:shrink-0
-                                  lg:items-center`}>
+                  // **Fuera del local va al lado de los extras** en el computador
+                  // (2026-11-24): en su propia fila, el paso 3 pasaba de 612 a 682px
+                  // y no cabía; la fila de los extras tenía espacio a la derecha.
+                  // En ese grupo el título va arriba y la empresa bajo el nombre:
+                  // así ocupa poco ancho y los extras siguen en una fila.
+                  <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-0 lg:items-start
+                                                  lg:gap-2 lg:px-3 lg:py-1.5 ${g.titulo === 'Fuera del local' ? 'lg:block'
+                                                    : 'lg:flex'} ${g.titulo === 'Fuera del local' ? ''
+                                                    : g.titulo === 'Extras y arriendo' && grupos.some((x) => x.titulo === 'Fuera del local') ? ''
+                                                    : 'lg:col-span-2'}`}>
+                    {/* Los botones de agregar van a 40px en el computador (2026-11-23): con
+                        el karting y las actividades de otras empresas, el catálogo crece
+                        y las dos filas se doblan; así el paso 3 sigue cabiendo. */}
+                    <p className={`mb-2 ${TITULO_GRUPO} ${g.titulo === 'Fuera del local' ? 'lg:mb-1'
+                      : 'lg:mb-0 lg:flex lg:min-h-[40px] lg:w-[9.5rem] lg:shrink-0 lg:items-center'}`}>
                       {g.titulo}
                       {n === 0 && <span className="hidden lg:inline"><AyudaCorta tema="agregarProducto" /></span>}
                     </p>
@@ -2240,18 +2332,19 @@ export default function CotizacionDialogo({
                         return (
                           <button key={m.nombre} type="button" onClick={() => agregar(m)} disabled={ya}
                             title={ya ? 'Ya está en la cotización: cambia la cantidad en su línea' : undefined}
-                            className={`boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2 ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
+                            className={`boton min-h-[48px] text-[14px] lg:min-h-[40px] lg:px-2 lg:text-[13px] ${m.loCobra ? 'flex-wrap !justify-start !gap-x-0 text-left lg:py-1' : ''} ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
                             {ya ? '✓' : '+'} {m.nombre}
                             <span className={`ml-1 text-hueso/60 ${ya ? 'lg:hidden' : ''}`}>
                               {ya ? '· ya está'
                                 : m.moneda === MONEDA.uf ? `${String(m.precioCotizacion).replace('.', ',')} UF`
                                 : precioParaCotizar(m) ? enPesos(precioParaCotizar(m)) : ''}
                             </span>
+                            {m.loCobra && <span className="basis-full text-left text-[13px] font-semibold leading-tight text-ambar-texto">{m.loCobra}</span>}
                           </button>
                         );
                       })}
                       {g.otra && (
-                        <button type="button" className="boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2"
+                        <button type="button" className="boton min-h-[48px] text-[14px] lg:hidden"
                           onClick={() => setLineas([...vistas, {
                             presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
                             personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
@@ -2283,8 +2376,14 @@ export default function CotizacionDialogo({
             <div className={`${marcoGrupo()} p-3 lg:px-3 lg:py-2`}>
             <p className={`mb-2 ${TITULO_GRUPO} lg:hidden`}>En la cotización</p>
             {vistas.length === 0 ? (
-              <p className="rounded border border-dashed border-hueso/20 p-4 text-[14px] text-hueso/60">
+              <p className="flex flex-wrap items-center gap-3 rounded border border-dashed border-hueso/20 p-4 text-[14px] text-hueso/60">
                 Todavía no hay nada cotizado.
+                <button type="button" className="boton hidden min-h-[36px] !px-2 text-[13px] lg:inline-flex"
+                  onClick={() => setLineas([...vistas, {
+                    presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
+                    personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
+                  + Otra línea
+                </button>
               </p>
             ) : (
               // **En el computador, una tabla** (2026-11-21): el nombre de cada
@@ -2294,10 +2393,20 @@ export default function CotizacionDialogo({
               // Los nombres de cada campo siguen ahí para un lector de pantalla.
               <ul className="space-y-2 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto] lg:gap-x-4
                              lg:gap-y-1.5 lg:space-y-0">
-                <li aria-hidden className="hidden border-2 border-transparent px-3 text-[13px] font-medium uppercase
+                <li className="hidden border-2 border-transparent px-3 text-[13px] font-medium uppercase
                                            tracking-wide text-hueso/60 lg:col-span-full lg:grid lg:grid-cols-subgrid
                                            lg:items-center">
-                  <span className={`${TITULO_GRUPO} normal-case tracking-normal text-hueso`}>En la cotización</span>
+                  {/* En el computador, *+ Otra línea* va acá, junto a lo cotizado, y no
+                      en la fila de los extras: con más extras esa fila se doblaba. */}
+                  <span className={`${TITULO_GRUPO} flex items-center gap-3 normal-case tracking-normal text-hueso`}>
+                    En la cotización
+                    <button type="button" className="boton min-h-[36px] !px-2 text-[13px] font-normal"
+                      onClick={() => setLineas([...vistas, {
+                        presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
+                        personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
+                      + Otra línea
+                    </button>
+                  </span>
                   <span>Cantidad</span>
                   <span className="flex items-center">Precio c/u <AyudaCorta tema="precioLinea" /></span>
                   <span className="flex items-center">Descuento <AyudaCorta tema="descuentoLinea" /></span>
@@ -2330,6 +2439,10 @@ export default function CotizacionDialogo({
                         {prod && (
                           <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px]
                                            text-hueso/70">{prod.tipo}</span>
+                        )}
+                        {l.loCobra && (
+                          <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px]
+                                           font-semibold text-ambar-texto">lo cobra {l.loCobra} · aparte</span>
                         )}
                         </span>
                         <span className="flex-1 lg:hidden" />
@@ -2523,6 +2636,34 @@ export default function CotizacionDialogo({
                     {d ? `${d}%` : 'Sin'}
                   </button>
                 ))}
+                {/* **La promoción** (2026-11-24): al lado del descuento, que es
+                    lo que más cambia. Aplicada, una pastilla con su nombre,
+                    lo que da y *Quitar*. */}
+                {p && promoAplicada ? (
+                  <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border-2 border-oro/60
+                                   bg-oro/10 py-0.5 pl-2.5 pr-1 text-[13px]">
+                    <b className="text-[14px]">🎁 {promoAplicada.nombre}</b>
+                    {rigePromocion(promoAplicada, invitados)
+                      ? <span>−{beneficio.descuento}%{beneficio.sinArriendo ? ' · sin arriendo' : ''}</span>
+                      : <span className="font-semibold text-ambar-texto">pide desde {Math.max(1, promoAplicada.minimo)}: no rige</span>}
+                    <AyudaCorta tema="promoEnCotizacion" />
+                    {rigePromocion(promoAplicada, invitados) && descuento !== beneficio.descuento && (
+                      <button type="button" className="boton boton-angosto min-h-[36px]"
+                        onClick={() => setDescuento(beneficio.descuento)}>
+                        Usar −{beneficio.descuento}%
+                      </button>
+                    )}
+                    <button type="button" className="boton boton-angosto min-h-[36px]" onClick={quitarPromocion}>
+                      Quitar
+                    </button>
+                  </span>
+                ) : p && (datos.promociones ?? []).some((x) => x.activa) ? (
+                  <button type="button" className="boton min-h-[40px] !border-2 !border-oro/60" aria-label="Aplicar promoción"
+                    onClick={() => setAplicandoPromo(true)}>
+                    {/* En el computador, corto: con el largo, el neto y el total bajaban de fila. */}
+                    🎁 <span className="lg:hidden">Aplicar promoción…</span><span className="hidden lg:inline">Promoción…</span>
+                  </button>
+                ) : null}
               </div>
               <dl className="ml-auto max-w-xs space-y-1 text-[15px] tabular-nums lg:flex lg:max-w-none lg:items-baseline
                              lg:gap-x-5 lg:space-y-0">
@@ -2540,6 +2681,44 @@ export default function CotizacionDialogo({
                   <dt>Total</dt><dd className="text-oro">{enPesos(cuentas.total)}</dd>
                 </div>
               </dl>
+              {otras.length > 0 && (
+                <div className="w-full space-y-1 text-[14px] text-hueso/80 lg:basis-full">
+                  {otras.map((o) => {
+                    const hecha = coordinadasDe(coordinadas).get(normalizar(o.empresa));
+                    // **Escribirle para coordinar** (2026-11-24): con el teléfono
+                    // de *Productos → 🤝 Otras empresas* y un mensaje con el día,
+                    // la gente y lo que se pidió.
+                    const ficha = empresaDe(datos.otrasEmpresas ?? [], o.empresa);
+                    const wa = ficha?.telefono ? enlaceWhatsApp(ficha.telefono, mensajeParaCoordinar({
+                      empresa: ficha, negocio: datos.empresa || 'Brasas de Lo Pirque',
+                      dia: esFecha(fechaReal) ? enPalabras(fechaReal) : '', invitados,
+                      conceptos: vistas.filter((l) => normalizar(l.loCobra ?? '') === normalizar(o.empresa))
+                        .map((l) => ({ concepto: l.concepto, cantidad: l.cantidad }))
+                    })) : '';
+                    return (
+                      <p key={o.empresa} className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                        <span>Aparte, lo cobra <strong>{o.empresa}</strong> ({o.conceptos.join(', ')}): {enPesos(o.total)}</span>
+                        {p && wa && (
+                          <button type="button" className="boton min-h-[36px] border-verde-fuerte/60 font-semibold text-verde-texto"
+                            onClick={() => abrirWhatsApp(wa)}>💬 Escribirle</button>
+                        )}
+                        {p && (hecha ? (
+                          <span className="flex items-center gap-2">
+                            <span className="font-semibold text-verde-texto">✓ coordinado · {hecha.quien}</span>
+                            <button type="button" className="boton min-h-[36px] !px-2 text-[13px]"
+                              onClick={() => coordinar(o.empresa, false)}>Deshacer</button>
+                          </span>
+                        ) : (
+                          <button type="button" className="boton min-h-[36px] border-ambar-fuerte/60 font-semibold text-ambar-texto"
+                            onClick={() => coordinar(o.empresa, true)}>🤝 Ya lo coordiné</button>
+                        ))}
+                      </p>
+                    );
+                  })}
+                  <p className="text-right">El día completo, con lo de otras empresas: <strong>
+                    {enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</strong></p>
+                </div>
+              )}
             </div>
             </div>
 
@@ -3593,6 +3772,10 @@ export default function CotizacionDialogo({
           onCerrar={() => setCorrigiendo(false)}
           onCancelarEvento={() => { setCorrigiendo(false); setCancelando(true); }}
           onListo={(hacia) => { setCorrigiendo(false); onCambio(); if (onAbrir) onAbrir(hacia || p.id, 4); else onCerrar(); }} />
+      )}
+      {aplicandoPromo && (
+        <AplicarPromocion promociones={datos.promociones ?? []} catalogo={datos.menus} invitados={invitados}
+          fecha={fechaReal} yaEstan={vistas} onCerrar={() => setAplicandoPromo(false)} onAplicar={aplicarPromocion} />
       )}
       {cayendo && p && (
         <SeCayo id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''}

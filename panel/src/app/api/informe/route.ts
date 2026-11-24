@@ -17,13 +17,12 @@ import { HOJA_USUARIOS } from '@/lib/usuarios';
 import { HOJA_PRESUPUESTOS, HOJA_LINEAS, folioDe } from '@/lib/presupuestos';
 import { HOJA_COBROS } from '@/lib/cobros';
 import { HOJA_CLIENTES } from '@/lib/clientes';
-import { HOJA_VENDEDORES, fichaDe, ventasDe } from '@/lib/vendedores';
+import { HOJA_VENDEDORES, fichaDe, ventasDe, cuentasQueVenden } from '@/lib/vendedores';
 import { leerUsuarios, leerVendedores, leerPresupuestos, leerLineasPresupuesto, leerCobros,
          leerClientes } from '@/lib/datos';
 import { conCliente } from '@/lib/cotizar';
 import { HOJA_MENUS } from '@/lib/menus';
 import { leerMenus } from '@/lib/datos';
-import { ROL } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,9 +80,9 @@ export const GET = conLecturas([HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_TRABAJADORES
         leerUsuarios(), leerPresupuestos(), leerLineasPresupuesto(), leerCobros(), leerClientes(), leerMenus()
       ]);
       const conNombre = presupuestos.map((p) => conCliente(p, clientes));
-      vendedores = usuarios
-        .filter((u) => u.rol === ROL.vendedor
-          && (u.activo || fichasV.some((f) => normalizar(f.usuario) === normalizar(u.usuario))))
+      // Los mismos de la pantalla Vendedores (`cuentasQueVenden()`): también
+      // quien cotiza con otro rol (2026-11-24).
+      vendedores = cuentasQueVenden(usuarios, fichasV, presupuestos)
         .map((u) => {
           const f = fichaDe(fichasV, u.usuario, u.nombre);
           const nombre = f.nombre || u.nombre || u.usuario;

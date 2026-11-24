@@ -29,6 +29,7 @@
 import { indices } from './columnas.ts';
 import { esFecha, type Fecha } from './fechas.ts';
 import { marcaPlata, partesMarca } from './plata.ts';
+import { ROL } from './auth.ts';
 
 export const HOJA_CAJA = 'Caja chica';
 
@@ -291,4 +292,46 @@ export const efectivoDelDia = (movs: Movimiento[], fecha: string) =>
 export function fraseMovimiento(m: Pick<Movimiento, 'tipo' | 'monto' | 'detalle' | 'para'>): string {
   const que = m.tipo === TIPO_CAJA.entrega ? `Entrega a ${m.para}` : m.tipo;
   return `${ICONO_CAJA[m.tipo]} ${que} · ${pesos(m.monto)}${m.detalle ? ` · ${m.detalle}` : ''}`;
+}
+
+/* ---------- A quién se le entrega la caja (2026-11-24) ---------- */
+
+/**
+ * **Quién recibe la plata de la caja: el encargado de operaciones y los
+ * gerentes** (2026-11-24, lo pidió el cliente dos veces el mismo día: *"tiene
+ * que ser el encargado de operaciones y la gerencia que puede recibir plata.
+ * Y eso de la forma más simple posible y elegible sin enredar al usuario"*, y
+ * *"tienen que estar el encargado de operaciones y los tres gerentes… todos
+ * estos nombres tengo que poder elegir en este formulario"*). Hasta ese día se
+ * veía uno solo y los demás quedaban detrás de *Otra persona…*, con un
+ * buscador.
+ *
+ * **Entran operaciones, gerencia y pagos**: un gerente puede tener la cuenta
+ * con el rol de pagos, y quedarse fuera por el nombre del rol es justo lo que
+ * el cliente no quiere. **El administrador no**: es la cuenta general del
+ * panel, no una persona a la que se le pasa la plata.
+ *
+ * **El permiso `recibirCaja` no cambió.** Esta lista es la de quienes lo
+ * tienen, menos el administrador; el servidor valida contra ella.
+ */
+export const RECIBEN_CAJA: readonly string[] = [ROL.operaciones, ROL.gerencia, ROL.pagos];
+
+export interface Destino { usuario: string; nombre: string; rol: string }
+
+/**
+ * Las cuentas a las que se puede entregar la caja, **sin la propia**: activas,
+ * de operaciones, gerencia o pagos, **primero operaciones** —es el habitual,
+ * *"entregar este dinero a Cristóbal"*—, después la gerencia y pagos, y por
+ * nombre dentro de cada rol. Se nombran por su nombre,
+ * que es lo que queda en *Para* y lo que trae la sesión de quien recibe.
+ */
+export function quienesRecibenCaja(
+  cuentas: { usuario: string; nombre: string; rol: string; activo: boolean }[], yo: string
+): Destino[] {
+  const nombre = (c: { nombre: string; usuario: string }) => c.nombre || c.usuario;
+  const orden = (rol: string) => RECIBEN_CAJA.indexOf(rol);
+  return cuentas
+    .filter((c) => c.activo && orden(c.rol) >= 0 && nombre(c) !== yo && c.usuario !== yo)
+    .map((c) => ({ usuario: nombre(c), nombre: nombre(c), rol: c.rol }))
+    .sort((a, b) => orden(a.rol) - orden(b.rol) || a.nombre.localeCompare(b.nombre, 'es'));
 }

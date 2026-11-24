@@ -232,7 +232,7 @@ más abajo; esto es la lista para revisar.
 - Fotografía real como protagonista, Fraunces y Work Sans, dorado sobre
   papel tibio de día —la vista que abre— y sobre negro de noche, sin signos
   de exclamación ni superlativos.
-- Cero JavaScript para interfaz: las tres excepciones están decididas y no
+- Cero JavaScript para interfaz: las cuatro excepciones están decididas y no
   sientan precedente.
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
   `precios.json`, los textos en el español de la raíz.
@@ -614,13 +614,15 @@ unos pocos KB; las imágenes se cachean entre páginas.
 - **Casi sin JavaScript.** El menú de celular es checkbox + label, y las
   tarjetas que giran y los carruseles son CSS. **El selector de idiomas
   tampoco usa JS**: es un `<details>` con enlaces a la misma página en otra
-  carpeta. Hay exactamente **tres** excepciones, todas decididas
+  carpeta. Hay exactamente **cuatro** excepciones, todas decididas
   explícitamente con el cliente, y ninguna sirve de precedente:
   `assets/js/reserva.js` (solo en `reservas.html`; la integración con
   Shopify no se puede hacer sin JS) y `assets/js/idioma.js` (en todas; la
-  sugerencia de idioma no se puede hacer sin JS en un sitio estático), y
+  sugerencia de idioma no se puede hacer sin JS en un sitio estático),
   `assets/js/tema.js` (en todas; recuerda la vista diurna, ver "La vista
-  diurna"). **Para interfaz no se usa JavaScript.**
+  diurna") y `assets/js/cotizador.js` (solo en `promociones.html`; el
+  cotizador con el total en vivo, ver "El cotizador de promociones").
+  **Para interfaz no se usa JavaScript.**
 - El menú de celular **sí existe acá** (hamburguesa bajo 920px). El landing de
   socios no tiene: ahí el menú simplemente desaparece bajo 900px.
 - **El sitio público vende DOS experiencias, el landing sigue con CUATRO**
@@ -1284,6 +1286,58 @@ Brasas y Mesa de Directorio—.
   charla) y la mesa servida (`g18`).
 - Los nombres en inglés y portugués (*Grill Battle*, *Duelo de Churrasco*…)
   los escribió Claude.
+
+### El cotizador de promociones (2026-11-23)
+
+Lo pidió el cliente: *"en cada página de promociones debe haber un
+cotizador, según las reglas del sitio público elegante, simple, que permite
+cotizar ciertas promociones"*. Eligió **el total en vivo**, y con eso **es la
+cuarta excepción a la regla de cero JavaScript** (`assets/js/cotizador.js`,
+solo en `promociones.html`). La mitad del panel —las promociones en
+*Productos*, las reglas y las cotizaciones que llegan— está en
+`panel/CLAUDE.md`, "Las promociones del sitio".
+
+- **Lo arma el panel, no la página**: cada bloque trae un
+  `<div class="cotizador" data-promo="gran-premio" hidden>` vacío, y el script
+  lo llena con la promoción que el panel conectó a ese bloque
+  (`/api/publico/promociones`). **Sin promoción conectada, con el cotizador
+  apagado o sin JavaScript, el bloque queda como antes**, con su WhatsApp.
+- **No calcula nada**: le pregunta a `/api/publico/cotizar`, que cotiza con
+  las reglas del vendedor (el show, el arriendo mínimo, el descuento de la
+  promoción), y dibuja lo que vuelve. Pregunta cuando se deja de mover los
+  números (600 ms) y el panel guarda cada respuesta 5 minutos.
+- **Es la pieza de la reserva en pasos** (regla *coherencia*): ① *¿Cuántos y
+  qué día?* —con lo que incluye—, ② *¿Qué menú?* y lo que se puede sumar, ③ la
+  boleta con el total y *por persona*, y lo que cobra otra empresa aparte.
+  ***Quiero esta cotización*** cambia la boleta por los datos (nombre,
+  empresa, WhatsApp, correo opcional) y *Recibir la cotización*. En el
+  computador, los tres lado a lado: **433px, y 452 con los datos, en el
+  notebook del cliente (1262×573)**; en portugués, con los textos más largos,
+  unos 470.
+- **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
+  + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
+  ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde
+  (`data-cot`). El WhatsApp del bloque pasa a delineado: es la segunda
+  opción.
+- **Al mandar**, la cotización queda en el panel enviada y a nombre de la
+  vendedora de turno, y el cliente ve *Listo. Tu cotización N° …* con *Ver la
+  cotización* (el documento formal del panel) y *Escríbenos por WhatsApp* (el
+  de Eventos, con el número en el mensaje).
+- **Fuera de las direcciones reales manda `prueba: true`**
+  (`CONFIG.direccionesReales`, las mismas de `reserva.js`): el panel calcula
+  y no escribe, y la página dice *Versión de prueba: se calculó, pero no se
+  mandó*. En un computador, `?panel=http://localhost:3125` lo prueba contra el
+  panel de ejemplo.
+- **El link de campaña**: `promociones.html#gran-premio` abre la página con
+  esa promoción elegida (el script marca su `.promo-radio`, que lleva
+  `data-promo`), y al elegir otra el link de la barra cambia. Lo copia el
+  panel, en los tres idiomas. Las claves son las de `EN_EL_SITIO` del panel:
+  **un bloque nuevo lleva su clave en los dos lados**.
+- Los textos están en `TEXTOS` del script, en los tres idiomas; los nombres
+  de los productos llegan del panel en español.
+- **Los precios de ejemplo de `precios.json` (`paquetes`) siguen** para quien
+  no tiene JavaScript o mientras una promoción no esté conectada. Cuando las
+  cinco estén en el panel, se pueden borrar de la lista y de la página.
 
 ## Landing dossier (`dossier.html`) y los precios de empresa (2026-11-18)
 

@@ -192,6 +192,12 @@ export interface DatosContrato {
    * ofrecen. Sin ella, el contrato dice los plazos como siempre.
    */
   fechaRef?: Fecha;
+  /**
+   * **Lo que cobra otra empresa** (2026-11-24, `puntosDelContrato()`): un
+   * renglón por empresa, con lo suyo, su RUT y cuánto. Sin nada, no hay
+   * cláusula.
+   */
+  terceros?: string[];
 }
 
 /** Cuántos cambios de fecha, hasta cuántos días antes se cancela, y qué % se devuelve. */
@@ -371,6 +377,22 @@ export function clausulasDe(d: DatosContrato): Clausula[] {
     ],
     puntos: pagos
   });
+
+  // **Lo que cobra otra empresa** (2026-11-24, lo decidió el cliente: *"sí va
+  // en una línea del contrato"*), después de la forma de pago —así las
+  // cláusulas Tercera y Cuarta, que se citan, no cambian de número—. Dice
+  // solo los hechos: no es parte del precio, lo presta y lo cobra ella, y se
+  // coordina acá. Quién responde por qué lo decide el negocio con su abogado.
+  if (d.terceros?.length) {
+    agregar('Servicios de otras empresas', {
+      parrafos: [
+        'Los siguientes servicios no forman parte del Servicio ni del Precio Total: los presta y los '
+        + 'cobra directamente la empresa que se indica, a quien el Cliente se los paga. '
+        + `${alias} coordina con ella su realización el día del Evento.`
+      ],
+      puntos: d.terceros
+    });
+  }
 
   agregar('Reunión de coordinación', {
     parrafos: [

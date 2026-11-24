@@ -57,7 +57,17 @@ export const NO_CABEN = {
   // El formulario de un ajuste abierto dentro de la línea de una persona.
   'v-equipo-del-dia-con-ajuste': 839,
   // La cara de reservas es una lista: crece con las reservas del día.
-  'v-equipo-del-dia-reservas': 851
+  'v-equipo-del-dia-reservas': 851,
+  // **La cabecera de cotizar en dos filas** (2026-11-24, lo pidió el cliente:
+  // *"los pasos tienen que llegar en una fila y ahí comprometer un poco la
+  // eficiencia del espacio y poner las alternativas en una segunda fila abajo…
+  // y un botón grande de las notas"*). La fila de las alternativas suma unos
+  // 50px; en el paso 3, además, *Fuera del local* le quita ancho a los extras.
+  'v-cotizar-3-productos': 698,
+  'v-cotizar-4-envio': 665,
+  'v-cotizar-4-envio-vendedor': 665,
+  'v-cotizar-5-contrato': 681,
+  'v-cotizar-5-contrato-vendedor': 681
 };
 
 /** Hallazgos de alineación que se aceptan, con el porqué. Hoy, ninguno. */
@@ -98,7 +108,10 @@ export const PANTALLAS = [
   ['dia', '/dia/2026-11-14'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
   ['bitacora', '/bitacora'],
   // La caja chica (2026-11-23, `caja.ts`).
-  ['caja', '/caja']
+  ['caja', '/caja'],
+  // Las promociones del sitio (2026-11-23), en Productos.
+  ['productos-promociones', '/menus?ver=promociones'],
+  ['productos-empresas', '/menus?ver=empresas']
 ];
 
 const b = await chromium.launch();
@@ -130,6 +143,11 @@ const cotizacion = async (paso) => {
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
 /** Abre una escena con la sesión del vendedor y vuelve a la del administrador. */
+/** Como Daniela, que recibe las cotizaciones del sitio (2026-11-23). */
+const comoVendedora = async (abrir) => {
+  await ctx.addCookies([{ name: 'sesion', value: SESIONES.vendedora, url: URL_PANEL }]);
+  try { await abrir(); } finally { await ctx.addCookies([{ name: 'sesion', value: SESIONES.admin, url: URL_PANEL }]); }
+};
 const comoVendedor = async (abrir) => {
   await ctx.addCookies([{ name: 'sesion', value: SESIONES.vendedor, url: URL_PANEL }]);
   try { await abrir(); } finally { await ctx.addCookies([{ name: 'sesion', value: SESIONES.admin, url: URL_PANEL }]); }
@@ -168,6 +186,17 @@ export const ESCENAS = {
   },
   // **La caja chica** (2026-11-23): los dos formularios de quien la lleva.
   'ficha-caja-gasto': async () => { await ir('/caja'); await clic(boton(/Anotar un gasto/)); },
+  // **Las promociones del sitio** (2026-11-23): la tarjeta del Gran Premio abierta,
+  // con su link de campaña, el karting para sumar y el arriendo.
+  'ficha-promocion': async () => {
+    await ir('/menus?ver=promociones'); await clic(boton(/Gran Premio de Fin de Año/));
+  },
+  // Otra empresa abierta (2026-11-24): Productos → 🤝 Otras empresas.
+  'ficha-otra-empresa': async () => {
+    await ir('/menus?ver=empresas'); await clic(boton(/Karting Pirque/));
+  },
+  // La ventana que le avisa a la vendedora de las cotizaciones del sitio: sale sola al entrar.
+  'v-aviso-sitio': async () => { await comoVendedora(async () => { await ir('/'); await p.getByRole('dialog').waitFor(); }); },
   'ficha-caja-entregar': async () => { await ir('/caja'); await clic(boton(/Entregar…/)); },
   // Cambiar el vendedor de un cliente (2026-11-22): con uno ya elegido, que es cuando más mide.
   'v-cambiar-vendedor': async () => {
@@ -208,6 +237,13 @@ export const ESCENAS = {
   'v-extras-del-dia': async () => { await diaDe('/extras', /14 de noviembre/); await lineaDelDia(); },
   'v-ficha-colaborador': async () => { await diaDe('/extras', /14 de noviembre/); await lineaDelDia(); await clic(ventana().getByRole('button', { name: 'Ficha' })); },
   'v-puestos': async () => { await ir('/equipo'); await clic(p.locator('main button', { hasText: /puestos/i })); },
+  // **Reenganchar un nombre suelto** (2026-11-24, `ReengancharSuelto`): el
+  // turno de octubre de *Matias Peres*, con la ficha elegida. La escena no pasa.
+  'v-reenganchar': async () => {
+    await ir('/equipo'); await clic(boton('Es…', true));
+    await ventana().getByLabel('Buscar trabajador').fill('Matías');
+    await clic(ventana().getByRole('button', { name: /Matías Pérez/ }));
+  },
   // Cotizaciones.
   'v-cotizar-1-cliente': async () => { await ir('/presupuestos'); await clic(boton('+ Cotizar', true)); },
   'v-cotizar-1-cliente-nuevo': async () => {
@@ -235,6 +271,14 @@ export const ESCENAS = {
   },
   'v-cotizar-2-evento': () => cotizacion(/Evento/),
   'v-cotizar-3-productos': () => cotizacion(/Productos/),
+  // **Aplicar una promoción** (2026-11-24), como vendedor: la lista y lo que
+  // pasa al aplicar el Gran Premio, con 80 personas (su tramo del 20%).
+  'v-aplicar-promocion': () => comoVendedor(async () => {
+    await cotizacion(/Productos/);
+    await clic(ventana().getByRole('button', { name: 'Aplicar promoción' }));
+    await clic(p.getByRole('radio', { name: /Gran Premio de Fin de Año/ }));
+    await clic(p.getByRole('radio', { name: 'A Brasas abiertas' }));
+  }),
   // El simulador de evento (2026-11-23): solo calcula, no guarda nada.
   'v-simulador': async () => {
     await cotizacion(/Productos/);

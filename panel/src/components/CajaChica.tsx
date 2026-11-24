@@ -22,7 +22,6 @@ import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
 import Azulejo from './Azulejo';
 import FechaDia from './FechaDia';
-import BuscarEnLista from './BuscarEnLista';
 import { avisar } from './AvisoFlotante';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import {
@@ -59,11 +58,13 @@ function Formulario({ tipo, d, tengo, onListo, onVolver }: {
     : tipo === TIPO_CAJA.deposito ? tengo : tipo === TIPO_CAJA.inicial ? 0 : 0;
   const [monto, setMonto] = useState(sugerido > 0 ? String(sugerido) : '');
   const [detalle, setDetalle] = useState('');
-  // El habitual es el encargado de operaciones: *"entregar este dinero a
-  // Cristóbal"*. Los demás, con el buscador.
+  // **De partida, el encargado de operaciones** (*"entregar este dinero a
+  // Cristóbal"*), y los demás a un toque (2026-11-24, lo pidió el cliente:
+  // *"tiene que ser mucho más flexible… de la forma más simple posible y
+  // elegible sin enredar al usuario"*). Son pocos —operaciones, la gerencia y
+  // pagos—, así que van todos a la vista, sin buscador.
   const habitual = d.destinos.find((x) => x.rol === ROL.operaciones) ?? d.destinos[0];
   const [para, setPara] = useState(habitual?.usuario ?? '');
-  const [buscando, setBuscando] = useState(false);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [guardando, setGuardando] = useState(false);
   const n = Math.round(Number(monto.replace(/[^\d]/g, ''))) || 0;
@@ -108,28 +109,31 @@ function Formulario({ tipo, d, tengo, onListo, onVolver }: {
     <section className={`${marcoGrupo('oro')} space-y-2 p-3`} data-ficha>
       <p className={TITULO_GRUPO}>{titulo}</p>
       {tipo === TIPO_CAJA.entrega && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={ROTULO}>A quién</span>
-          {habitual && (
-            <button type="button" onClick={() => setPara(habitual.usuario)}
-              className={`boton min-h-[44px] !text-[15px] ${para === habitual.usuario ? '!border-oro !font-bold text-oro' : ''}`}>
-              {para === habitual.usuario ? '✓ ' : ''}{habitual.nombre}
-            </button>
-          )}
-          {para && para !== habitual?.usuario && (
-            <span className="boton min-h-[44px] !border-oro !text-[15px] !font-bold text-oro">✓ {nombrePara}</span>
-          )}
-          {d.destinos.length > 1 && (
-            <button type="button" className="boton min-h-[44px] !text-[15px]" onClick={() => setBuscando(true)}>Otra persona…</button>
-          )}
-          {buscando && (
-            <div className="basis-full">
-              <BuscarEnLista etiqueta="Buscar a quién entregar" vacia="No hay nadie más que reciba la caja."
-                opciones={d.destinos.map((x) => ({ id: x.usuario, nombre: x.nombre, detalle: NOMBRE_ROL[x.rol] ?? x.rol }))}
-                elegido={para} onElegir={(id) => { setPara(id); setBuscando(false); }} onCerrar={() => setBuscando(false)} />
-            </div>
-          )}
-          {!d.destinos.length && <span className="text-[15px] text-ambar-texto">No hay cuentas que reciban la caja.</span>}
+        // En el celular, *A quién* va arriba y cada persona a todo el ancho: en
+        // la columna del rótulo, *Encargado de operaciones* se doblaba.
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2">
+          <span className={`${ROTULO} sm:pt-2.5`}>A quién</span>
+          <div className="flex min-w-0 flex-1 flex-wrap gap-2" role="radiogroup" aria-label="A quién se la entregas">
+            {d.destinos.map((x) => {
+              const elegido = para === x.usuario;
+              return (
+                <button key={x.usuario} type="button" role="radio" aria-checked={elegido}
+                  onClick={() => setPara(x.usuario)}
+                  className={`tecla flex min-h-[44px] w-full items-center gap-2 rounded-xl border-2 px-3 py-1 text-left sm:w-auto ${elegido
+                    ? 'border-oro bg-oro/15' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
+                  <span aria-hidden className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[13px] font-bold ${elegido
+                    ? 'border-oro bg-oro text-tinta' : 'border-hueso/40'}`}>{elegido ? '✓' : ''}</span>
+                  <span className="leading-tight">
+                    <span className="block text-[15px] font-bold">{x.nombre}</span>
+                    <span className="block text-[13px] text-hueso/70">{NOMBRE_ROL[x.rol] ?? x.rol}</span>
+                  </span>
+                </button>
+              );
+            })}
+            {!d.destinos.length && (
+              <span className="pt-2.5 text-[15px] text-ambar-texto">No hay un encargado de operaciones, gerencia ni pagos con cuenta activa.</span>
+            )}
+          </div>
         </div>
       )}
       <label className="flex items-center gap-2">

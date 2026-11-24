@@ -111,7 +111,7 @@ export interface Simulacion {
 const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
 export interface EntradaSimulador {
-  lineas: { concepto: string; cantidad: number; precio: number; descuento?: number; ivaIncluido?: boolean }[];
+  lineas: { concepto: string; cantidad: number; precio: number; descuento?: number; ivaIncluido?: boolean; loCobra?: string }[];
   descuentoTotal?: number;
   invitados: number;
   catalogo: (Pick<Menu, 'nombre' | 'costo'> & { tipo?: string })[];
@@ -127,7 +127,10 @@ export interface EntradaSimulador {
 
 export function simular(e: EntradaSimulador): Simulacion {
   const invitados = Math.max(0, Math.round(Number(e.invitados) || 0));
-  const lineas = e.lineas.filter((l) => String(l.concepto ?? '').trim() && Number(l.cantidad) > 0);
+  // Lo que cobra otra empresa (el karting) no entra ni en lo cobrado ni en
+  // lo que cuesta: no pasa por nuestra caja.
+  const lineas = e.lineas.filter((l) => String(l.concepto ?? '').trim() && Number(l.cantidad) > 0
+    && !String(l.loCobra ?? '').trim());
   const ingreso = cuentasDe(lineas, e.descuentoTotal ?? 0).neto;
   const faltan: string[] = [];
 

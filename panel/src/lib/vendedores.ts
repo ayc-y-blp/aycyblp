@@ -58,7 +58,7 @@ export const COL_VENDEDORES = {
   conSocio: 'Con socio cobra %',
   /** `no` es desactivado. Solo los socios: un vendedor se desactiva en *Cuentas*. */
   activo: 'Activo',
-  /** El link personal del socio (`/mi/<token>`). Vacío: sin link. */
+  /** El link personal del socio o del vendedor (`/mi/<token>`). Vacío: sin link. */
   token: 'Token de acceso',
   ...COL_BANCO,
   nota: 'Nota de pago',
@@ -261,7 +261,9 @@ export function filaVendedor(v: FichaVendedor, enc: string[]): string[] {
   poner(i.usuario, v.usuario); poner(i.nombre, v.nombre);
   poner(i.tipoFicha, TIPO_FICHA[v.tipo]); poner(i.activo, v.activo ? '' : 'no');
   poner(i.etapa1Desde, Math.max(1, v.etapa1Desde || ETAPA1_DESDE));
-  poner(i.token, v.tipo === 'socio' ? v.token : '');
+  // El link personal: del socio desde el 2026-11-12, también del vendedor
+  // desde el 2026-11-24 (antes se escribía en blanco para un vendedor).
+  poner(i.token, v.token);
   poner(i.conSocio, v.tipo === 'vendedor' ? String(v.conSocio).replace('.', ',') : '');
   poner(i.sueldoFijo, v.sueldoFijo || ''); poner(i.comisionPct, v.comisionPct ? String(v.comisionPct).replace('.', ',') : '');
   poner(i.montoEvento, v.montoEvento || ''); poner(i.base, BASE_COMISION[v.base]);
@@ -293,6 +295,20 @@ export function socioPorToken(fichas: FichaVendedor[], token: string): FichaVend
   const t = String(token ?? '').trim();
   if (!t) return undefined;
   return fichas.find((f) => f.tipo === 'socio' && f.activo && f.token === t);
+}
+
+/**
+ * **El vendedor o el socio de un link personal** (2026-11-24, lo pidió el
+ * cliente: *"necesito también que tengan copiar link personal con su resumen,
+ * muy parecido al de los trabajadores, pero enfocado a los datos de venta y
+ * condiciones personales en el trato de comisiones… y qué valor tengo que
+ * poner a la boleta para cobrar mi comisión"*). Hasta ese día solo los socios
+ * tenían link: el vendedor veía lo suyo entrando al panel.
+ */
+export function fichaPorToken(fichas: FichaVendedor[], token: string): FichaVendedor | undefined {
+  const t = String(token ?? '').trim();
+  if (!t) return undefined;
+  return fichas.find((f) => f.activo && f.token === t);
 }
 
 /** Si la ficha dice cómo se le paga: sin nada, el resumen no puede calcular plata. */
@@ -459,6 +475,40 @@ export function confirmadaEl(total: number,
  * `daniela`, quien paga la veía sin ventas y su comisión no se congelaba.
  * Calzaba solo cuando los dos eran iguales, como en los datos de prueba.
  */
+/**
+ * **Quién vende: el rol Vendedor y cualquiera que cotice** (2026-11-24, lo
+ * pidió el cliente: *"Cristóbal Cornejo no aparece aún que él tenga
+ * cotizaciones. Sé que él tiene el rol de encargado de operaciones, pero él
+ * vende también. Entonces, si alguien con otro rol, pero igual vende dentro
+ * del sistema, tiene que aparecer en vendedores también, porque para él
+ * también corren comisiones… y tiene que hacer su link personal"*).
+ *
+ * - **Una cuenta con rol Vendedor**: activa, o desactivada si tiene ficha
+ *   (para pagarle lo que se le debe). Como siempre.
+ * - **Una cuenta con otro rol**: si tiene **una cotización a su nombre**
+ *   (`Creado por`, por nombre o usuario) **o su ficha de vendedor** en
+ *   `Vendedores`. Activa o no: lo vendido se le paga igual.
+ * - **El administrador, solo con ficha**: es la cuenta general del panel, y lo
+ *   que importó del CRM puede haber quedado a su nombre sin que nadie le deba
+ *   una comisión.
+ *
+ * Es **una sola regla** para la lista de Vendedores, el Informe, el link
+ * personal y el congelado de la comisión: si cada uno filtrara a su manera,
+ * Cristóbal saldría en uno y no en el otro.
+ */
+export function cuentasQueVenden<C extends { usuario: string; nombre: string; rol: string; activo: boolean }>(
+  cuentas: C[], fichas: Pick<FichaVendedor, 'usuario' | 'tipo'>[], presupuestos: Pick<Presupuesto, 'creadoPor'>[]
+): C[] {
+  const conFicha = new Set(fichas.filter((f) => f.tipo !== 'socio').map((f) => normalizar(f.usuario)));
+  const cotizaron = new Set(presupuestos.map((p) => normalizar(p.creadoPor)).filter(Boolean));
+  return cuentas.filter((c) => {
+    const ficha = conFicha.has(normalizar(c.usuario));
+    if (c.rol === 'vendedor') return c.activo || ficha;
+    if (c.rol === 'admin') return ficha;
+    return ficha || cotizaron.has(normalizar(c.nombre)) || cotizaron.has(normalizar(c.usuario));
+  });
+}
+
 export const esVentaDe = (usuario: string, tipo: TipoFicha = 'vendedor', nombre = '') => {
   const quien = (tipo === 'socio' ? [usuario] : [usuario, nombre]).map(normalizar).filter(Boolean);
   return (p: Pick<Presupuesto, 'creadoPor' | 'socio'>) =>

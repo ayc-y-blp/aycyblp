@@ -25,7 +25,9 @@ const usu = await import(L + 'usuarios.ts');
 const fil = await import(L + 'filas.ts');
 const not = await import(L + 'notas.ts');
 const caj = await import(L + 'caja.ts');
+const prm = await import(L + 'promociones.ts');
 const pla = await import(L + 'plata.ts');
+const otr = await import(L + 'otrasEmpresas.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -65,6 +67,8 @@ H['Config'] = cfg.aFilasConfig({
   margenMinimo: 30, gastosEvento: 'Hielo: 20000; Leña y carbón: 600 pp',
   // La carpeta de los comprobantes: en el ejemplo, Drive es de mentira (`capturas.sh`).
   driveComprobantes: 'unidad-de-ejemplo',
+  // Las cotizaciones del cotizador del sitio llegan a Daniela (2026-11-23).
+  vendedorSitio: 'Daniela',
   empresa: { ...cfg.EMPRESA_VACIA, nombre: 'Brasas de Lo Pirque' }
 });
 
@@ -79,7 +83,33 @@ H['Menús'] = men.aFilasMenus([
   P({ nombre: 'Pequeños', precioEnLinea: 6000, precioEnLocal: 9000, cotizacion: true, precioCotizacion: 9000, costo: 3000 }),
   P({ nombre: 'Show ecuestre', tipo: 'Show', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 450000, costo: 250000 }),
   P({ nombre: 'Arriendo del recinto', tipo: 'Arriendo', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 2500000 }),
-  P({ nombre: 'Desayuno de campo', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 8000, iva: '+ IVA' })
+  P({ nombre: 'Desayuno de campo', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 8000, iva: '+ IVA' }),
+  // Las promociones del sitio (2026-11-23): la clase del Combate y el karting,
+  // que lo cobra otra empresa y va aparte del total.
+  P({ nombre: 'Clase de parrilla', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 15000, iva: '+ IVA', costo: 6000 }),
+  P({ nombre: 'Karting', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 35000, iva: '+ IVA', loCobra: 'Karting Pirque' })
+]);
+
+/* ---------- Otras empresas (2026-11-24): la del karting, con datos inventados ---------- */
+H['Otras empresas'] = otr.aFilasOtrasEmpresas([
+  otr.limpiarOtraEmpresa({ nombre: 'Karting Pirque', rut: '76.111.222-3', contacto: 'Pedro Soto',
+    telefono: '+56 9 5555 1234', correo: 'reservas@karting.example', que: 'Karting en la pista de al lado' })
+]);
+
+/* ---------- Promociones del sitio (2026-11-23) ---------- */
+const PR = prm.nuevaPromocion;
+H['Promociones'] = prm.aFilasPromociones([
+  PR({ id: 'PR-01', nombre: 'Fin de año', sitio: 'fin-de-ano', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
+    minimo: 22, descuento: 11, arriendo: prm.ARRIENDO_PROMO.semana }),
+  PR({ id: 'PR-02', nombre: 'Combate de Parrillas', sitio: 'combate', menus: ['A Brasas abiertas'],
+    incluye: ['Clase de parrilla'], minimo: 22 }),
+  PR({ id: 'PR-03', nombre: 'Gran Premio de Fin de Año', sitio: 'gran-premio', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
+    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 22, descuento: 10,
+    // Un tramo sobre el tope del vendedor (15%): Andrés Pino, con 80, lleva el 20%.
+    tramos: [{ desde: 60, descuento: 20 }] }),
+  PR({ id: 'PR-04', nombre: 'Día de Campo en Familia', sitio: 'dia-de-campo', menus: ['Lo Pirque'], ninos: 'Niños',
+    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30 }),
+  PR({ id: 'PR-05', nombre: 'Mesa de Directorio', menus: ['Sommelier'], minimo: 8, activa: false })
 ]);
 
 /* ---------- Fechas Hábiles ---------- */
@@ -109,7 +139,10 @@ const CLIENTES = [
   { id: 'C-0005', nombre: 'Marisol Cáceres', empresa: 'Inmobiliaria Cordillera', rut: '', domicilio: '', giro: '',
     telefono: '+56 9 4567 8901', correo: 'marisol@ejemplo.cl', notas: '', creadoPor: 'Daniela', creado: '2026-11-10 09:20' },
   { id: 'C-0006', nombre: 'Felipe Ortúzar', empresa: '', rut: '', domicilio: '', giro: '',
-    telefono: '+56 9 3678 9012', correo: 'felipe.ortuzar@ejemplo.cl', notas: 'Matrimonio civil, almuerzo.', creadoPor: 'Jorge', creado: '2026-11-11 17:40' }
+    telefono: '+56 9 3678 9012', correo: 'felipe.ortuzar@ejemplo.cl', notas: 'Matrimonio civil, almuerzo.', creadoPor: 'Jorge', creado: '2026-11-11 17:40' },
+  // Llegó por el cotizador del sitio (2026-11-23): su ficha es de la cuenta que recibe las del sitio.
+  { id: 'C-0007', nombre: 'Ignacia Rojas', empresa: 'Constructora Maipo', rut: '', domicilio: '', giro: '',
+    telefono: '+56 9 2789 0123', correo: 'ignacia.rojas@ejemplo.cl', notas: 'Llegó por el cotizador del sitio.', creadoPor: 'Daniela', creado: '2026-11-13 09:40' }
 ];
 const encC = cli.ENCABEZADO_CLIENTES;
 H['Clientes'] = [encC, ...CLIENTES.map((c) => cli.filaCliente(encC, c))];
@@ -160,6 +193,20 @@ COBROS.push({ id: 'COB-mh2a1-a1b2', presupuesto: santaInes, fecha: '2026-10-23',
   nota: '', registradoPor: 'Jorge', cuando: '2026-10-23 16:40', comprobante: '', revisadoPor: 'Verónica Lagos', revisado: '2026-10-24 09:12' });
 COBROS.push({ id: 'COB-mhkq2-c3d4', presupuesto: santaInes, fecha: '2026-11-06', concepto: 'Saldo', monto: 1848000, medio: 'Transferencia',
   nota: '', registradoPor: 'Jorge', cuando: '2026-11-06 12:05', comprobante: '', revisadoPor: 'Verónica Lagos', revisado: '2026-11-06 15:30' });
+
+// Constructora Maipo (2026-11-23): la mandó el cliente desde el cotizador del
+// Gran Premio, con el karting —que cobra otra empresa— aparte. Es de Daniela,
+// que recibe las del sitio, y todavía no ve su aviso: la ventana sale al entrar.
+const maipo = cotizacion(Date.parse('2026-11-13T12:40:11.204Z'), {
+  fecha: '2026-12-12', idCliente: 'C-0007', estado: 'Enviada', validoHasta: '2026-11-28', creadoPor: 'Daniela',
+  creado: '2026-11-13 09:40', invitados: 40, tipoEvento: 'Empresa', anticipo: null, saldoDias: null,
+  cambiosFecha: null, cancelacionDias: null, reembolso: null, seguimientoDias: null, avisoEvento: null, horario: '',
+  enviada: '2026-11-13 09:40', recontactar: '2026-11-13', origen: 'Sitio · Gran Premio de Fin de Año', avisoVisto: '',
+  notas: 'Cotizada por el cliente en el sitio: Gran Premio de Fin de Año · Constructora Maipo.'
+});
+linea(maipo, 'A Brasas abiertas', 40, 75000, 40);
+linea(maipo, 'Show ecuestre', 1, 0, 0);
+linea(maipo, 'Karting', 40, 35000, 0, { ivaIncluido: false, loCobra: 'Karting Pirque' });
 
 // Agrícola El Peumo: ganada con el anticipo; el saldo viene (lo que "viene" de Jorge).
 const peumo = cotizacion(Date.parse('2026-10-28T19:02:33.851Z'), {
@@ -382,6 +429,12 @@ for (const n of ['Antonia Reyes', 'Felipe Cortés', 'Luis Contreras', 'Catalina 
 for (const n of ['Matías Pérez', 'Diego Morales', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Catalina Vergara']) turno('2026-11-13', n);
 for (const n of ['Matías Pérez', 'Javiera Tapia', 'Diego Morales', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Hernán Bravo', 'Catalina Vergara']) turno('2026-11-14', n);
 for (const n of ['Matías Pérez', 'Javiera Tapia', 'Antonia Reyes', 'Rosa Espinoza', 'Felipe Cortés', 'Luis Contreras', 'Catalina Vergara']) turno('2026-11-15', n);
+// **Un turno suelto** (2026-11-24): octubre, con el nombre mal escrito, como
+// si la ficha se hubiera corregido en la planilla. Para medir el aviso de
+// Equipo y la ventana *Es…* (`ReengancharSuelto`). En octubre no sale en las
+// fotos de la ayuda, que miran noviembre.
+TURNOS.push({ fecha: '2026-10-24', trabajador: 'Matias Peres', puesto: 'Garzón', asistencia: 'Sí', modalidad: 'Por turno',
+  pagoJornada: 35000, horasExtra: 0, valorHora: 5000, ajustes: [], propina: 0 });
 const encT = eq.ENCABEZADO_TURNOS;
 H['Turnos'] = [encT, ...TURNOS.map((x) => eq.filaTurno(encT, x))];
 
@@ -494,7 +547,7 @@ H['Importar reservas'] = [
 
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones', 'Otras empresas'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

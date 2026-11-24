@@ -27,9 +27,13 @@ const TOPE = {
   'clientes': 1,
   'config': 1,
   'menus': 2,                      // Productos: la lista y lo que ya se usó
+  'promociones': 1,                // Productos → Promociones (2026-11-23)
+  'otras-empresas': 1,             // Productos → Otras empresas (2026-11-24)
   'informe': 1,
   'recepcion': 1,                  // la anfitriona, cada minuto
   'publico/fechas': 1,             // el sitio público: lo llama cada visitante
+  'publico/promociones': 1,        // el cotizador de promociones: cada visita (2026-11-23)
+  'publico/cotizar?promo=gran-premio&adultos=30&fecha=2026-12-12&menu=Lo%20Pirque': 1,  // cada cálculo del cotizador
   'usuarios': 1,
   'vendedores': 1,                 // el resumen del equipo de ventas (2026-11-12)
   'mantencion/produccion': 1,      // dejar la base en cero: cuenta las 20 pestañas (2026-11-18)

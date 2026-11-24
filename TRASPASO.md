@@ -320,6 +320,97 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *Visitas · Eventos*, y va en la fila de *Volver* para que el marco del
   periodo quepa en una) y en la página del día, al lado de *Mías*. Ver
   `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
+- **Las promociones del sitio y su cotizador** (23 y 24-11-2026, PR #338,
+  mergeado el 24-11-2026 con el *"prepara todo en PR y mergea"* del cliente;
+  todo lo de abajo hasta *🤝 Otras empresas* va en ese PR): *Productos → 🎁 Promociones* (una promoción es
+  una receta de productos, con su descuento, y se conecta a un bloque de
+  `promociones.html`), *Lo cobra otra empresa* en el catálogo (el karting va
+  aparte del total, con su detalle, y la vendedora lo ve *🤝 por coordinar*),
+  *Las del sitio van a* en Configuración, las rutas públicas del cotizador, la
+  ventana que avisa al vendedor y el link de campaña por promoción, **y el
+  cotizador en `promociones.html`** (`assets/js/cotizador.js`, la cuarta
+  excepción de JavaScript del sitio, decidida por el cliente: *total en
+  vivo*). En el mismo PR: mientras no haya promociones conectadas en el panel
+  de producción, la página queda igual que hoy. Ver `panel/CLAUDE.md`, "Las
+  promociones del sitio", y `CLAUDE.md`, "El cotizador de promociones".
+  **Decidido el 24-11-2026**: un bloque nuevo (como *Karting*) es un PR chico
+  del sitio, no se crea desde el panel. Los precios y datos de verdad los
+  llena el cliente después, cuando se decidan.
+- **Cambiar un nombre arrastra lo guardado** (24-11-2026, en el mismo PR
+  #338, lo encontró el cliente: un puesto renombrado dejaba a su gente en un
+  recuadro aparte, y *Christipher* seguía en los turnos después de corregir
+  la ficha). Los turnos guardan el nombre escrito, no un número de ficha:
+  ahora renombrar una persona, un colaborador o un puesto reescribe sus
+  turnos, días, pagos, boletas, ajustes y puestos habituales, y lo que ya
+  quedó suelto se reengancha con *Es…* / *Pasar a…* en Equipo y Extras. **Lo
+  que se corrige directo en la planilla no se entera**: para eso es *Es…*.
+  Ver `panel/CLAUDE.md`, "Cambiar un nombre arrastra lo guardado".
+- **El link personal del vendedor** (24-11-2026, en el mismo PR #338, lo
+  pidió el cliente): *🔗 Copiar link* también en la tarjeta de un vendedor;
+  su página muestra su trato renglón por renglón, lo que ganó con el sueldo
+  fijo, lo que viene, lo que se le pagó y el bruto que escribe en la boleta.
+  Ver `panel/CLAUDE.md`, "El link personal del vendedor".
+- **Turnos dice lo que cuesta el equipo de cada día** (24-11-2026, en el
+  mismo PR #338, lo pidió el cliente): una pastilla con el monto al lado de
+  *👥 8 en el equipo*, y arriba de la ventana del día; el mismo número de la
+  tarjeta de Reservas, sin la propina. Ver `panel/CLAUDE.md`, "Turnos: lo que
+  cuesta el equipo de cada día".
+- **Los links personales abren en el mes, con su boleta** (24-11-2026, en el
+  mismo PR #338, lo pidió el cliente): trabajador, colaborador, vendedor y
+  socio, con *📅 Mes · Semana* y ◀ ▶ en un marco (sin JavaScript). Ver
+  `panel/CLAUDE.md`, "Los links personales abren en el mes".
+- **Copiar para Mercado Pago, en dos botones** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente): en el Informe, *📋 Sueldo* y *📋 Propina* copian
+  solo el monto, y *🏦 Datos bancarios* la cuenta con el nombre de cada campo,
+  para el ✨ del formulario de cuenta nueva. Ver `panel/CLAUDE.md`, "Copiar,
+  en dos botones". **El cliente iba a mandar otro pantallazo del formulario**:
+  si sus campos u orden son otros, se ajusta `NOMBRE_COLUMNA_TRANSFERENCIA`.
+- **Caja → Entregar, a la vista** (24-11-2026, en el mismo PR #338, lo pidió
+  el cliente: *"tienen que estar el encargado de operaciones y los tres
+  gerentes… todos estos nombres tengo que poder elegir"*): un botón por cada
+  encargado de operaciones, gerencia y pagos, con su rol, y operaciones
+  elegido de partida; sin buscador. El administrador (la cuenta general) no
+  aparece. El permiso `recibirCaja` no cambió. **(Por confirmar)** que los
+  tres gerentes de producción tengan el rol *Gerencia general* o *Encargado de
+  pagos*: si alguno tiene otro, no sale. Ver `panel/CLAUDE.md`, "El cobro en
+  la mesa y la caja chica".
+- **Qué incluye cada producto, en la cotización** (24-11-2026, en el mismo
+  PR #338, lo pidió el cliente): arriba el menú de la casa y lo común, y en
+  cada alternativa lo que la distingue, con los textos del sitio
+  (`lib/detalle.ts`); y la tabla de precios cabe entera en el teléfono. Ver
+  `panel/CLAUDE.md`, "Qué incluye cada producto, en la cotización". **También
+  en el contrato**, bajo la tabla del precio (lo pidió el cliente).
+- **Vende quien cotiza, tenga el rol que tenga** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente: Cristóbal, operaciones, no salía en Vendedores):
+  `cuentasQueVenden()` en la lista, el Informe, el link personal y el congelado
+  de la comisión. Su trato parte en 0% y sin ficha la comisión no se congela.
+  Ver `panel/CLAUDE.md`, "Vende quien cotiza".
+- **La ficha de una promoción, ordenada** (24-11-2026, en el mismo PR #338,
+  lo marcó el cliente con una foto): secciones *Menús* (adultos y niños, cada
+  menú una vez), *Extras* (cada uno con *No · Incluido · Se suma*; el show con
+  la regla de Configuración) y *Condición* en tramos con *+ Otro tramo*
+  (columna nueva `Más tramos`). Ver `panel/CLAUDE.md`, "La ficha, ordenada".
+- **🚐 Fuera del local y la cabecera de cotizar en dos filas** (24-11-2026,
+  en el mismo PR #338, lo pidió el cliente): lo que cobra otra empresa va en
+  su grupo, en la promoción y en el paso Productos; los pasos en una fila y
+  las alternativas con *🗒 Notas* grande debajo. **Los pasos 3, 4 y 5 ya no
+  caben en 1280×650** (698, 665 y 681px), anotados en `NO_CABEN`: el cliente
+  aceptó perder espacio. Ver `panel/CLAUDE.md`, "*Fuera del local* y la
+  cabecera…".
+- **🎁 Promoción… en la cotización del vendedor** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente): aplica una promoción activa —su menú reemplaza
+  al de adulto, suma lo que incluye y pone su descuento—, y todo queda
+  editable. **Su descuento vale aunque pase el tope del vendedor** (lo decidió
+  el cliente) y su arriendo se perdona como diga, también al ganar. Columna
+  nueva `Promoción` en `Presupuestos`; las del sitio nacen con la suya. Ver
+  `panel/CLAUDE.md`, "*🎁 Promoción…*".
+- **🤝 Otras empresas** (24-11-2026, en el mismo PR #338, lo pidió el
+  cliente; *"no paga comisión, sí va en una línea del contrato"*): una lista
+  en *Productos* con RUT, contacto, teléfono y correo; se eligen en el
+  producto (*Lo cobra*); salen en la cotización, en la cláusula *Servicios de
+  otras empresas* del contrato y en *💬 Escribirle* para coordinar. Cambiar
+  el nombre arrastra productos y cotizaciones. Pestaña nueva `Otras
+  empresas`. Ver `panel/CLAUDE.md`, "*🤝 Otras empresas*".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -474,10 +565,10 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Reservas` | una reserva | `ID Orden` (id de Shopify, `MANUAL-…` a mano), `Fecha Reserva`, `Nombre`, `Email`, `Teléfono`, `Menú`, `Personas`, `Monto`, `Tipo Pago` (solo Shopify: *Pago directo / Solo reserva*), `Estado Pago Shopify` (`paid`, `pending`, `partially_paid`, `cancelled`, `refunded`, `voided`), `Asistencia`, `Nota de pago`, `Abonado`, `Se cayó por cupo`, `Anotada por`, `Pago anotado`, `Pago revisado`, `Agregados`, `Valor final`, `Mesa cerrada`, `Cobrado en el local`, `Comprobante del cobro`, `Cobro cerrado`… | `Fechas Hábiles` por fecha; `Presupuestos.ID Reserva` |
 | `Fechas Hábiles` | un día del calendario | `Fecha`, `Capacidad Máx`, `Hora Apertura`, `Estado` (*Abierta / Privada / Privada exclusiva / Cerrada*), `Notas`, `Cupo pedido` | `Reservas`, `Turnos`, `Actividades` por fecha |
 | `Config` | un parámetro | `Clave` · `Valor` (días que se abre, cupo, vigencia, descuentos, anticipo, mínimo del show, datos de la empresa, carpeta de Drive…) | todo |
-| `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor` | Reservas (por nombre), líneas de cotización |
+| `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor`, `Costo`, `Lo cobra` | Reservas (por nombre), líneas de cotización |
 | `Clientes` | una ficha | `ID` (`C-0001`), `Nombre`, `Empresa del cliente`, `RUT`, `Domicilio`, `Teléfono`, `Correo`, `Giro`, `Creado por` | `Presupuestos.ID Cliente` |
-| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
-| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF` | `Presupuestos` |
+| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Origen` (*Sitio · …*), `Aviso del sitio visto`, `Otras empresas coordinadas`, `Promoción` (la aplicada, su ID), `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
+| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF`, `Lo cobra` (otra empresa: va aparte del total) | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |
 | `Trabajadores` | una ficha | `Nombre` (es la identidad), `Puesto habitual`, `Activo`, `Token de acceso`, `Modalidad` (*por turno / contratado*), `Pago por jornada`, `Valor hora extra`, `Participa en propina` (en blanco = sí), `Nota de pago` (datos bancarios), `Por confirmar`, `Pago jornada preparación` | `Turnos.Trabajador` por nombre |
@@ -491,6 +582,8 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
+| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento` (el primer tramo), `Arriendo`, `Cotizador`, `Más tramos` (`50:15 \| 80:20`) | `Menús` por nombre |
+| `Otras empresas` | una empresa que cobra directo algo del evento (desde el 24-11-2026) | `Nombre` (la identidad: lo usan `Menús.Lo cobra` y `Presupuesto Líneas.Lo cobra`), `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa` | `Menús` y `Presupuesto Líneas` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |
@@ -1012,8 +1105,9 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 **Del sitio**
 
-- **Cero JavaScript para interfaz**, con tres excepciones decididas que no
-  sientan precedente: `reserva.js`, `idioma.js` y `tema.js`. Menú,
+- **Cero JavaScript para interfaz**, con cuatro excepciones decididas que no
+  sientan precedente: `reserva.js`, `idioma.js`, `tema.js` y `cotizador.js`
+  (el cotizador de promociones, 2026-11-23). Menú,
   tarjetas que giran, carruseles y selector de idiomas son CSS o
   `<details>`.
 - **Tres idiomas generados por `traducir.py`** en vez de duplicar a mano
@@ -1495,7 +1589,7 @@ misma pasada.
 - Fotografía real como protagonista (solo fotos del negocio, sin stock),
   **Fraunces** y **Work Sans**, dorado sobre papel tibio de día y sobre negro
   de noche, **sin signos de exclamación ni superlativos**.
-- **Cero JavaScript para interfaz** (las tres excepciones no sientan
+- **Cero JavaScript para interfaz** (las cuatro excepciones no sientan
   precedente).
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
   `precios.json`, los textos en el español de la raíz.

@@ -403,6 +403,75 @@
   .condicion-especial b{ font-size:0.82rem; text-transform:uppercase; letter-spacing:0.1em; color: var(--gold); }
   .condicion-especial span{ color: var(--ink-dim); }
   .paquete-cierre .hero-cta{ margin-top:16px; }
+  /* ---------- el cotizador (2026-11-23) ----------
+     Lo dibuja assets/js/cotizador.js con la promoción que el panel conecta a
+     este bloque —la cuarta excepción a la regla de cero JavaScript, decidida
+     por el cliente: "total en vivo"—. Es la misma pieza que la reserva en
+     pasos: (1) cuántos y qué día, (2) el menú y lo que se suma, (3) la
+     boleta y, al apretar "Quiero esta cotización", los datos y el envío. En
+     el computador van lado a lado, para que quepa en una pantalla. El cálculo lo hace el panel, con las reglas del
+     vendedor. Teclas de 44px y letra de 13px o más (regla PlayStation). */
+  .cot{ margin-top:26px; border:2px solid var(--gold); background: var(--bg-panel); padding:14px 18px 16px; }
+  .cot-cabeza{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 18px; }
+  .cot-titulo{ font-family: var(--serif); font-size: clamp(1.35rem,2.4vw,1.7rem); font-weight:600; margin:0; }
+  .cot-bajada{ color: var(--ink-dim); font-size:0.95rem; margin:0; }
+  .cot-pasos{ display:grid; gap:12px; margin-top:10px; }
+  @media (min-width: 1000px){ .cot-pasos{ grid-template-columns: 0.85fr 1.05fr 1.3fr; align-items:stretch; } }
+  .cot-paso{ border:1px solid var(--line); background: var(--bg); padding:10px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+  .cot-paso-titulo{ display:flex; align-items:center; gap:10px; margin:0; font-weight:600; font-size:1rem; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  .cot-num{ display:inline-flex; flex:none; width:28px; height:28px; border-radius:50%; align-items:center; justify-content:center; border:1.5px solid var(--gold); color: var(--gold); font-size:0.9rem; font-weight:700; }
+  .cot-rotulo{ display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color: var(--ink-dim); margin-bottom:6px; }
+  .cot-contador{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .cot-contador .cot-rotulo{ margin:0; }
+  .cot-teclas{ display:flex; align-items:center; gap:6px; }
+  .cot-tecla{ width:44px; height:44px; border:1.5px solid var(--gold); background:transparent; color: var(--ink); font-size:1.3rem; line-height:1; cursor:pointer; border-radius:2px; }
+  .cot-numero{ width:68px; height:44px; text-align:center; font: inherit; font-size:1.1rem; font-weight:700; border:1px solid var(--line); background: var(--bg); color: var(--ink); border-radius:2px; }
+  .cot-campo{ display:block; width:100%; min-height:44px; padding:8px 10px; border:1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size:1rem; border-radius:2px; }
+  .cot-dia, .cot-etiqueta{ display:block; }
+  .cot-opciones{ display:grid; gap:8px; }
+  .cot-opcion{ display:flex; gap:10px; align-items:center; min-height:44px; padding:6px 12px; border:1px solid var(--line); cursor:pointer; border-radius:2px; }
+  .cot-opcion:has(input:checked){ border-color: var(--gold); background: rgba(201,162,39,0.10); }
+  .cot-opcion input{ width:18px; height:18px; accent-color: var(--gold); flex:none; margin:0; }
+  .cot-opcion-texto{ display:flex; flex-direction:column; }
+  /* Un menú en un renglón: el nombre a la izquierda y su precio a la derecha. */
+  .cot-opciones .cot-opcion-texto{ flex:1; flex-direction:row; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:0 10px; }
+  .cot-precio{ font-size:0.85rem; color: var(--ink-dim); }
+  .cot-fijo{ margin:0; display:flex; flex-direction:column; gap:2px; }
+  .cot-fijo .cot-rotulo{ margin:0; }
+  .cot-incluye{ margin:0; font-size:0.92rem; color: var(--ink-dim); }
+  .cot-incluye .cot-rotulo{ margin-bottom:2px; }
+  .cot-rotulo-suelto{ margin:0; }
+  .cot-boleta{ min-height:96px; }
+  .cot-aviso{ margin:0; color: var(--ink-dim); font-size:0.95rem; }
+  .cot-aviso-alerta{ color: var(--gold); font-weight:700; }
+  .cot-lineas{ list-style:none; margin:0; padding:0; display:grid; gap:3px; font-size:0.92rem; }
+  .cot-lineas li{ display:flex; justify-content:space-between; gap:12px; }
+  .cot-monto{ font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .cot-cuentas{ margin:6px 0 0; padding-top:6px; border-top:1px solid var(--line); display:grid; gap:2px; font-size:0.9rem; }
+  .cot-cuentas div{ display:flex; justify-content:space-between; align-items:baseline; }
+  .cot-cuentas dd{ margin:0; font-variant-numeric: tabular-nums; }
+  .cot-total{ font-size:1.02rem; font-weight:700; margin-top:2px; }
+  .cot-total dd{ font-family: var(--serif); font-style:italic; color: var(--gold); font-size:1.5rem; font-weight:400; }
+  .cot-por-persona{ margin:0; text-align:right; font-size:0.88rem; color: var(--ink-dim); }
+  .cot-aparte, .cot-nota{ margin:6px 0 0; font-size:0.88rem; line-height:1.4; color: var(--ink-dim); border-left:2px solid var(--gold); padding-left:10px; }
+  .cot-form{ display:grid; gap:8px; }
+  @media (min-width: 560px){ .cot-form{ grid-template-columns: 1fr 1fr; } .cot-form .cot-enviar, .cot-form .cot-mensaje{ grid-column: 1 / -1; } }
+  .cot-quiero{ justify-content:center; min-height:44px; padding-top:10px; padding-bottom:10px; cursor:pointer; font: inherit; font-weight:600; margin-top:auto; }
+  .cot-quiero:disabled{ opacity:0.45; cursor:not-allowed; }
+  .cot-resumen-fila{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:0 12px; }
+  .cot-resumen{ margin:0; font-weight:600; }
+  .cot-volver{ align-self:flex-start; min-height:44px; background:none; border:0; padding:0; color: var(--ink-dim); font: inherit; font-size:0.92rem; text-decoration: underline; cursor:pointer; }
+  .cot [hidden]{ display:none !important; }
+  .cot-etiqueta .cot-rotulo{ margin-bottom:2px; }
+  .cot-trampa{ position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+  .cot-enviar{ justify-content:center; min-height:44px; padding-top:10px; padding-bottom:10px; cursor:pointer; font: inherit; font-weight:600; }
+  .cot-enviar:disabled{ opacity:0.45; cursor:not-allowed; }
+  .cot-mensaje{ margin:0; font-size:0.88rem; color: var(--ink-dim); }
+  .cot-listo-titulo{ margin:0 0 10px; font-weight:700; font-size:1.05rem; }
+  .cot-listo-acciones{ display:flex; flex-wrap:wrap; gap:10px; }
+  /* Con el cotizador, el WhatsApp del bloque pasa a ser la segunda opción. */
+  .promo-bloque .btn.btn-whatsapp.cot-secundario{ background: transparent; border-color: var(--line); color: var(--ink); }
+
   @media (min-width: 901px){ .paquete-datos{ grid-template-columns: repeat(3,1fr); } }
 
   /* ---------- la oferta concreta ---------- */
@@ -838,6 +907,7 @@
 <link rel="stylesheet" href="../assets/css/tema.css?v=8bedec7b">
 <script src="../assets/js/tema.js?v=9398876b"></script>
 <script src="../assets/js/idioma.js?v=30e2a7c2" defer></script>
+<script src="../assets/js/cotizador.js?v=b74ca183" defer></script>
 </head>
 <body>
   <div class="topbar">
@@ -876,12 +946,12 @@
        ================================================================= -->
   <!-- Las seis promociones se eligen con estos botones de opción (CSS, sin
        JavaScript): cada uno muestra su foto arriba y su oferta abajo. -->
-  <input class="promo-radio" type="radio" name="promo" id="promo-0" checked aria-label="Fim de ano">
-  <input class="promo-radio" type="radio" name="promo" id="promo-1" aria-label="Duelo de Churrasco">
-  <input class="promo-radio" type="radio" name="promo" id="promo-2" aria-label="Grande Prêmio de Fim de Ano">
-  <input class="promo-radio" type="radio" name="promo" id="promo-3" aria-label="Dia de Campo em Família">
-  <input class="promo-radio" type="radio" name="promo" id="promo-4" aria-label="IA na Brasa">
-  <input class="promo-radio" type="radio" name="promo" id="promo-5" aria-label="Mesa de Diretoria">
+  <input class="promo-radio" type="radio" name="promo" id="promo-0" data-promo="fin-de-ano" checked aria-label="Fim de ano">
+  <input class="promo-radio" type="radio" name="promo" id="promo-1" data-promo="combate" aria-label="Duelo de Churrasco">
+  <input class="promo-radio" type="radio" name="promo" id="promo-2" data-promo="gran-premio" aria-label="Grande Prêmio de Fim de Ano">
+  <input class="promo-radio" type="radio" name="promo" id="promo-3" data-promo="dia-de-campo" aria-label="Dia de Campo em Família">
+  <input class="promo-radio" type="radio" name="promo" id="promo-4" data-promo="ia" aria-label="IA na Brasa">
+  <input class="promo-radio" type="radio" name="promo" id="promo-5" data-promo="directorio" aria-label="Mesa de Diretoria">
   <header class="hero-full promo-hero">
     <div class="promo-slide ps0">
       <div class="hero-full-bg">
@@ -1001,6 +1071,8 @@
         </a>
         <a href="#experiencias" class="btn btn-ghost">Ver experiências</a>
       </div>
+      <!-- El cotizador (2026-11-23): lo dibuja assets/js/cotizador.js con la promoción del panel; sin ella, o sin JavaScript, queda vacío y el bloque sigue con WhatsApp. -->
+      <div class="cotizador" data-promo="fin-de-ano" hidden></div>
     </div>
     <div class="wrap promo-bloque pb1">
       <div class="paquete">
@@ -1019,8 +1091,8 @@
         </div>
         <div class="paquete-cierre">
           <div class="oferta paquete-datos">
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.combate">$85.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato" data-cot="precio"><b><i class="monto" data-lista="texto:paquetes.combate">$85.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="minimo"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
           <div class="oferta-dato"><b>Open bar</b><span>incluído</span></div>
           </div>
           <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
@@ -1032,6 +1104,7 @@
           </div>
         </div>
       </div>
+      <div class="cotizador" data-promo="combate" hidden></div>
     </div>
     <div class="wrap promo-bloque pb2">
       <div class="paquete">
@@ -1049,8 +1122,8 @@
         </div>
         <div class="paquete-cierre">
           <div class="oferta paquete-datos">
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.gran_premio">$95.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato" data-cot="precio"><b><i class="monto" data-lista="texto:paquetes.gran_premio">$95.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="minimo"><b>22</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
           <div class="oferta-dato"><b>Kart</b><span>e show equestre</span></div>
           </div>
           <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
@@ -1062,6 +1135,7 @@
           </div>
         </div>
       </div>
+      <div class="cotizador" data-promo="gran-premio" hidden></div>
     </div>
     <div class="wrap promo-bloque pb3">
       <div class="paquete">
@@ -1080,9 +1154,9 @@
         </div>
         <div class="paquete-cierre">
           <div class="oferta paquete-datos">
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.dia_campo.adulto">$55.000 CLP</i></b><span>+ IVA por adulto</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.dia_campo.nino">$25.000 CLP</i></b><span>+ IVA por criança</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b>40</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato" data-cot="precio"><b><i class="monto" data-lista="texto:paquetes.dia_campo.adulto">$55.000 CLP</i></b><span>+ IVA por adulto</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="ocultar"><b><i class="monto" data-lista="texto:paquetes.dia_campo.nino">$25.000 CLP</i></b><span>+ IVA por criança</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="minimo"><b>40</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
           </div>
           <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
           <div class="hero-cta">
@@ -1093,6 +1167,7 @@
           </div>
         </div>
       </div>
+      <div class="cotizador" data-promo="dia-de-campo" hidden></div>
     </div>
     <div class="wrap promo-bloque pb4">
       <div class="paquete">
@@ -1109,8 +1184,8 @@
         </div>
         <div class="paquete-cierre">
           <div class="oferta paquete-datos">
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.ia">$75.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b>15</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato" data-cot="precio"><b><i class="monto" data-lista="texto:paquetes.ia">$75.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="minimo"><b>15</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
           <div class="oferta-dato"><b>Sob medida</b><span>preparada com antecedência</span></div>
           </div>
           <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
@@ -1122,6 +1197,7 @@
           </div>
         </div>
       </div>
+      <div class="cotizador" data-promo="ia" hidden></div>
     </div>
     <div class="wrap promo-bloque pb5">
       <div class="paquete">
@@ -1139,8 +1215,8 @@
         </div>
         <div class="paquete-cierre">
           <div class="oferta paquete-datos">
-          <div class="oferta-dato"><b><i class="monto" data-lista="texto:paquetes.directorio">$120.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
-          <div class="oferta-dato"><b>8</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
+          <div class="oferta-dato" data-cot="precio"><b><i class="monto" data-lista="texto:paquetes.directorio">$120.000 CLP</i></b><span>+ IVA por pessoa</span><em class="de-ejemplo">Preço de exemplo</em></div>
+          <div class="oferta-dato" data-cot="minimo"><b>8</b><span>pessoas ou mais</span><em class="de-ejemplo">Mínimo de exemplo</em></div>
           <div class="oferta-dato"><b>Harmonização</b><span>com o menu premium</span></div>
           </div>
           <div class="condicion-especial"><b>Condição especial</b><span>A definir</span></div>
@@ -1152,6 +1228,7 @@
           </div>
         </div>
       </div>
+      <div class="cotizador" data-promo="directorio" hidden></div>
     </div>
   </section>
 

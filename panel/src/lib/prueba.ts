@@ -61,7 +61,7 @@ import {
   ENCABEZADO_PAGOS, leerPagosDe, filaPago, cuentaEnPeriodo, pagadoDe,
   estadoDePago, aTransferirDe, faltaDe, pagoDelCuerpo, nuevoIdPago,
   desglosePago, conceptoDe, CONCEPTO, pideBoleta, leerBoletasDe, filaBoleta,
-  ENCABEZADO_BOLETAS, boletaDe, boletaEnPlanilla, textoTransferencia, glosaDe,
+  ENCABEZADO_BOLETAS, boletaDe, boletaEnPlanilla, textoDatosBancarios, montoParaPegar, glosaDe,
   ORDEN_TRANSFERENCIA, filaTransferencia, NOMBRE_COLUMNA_TRANSFERENCIA,
   pagosEnPeriodo, pagosQueNoCaben,
   type PagoEquipo
@@ -1132,7 +1132,7 @@ const filasMenus = aFilasMenus(POR_DEFECTO_MENUS);
 ok(filasMenus[0].slice(0, 3).join('|') === 'Menú|Precio en línea|Precio en el local',
    'las tres columnas de siempre van primero y en el mismo orden: una planilla vieja se sigue leyendo');
 ok(filasMenus[0].slice(3).join('|')
-     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo',
+     === 'Tipo|Sitio público|Cotización|Cobro|Precio cotización|IVA|Moneda|Activo|Bono vendedor|Costo|Lo cobra',
    'y las del catálogo van al final');
 ok(filasMenus.length === POR_DEFECTO_MENUS.length + 1, 'una fila por menu, mas el encabezado');
 ok(JSON.stringify(leerMenusDe(filasMenus)) === JSON.stringify(POR_DEFECTO_MENUS),
@@ -3562,19 +3562,20 @@ console.log('\nPagos al equipo');
   const ana = { titular: 'Ana Soto', rut: '11111111-1',
     banco: 'BancoEstado', tipo: 'Cuenta RUT', numero: '11111111', monto: 120000,
     correo: 'ana@correo.cl', glosa: glosaDe('Sueldo', '2026-11-09', '2026-11-15') };
-  const texto = textoTransferencia(ana);
-  ok(texto === ['Ana Soto', '11.111.111-1', 'BancoEstado', 'Cuenta RUT', '11111111',
-       'ana@correo.cl', '120000', 'Sueldo 09/11 al 15/11'].join('\n'),
-     'solo los valores, uno por línea, en el orden del formulario del banco y después el monto y la glosa');
-  ok(!/Nombre y apellido|RUT:|E-mail/.test(texto), 'sin rótulos: cada línea se pega tal cual en su campo');
-  ok(textoTransferencia({ ...ana, correo: '' }).split('\n')[5] === ''
-     && textoTransferencia({ ...ana, correo: '' }).split('\n')[6] === '120000',
-     'sin correo su línea va vacía: el monto sigue en el mismo lugar');
+  const texto = textoDatosBancarios(ana);
+  ok(texto === ['Nombre y apellido: Ana Soto', 'RUT: 11.111.111-1', 'Banco: BancoEstado',
+       'Tipo de cuenta: Cuenta RUT', 'Número de cuenta: 11111111', 'E-mail: ana@correo.cl'].join('\n'),
+     'datos bancarios: cada dato con el nombre de su campo, en el orden del formulario (para el ✨ que lo rellena)');
+  ok(!/120000|Sueldo/.test(texto), 'sin el monto ni la glosa: van aparte, no son campos de ese formulario');
+  ok(!textoDatosBancarios({ ...ana, correo: '' }).includes('E-mail'),
+     'sin correo no va su línea: es opcional');
+  ok(montoParaPegar(147000) === '147000' && montoParaPegar(42500.4) === '42500' && montoParaPegar(-5) === '0',
+     'el monto se copia solo con dígitos, sin signo peso ni puntos');
   ok(JSON.stringify(ORDEN_TRANSFERENCIA.slice(0, 6).map((k) => NOMBRE_COLUMNA_TRANSFERENCIA[k]))
      === JSON.stringify(['Nombre y apellido', 'RUT', 'Banco', 'Tipo de cuenta', 'Número de cuenta', 'E-mail']),
      'las columnas de la planilla para el banco: los mismos rótulos, en el mismo orden');
-  ok(texto.split('\n')[6] === '120000',
-     'el monto va sin puntos ni signo peso: es lo que un banco acepta pegar');
+  ok(filaTransferencia(ana)[ORDEN_TRANSFERENCIA.indexOf('monto')] === '120000',
+     'en la planilla, el monto va sin puntos ni signo peso: es lo que un banco acepta pegar');
   ok(glosaDe('Propina', '2026-11-09', '2026-11-15').length <= 30,
      'y la glosa cabe en los 30 caracteres que dejan los bancos');
   ok(ORDEN_TRANSFERENCIA.every((k) => !!NOMBRE_COLUMNA_TRANSFERENCIA[k]),
@@ -3583,8 +3584,9 @@ console.log('\nPagos al equipo');
   ok(filaAna[ORDEN_TRANSFERENCIA.indexOf('rut')] === '9.876.543-K'
      && filaAna[ORDEN_TRANSFERENCIA.indexOf('numero')] === '001234567809',
      'la planilla lleva el RUT con puntos y la cuenta solo con dígitos, con sus ceros de adelante');
-  ok(texto === filaTransferencia(ana).join('\n'),
-     'copiar y la planilla para el banco dicen lo mismo: es la misma fila, una celda por línea');
+  ok(texto.split('\n').map((l) => l.slice(l.indexOf(': ') + 2)).join('|')
+     === filaTransferencia(ana).slice(0, 6).join('|'),
+     'copiar y la planilla para el banco dicen lo mismo: los valores son las primeras seis celdas de la fila');
   ok(CONCEPTO.propina === 'Propina', 'el concepto propina se llama así en la planilla');
 
   ok(leerPagosDe([ENCABEZADO_PAGOS]).length === 0, 'una pestaña vacía no inventa pagos');
@@ -4927,6 +4929,12 @@ console.log('\nCotizaciones, fase 2');
      'la Ley 20.393 y los acuerdos van solo si corresponde, y la numeración se corre sola');
   ok(clausulasDe({ ...datos, acuerdos: 'Torta.' })[8].titulo === 'NOVENO: Acuerdos adicionales',
      'sin la Ley 20.393, los acuerdos son la novena');
+  // Lo que cobra otra empresa, en su cláusula (2026-11-24).
+  const conTerceros = clausulasDe({ ...datos, terceros: ['Karting: Karting Pirque, RUT 76.111.222-3, por **$833.000** (IVA incluido).'] });
+  ok(conTerceros[4].titulo === 'QUINTO: Servicios de otras empresas' && conTerceros[3].titulo.startsWith('CUARTO: Forma de pago')
+     && !!conTerceros[4].puntos?.[0].includes('Karting Pirque') && texto(conTerceros).includes('no forman parte del Servicio ni del Precio Total')
+     && !clausulasDe(datos).some((c) => c.titulo.includes('otras empresas')),
+     'lo que cobra otra empresa va en su cláusula después de la forma de pago, y sin nada de otra, no hay cláusula');
   ok(comparecencia(datos, 'Pirque').includes('**Juan Soto**, RUT 12.345.678-9')
      && comparecencia(datos, 'Pirque').startsWith(`En Pirque, a ${RAYA}`),
      'una persona firma por sí misma; la fecha de firma queda para escribirla a mano');
@@ -5474,7 +5482,15 @@ console.log('\nLos socios comerciales (segunda entrega)');
   const s1 = { ...fichaSocio('S-0001', 'Turismo Maipo'), token: 'tok-1' };
   const ida = leerVendedoresDe([ENCABEZADO_VENDEDORES, filaVendedor(s1, ENCABEZADO_VENDEDORES),
     filaVendedor({ ...fichaVacia('carla'), token: 'no-va' }, ENCABEZADO_VENDEDORES)]);
-  ok(ida[0].token === 'tok-1' && ida[1].token === '', 'el link del socio se guarda y se lee; un vendedor no lleva token');
+  // Desde el 2026-11-24 el vendedor también tiene link personal.
+  ok(ida[0].token === 'tok-1' && ida[1].token === 'no-va', 'el link del socio y el del vendedor se guardan y se leen');
+  {
+    const { fichaPorToken } = await import('./vendedores.ts');
+    const fichas = [{ ...s1 }, { ...fichaVacia('carla', 'Carla'), token: 'tok-2' }, { ...fichaVacia('ana'), token: 'tok-3', activo: false }];
+    ok(fichaPorToken(fichas, 'tok-2')?.usuario === 'carla' && fichaPorToken(fichas, 'tok-1')?.tipo === 'socio'
+       && !fichaPorToken(fichas, 'tok-3') && !fichaPorToken(fichas, '') && !fichaPorToken(fichas, ' '),
+       'el link encuentra al vendedor y al socio; uno desactivado o vacío no encuentra a nadie');
+  }
   ok(socioPorToken(ida, 'tok-1')?.usuario === 'S-0001' && !socioPorToken(ida, '') && !socioPorToken(ida, 'otro')
      && !socioPorToken([{ ...ida[0], activo: false }], 'tok-1'),
      'el link abre al socio; vacío o inventado no abre nada, y desactivarlo apaga su link');
@@ -7093,6 +7109,22 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ];
   const movs = K.leerCajaDe(filas);
   ok(movs.length === 6 && movs[1].tipo === 'Cobro' && movs[1].monto === 50000, 'la caja se lee: sin id o con un tipo raro, no cuenta');
+  // A quién se le entrega (2026-11-24): operaciones y gerencia, sin la propia.
+  const cuentasK = [
+    { usuario: 'vero', nombre: 'Verónica Lagos', rol: 'pagos', activo: true },
+    { usuario: 'admin', nombre: 'Admin', rol: 'admin', activo: true },
+    { usuario: 'rodrigo', nombre: 'Rodrigo Vera', rol: 'gerencia', activo: true },
+    { usuario: 'cris', nombre: 'Cristóbal Cornejo', rol: 'gerente', activo: true },
+    { usuario: 'ana', nombre: 'Ana Ruiz', rol: 'gerencia', activo: true },
+    { usuario: 'viejo', nombre: 'Pedro Antiguo', rol: 'gerente', activo: false },
+    { usuario: 'tomas', nombre: 'Tomás Herrera', rol: 'encargado', activo: true }
+  ];
+  ok(JSON.stringify(K.quienesRecibenCaja(cuentasK, 'Tomás Herrera').map((d) => d.nombre))
+     === JSON.stringify(['Cristóbal Cornejo', 'Ana Ruiz', 'Rodrigo Vera', 'Verónica Lagos']),
+     'la caja se entrega a operaciones (primero), a la gerencia y a pagos, todos a la vista: ni el administrador ni una cuenta apagada');
+  ok(!K.quienesRecibenCaja(cuentasK, 'Cristóbal Cornejo').some((d) => d.nombre === 'Cristóbal Cornejo')
+     && !K.quienesRecibenCaja(cuentasK, 'cris').some((d) => d.nombre === 'Cristóbal Cornejo'),
+     'y nunca a uno mismo, por nombre o por usuario');
   const s = K.saldosDeCaja(movs);
   ok(s.enCaja === 7000 + 50000 - 3000 - 40000 - 5000 && s.porRecibir === 5000,
      'en la caja: lo que entró menos los gastos y las entregas; lo entregado sin confirmar, por recibir');
@@ -7145,6 +7177,367 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'la bandeja de pagos dice lo cobrado en la mesa y cómo, no el total de la reserva');
   ok(A.pendientesDeCaja(movs, { usuario: 'fernanda' }, { recibe: false, revisa: false }).length === 0,
      'quien no recibe ni revisa no ve nada de la caja en la bandeja');
+}
+
+{
+  // --- Lo cobra otra empresa (2026-11-23): el karting va aparte del total ---
+  const M = await import('./menus.ts');
+  const P = await import('./presupuestos.ts');
+  const C = await import('./cotizar.ts');
+  const F = await import('./fudo.ts');
+  const kart = M.nuevoProducto({ nombre: 'Karting', tipo: 'Extra', sitioPublico: false, cotizacion: true,
+    precioCotizacion: 35000, iva: '+ IVA', loCobra: 'Karting Pirque' });
+  const brasasC = M.nuevoProducto({ nombre: 'Brasas', sitioPublico: false, cotizacion: true,
+    precioCotizacion: 70000, iva: '+ IVA' });
+  const cat = [kart, brasasC];
+  const vueltaM = M.leerMenusDe(M.aFilasMenus(cat));
+  ok(vueltaM[0].loCobra === 'Karting Pirque' && vueltaM[1].loCobra === '',
+     'quién cobra un producto se escribe y se vuelve a leer');
+  ok(M.limpiarProducto({ nombre: 'X', tipo: 'Menú', loCobra: 'Otra' }).loCobra === ''
+     && M.limpiarProducto({ nombre: 'X', tipo: 'Extra', loCobra: ' Otra ' }).loCobra === 'Otra',
+     'solo un extra lo cobra otra empresa: un menú es nuestro');
+  const lineasK = C.prepararLineas([
+    { presupuesto: 'P1', concepto: 'Brasas', cantidad: 10, precio: 70000, personas: 0, ivaIncluido: false },
+    { presupuesto: 'P1', concepto: 'karting', cantidad: 10, precio: 35000, personas: 0, ivaIncluido: false }
+  ], cat, 10, false);
+  ok(lineasK[1].loCobra === 'Karting Pirque' && lineasK[0].loCobra === '',
+     'al preparar las líneas, quién cobra sale del catálogo');
+  ok(P.cuentasDe(lineasK).total === 833000,
+     'el total deja fuera lo que cobra otra empresa');
+  const otrasK = P.otrasEmpresas(lineasK);
+  ok(otrasK.length === 1 && otrasK[0].empresa === 'Karting Pirque' && otrasK[0].total === 416500
+     && otrasK[0].conceptos[0] === 'Karting',
+     'lo de otras empresas se suma aparte, con IVA, por empresa');
+  const encLK = P.ENCABEZADO_LINEAS;
+  const vueltaK = P.leerLineasDe([encLK, ...lineasK.map((l) => P.filaLinea(encLK, l))]);
+  ok(vueltaK[1].loCobra === 'Karting Pirque' && vueltaK[0].loCobra === '',
+     'una línea de otra empresa se escribe y se vuelve a leer así');
+  const acordadoK = F.acordadoDe({ id: 'P1', descuento: 0 }, vueltaK, cat);
+  ok(acordadoK.lineas.length === 1 && acordadoK.total === 833000,
+     'lo que cobra otra empresa no va a la caja de Fudo');
+  const pK = { id: 'P1', coordinadas: '' };
+  const lineasP1 = vueltaK.map((l) => ({ ...l, presupuesto: 'P1' }));
+  ok(P.porCoordinar(pK, lineasP1).map((x) => x.empresa).join() === 'Karting Pirque',
+     'lo de otra empresa queda por coordinar');
+  const marcada = P.marcarCoordinada('', 'karting pirque', 'Daniela', '2026-11-24 10:00', true);
+  ok(P.porCoordinar({ ...pK, coordinadas: marcada }, lineasP1).length === 0
+     && P.coordinadasDe(marcada).get('karting pirque')?.quien === 'Daniela'
+     && P.marcarCoordinada(marcada, 'Karting Pirque', 'x', 'y', false) === '',
+     'marcado coordinado deja de estar pendiente, con quién lo marcó; y se puede deshacer');
+}
+
+{
+  console.log('\nLas otras empresas (2026-11-24)');
+  const OE = await import('./otrasEmpresas.ts');
+  const filasOE = OE.aFilasOtrasEmpresas([
+    OE.limpiarOtraEmpresa({ nombre: ' Karting Pirque ', rut: '76.111.222-3', contacto: 'Pedro Soto', telefono: '+56 9 5555 1234' }),
+    OE.limpiarOtraEmpresa({ nombre: 'Quesería', activa: 'no' })
+  ]);
+  const leidasOE = OE.leerOtrasEmpresasDe([...filasOE, ['karting pirque', 'otro']]);
+  ok(leidasOE.length === 2 && leidasOE[0].nombre === 'Karting Pirque' && leidasOE[0].activa && !leidasOE[1].activa
+     && leidasOE[0].rut === '76.111.222-3',
+     'una empresa se escribe y se vuelve a leer igual; una repetida (sin mayúsculas) cuenta una vez');
+  ok(OE.empresaDe(leidasOE, 'KARTING PIRQUE')?.contacto === 'Pedro Soto'
+     && OE.sinFicha(['Karting Pirque', '', 'Transfer Sur', 'transfer sur'], leidasOE).join() === 'Transfer Sur',
+     'se encuentra por nombre sin mayúsculas, y los nombres que un producto usa sin estar en la lista salen una vez');
+  ok(OE.datosEnFrase(leidasOE[0]) === 'RUT 76.111.222-3 · Pedro Soto · +56 9 5555 1234' && OE.datosEnFrase(undefined) === '',
+     'sus datos en una frase, solo lo que tiene');
+  const puntosOE = OE.puntosDelContrato([{ empresa: 'karting pirque', total: 833000, conceptos: ['Karting'] }], leidasOE,
+    (n) => '$' + n.toLocaleString('es-CL'));
+  ok(puntosOE[0] === 'Karting: Karting Pirque, RUT 76.111.222-3, por **$833.000** (IVA incluido).',
+     'la línea del contrato: lo suyo, la empresa con su RUT y cuánto');
+  const msgOE = OE.mensajeParaCoordinar({ empresa: leidasOE[0], negocio: 'Brasas de Lo Pirque', dia: 'sábado 28 de noviembre',
+    invitados: 80, conceptos: [{ concepto: 'Karting', cantidad: 20 }] });
+  ok(msgOE === 'Hola Pedro, te escribo de Brasas de Lo Pirque. Tenemos un evento el sábado 28 de noviembre con 80 personas y quieren Karting para 20. ¿Lo coordinamos?',
+     'el mensaje para coordinar dice el día, la gente y lo que se pidió');
+  {
+    // No pagan comisión: lo de otra empresa no entra en el total, que es la base de la comisión.
+    const PP = await import('./presupuestos.ts');
+    const base = PP.cuentasDe([
+      { cantidad: 10, precio: 50000, descuento: 0, ivaIncluido: false, loCobra: '' },
+      { cantidad: 10, precio: 35000, descuento: 0, ivaIncluido: false, loCobra: 'Karting Pirque' }
+    ], 0);
+    ok(base.subtotal === 500000, 'lo que cobra otra empresa no entra en nuestro neto: no paga comisión ni va en nuestra boleta');
+  }
+
+  console.log('\nLas promociones del sitio (2026-11-23)');
+  const M = await import('./menus.ts');
+  const PR = await import('./promociones.ts');
+  const prod = (nombre: string, x: Partial<import('./menus.ts').Menu>) =>
+    M.nuevoProducto({ nombre, sitioPublico: false, cotizacion: true, iva: '+ IVA', ...x });
+  const cat = [
+    prod('Lo Pirque', { precioCotizacion: 50000 }), prod('Brasas', { precioCotizacion: 70000 }),
+    prod('Niños', { precioCotizacion: 19000, iva: 'Incluido' }),
+    prod('Show ecuestre', { tipo: 'Show', cobro: 'Monto fijo', precioCotizacion: 300000 }),
+    prod('Arriendo del recinto', { tipo: 'Arriendo', cobro: 'Monto fijo', precioCotizacion: 2500000 }),
+    prod('Karting', { tipo: 'Extra', precioCotizacion: 35000, loCobra: 'Karting Pirque' }),
+    prod('Sin precio', { tipo: 'Extra' })
+  ];
+  const gran = PR.nuevaPromocion({ id: 'PR-01', nombre: 'Gran Premio', sitio: 'gran-premio', menus: ['Lo Pirque', 'Brasas'],
+    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 10 });
+  const combate = PR.nuevaPromocion({ id: 'PR-02', nombre: 'Combate', sitio: 'combate', menus: ['Brasas'],
+    minimo: 10, descuento: 10, arriendo: PR.ARRIENDO_PROMO.semana });
+  const campo = PR.nuevaPromocion({ id: 'PR-03', nombre: 'Día de campo', sitio: 'dia-de-campo', menus: ['Lo Pirque'],
+    ninos: 'Niños', minimo: 10 });
+  const ctx = {
+    catalogo: cat, diasAbiertos: [0, 6], hoy: '2026-11-24',
+    fechas: [{ fecha: '2026-11-28', estado: 'Abierta' }, { fecha: '2026-12-05', estado: 'Privada exclusiva' }],
+    reglaShow: { desde: 25, minimo: 100000 },
+    reglaArriendo: { privado: [{ hasta: 10, minimo: 400000 }, { hasta: 15, minimo: 200000 }], exclusivo: [] },
+    reservasDelDia: () => 0
+  };
+  const sab = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'brasas', suma: ['Karting'], fecha: '2026-11-28' }, ctx);
+  ok(sab.ok && sab.publico && sab.arriendo === 0 && sab.cuentas.total === 999600
+     && sab.lineas.some((l) => l.concepto === 'Show ecuestre' && l.precio === 0),
+     'un sábado abierto al público: el menú elegido, el show incluido y sin arriendo');
+  ok(sab.ok && sab.otras.length === 1 && sab.otras[0].total === 499800 && sab.porPersona === 83300,
+     'el karting va aparte del total, con quien lo cobra');
+  const mar = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(mar.ok && !mar.publico && mar.arriendo === 200000
+     && mar.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 200000)
+     && mar.lineas.some((l) => l.concepto === 'Show ecuestre' && l.precio === 300000),
+     'un martes con 12: el arriendo mínimo del tramo y el show con su precio, como en una cotización de vendedor');
+  ok(!mar.ok || mar.otras.length === 0, 'sin sumar el karting no hay nada aparte');
+  const comb = PR.cotizarPromocion(combate, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(comb.ok && comb.arriendo === 0 && comb.lineas.length === 1 && comb.lineas[0].concepto === 'Brasas'
+     && comb.cuentas.total === Math.round(12 * 70000 * 1.19 * 0.9),
+     'menú fijo, sin arriendo de lunes a viernes y el descuento de la promoción');
+  // Tramos de la condición (2026-11-24): el del tramo más alto que alcanza.
+  const conTramos = { ...combate, tramos: PR.tramosDe('30:15 | 20:12 | 5:99 | 30:50', combate.minimo) };
+  ok(JSON.stringify(conTramos.tramos) === JSON.stringify([{ desde: 20, descuento: 12 }, { desde: 30, descuento: 15 }]),
+     'los tramos se ordenan, sin repetir un desde y solo sobre el primero (10)');
+  ok(PR.descuentoPara(conTramos, 12) === 10 && PR.descuentoPara(conTramos, 20) === 12 && PR.descuentoPara(conTramos, 45) === 15,
+     'el descuento es el del tramo más alto que alcanza el grupo');
+  const comb30 = PR.cotizarPromocion(conTramos, { adultos: 30, ninos: 0, menu: '', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(comb30.ok && comb30.descuento === 15 && comb30.cuentas.total === Math.round(30 * 70000 * 1.19 * 0.85),
+     'al cotizar, 30 personas llevan el 15%');
+  const fila = PR.aFilasPromociones([conTramos])[1];
+  ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES, fila])[0].tramos.length === 2
+     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), fila.slice(0, -1)])[0].tramos.length === 0,
+     'los tramos se guardan y se leen; una fila de antes, sin la columna, queda con uno solo');
+  ok(PR.esMenuDeNinos('Niños') && PR.esMenuDeNinos('Menú Pequeños') && !PR.esMenuDeNinos('Lo Pirque')
+     && PR.menusAdultoParaPromo(cat).every((m) => !PR.esMenuDeNinos(m.nombre))
+     && PR.menusNinosParaPromo(cat).map((m) => m.nombre).join() === 'Niños',
+     'los menús de niños van en su fila y los de adulto en la suya: ninguno sale dos veces');
+  ok(PR.limpiarPromocion({ id: 'x', nombre: 'x', incluye: ['Karting'], suma: ['Karting', 'Show ecuestre'] }, cat).suma.join() === 'Show ecuestre',
+     'un extra incluido no queda además para sumar');
+  const campoC = PR.cotizarPromocion(campo, { adultos: 10, ninos: 5, menu: '', suma: [], fecha: '2026-11-28' }, ctx);
+  ok(campoC.ok && campoC.invitados === 15 && campoC.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 5),
+     'con menú de niños: los niños van en su línea y cuentan para el total de personas');
+  const no = (r: ReturnType<typeof PR.cotizarPromocion>) => (r.ok ? '' : r.codigo);
+  ok(no(PR.cotizarPromocion(gran, { adultos: 5, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'minimo'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-24' }, ctx)) === 'fecha'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-12-05' }, ctx)) === 'tomado'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Sommelier', suma: [], fecha: '2026-11-28' }, ctx)) === 'menu'
+     && no(PR.cotizarPromocion({ ...gran, activa: false }, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'promocion',
+     'no se cotiza bajo el mínimo, hoy, un día tomado en exclusiva, un menú ajeno ni una promoción apagada');
+  // Aplicarla en la cotización de un vendedor (2026-11-24).
+  ok(PR.perdonaArriendo(combate, '2026-12-01') && !PR.perdonaArriendo(combate, '2026-11-28')
+     && !PR.perdonaArriendo(gran, '2026-12-01') && !PR.perdonaArriendo(undefined, '2026-12-01')
+     && PR.perdonaArriendo({ arriendo: PR.ARRIENDO_PROMO.nunca }, '2026-11-28'),
+     'la promoción perdona el arriendo de lunes a viernes, o siempre, según diga');
+  const b12 = PR.beneficioDePromocion(conTramos, 12, '2026-12-01');
+  const b30 = PR.beneficioDePromocion(conTramos, 30, '2026-11-28');
+  const b5 = PR.beneficioDePromocion(conTramos, 5, '2026-12-01');
+  ok(b12.descuento === 10 && b12.sinArriendo && b30.descuento === 15 && !b30.sinArriendo
+     && b5.descuento === 0 && !b5.sinArriendo && !PR.rigePromocion(conTramos, 5),
+     'lo que da la promoción: el descuento del tramo y el arriendo; bajo su mínimo, nada');
+  const lp = PR.lineasDeLaPromocion(campo, '', 40, 'P1', cat);
+  ok(lp.map((l) => `${l.concepto}:${l.cantidad}`).join() === 'Lo Pirque:40,Niños:0',
+     'aplicarla suma el menú con los invitados y el de niños en 0');
+  const lg = PR.lineasDeLaPromocion(gran, 'Brasas', 40, 'P1', cat, [{ concepto: 'Lo Pirque', personas: 30 }]);
+  ok(lg.map((l) => `${l.concepto}:${l.cantidad}`).join() === 'Brasas:10,Show ecuestre:1',
+     'lo que ya está se queda: el menú elegido toma los invitados que faltan, y lo que incluye se suma');
+  ok(PR.lineasDeLaPromocion(gran, 'Brasas', 40, 'P1', cat, [{ concepto: 'brasas', personas: 40 }, { concepto: 'Show ecuestre', personas: 0 }]).length === 0,
+     'lo que ya está en la cotización no se repite');
+  const ap = PR.aplicarALineas(gran, 'Brasas', 40, 'P1', cat,
+    [{ concepto: 'Lo Pirque', personas: 30 }, { concepto: 'Niños', personas: 10 }, { concepto: 'Karting', personas: 0 }]);
+  ok(ap.lineas.map((l) => `${l.concepto}:${l.personas}`).join() === 'Brasas:30,Niños:10,Karting:0,Show ecuestre:0'
+     && ap.reemplazadas.map((l) => l.concepto).join() === 'Lo Pirque',
+     'aplicarla reemplaza el menú de adulto que no es suyo, en su lugar; los niños y los extras se quedan');
+  ok(PR.aplicarALineas(gran, 'Lo Pirque', 40, 'P1', cat, [{ concepto: 'Lo Pirque', personas: 40 }]).reemplazadas.length === 0,
+     'un menú que sí es de la promoción se queda como está');
+  const vuelta = PR.leerPromocionesDe(PR.aFilasPromociones([gran, combate, campo]));
+  ok(JSON.stringify(vuelta) === JSON.stringify([gran, combate, campo]), 'una promoción se escribe y se vuelve a leer igual');
+  const limpia = PR.limpiarPromocion({ id: 'PR-09', nombre: ' X ', sitio: 'no-existe', menus: ['brasas', 'Inventado'],
+    incluye: 'show ecuestre | Show ecuestre', descuento: 150 }, cat);
+  ok(limpia.sitio === '' && limpia.menus.join() === 'Brasas' && limpia.incluye.join() === 'Show ecuestre'
+     && limpia.descuento === 100 && limpia.nombre === 'X',
+     'lo que llega se limpia: productos del catálogo, sin repetidos, y una clave del sitio que existe');
+  ok(PR.nuevoIdPromocion([gran, combate, campo]) === 'PR-04', 'el próximo ID de promoción');
+  const sinCot = { ...gran, cotizador: false };
+  ok(PR.promocionesParaElSitio([sinCot], cat).length === 0
+     && no(PR.cotizarPromocion(sinCot, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'promocion'
+     && PR.leerPromocionesDe(PR.aFilasPromociones([sinCot]))[0].cotizador === false,
+     'con el cotizador apagado la promoción no sale en el sitio ni se cotiza, y se guarda así');
+  // --- Lo que manda el sitio ---
+  const lc = PR.limpiarContactoSitio({ nombre: '  Ana   Pérez ', telefono: '+56 9 1111-2222', correo: 'ANA@Ejemplo.cl ' });
+  ok('nombre' in lc && lc.nombre === 'Ana Pérez' && lc.correo === 'ana@ejemplo.cl' && lc.telefono === '+56 9 11112222',
+     'el contacto del sitio se limpia');
+  ok('codigo' in PR.limpiarContactoSitio({ nombre: 'Ana', telefono: '123' })
+     && 'codigo' in PR.limpiarContactoSitio({ nombre: 'Ana', telefono: '+56911112222', correo: 'no-es-correo' }),
+     'sin un teléfono de verdad, o con un correo mal escrito, no se manda');
+  const fichas = [{ id: 'C-0001', telefono: '9 1111 2222', correo: '' }, { id: 'C-0002', telefono: '', correo: 'luis@x.cl' }] as never[];
+  ok(PR.fichaDelContacto({ telefono: '+56 9 1111 2222', correo: '' }, fichas)?.id === 'C-0001'
+     && PR.fichaDelContacto({ telefono: '+56 9 3333 4444', correo: 'luis@x.cl' }, fichas)?.id === 'C-0002'
+     && !PR.fichaDelContacto({ telefono: '+56 9 3333 4444', correo: '' }, fichas),
+     'un cliente que vuelve calza por teléfono o correo: no queda con dos fichas');
+  const sab2 = PR.cotizarPromocion(gran, { adultos: 30, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx);
+  if (sab2.ok) {
+    const pres = PR.cotizacionDelSitio({ id: 'PRE-9', token: 't', idCliente: 'C-0001', promo: gran, cotizada: sab2, fecha: '2026-11-28',
+      empresa: 'Acme', vendedor: 'Carmen', hoy: '2026-11-24', ahora: '2026-11-24 10:00', vigenciaDias: 15 });
+    ok(pres.estado === 'Enviada' && pres.enviada === '2026-11-24 10:00' && pres.validoHasta === '2026-11-27'
+       && pres.recontactar === '2026-11-24' && pres.origen === 'Sitio · Gran Premio' && pres.creadoPor === 'Carmen'
+       && pres.invitados === 30 && PR.esDelSitio(pres),
+       'la cotización del sitio nace enviada, vigente hasta el día antes del evento, con el contacto hoy y a nombre de la cuenta');
+    ok(PR.delSitioHoy([{ idCliente: 'C-0001', origen: pres.origen, creado: '2026-11-24 10:00' },
+      { idCliente: 'C-0001', origen: '', creado: '2026-11-24 11:00' }], 'C-0001', '2026-11-24') === 1,
+       'el tope cuenta solo las del sitio de ese cliente, de hoy');
+    const lineasP = sab2.lineas.map((l, k) => ({ ...l, presupuesto: 'PRE-9', fila: k + 2 }));
+    const otra = { ...pres, id: 'PRE-8', creadoPor: '' };
+    const vista = { ...pres, id: 'PRE-7', avisoVisto: 'Carmen · ayer' };
+    const deCarmen = PR.avisosDelSitio([pres, otra, vista], lineasP, { usuario: 'carmen', asigna: false });
+    ok(deCarmen.length === 1 && deCarmen[0].id === 'PRE-9' && deCarmen[0].promo === 'Gran Premio'
+       && deCarmen[0].total === sab2.cuentas.total,
+       'el aviso: a su vendedor, las del sitio que no ha visto');
+    ok(PR.avisosDelSitio([pres, otra], lineasP, { usuario: 'Rodrigo', asigna: true }).map((a) => a.id).join() === 'PRE-8'
+       && PR.avisosDelSitio([{ ...pres, estado: 'Perdida' }], lineasP, { usuario: 'Carmen', asigna: false }).length === 0,
+       'las sin vendedor las ve quien asigna; una que ya se cayó no avisa');
+  } else ok(false, 'el sábado se cotiza para armar la cotización del sitio');
+  const sitio = PR.promocionesParaElSitio([gran, combate, PR.nuevaPromocion({ id: 'PR-05', sitio: 'ia', menus: ['Brasas'], incluye: ['Sin precio'] })], cat);
+  ok(sitio.length === 2 && sitio[0].desde === 50000 && sitio[1].desde === 63000
+     && sitio[0].suma[0].loCobra === 'Karting Pirque' && !('costo' in sitio[0].menus[0]),
+     'el sitio recibe las conectadas, desde cuánto por persona y sin costos; una con un producto sin precio no sale');
+}
+
+/* ---------- Renombrar arrastra lo guardado (2026-11-24) ---------- */
+{
+  const RN = await import('./renombrar.ts');
+  const turnosT = [['Fecha', 'Trabajador', 'Puesto', 'Asistencia'],
+    ['2026-11-14', 'Christipher Acevedo', 'Jefe de turno', ''],
+    ['2026-11-15', 'christipher acevedo', 'jefe de turno', 'Sí'],
+    ['2026-11-15', 'Rosa Espinoza', 'Cocina', 'Sí'],
+    ['2026-11-21', 'Christopher Acevedo', 'Barra', '']];
+  const fichasT = [['Nombre', 'Teléfono', 'Puesto habitual'], ['Christopher Acevedo', '', 'Jefe de turno'], ['Rosa Espinoza', '', 'Cocina']];
+  const pagosT = [['ID', 'Fecha de pago', 'Trabajador'], ['P-1', '2026-11-16', 'Christipher Acevedo']];
+  const tablas = { Turnos: turnosT, Trabajadores: fichasT, Pagos: pagosT };
+
+  const deLista = RN.renombresDeLista([{ nombre: 'Garzón', antes: 'Garzón' }, { nombre: 'Encargado de turno / caja', antes: 'Jefe de turno' },
+    { nombre: 'Runner' }, { nombre: '', antes: 'Barra' }]);
+  ok(deLista.length === 1 && deLista[0].de === 'Jefe de turno' && deLista[0].a === 'Encargado de turno / caja',
+     'de la lista de puestos sale solo lo que cambió de nombre: ni lo igual, ni lo nuevo, ni lo vacío');
+
+  const puesto = RN.cambiosDeRenombre(tablas, 'puesto', deLista);
+  ok(puesto.length === 3 && puesto.filter((c) => c.que === 'turnos').length === 2 && puesto.some((c) => c.hoja === 'Trabajadores' && c.fila === 2)
+     && puesto.every((c) => c.valor === 'Encargado de turno / caja'),
+     'renombrar un puesto: sus turnos (sin importar mayúsculas) y el puesto habitual de las fichas');
+  ok(RN.fraseDeCambios(RN.cuentaDeCambios(puesto)) === '2 turnos y 1 ficha', 'la frase dice cuánto arrastró');
+
+  // Otra empresa (2026-11-24): sus productos y las líneas de las cotizaciones.
+  const empresaR = RN.cambiosDeRenombre({
+    'Menús': [['Menú', 'Lo cobra'], ['Karting', 'Karting pirque'], ['Desayuno', '']],
+    'Presupuesto Líneas': [['ID Presupuesto', 'Concepto', 'Lo cobra'], ['P1', 'Karting', 'Karting Pirque'], ['P1', 'Lo Pirque', '']]
+  }, 'empresa', [{ de: 'Karting Pirque', a: 'Karting Los Andes' }]);
+  ok(empresaR.length === 2 && empresaR.every((c) => c.valor === 'Karting Los Andes')
+     && RN.fraseDeCambios(RN.cuentaDeCambios(empresaR)) === '1 producto y 1 línea',
+     'renombrar otra empresa arrastra su producto y las líneas de las cotizaciones');
+
+  const persona = RN.cambiosDeRenombre(tablas, 'trabajador', [{ de: 'Christipher Acevedo', a: 'Christopher Acevedo' }]);
+  ok(persona.length === 3 && persona.filter((c) => c.que === 'turnos').length === 2 && persona.some((c) => c.hoja === 'Pagos')
+     && persona.every((c) => c.col === (c.hoja === 'Pagos' ? 2 : 1)),
+     'renombrar a una persona: sus turnos y sus pagos, en la columna que dice el encabezado');
+  ok(RN.repetidosDespues(turnosT, 'Fecha', 'Trabajador', persona.filter((c) => c.hoja === 'Turnos')).length === 0,
+     'sin días repetidos cuando no estaba dos veces');
+  const conDoble = [...turnosT, ['2026-11-14', 'Christopher Acevedo', 'Garzón', '']];
+  const doble = RN.cambiosDeRenombre({ Turnos: conDoble }, 'trabajador', [{ de: 'Christipher Acevedo', a: 'Christopher Acevedo' }]);
+  ok(RN.repetidosDespues(conDoble, 'Fecha', 'Trabajador', doble).join() === '2026-11-14',
+     'si el mismo día ya tenía la ficha nueva, se avisa ese día');
+
+  const cadena = RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Trabajador', 'Puesto'], ['d', 'x', 'A'], ['d', 'y', 'B']] }, 'puesto',
+    [{ de: 'A', a: 'B' }, { de: 'B', a: 'C' }]);
+  ok(cadena.map((c) => c.valor).join() === 'B,C', 'A → B y B → C a la vez: lo de A queda en B y lo de B en C');
+  ok(RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Trabajador'], ['d', 'Ana']] }, 'trabajador', [{ de: 'ana', a: 'Ana' }]).length === 0,
+     'una celda que ya dice el nombre nuevo no se reescribe');
+  ok(RN.cambiosDeRenombre({ Turnos: [['Fecha', 'Otra']] }, 'trabajador', [{ de: 'A', a: 'B' }]).length === 0,
+     'sin la columna, no toca nada');
+
+  const suelt = RN.sueltos(turnosT.slice(1).map((f) => ({ nombre: f[1] })), ['Christopher Acevedo', 'Rosa Espinoza']);
+  ok(suelt.length === 1 && suelt[0].nombre === 'Christipher Acevedo' && suelt[0].veces === 2,
+     'lo suelto: el nombre que no está en la lista, con cuántos turnos');
+  ok(RN.sueltos([{ nombre: '' }, { nombre: 'Cocina' }], ['cocina']).length === 0, 'lo vacío y lo que está (sin mayúsculas) no es suelto');
+  ok(RN.fraseDeCambios({}) === '' && RN.fraseDeCambios({ turnos: 1 }) === '1 turno'
+     && RN.fraseDeCambios({ turnos: 6, pagos: 2, boletas: 1 }) === '6 turnos, 2 pagos y 1 boleta', 'la frase en singular y plural');
+  const S = await import('./sheets.ts');
+  ok(S.letraDeColumna(0) === 'A' && S.letraDeColumna(25) === 'Z' && S.letraDeColumna(26) === 'AA' && S.letraDeColumna(27) === 'AB',
+     'la letra de la columna');
+}
+
+/* ---------- El link personal abre en el mes (2026-11-24) ---------- */
+{
+  const EQ = await import('./equipo.ts');
+  ok(EQ.periodoDelLink('', '2026-11-24') === '2026-11' && EQ.periodoDelLink('chao', '2026-11-24') === '2026-11'
+     && EQ.periodoDelLink('2026-11-16', '2026-11-24') === '2026-11-16' && EQ.periodoDelLink('2026-10', '2026-11-24') === '2026-10',
+     'el link abre en el mes en curso; lo que viene en la URL manda si es un periodo');
+  ok(EQ.semanaParaElMes('2026-11', '2026-11-24') === '2026-11-16',
+     'de noviembre a semana, a mitad de mes: la semana pasada');
+  ok(EQ.semanaParaElMes('2026-12', '2026-12-02') === '2026-11-30',
+     'el 2 de diciembre, la semana pasada es de noviembre: va la en curso, que toca diciembre');
+  ok(EQ.semanaParaElMes('2026-10', '2026-11-24') === '2026-10-26' && EQ.semanaParaElMes('2027-01', '2026-11-24') === '2026-12-28',
+     'un mes que pasó abre su última semana; uno que viene, la que toca su día 1');
+  ok(EQ.mesDeLaSemana('2026-10-26') === '2026-10', 'de semana a mes: el mes de su lunes');
+}
+
+/* ---------- Quién vende: también quien cotiza con otro rol (2026-11-24) ---------- */
+{
+  const V = await import('./vendedores.ts');
+  const cuentas = [
+    { usuario: 'jorge', nombre: 'Jorge', rol: 'vendedor', activo: true },
+    { usuario: 'ex', nombre: 'Ex Vendedora', rol: 'vendedor', activo: false },
+    { usuario: 'ccm', nombre: 'Cristobal Cornejo', rol: 'gerente', activo: true },
+    { usuario: 'vero', nombre: 'Verónica Lagos', rol: 'pagos', activo: true },
+    { usuario: 'rodrigo', nombre: 'Rodrigo Vera', rol: 'gerencia', activo: true },
+    { usuario: 'brasas', nombre: 'brasas', rol: 'admin', activo: true }
+  ];
+  const cotiz = [{ creadoPor: 'Cristóbal Cornejo' }, { creadoPor: 'brasas' }, { creadoPor: 'Jorge' }];
+  const nombres = (fichas: { usuario: string; tipo: 'vendedor' | 'socio' }[]) =>
+    V.cuentasQueVenden(cuentas, fichas, cotiz).map((c) => c.usuario).join();
+  ok(nombres([]) === 'jorge,ccm',
+     'venden el rol Vendedor activo y quien tiene cotizaciones a su nombre (Cristóbal, operaciones), sin mirar tildes');
+  ok(nombres([{ usuario: 'rodrigo', tipo: 'vendedor' }, { usuario: 'ex', tipo: 'vendedor' }]) === 'jorge,ex,ccm,rodrigo',
+     'con ficha de vendedor también, aunque no haya cotizado o su cuenta esté desactivada');
+  ok(!nombres([]).includes('brasas') && nombres([{ usuario: 'brasas', tipo: 'vendedor' }]).includes('brasas'),
+     'el administrador (la cuenta general) solo con ficha: lo importado a su nombre no lo vuelve vendedor');
+  ok(!nombres([{ usuario: 'vero', tipo: 'socio' }]).includes('vero'), 'una ficha de socio comercial no cuenta');
+}
+
+/* ---------- Qué incluye cada producto, en la cotización (2026-11-24) ---------- */
+{
+  const D = await import('./detalle.ts');
+  ok(D.textoDelSitio('Desayuno')?.detalle.startsWith('Pan amasado') === true,
+     'Desayuno (producción) calza con Desayuno de campo (el sitio)');
+  ok(D.textoDelSitio('Menú Niños')?.detalle.startsWith('De 4 a 12 años') === true
+     && D.textoDelSitio('Sommelier')?.casa === true
+     && D.textoDelSitio('A Brasas Abiertas Empresas')?.detalle.includes('bar abierto') === true,
+     'el menú de niños, Sommelier con el menú de la casa, y un nombre con una palabra de más');
+  ok(!D.textoDelSitio('Arriendo') && !D.textoDelSitio('Barra abierta sin alcohol') && !D.textoDelSitio(''),
+     'lo que el sitio no describe no lleva detalle: no se inventa');
+  ok(!D.textoDelSitio('Sommelier')!.detalle.includes('misma libertad'),
+     'Sommelier trae la lista del bar abierto: la cotización puede no traer Brasas');
+  // La cotización de una sola alternativa: todo va arriba.
+  const una = D.desglose([{ id: 'P-1', conceptos: ['Sommelier', 'Desayuno', 'Arriendo'] }]);
+  ok(una.casa && una.comunes.map((x) => x.nombre).join() === 'Sommelier,Desayuno' && una.propios['P-1'].length === 0,
+     'con una alternativa: el menú de la casa y cada producto con texto, arriba; el arriendo, sin detalle');
+  // Dos alternativas: lo común arriba, lo distinto en su caja.
+  const dos = D.desglose([
+    { id: 'A', conceptos: ['Lo Pirque', 'Menú Niños', 'Show ecuestre'] },
+    { id: 'B', conceptos: ['Sommelier', 'Menú Niños', 'Show ecuestre', 'Karting'] }
+  ]);
+  ok(dos.casa && dos.comunes.map((x) => x.nombre).join() === 'Menú Niños,Show ecuestre',
+     'con alternativas: arriba lo que está en todas');
+  ok(dos.propios.A.map((x) => x.nombre).join() === 'Lo Pirque' && dos.propios.B.map((x) => x.nombre).join() === 'Sommelier,Karting',
+     'y en cada una, lo que la distingue');
+  ok(D.partes('Entrada: Tabla campestre').que === 'Entrada' && D.partes('De 4 a 12 años.').que === '',
+     'un renglón con nombre se parte en dos; uno sin nombre va entero');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

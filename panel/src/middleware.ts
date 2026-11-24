@@ -37,6 +37,11 @@ import { empresaDe } from './lib/empresas.ts';
 const PUBLICAS = [
   // Las fechas que dibuja el calendario del sitio.
   '/api/publico/fechas',
+  // El cotizador de la página de promociones (2026-11-23): las promociones
+  // para dibujarlo, y cotizar y mandar. Lo que lo protege está en la ruta:
+  // el campo trampa, el teléfono y el tope por cliente al día.
+  '/api/publico/promociones',
+  '/api/publico/cotizar',
   // El webhook de Shopify. Público por fuerza: Shopify no puede
   // autenticarse con nuestra contraseña. Lo que lo protege es la firma
   // HMAC, que se verifica dentro de la ruta; ver src/lib/firma.ts.

@@ -3,8 +3,10 @@
  * recibe los datos ya leídos, así que se puede dibujar con datos de prueba.
  * Ver `app/contrato/[token]/page.tsx` y `lib/contrato.ts`.
  */
-import { gentePosible, cuentasDe, folioDe,
+import { gentePosible, cuentasDe, folioDe, otrasEmpresas,
          type Presupuesto, type LineaPresupuesto } from '@/lib/presupuestos';
+import { puntosDelContrato, type OtraEmpresa } from '@/lib/otrasEmpresas';
+import { enPesos } from '@/lib/ocupacion';
 import { grupoDe, letraDe } from '@/lib/cotizar';
 import { condicionesDe } from '@/lib/cobros';
 import { tranquilidadDeCotizacion } from '@/lib/cancelacion';
@@ -16,13 +18,15 @@ import type { Config } from '@/lib/config';
 import type { Cliente } from '@/lib/clientes';
 import BotonImprimir from '@/components/BotonImprimir';
 import TablaCotizacion from '@/components/TablaCotizacion';
+import QueIncluye from '@/components/QueIncluye';
+import { desglose } from '@/lib/detalle';
 
 /** Lo que va entre `**` sale en negrita: los montos y los nombres. */
 function Texto({ t }: { t: Parrafo }) {
   return <>{t.split('**').map((pedazo, i) => (i % 2 ? <strong key={i}>{pedazo}</strong> : pedazo))}</>;
 }
 
-export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
+export default function HojaContrato({ p, lista, lineas, clientes, cfg, empresas = [] }: {
   p: Presupuesto;
   /** Todas las cotizaciones, para la letra de la alternativa. */
   lista: Presupuesto[];
@@ -30,9 +34,16 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
   lineas: LineaPresupuesto[];
   clientes: Cliente[];
   cfg: Config;
+  /** Las otras empresas (2026-11-24): su RUT va en la cláusula de lo que cobran ellas. */
+  empresas?: OtraEmpresa[];
 }) {
   const negocio = negocioDe(cfg.empresa);
   const cuentas = cuentasDe(lineas, p.descuento);
+  // **Qué incluye, también en el contrato** (2026-11-24, lo pidió el cliente):
+  // la misma pieza de la cotización, con lo que se contrató. Lo que cobra
+  // otra empresa no entra: ya va aparte, bajo la tabla.
+  const incluye = desglose([{ id: p.id,
+    conceptos: lineas.filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) }]);
   const ficha = clientes.find((c) => c.id === p.idCliente);
   const cliente = {
     nombre: ficha?.nombre ?? p.cliente,
@@ -60,7 +71,10 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
     tranquilidad: tranquilidadDeCotizacion(p, cfg),
     // **El contrato se lee con la fecha de su firma** (2026-11-23): o la de
     // hoy, si todavía no se firma. Ver `fechaDelContrato()`.
-    fechaRef: fechaDelContrato(p, hoy())
+    fechaRef: fechaDelContrato(p, hoy()),
+    // **Lo que cobra otra empresa, en su cláusula** (2026-11-24, lo decidió el
+    // cliente: *"sí va en una línea del contrato"*).
+    terceros: puntosDelContrato(otrasEmpresas(lineas), empresas, enPesos)
   };
   const clausulas = clausulasDe(datos);
 
@@ -101,7 +115,8 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
           {c.tabla && (
             <div className="mt-3 text-sm">
               <TablaCotizacion lineas={lineas} cuentas={cuentas} descuento={p.descuento}
-                uf={p.uf} fechaUF={p.fechaUF} />
+                uf={p.uf} fechaUF={p.fechaUF} empresas={empresas} />
+              <QueIncluye casa={incluye.casa} comunes={incluye.comunes} varias={false} />
             </div>
           )}
           {c.cuenta && (

@@ -15,7 +15,7 @@
  * puede decir un precio distinto del que el cliente aprobó.
  */
 import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
-import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig } from '@/lib/datos';
+import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig, leerOtrasEmpresas } from '@/lib/datos';
 import { porToken, lineasDe } from '@/lib/presupuestos';
 import HojaContrato from '@/components/HojaContrato';
 import { vistaPrevia } from '@/lib/vistaPrevia';
@@ -46,7 +46,10 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
     );
   }
 
-  return <HojaContrato p={p} lista={lista} lineas={lineasDe(todas, p.id)} clientes={clientes} cfg={cfg} />;
+  const lineas = lineasDe(todas, p.id);
+  // Las otras empresas (2026-11-24): solo si el contrato trae algo que cobra otra.
+  const empresas = lineas.some((l) => String(l.loCobra ?? '').trim()) ? await leerOtrasEmpresas().catch(() => []) : [];
+  return <HojaContrato p={p} lista={lista} lineas={lineas} clientes={clientes} cfg={cfg} empresas={empresas} />;
 }
 
 /** La dirección dice de qué empresa es lo que se lee (ver `empresaPagina.ts`). */

@@ -3,7 +3,7 @@ import { conLecturas } from '@/lib/sheets';
 import { exigir, quienEs } from '@/lib/permisos';
 import {
   leerPresupuestos, leerLineasPresupuesto, guardarPresupuesto,
-  crearReserva, leerMenus, leerClientes, anotar, leerConfig, leerCobros,
+  crearReserva, leerMenus, leerClientes, anotar, leerConfig, leerCobros, leerPromociones,
   actualizarPagoDeReserva, congelarComision, abrirElDiaSiHaceFalta, dejarExclusivo, leerFechas, leerReservas, moverCobros
 } from '@/lib/datos';
 import { cupoParaGanar } from '@/lib/dias';
@@ -24,6 +24,7 @@ import {
 import { hoy } from '@/lib/fechas';
 
 import { minimosAprobados } from '@/lib/condiciones';
+import { promocionDe, beneficioDePromocion } from '@/lib/promociones';
 
 export const dynamic = 'force-dynamic';
 
@@ -168,7 +169,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
       const personas = personasParaMinimos(suyas, p.invitados);
       // Un mínimo aprobado como condición especial (2026-11-23) rige en vez del de Configuración.
       const aprobados = minimosAprobados(original);
-      const delDia = conMinimoArriendo(arriendoDelDia(reglaArriendoDe(cfg), p.fecha, fechas, cfg.diasAbiertos,
+      // **La promoción aplicada puede perdonar el arriendo** (2026-11-24): se
+      // lee solo si la cotización tiene una.
+      const promo = original.promocion
+        ? promocionDe(await leerPromociones().catch(() => []), original.promocion) : undefined;
+      const delDia = beneficioDePromocion(promo, p.invitados, p.fecha).sinArriendo ? null : conMinimoArriendo(arriendoDelDia(reglaArriendoDe(cfg), p.fecha, fechas, cfg.diasAbiertos,
         esExclusivo(original.exclusivo), otras), aprobados.arriendo);
       const minimo = delDia ? delDia(personas) : null;
       if (!original.arriendoBajoMinimo && minimo && arriendoQuedaBajoMinimo(suyas, menus, minimo)) {

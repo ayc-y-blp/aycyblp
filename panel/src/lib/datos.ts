@@ -12,7 +12,9 @@
 import { conEmpresa, empresaActual, laCasa, porEmpresa } from './empresa.ts';
 import { leerHoja, agregarFila, agregarFilas, escribirFila, borrarFila, borrarFilas,
          escribirBloque, asegurarEncabezado, asegurarColumna, asegurarHoja, leerEncabezado,
-         esPestanaQueNoExiste } from './sheets.ts';
+         esPestanaQueNoExiste, escribirCeldas } from './sheets.ts';
+import { hojasDe, cambiosDeRenombre, repetidosDespues, DONDE_FECHA,
+         type CeldaNueva, type QueSeRenombra, type Renombre } from './renombrar.ts';
 import {
   HOJA_RESERVAS, HOJA_FECHAS, COL_RESERVAS, COL_FECHAS,
   indices, faltantes, esManual, ESTADO_DIA, esExclusiva, esPrivada, estaCerrado
@@ -29,6 +31,12 @@ import { estadoConCobroLocal } from './cobroLocal.ts';
 import { HOJA_CAJA, ENCABEZADO_CAJA, leerCajaDe, filaCaja, nuevoIdCaja, type Movimiento } from './caja.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
+import {
+  HOJA_PROMOCIONES, ENCABEZADO_PROMOCIONES, leerPromocionesDe, aFilasPromociones, type Promocion
+} from './promociones.ts';
+import {
+  HOJA_OTRAS_EMPRESAS, ENCABEZADO_OTRAS_EMPRESAS, leerOtrasEmpresasDe, aFilasOtrasEmpresas, type OtraEmpresa
+} from './otrasEmpresas.ts';
 import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
 import { normalizar } from './columnas.ts';
 import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, vistaDeEmpresa, type Usuario } from './usuarios.ts';
@@ -58,7 +66,7 @@ import {
 import { conCliente } from './cotizar.ts';
 import { HOJA_NOTAS, ENCABEZADO_NOTAS, leerNotasDe, filaNota, nuevoIdNota, type Nota } from './notas.ts';
 import { HOJA_VENDEDORES, ENCABEZADO_VENDEDORES, leerVendedoresDe, filaVendedor, fichaDe, baseDeVenta,
-         comisionDe, marcaComision, confirmadaEl, type FichaVendedor } from './vendedores.ts';
+         comisionDe, marcaComision, confirmadaEl, cuentasQueVenden, type FichaVendedor } from './vendedores.ts';
 import { HOJA_COBROS, ENCABEZADO_COBROS, leerCobrosDe, filaCobro, cobrosDe, estadoCobros,
          type Cobro } from './cobros.ts';
 import { liberaCupo, pagoPorCobros } from './pagos.ts';
@@ -386,6 +394,45 @@ export async function guardarMenus(menus: Menu[]): Promise<void> {
   await escribirBloque(HOJA_MENUS, aFilasMenus(menus));
 }
 
+/**
+ * **Las promociones del sitio** (2026-11-23, `lib/promociones.ts`). Si la
+ * pestaña no está, se crea con su encabezado —como `Caja chica`—: así una
+ * tanda que la pregunta no gasta una lectura de más mirando el libro.
+ */
+export async function leerPromociones(): Promise<Promocion[]> {
+  try {
+    return leerPromocionesDe(await leerHoja(HOJA_PROMOCIONES));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_PROMOCIONES, ENCABEZADO_PROMOCIONES); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** Reescribe la pestaña entera. */
+export async function guardarPromociones(promos: Promocion[]): Promise<void> {
+  await escribirBloque(HOJA_PROMOCIONES, aFilasPromociones(promos));
+}
+
+/**
+ * **Las otras empresas** (2026-11-24, `lib/otrasEmpresas.ts`). Si la pestaña
+ * no está, se crea con su encabezado, como `Promociones`.
+ */
+export async function leerOtrasEmpresas(): Promise<OtraEmpresa[]> {
+  try {
+    return leerOtrasEmpresasDe(await leerHoja(HOJA_OTRAS_EMPRESAS));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_OTRAS_EMPRESAS, ENCABEZADO_OTRAS_EMPRESAS); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** Reescribe la pestaña entera. */
+export async function guardarOtrasEmpresas(lista: OtraEmpresa[]): Promise<void> {
+  await escribirBloque(HOJA_OTRAS_EMPRESAS, aFilasOtrasEmpresas(lista));
+}
+
 /* ---------- El equipo ---------- */
 
 /**
@@ -406,6 +453,35 @@ export async function leerPuestos(): Promise<Puesto[]> {
 
 export async function guardarPuestos(puestos: Puesto[]): Promise<void> {
   await escribirBloque(HOJA_PUESTOS, aFilasPuestos(puestos));
+}
+
+/**
+ * **Cambia un nombre en todo lo guardado** (2026-11-24, `lib/renombrar.ts`):
+ * los turnos, los ajustes, los pagos y las boletas de una persona, o los
+ * turnos y las fichas de un puesto. Lee esas pestañas en una tanda —frescas,
+ * porque busca en qué fila escribir— y escribe solo las celdas que cambian,
+ * en una llamada. Todos los cambios a la vez: *A → B* y *B → C* no terminan
+ * los dos en C. Devuelve las celdas (para contar con `cuentaDeCambios()`) y
+ * los días en que alguien quedó dos veces.
+ */
+export async function renombrarEnPlanilla(
+  tipo: QueSeRenombra, renombres: Renombre[]
+): Promise<{ celdas: CeldaNueva[]; repetidos: string[] }> {
+  if (!renombres.length) return { celdas: [], repetidos: [] };
+  const hojas = hojasDe(tipo);
+  const leidas = await Promise.all(hojas.map((h) => leerHoja(h, true).catch((e) => {
+    if (esPestanaQueNoExiste(e)) return [] as string[][];
+    throw e;
+  })));
+  const tablas = Object.fromEntries(hojas.map((h, i) => [h, leidas[i]]));
+  const celdas = cambiosDeRenombre(tablas, tipo, renombres);
+  await escribirCeldas(celdas);
+  const fecha = DONDE_FECHA[tipo];
+  const repetidos = fecha
+    ? repetidosDespues(tablas[fecha.hoja] ?? [], fecha.fecha, fecha.nombre,
+        celdas.filter((c) => c.hoja === fecha.hoja))
+    : [];
+  return { celdas, repetidos };
 }
 
 /**
@@ -947,13 +1023,20 @@ export async function congelarComision(idPresupuesto: string): Promise<void> {
     if (!p || !p.idReserva) return;
     // `Creado por` es el nombre de la persona (lo que trae la sesión); se
     // busca por nombre y, para las viejas, por usuario.
+    // **Cualquiera que venda** (2026-11-24, `cuentasQueVenden()`): también
+    // quien cotiza con otro rol, como el encargado de operaciones.
     const creo = normalizar(p.creadoPor);
-    const u = usuarios.find((x) => x.rol === 'vendedor' && !!creo && normalizar(x.nombre) === creo)
-      ?? usuarios.find((x) => x.rol === 'vendedor' && !!creo && normalizar(x.usuario) === creo);
+    const venden = cuentasQueVenden(usuarios, fichas, presupuestos);
+    const u = venden.find((x) => !!creo && normalizar(x.nombre) === creo)
+      ?? venden.find((x) => !!creo && normalizar(x.usuario) === creo);
     // **El socio también congela la suya** (2026-11-12, segunda entrega), en
     // su propia columna y en la misma escritura.
     const s = p.socio ? fichas.find((f) => f.tipo === 'socio' && normalizar(f.usuario) === normalizar(p.socio ?? '')) : undefined;
-    const faltaVendedor = !!u && !p.comisionVendedor;
+    // **Sin ficha, no se congela** (2026-11-24): su trato de partida es 0%, y
+    // congelarlo dejaría en $0 una venta que se pagó antes de escribirle el
+    // trato. Hasta que tenga ficha, se calcula al leer.
+    const conFicha = !!u && fichas.some((f) => f.tipo !== 'socio' && normalizar(f.usuario) === normalizar(u.usuario));
+    const faltaVendedor = conFicha && !p.comisionVendedor;
     const faltaSocio = !!s && !p.comisionSocio;
     if (!faltaVendedor && !faltaSocio) return;
     const b = baseDeVenta(p, lineas, menus);

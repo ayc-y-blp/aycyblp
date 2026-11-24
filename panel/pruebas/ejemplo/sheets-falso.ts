@@ -3,7 +3,7 @@
  * panel: `capturas.sh` la copia a una copia del panel, nunca al de verdad.
  *
  * Una planilla falsa en un JSON en disco: imita lo que el panel usa de la API
- * de Sheets (get, values.get/batchGet/append/update/clear, batchUpdate con
+ * de Sheets (get, values.get/batchGet/append/update/batchUpdate/clear, batchUpdate con
  * addSheet y deleteDimension). Se lee y se escribe el archivo en cada
  * llamada, así que lo escrito persiste entre peticiones e instancias.
  */
@@ -121,6 +121,23 @@ const crudo = {
         const t = hoja(l, range);
         const n = filaDe(range);
         t.splice(n - 1);
+        guardar(l);
+        return { data: {} };
+      },
+      // Celdas sueltas en varias pestañas (2026-11-24, renombrar).
+      batchUpdate: async ({ requestBody }: any) => {
+        const l = leer();
+        for (const { range, values } of requestBody.data ?? []) {
+          const t = hoja(l, range);
+          const m = String(range).match(/!([A-Z]+)(\d+)$/);
+          if (!m) continue;
+          const col = [...m[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+          const fila = +m[2];
+          while (t.length < fila) t.push([]);
+          const f = t[fila - 1];
+          while (f.length <= col) f.push('');
+          f[col] = texto(values?.[0]?.[0]);
+        }
         guardar(l);
         return { data: {} };
       },

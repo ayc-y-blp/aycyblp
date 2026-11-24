@@ -15,6 +15,8 @@ import { useEffect, useState } from 'react';
 import Ayuda from './Ayuda';
 import PasoAProduccion from './PasoAProduccion';
 import ImportarCRM from './ImportarCRM';
+import BuscarEnLista from './BuscarEnLista';
+import { NOMBRE_ROL } from '@/lib/roles';
 import { usarSoloMira } from './SesionCliente';
 import { Aviso } from './CalendarView';
 import { deDiasSemana, idDeDrive, type Config } from '@/lib/config';
@@ -39,6 +41,9 @@ export default function ConfigEditor() {
   const [guardando, setGuardando] = useState('');
   const [revisando, setRevisando] = useState(false);
   const [resumen, setResumen] = useState('');
+  /** Las cuentas que cotizan, para elegir a quién van las cotizaciones del sitio (2026-11-23). */
+  const [cuentas, setCuentas] = useState<{ nombre: string; rol: string }[]>([]);
+  const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   /** Vista gerencia sin `configurar`: se mira y no se toca. */
   const soloMira = usarSoloMira('configurar');
 
@@ -74,7 +79,7 @@ export default function ConfigEditor() {
     const r = await fetch('/api/config');
     const d = await r.json();
     if (d.error) { setError(d.error); setSinPermiso(!!d.permiso); }
-    else setConfig(d.config);
+    else { setConfig(d.config); setCuentas(d.cuentas ?? []); }
   }
   useEffect(() => { cargar(); }, []);
 
@@ -244,6 +249,26 @@ export default function ConfigEditor() {
             'cliente está en Condiciones para el cliente.',
       cuerpo: <>
         {grupo('La cotización', <>
+        {/* **A quién llegan las del sitio** (2026-11-23): las que manda un
+            cliente desde el cotizador de promociones. Una cuenta que cotiza,
+            elegida con el buscador (regla: una lista que crece). */}
+        {campo('vendedorSitio', 'Las del sitio van a',
+          'Las cotizaciones que un cliente arma en la página de promociones quedan a nombre de esta ' +
+          'cuenta, y le aparecen en una ventana al entrar al panel. Sin nadie, quedan sin vendedor ' +
+          'y las ve la gerencia.',
+          eligiendoVendedor ? (
+            <BuscarEnLista etiqueta="Buscar cuenta" vacia="No hay cuentas que coticen."
+              elegido={config.vendedorSitio}
+              opciones={[{ id: '', nombre: 'Sin vendedor' },
+                ...cuentas.map((c) => ({ id: c.nombre, nombre: c.nombre, detalle: NOMBRE_ROL[c.rol] ?? c.rol }))]}
+              onElegir={(id) => { setEligiendoVendedor(false); if (id !== config.vendedorSitio) guardar({ vendedorSitio: id }, 'vendedorSitio'); }}
+              onCerrar={() => setEligiendoVendedor(false)} />
+          ) : (
+            <button type="button" className="boton min-h-[40px] w-full text-left" onClick={() => setEligiendoVendedor(true)}>
+              {config.vendedorSitio ? <strong>{config.vendedorSitio}</strong> : <span className="text-hueso/70">Sin vendedor</span>}
+              <span className="ml-2 text-[13px] text-hueso/70">· Cambiar…</span>
+            </button>
+          ))}
         {campo('vigencia', 'Vigencia',
           'Cuántos días vale una cotización desde que se manda al cliente. Nunca pasa del día ' +
           'antes del evento. En 0 no vence.',

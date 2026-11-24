@@ -3,11 +3,12 @@ import { conLecturas } from '@/lib/sheets';
 import { HOJA_FECHAS, HOJA_RESERVAS } from '@/lib/columnas';
 import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS, folioDe } from '@/lib/presupuestos';
+import { avisosDelSitio } from '@/lib/promociones';
 import { HOJA_CLIENTES } from '@/lib/clientes';
 import { HOJA_TRABAJADORES } from '@/lib/equipo';
 import { HOJA_COLABORADORES } from '@/lib/extras';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
-import { leerReservas, leerFechas, leerConfig, posiblesDeLosDias, leerPresupuestos, leerClientes,
+import { leerReservas, leerFechas, leerConfig, posiblesDeLosDias, leerPresupuestos, leerClientes, leerLineasPresupuesto,
   leerTrabajadores, leerColaboradores, leerVendedores } from '@/lib/datos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { HOJA_CAJA } from '@/lib/caja';
@@ -162,7 +163,17 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
     const revisa = puede(rol as Rol, 'pagar');
     const caja = recibe || revisa
       ? pendientesDeCaja(await leerCaja().catch(() => []), { usuario }, { recibe, revisa }) : [];
-    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos, caja });
+    // **Las cotizaciones del sitio que esta cuenta no ha visto** (2026-11-23):
+    // la ventana que le avisa al entrar. `Presupuestos`, sus líneas y
+    // `Clientes` ya venían en la tanda: ninguna lectura más.
+    const delSitio = puede(rol as Rol, 'presupuestos')
+      ? await (async () => {
+        const [pres, clientes, lineas] = await Promise.all([leerPresupuestos(), leerClientes(), leerLineasPresupuesto()]);
+        return avisosDelSitio(pres.map((p) => conCliente(p, clientes)), lineas,
+          { usuario, asigna: puede(rol as Rol, 'asignarVendedor') });
+      })().catch(() => [])
+      : [];
+    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos, caja, delSitio });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

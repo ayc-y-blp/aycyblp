@@ -144,7 +144,7 @@ revisan antes de cada cambio en esta carpeta.
   | La fecha de un día, y *hoy* / *esta semana* | `FechaDia` + `MarcaAhora` (*HOY* relleno) y `MARCO_HOY` alrededor de la tarjeta o celda de hoy, con el fondo apenas iluminado (`.fondo-hoy`) |
   | El estado del día (público, privado, exclusivo, cerrado…) | `PuntoDia` / `PuntoYPalabra` y `COLOR_TARJETA` |
   | Lo cotizado (solo lo mandado) y la gente posible, ganadas, esperando, lo tuyo sin mandar | `Pastilla` / `PastillaCotizado` |
-  | En las celdas de Turnos y Extras: el equipo del día (👥, dorado) y las actividades y su costo (🎠, añil) | `Pastilla` tipo `equipo` / `extras` |
+  | En las celdas de Turnos y Extras: el equipo del día y lo que cuesta (👥, dorado; el costo también arriba de la ventana del día) y las actividades y su costo (🎠, añil) | `Pastilla` tipo `equipo` / `extras` |
   | Lo que le falta a una ficha para poder pagarle: *falta su cuenta*, *falta su factura* | `Pastilla` tipo `falta`: un aviso fino, nunca con forma de botón (Informe, Vendedores, Equipo y Extras) |
   | Cómo va el pago de una reserva | `PastillaPago`; la pastilla sola, para ponerla en una línea de texto, `EstadoDelPago` (la bandeja de lo que revisa pagos) |
   | Lo de la cuenta y lo de todos | `BotonMias` / `BotonTodos` |
@@ -164,6 +164,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
+| Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
@@ -174,6 +175,12 @@ revisan antes de cada cambio en esta carpeta.
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
+  | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` |
+  | La promoción aplicada a una cotización y cómo elegirla | `AplicarPromocion` (*🎁 Promoción…*) y la pastilla *🎁 nombre −N%* al lado del descuento sobre el total (paso Productos) |
+| Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total con *💬 Escribirle* (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa*, con los datos de la empresa, en `TablaCotizacion` (la cotización y el contrato) |
+| Una otra empresa y sus datos | `OtrasEmpresasEditor` (*Productos → 🤝 Otras empresas*), con `datosEnFrase()` / `datosDe()` de `lib/otrasEmpresas.ts` |
+  | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
+  | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -220,6 +227,601 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## *🤝 Otras empresas*: el karting, el taller de queso, un transfer (2026-11-24)
+
+Lo pidió el cliente: *"tal vez hasta se puede tener que ingresar la otra
+cuenta, la otra empresa y poder elegirla, porque el karting va a quedar ahí al
+lado… con sus datos y con etcétera, para mostrarlo bien en la cotización o en
+el contrato también, que es igual que el taller de queso"*. Contestó lo que se
+le preguntó: *"no paga comisión, sí va en una línea del contrato"*.
+
+- **La lista** (`lib/otrasEmpresas.ts`, pestaña nueva **`Otras empresas`**:
+  `Nombre`, `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa`),
+  en ***Productos → 🤝 Otras empresas*** (`OtrasEmpresasEditor`): una tarjeta
+  por empresa, con sus campos en dos columnas en el computador. Se guarda con
+  su botón —el nombre lo usan otros— y la cambia quien cambia el catálogo
+  (`configurar`). Ruta `/api/otras-empresas`.
+- **El nombre es la identidad**, como en todo el panel: el producto y la línea
+  de la cotización guardan el nombre escrito (`Lo cobra`). **Cambiarlo lo
+  arrastra** (`DONDE.empresa` en `lib/renombrar.ts`: `Menús` y `Presupuesto
+  Líneas`), y la tarjeta lo dice antes de guardar. Lo que no arrastra: la
+  marca *🤝 Ya lo coordiné* de una cotización, que queda con el nombre de
+  antes y vuelve a pedir coordinar.
+- **Los nombres que un producto ya usa y no están en la lista** (el *Karting
+  Pirque* escrito a mano antes de la lista) salen arriba, con *+ Agregar*
+  (`sinFicha()`).
+- **En el producto**, *Lo cobra*: ***Nosotros*** (el directo) u ***Otra
+  empresa…***, que abre la lista con buscador (`BuscarEnLista`), con *+
+  Agregar en 🤝 Otras empresas* al pie. Una apagada ya no se ofrece.
+- **En la cotización que ve el cliente** (`TablaCotizacion`): bajo lo que
+  cobra cada empresa, su RUT, contacto, teléfono y correo. La página lee la
+  lista solo si la cotización trae algo de otra empresa.
+- **En el contrato**, la cláusula ***Servicios de otras empresas***, después
+  de la forma de pago (así la Tercera y la Cuarta, que se citan, no cambian
+  de número): *"no forman parte del Servicio ni del Precio Total: los presta y
+  los cobra directamente la empresa que se indica, a quien el Cliente se los
+  paga. Brasas de Lo Pirque coordina con ella su realización el día del
+  Evento"*, y un renglón por empresa con lo suyo, su RUT y cuánto
+  (`puntosDelContrato()`). **Dice solo los hechos**: quién responde por qué
+  es del negocio y de su abogado.
+- **No paga comisión** (lo decidió el cliente): ya era así, porque sus líneas
+  no entran en el total (`cuentasDe()`), que es la base de la comisión. Una
+  prueba lo fija.
+- **Coordinar**: en la ventana de cotizar, al lado de *🤝 Ya lo coordiné*,
+  ***💬 Escribirle*** abre WhatsApp con el teléfono de la empresa y un mensaje
+  con el día, la gente y lo pedido (`mensajeParaCoordinar()`). Sin teléfono,
+  no sale.
+- **Lecturas de Google**: `/api/otras-empresas` una tanda (Productos la pide
+  aparte, para el buscador); `/api/presupuestos` la suma a la tanda del `GET`
+  (ninguna lectura más); la cotización y el contrato la leen solo si hace
+  falta. **Ningún permiso nuevo.** *Dejar la base en cero* la **conserva**.
+- **Ayuda**: el `?` de Productos, `loCobra` y uno nuevo, `otrasEmpresas`.
+- **El panel de ejemplo**: *Karting Pirque*, con datos inventados.
+- **Ventanas**: `ficha-otra-empresa`; la pantalla `productos-empresas` entra
+  en la prueba de espacio.
+- **Probado en el panel de ejemplo**: la tarjeta, elegir quién cobra el
+  karting, *💬 Escribirle* en la cotización de Ignacia Rojas, sus datos en el
+  documento (también en el celular) y la cláusula *QUINTO* en el contrato.
+  Renombrar *Karting Pirque* arrastra 1 producto y 1 línea; el vendedor
+  recibe 403.
+
+## *🎁 Promoción…*: el vendedor aplica una promoción en su cotización (2026-11-24)
+
+Lo pidió el cliente: *"el vendedor manualmente también tiene que poder elegir
+las promociones. Y con toda la posibilidad de editarlo dentro de la
+cotización según las reglas que permite la configuración. Pero sí
+configurable"*, y decidió: *"sí, que valga el descuento de la promoción"*.
+
+- **Dónde**: en el paso Productos, al lado de *Descuento sobre el total*,
+  ***🎁 Promoción…*** (*🎁 Aplicar promoción…* en el celular). Abre
+  `AplicarPromocion`: las promociones activas de *Productos → 🎁 Promociones*
+  como botones (son pocas y fijas), con desde cuántas personas, su descuento
+  con sus tramos y su arriendo; si ofrece varios menús, *¿Qué menú?*. Antes
+  de aplicar dice qué pasa: *Tradiciones (70) pasa a A Brasas abiertas. Lo
+  demás se queda. Con 80 personas, −20% sobre el total.* Mide 510px a
+  1280×650 (escena `v-aplicar-promocion`).
+- **Qué hace** (`aplicarALineas()` en `lib/promociones.ts`, puro y con
+  pruebas): **el menú elegido reemplaza a los otros menús de adulto**, en su
+  lugar y con su gente —una promoción es un paquete con su menú—; el de niños
+  entra en 0 si no estaba; se suma lo que incluye siempre; **lo demás se
+  queda** (los niños, los extras, el arriendo), y nada se repite. Lo que *se
+  puede sumar* no entra solo. Pone su descuento sobre el total. Después todo
+  se edita como siempre.
+- **Aplicada, una pastilla** al lado de los botones de descuento: *🎁 Gran
+  Premio de Fin de Año −20%*, con su `?` (`promoEnCotizacion`), *Usar −N%* si
+  el descuento ya no es el de la promoción (cambiaron los invitados) y
+  *Quitar*. Quitarla deja los productos; si el descuento pasa el tope de
+  siempre, vuelve a cero.
+- **Su descuento vale aunque pase el tope del vendedor** (`conTopes()` en
+  `/api/presupuestos`, con `beneficioDePromocion()`): sube el tope de esa
+  cotización como una condición aprobada, y no cuenta como condición
+  especial. Es el del tramo que alcanza el grupo (los invitados). Su botón
+  aparece entre los de descuento aunque no sea uno de Configuración (el 11%
+  de fin de año). **Si se quita o deja de regir, el descuento vuelve a
+  pasar por el tope** —también por la API—.
+- **Su arriendo**: si la promoción dice *Sin arriendo de lunes a viernes* o
+  *Sin arriendo* (`perdonaArriendo()`), el arriendo mínimo no se agrega ni se
+  exige: en la ventana, al guardar y al ganar (`/convertir`), con la misma
+  función.
+- **Bajo su mínimo de personas no rige** (`rigePromocion()`): ni su
+  descuento ni su arriendo. Se puede aplicar igual —el grupo puede crecer—, y
+  la pastilla dice *pide desde 22: no rige*.
+- **Columna nueva al final de `Presupuestos`: `Promoción`** (su ID). La
+  escribe el `PATCH` de `/api/presupuestos`: una activa, o la que ya tenía
+  aunque se haya apagado (lo acordado no cambia solo). Una alternativa nueva
+  la hereda. **Las cotizaciones que llegan del sitio** nacen con su promoción
+  puesta (`cotizacionDelSitio()`), así que el vendedor las sigue editando con
+  su descuento. Bitácora: *Aplicó una promoción* / *Quitó la promoción*.
+- **Lecturas de Google**: `Promociones` se suma a la tanda del `GET` y del
+  `PATCH` de `/api/presupuestos` (ninguna lectura más); `/convertir` la lee
+  solo si la cotización tiene una. **Ningún permiso cambió.**
+- **El panel de ejemplo**: el Gran Premio con un tramo del 20% desde 60
+  personas, sobre el tope de 15%: Andrés Pino, con 80, lo lleva.
+- **Probado en el panel de ejemplo**, como vendedor: en Andrés Pino, el Gran
+  Premio con A Brasas abiertas deja *A Brasas abiertas 70, Niños 10, Show* y
+  el 20%; pedir 25% por la API queda en 20; quitarla dejando el 20% queda en
+  15; una promoción apagada responde 404. En el celular, *Fin de año* deja el
+  11% marcado.
+
+### *Fuera del local* y la cabecera de cotizar en dos filas (2026-11-24)
+
+Lo pidió el cliente al ver la ficha de promociones ordenada: *"así tal cual
+deberías agregar actividades fuera del local, y cuando se crea un producto que
+cobra otra empresa, aparece en este fuera del local. Puede ser también un
+transfer… Y lo mismo para la cotización de un vendedor"*. Y de la cabecera:
+*"tal vez los pasos tienen que llegar en una fila y ahí comprometer un poco la
+eficiencia del espacio y poner las alternativas en una segunda fila abajo… y
+quizás un botón grande de las notas"*.
+
+- **🚐 Fuera del local**: en la ficha de una promoción, los extras que cobra
+  otra empresa (`Lo cobra`) van en su sección, aparte de *➕ Extras*. En el
+  paso Productos de cotizar, en su grupo a la derecha de *Extras y arriendo*,
+  cada botón con la empresa debajo. Un producto nuevo con *Lo cobra* cae ahí
+  solo.
+- **La cabecera de cotizar**: los cinco pasos en una fila; debajo, las
+  alternativas y **🗒 Notas** como un botón grande a la derecha. En el
+  celular, como antes.
+- **Los pasos 3, 4 y 5 ya no caben en 1280×650**: miden 698, 665 y 681px
+  (anotados en `NO_CABEN` con este porqué). El cliente lo aceptó al pedirlo.
+- Fotos de la ayuda rehechas: `ven-cotizar`, `ven-envio`, `pag-cobros` y
+  `ger-cobros`.
+
+## Vende quien cotiza, tenga el rol que tenga (2026-11-24)
+
+Lo pidió el cliente: *"en vendedores, Cristóbal Cornejo no aparece aún que él
+tenga cotizaciones. Sé que él tiene el rol de encargado de operaciones, pero él
+vende también. Entonces, si alguien con otro rol, pero igual vende dentro del
+sistema, tiene que aparecer en vendedores también, porque para él también
+corren comisiones… y tiene que hacer su link personal"*.
+
+- **Una sola regla, `cuentasQueVenden()`** (`lib/vendedores.ts`, con
+  pruebas): el rol Vendedor (activo, o desactivado con ficha) y **cualquier
+  otra cuenta con una cotización a su nombre** (`Creado por`, por nombre o
+  usuario, sin tildes) **o con su ficha de vendedor**. **El administrador,
+  solo con ficha**: es la cuenta general, y lo importado del CRM puede haber
+  quedado a su nombre.
+- **Se usa en los cuatro lugares que antes miraban solo el rol**: la lista de
+  *Vendedores*, la sección de vendedores del *Informe*, crear su link
+  personal (`/api/vendedores/link`) y congelar la comisión
+  (`congelarComision()`). Si cada uno filtrara a su manera, saldría en uno y no
+  en el otro.
+- **Su trato parte en 0%** (la ficha de partida): se le escribe en su tarjeta.
+  **Sin ficha, la comisión no se congela**: congelarla dejaría en $0 una venta
+  pagada antes de escribirle el trato. Hasta que tenga ficha, se calcula al
+  leer. Vale para todos, también para un vendedor sin fila.
+- **Su link personal** es el del vendedor (`Socio.tsx`): su trato, lo que ganó
+  y su boleta. Sigue la regla de siempre: vale mientras su cuenta esté activa.
+- **Lecturas de Google**: el link suma `Presupuestos` a su tanda (una sola).
+  Las demás ya lo leían. **Ningún permiso cambió.** **Ayuda**: el `?` de
+  Vendedores.
+- **Probado en el panel de ejemplo**: Marcela Díaz (operaciones) crea una
+  cotización y aparece en *Vendedores* con su rol; pagos le crea el link y su
+  página abre con su trato.
+
+## Qué incluye cada producto, en la cotización (2026-11-24)
+
+Lo pidió el cliente: *"que se desglose el detalle del producto en la
+cotización, que incluye qué servicio, qué significa barra abierta… tienes la
+información en el sitio público respecto a cada producto, así extráelo desde
+allá… el menú es el mismo, entonces esto puedes dejarlo arriba como un
+desglose general… y luego especificas abajo el producto cotizado en
+alternativa A o alternativa B. ¿Qué cambia?… Y eso para todos los links"*. Se
+le mostró como maqueta y quedó sin hacer hasta que lo marcó con la foto de una
+cotización de producción: *"la cotización aún se ve igual"*.
+
+- **En la cotización que ve el cliente** (`/presupuesto/<token>`: es la misma
+  del link, del WhatsApp, del correo y del PDF), una caja ***Qué incluye***
+  entre los datos del evento y los precios: **el menú de la casa** en cuatro
+  tiempos —si algún menú de adulto lo lleva— y **cada producto que está en
+  todas las alternativas**, con su texto. En cada alternativa, ***Lo que cambia
+  en la B***: solo lo que la distingue. Con una sola, todo va arriba.
+- **Los textos salen del sitio, tal cual** (`experiencias.html`,
+  `eventos.html`, `dossier.html`), en `DETALLE_DEL_SITIO` de **`lib/detalle.ts`**
+  (puro, con pruebas). **No se inventa nada**: un producto que el sitio no
+  describe —el arriendo, un extra nuevo— va sin detalle. **Si cambia el texto
+  en el sitio, se cambia también ahí.** Sommelier lleva la lista entera del
+  bar abierto: en el sitio dice *"misma libertad que Brasas"*, y una
+  cotización puede no traer Brasas.
+- **Un nombre que no calza exacto, calza igual** (`textoDelSitio()`): en
+  producción el producto es *Desayuno* y en el sitio *Desayuno de campo*. La
+  misma regla del importador (`productoParecido()`): un nombre dentro del otro,
+  con dos palabras de diferencia a lo más, sin *sin* ni *no*, y solo si gana uno.
+- **Lo que cobra otra empresa no entra** en el desglose: ya va aparte, con su
+  detalle, bajo el total.
+- **De paso, la tabla de precios cabe entera en un teléfono**
+  (`TablaCotizacion`, también en el contrato): se desplazaba de lado dentro de
+  su caja y se leía cortada (*SUBTOTAL NET*, *$2.882.35*). Bajo 640px, *Cant.*,
+  la letra a 13px, 6px entre columnas y el total a 16px. Cabe desde 360px. El
+  computador y el PDF, igual.
+- **También en el contrato** (`/contrato/<token>`, lo pidió el cliente el
+  mismo día: *"que en el contrato también aparece… el desglose"*), bajo la
+  tabla de la cláusula del precio, con lo contratado. Es la misma pieza,
+  **`QueIncluye`** (`components/QueIncluye.tsx`), en los dos documentos.
+- **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
+  **Ayuda**: el `?` de Cotizaciones.
+- **Probado en el panel de ejemplo**: Constructora Maipo (una alternativa) con
+  el menú de la casa, A Brasas abiertas y el show arriba, y el karting aparte;
+  Andrés Pino con una B de Sommelier: arriba el menú de la casa, Niños y el
+  show, y en cada alternativa su menú y sus bebestibles. A 393 y 360px la
+  tabla no se sale.
+
+## Los links personales abren en el mes, con su boleta (2026-11-24)
+
+Lo pidió el cliente: *"en el link personal, tanto de los trabajadores como de
+los vendedores, quiero que por defecto se muestra el mes y con el valor de la
+boleta del mes. Y ahí por elección se puede bajar a semanal"*. Hasta ese día
+el link del trabajador y del colaborador abría en la semana pasada (la que se
+paga el lunes), y el mes se elegía con unas pastillas al pie; el del socio y
+el vendedor ya era por mes, sin semanas.
+
+- **Los tres links** —trabajador, colaborador de las actividades extras y
+  vendedor o socio— **abren en el mes en curso** (`periodoDelLink()` en
+  `lib/equipo.ts`) y la caja de la boleta dice la del mes.
+- **La misma pieza en los tres** (`mi/[token]/Periodo.tsx`): un marco dorado
+  con **📅 Mes · Semana** arriba y ◀ el mes o la semana ▶ debajo, sin tope.
+  Es la idea de `ElegirPeriodo` del panel, **hecha con enlaces**: estas
+  páginas son de servidor y no llevan JavaScript. El periodo viaja en la
+  dirección: `?p=2026-10` un mes, `?p=2026-11-02` la semana que parte ese
+  lunes; el mes en curso es la dirección limpia, la que se manda.
+- **El elegido va con tinte y borde dorado**, no relleno: el relleno de la
+  página es la pestaña *Lo que gané*.
+- **Al pasar de un mes a *Semana*** se va a la semana de ese mes que más
+  importa (`semanaParaElMes()`): la pasada si toca ese mes —la que se paga—,
+  si no la en curso, y en un mes pasado su última semana. **De una semana a
+  *Mes***, al mes de su lunes (`mesDeLaSemana()`).
+- **En semana**, todo lo de antes sigue: *Tus semanas* con su etiqueta
+  (*En curso*, *Semana pasada*…), y la boleta de la semana con *¿Boleteas por
+  mes?*. **En mes**, la caja de la boleta trae *¿Boleteas por semana? Ver por
+  semana →*. Se fueron las pastillas *O mira un mes entero*.
+- **El socio y el vendedor** ganaron las semanas: el resumen, *Evento por
+  evento* y la boleta siguen al periodo elegido.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
+  el `?` del link en Equipo y en Extras, y el de Vendedores.
+- **Probado en el panel de ejemplo**, en el celular: los tres abren en
+  *Noviembre 2026* con *Tu boleta de noviembre 2026*; *Semana* lleva a
+  `?p=2026-11-02`, *Mes* vuelve a la dirección limpia y ◀ a `?p=2026-10`.
+  `revisarPlayStation()` sin hallazgos.
+
+## Turnos: lo que cuesta el equipo de cada día (2026-11-24)
+
+Lo pidió el cliente: *"agregar en la ficha de equipo, en turnos, agregar
+también el monto total del costo de sueldos del equipo, como lo tienes en
+reservas"*. La tarjeta del día en Reservas ya decía cuánto cuesta el equipo
+(arriba a la derecha); en Turnos solo salía cuánta gente había.
+
+- **En cada día del calendario de Turnos**, al lado de *👥 8 en el equipo*,
+  una segunda pastilla dorada con el monto (*$268.000*): la misma forma que
+  el costo de las actividades en Extras (dos pastillas, gente y plata).
+- **Arriba de la ventana del día**, al lado de *Hay 34 personas reservadas*,
+  la misma pastilla, que se mueve mientras se arma el día.
+- **Es el mismo número de Reservas** (`costoPlanificado()`): la jornada, las
+  horas extra y los ajustes; cuenta a quien todavía no se marcó y deja afuera
+  a quien no vino. **Sin la propina**, que no es sueldo.
+- **Quién lo ve**: quien ve Turnos. No es un dato nuevo para nadie: son los
+  montos de cada turno, que el encargado ya escribe y ya ve en la ventana del
+  día (*"cuánto costó el equipo de un día es algo que conviene que todos
+  tengan claro"*, 2026-11-05).
+- **En el computador** las dos pastillas no caben en una fila de la celda
+  (264px): el monto va debajo, en todas las celdas con equipo por igual.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el
+  `?` de Turnos. Las ventanas del equipo miden lo mismo (614 y 853px).
+
+## El link personal del vendedor (2026-11-24)
+
+Lo pidió el cliente: *"necesito también que tengan copiar link personal con
+su resumen, muy parecido al de los trabajadores, pero enfocado a los datos de
+venta y condiciones personales en el trato de comisiones… y que también
+después ya me muestra qué valor tengo que poner a la boleta para cobrar mi
+comisión"*. Hasta ese día el link (`/mi/<token>`) era solo de los socios
+comerciales: el vendedor veía lo suyo entrando al panel.
+
+- **🔗 Copiar link también en la tarjeta de un vendedor** (`ResumenVendedor`),
+  con *Renovar* y *Quitar*, igual que el socio. Permiso `links` (el
+  administrador, pagos y la gerencia): muestra plata y trato. **Ninguno
+  nuevo.** Un vendedor sin fila en `Vendedores` la gana con su trato de
+  partida al darle el link (`/api/vendedores/link`).
+- **La página es la del socio** (`mi/[token]/Socio.tsx`), con lo del
+  vendedor:
+  - ***Tu trato***, renglón por renglón (`tratoEnLineas()`): la comisión por
+    etapas y sobre qué base, el bono, el monto por evento, **el sueldo fijo**,
+    **cuánto cobra con un socio** y **con qué documento se le paga** (boleta
+    con la retención incluida o encima; factura con o sin IVA).
+  - *Lo que ganaste* suma el sueldo fijo a fin de mes, como el informe.
+  - **La caja de la boleta** (`CajaBoleta`) dice el **bruto que se escribe en
+    la boleta del SII**, la retención y el neto que recibe, con el sueldo fijo
+    adentro (`montosDeVendedor()` con `finesDeMesEntre()`). Las mismas cuentas
+    del informe y de `/vendedores`: en el ejemplo, Jorge en noviembre,
+    $538.739 bruto y $456.581 neto.
+  - *Lo que viene*, *Evento por evento* y *Lo que te pagamos*, como el socio.
+- **El token del vendedor se guarda**: `filaVendedor()` lo escribía en blanco
+  para un vendedor. `fichaPorToken()` encuentra a los dos tipos.
+- **Un vendedor se desactiva en su cuenta** (*Cuentas*), no en la ficha: el
+  link pide que la cuenta siga activa, y si no, dice lo mismo que un link
+  inventado.
+- **Lecturas de Google**: la página del link lee `Usuarios` en la misma tanda
+  de las cotizaciones (solo para un vendedor). Ninguna más en las pantallas.
+- **Ayuda**: el `?` de Vendedores.
+- **Probado en el panel de ejemplo**: pagos crea el link de Jorge (el
+  encargado recibe 403), la página muestra su trato, $538.739 con el sueldo
+  fijo y la boleta, en el celular y el computador; `revisarPlayStation()` sin
+  hallazgos. La tarjeta del vendedor con la fila del link mide 570px.
+
+## Cambiar un nombre arrastra lo guardado: personas, puestos y colaboradores (2026-11-24)
+
+Lo encontró el cliente dos veces el mismo día: *"cambié jefe de turno a
+encargado de turno / caja y luego ya no aparece en el turno… se tiene que
+poder cambiar el nombre independiente… avísame si hay complicaciones
+respecto a cómo guardas datos en cada turno"*, y *"en equipo sale correcto
+con Christopher Acevedo pero en los turnos me aparece como Christipher
+Acevedo"*.
+
+**La causa, que es de cómo se guarda**: un turno guarda **el nombre escrito**
+de la persona y del puesto, no un número de ficha. Lo mismo los días de un
+colaborador, los pagos, las boletas y los ajustes sueltos. Cambiar un nombre
+cambiaba solo la ficha o la lista de puestos, y lo guardado seguía con el de
+antes: el puesto nuevo salía vacío con *Falta 1*, la persona quedaba en un
+recuadro aparte con el nombre viejo al final de la ventana del día, su link
+personal y el informe no la juntaban, y en el buscador volvía a salir libre
+—se la podía agregar dos veces el mismo día—.
+
+**Qué hace ahora** (`lib/renombrar.ts`, puro y con pruebas):
+
+- **Cambiar un nombre reescribe las celdas que dicen el de antes**, en todas
+  las pestañas donde vive (`DONDE`), en **una lectura y una escritura**
+  (`renombrarEnPlanilla()` en `datos.ts`, `escribirCeldas()` en `sheets.ts`,
+  que manda solo esas celdas con `values.batchUpdate`: lo que otro escribió
+  en el resto de la fila no se pisa).
+
+  | Se cambia | Arrastra |
+  |---|---|
+  | Una persona (`PATCH /api/equipo/trabajador`) | sus turnos, ajustes sueltos, pagos y boletas |
+  | Un colaborador (`PATCH /api/extras/colaborador`) | sus días, pagos y boletas |
+  | Un puesto (la ventana de puestos, `PUT /api/equipo`) | sus turnos y el puesto habitual de las fichas |
+
+- **Calza sin mayúsculas ni tildes**, como el resto del panel. Varios puestos
+  a la vez se aplican juntos: *A → B* y *B → C* dejan lo de A en B y lo de B
+  en C. Un nombre que pasa a ser el de otro puesto **junta** sus turnos.
+- **Los puestos llevan `antes`**: cada fila de la ventana viaja con el nombre
+  con que se cargó, y el servidor compara (`renombresDeLista()`). Antes de
+  guardar, la ventana dice *Al guardar, Jefe de turno pasa a llamarse
+  Encargado de turno / caja, con sus 14 turnos y las fichas…*.
+- **La confirmación de una persona lo dice** (*Sus 8 turnos pasan al nombre
+  nuevo, con sus pagos, boletas y ajustes*) y el aviso de después dice cuánto
+  pasó. La bitácora: *Renombró un puesto · Jefe de turno → … · pasaron 14
+  turnos y 3 fichas*.
+- **Un día cerrado también se reescribe**: es el nombre, no la plata. Queda en
+  la bitácora.
+
+**Lo que ya quedó suelto se reengancha** (`ReengancharSuelto`, una pieza
+para Equipo y Extras, y `POST /api/equipo/renombrar`): un nombre corregido
+**directo en la planilla** —el panel no puede saber que fue un cambio— o uno
+cambiado antes de este arreglo.
+
+- **En Equipo**, el aviso *Hay turnos con un nombre que no está en la lista*
+  —antes, una lista de nombres y la instrucción de corregir la planilla a
+  mano— trae cada uno con cuántos turnos y **Es…** (una persona: el
+  buscador, `BuscarEnLista`) o **Pasar a…** (un puesto: un botón por puesto).
+  La ventana dice qué pasa antes de *Pasar a Christopher Acevedo*. **En
+  Extras**, lo mismo con los colaboradores. Lo dan `sueltos()` y el campo
+  `sueltos` de `GET /api/equipo` (de lo que ya leía).
+- **Lo suelto tiene que estar suelto y el destino en la lista**: si el nombre
+  de antes es de otra ficha, responde 409 —juntar dos fichas no se hace por
+  acá—. Permisos: `equipo` para una persona, `extras` para un colaborador,
+  `puestos` para un puesto (el mismo que lo cambia). **Ninguno nuevo.**
+- **Si la persona ya estaba con su ficha un mismo día**, ese día queda dos
+  veces: la ventana lo dice con el día y un link (`repetidosDespues()`). No
+  se borra solo: cada fila puede traer su asistencia o un ajuste.
+- **En la ventana del día**, un puesto que no está en la lista dice *No está
+  en la lista de puestos: pásalo en Equipo* (`LineaDePlan.suelto`).
+
+**Por qué no un número de ficha en cada fila**: el nombre ya es la identidad
+en todo el panel y en la planilla que el cliente lee; cambiarlo es migrar
+cinco pestañas y que la planilla deje de leerse sola. Arrastrar el nombre
+cuesta una lectura y una escritura, y solo al renombrar. **La complicación
+que queda**: si alguien corrige un nombre **en la planilla**, lo guardado no
+se entera; para eso está *Es…*. Conviene cambiar los nombres desde el panel.
+
+- **Lecturas de Google**: ninguna más en las pantallas. Renombrar o
+  reenganchar, una tanda (las pestañas de `DONDE`) y una escritura.
+- **Ayuda**: el `?` de Equipo y el de Extras, y uno nuevo, `nombreSuelto`.
+- **Ventanas**: `v-reenganchar` (273px a 1280×650). **El panel de ejemplo**
+  trae un turno de octubre de *Matias Peres* (suelto): en octubre no sale en
+  las fotos de la ayuda.
+- **Probado en el panel de ejemplo**: *Barra → Encargado de turno / caja*
+  arrastra 9 turnos y una ficha, y en la ventana del sábado Catalina Vergara
+  queda en el puesto nuevo sin *Falta 1*; *Rosa Espinoza → Rosa Espinosa*,
+  8 turnos y 2 pagos; con turnos de *Diego Moralez* y un puesto *Jefe de
+  turno* puestos a mano en la planilla, *Es…* y *Pasar a…* los reenganchan y
+  avisan el sábado 14, donde quedó dos veces. Por la API: lo que no está
+  suelto responde 409, un destino que no existe 404, el vendedor y el
+  encargado (con un puesto) 403.
+
+## Las promociones del sitio, su cotizador y lo que cobra otra empresa (2026-11-23)
+
+Lo pidió el cliente: *"en cada página de promociones debe haber un cotizador,
+según las reglas del sitio público elegante, simple… el Gran Premio se debe
+poder incluir el karting… se cobra por la otra empresa porque el karting es de
+otra… combate de parrillero… tiene fijo el [A Brasas] abiertas como menú…
+aplicar las mismas reglas condicionales que se aplican para la cotización de
+un vendedor… a qué vendedor se asignan estas cotizaciones… configurable…
+Y yo en el sistema necesito en productos una subcategoría promociones"*.
+Decidió tres cosas (*Total en vivo*, *Aparte del total*, *Enviada de
+inmediato*) y sumó tres más mientras se armaba: el aviso al vendedor al entrar,
+elegir si una promoción muestra el cotizador, y un link por promoción para las
+campañas. **El cotizador en `promociones.html` va en el mismo PR** (ver
+`CLAUDE.md` de la raíz, "El cotizador de promociones"): una versión de prueba
+del sitio llama al panel de producción con `prueba: true`, y mientras no haya
+promociones conectadas en producción la página queda como antes.
+**De paso, en el paso 3 de cotizar** los botones para agregar productos van a
+40px y 13px en el computador, y *+ Otra línea* va en la cabecera de *En la
+cotización*: con el karting y la clase de parrilla, la fila de los extras se
+doblaba y la ventana medía 654px; ahora 612.
+
+### *Productos → 🎁 Promociones* (`lib/promociones.ts`, `PromocionesEditor`)
+
+- **Una promoción es una receta de productos del catálogo**: el menú (uno queda
+  fijo; con varios el cliente elige), el de niños, lo que incluye siempre, lo
+  que se puede sumar, desde cuántas personas, **su descuento sobre el total**
+  (la condición especial) y el arriendo (*Como siempre*, *Sin arriendo de lunes
+  a viernes* —la de fin de año— o *Sin arriendo*). El precio sale de los
+  productos: **un solo lugar donde se edita**.
+- **Se conecta a un bloque de `promociones.html`** (`EN_EL_SITIO`: fin de año,
+  Combate, Gran Premio, Día de Campo, IA a las Brasas, Directorio). Cada bloque
+  tiene una sola; los que ya tienen otra salen con 🔒. Los textos y las fotos
+  del bloque siguen en la página, en sus tres idiomas: **un bloque nuevo es un
+  PR del sitio** y su clave se agrega a `EN_EL_SITIO`.
+- ***Cotizador y link***: si el bloque muestra el cotizador (con *No*, queda
+  como antes, solo WhatsApp) y **el link de campaña**
+  (`promociones.html#gran-premio`, `linkDeCampana()`), con *Copiar*, *EN* y
+  *PT*: abre la página con esa promoción elegida, para Instagram.
+- Cerrada dice a qué bloque va, desde cuántas personas y **desde cuánto por
+  persona** (+ IVA, con el menú más barato y el descuento: lo mismo que dirá el
+  sitio). Una conectada que no puede cotizar —un producto sin precio de
+  cotización— dice *no sale* y su bloque se queda con WhatsApp.
+- **Se guarda con su botón**, no sola: cambia lo que ve el sitio, como la
+  Configuración. Lo ve y lo cambia quien tiene `configurar`.
+- **Pestaña nueva `Promociones`**: `ID`, `Nombre`, `En el sitio`, `Activa`,
+  `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar` (los tres con `|`),
+  `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador` y, desde el
+  2026-11-24, `Más tramos`. Se crea sola con
+  su encabezado; *Dejar la base en cero* la **conserva** (es configuración).
+- La tarjeta abierta del Gran Premio mide 641px a 1280×650 (escena
+  `ficha-promocion`): los botones van a 36px en el computador y *Cotizador y
+  link* comparte fila.
+
+### La ficha, ordenada: menús, extras y condición (2026-11-24)
+
+Lo marcó el cliente con una foto de la ficha abierta: *"en promociones falta
+todo orden según reglas gráficas y lógicas… aparecen productos doblados en
+menú de niños… necesitamos poder agregar otro tramo de condición o otros
+tramos de condición con un más… para el show tiene que contar la misma regla
+de la configuración"*.
+
+- **Tres secciones con su marco** (`Seccion`, más fino que el de la
+  tarjeta): **🍽 Menús** y **🏷 Condición** a la izquierda y **➕ Extras** a la
+  derecha en el computador; una debajo de otra en el celular. Adentro, los
+  nombres en su columna de 7rem (`FilaSeccion`), para que los botones no se
+  doblen en tres renglones en media tarjeta.
+- **Cada menú sale una vez**: *Adultos* trae solo los de adulto y *Niños* solo
+  los de niños (`esMenuDeNinos()`: *Niños*, *Pequeños*…). Antes las dos filas
+  tenían la misma lista.
+- **Cada extra sale una vez**, con su estado: ***No · Incluido · Se suma***.
+  Antes *Incluye siempre* y *Se puede sumar* eran dos filas con los mismos
+  productos. El servidor también lo cuida: lo incluido no queda además para
+  sumar (`limpiarPromocion()`).
+- **El show no dice un precio**: dice *regla de Configuración*, con su `?`
+  (`promoShow`). Ya se cotizaba así —`prepararLineas()` lo deja sin costo en
+  un día público y desde N personas, y con su mínimo bajo eso—; el *$400.000
+  fijo* que mostraba el botón confundía.
+- **La condición en tramos**: el primero es desde cuántas personas sale la
+  promoción y su descuento (`Mínimo de personas` y `Descuento`, como antes);
+  **+ Otro tramo**, en la línea del título, suma uno con un descuento mayor
+  desde más gente, hasta cinco, cada uno con su ✕. **Rige el tramo más alto
+  que alcance el grupo** (`descuentoPara()`, en `cotizarPromocion()`): con 10%
+  desde 22 y 15% desde 50, 60 personas llevan el 15%. Los tramos de más van en
+  la columna nueva **`Más tramos`** de `Promociones` (`50:15 | 80:20`); una
+  fila de antes se lee con uno solo. La cabecera de la tarjeta dice *−10% a
+  −15%*. El sitio no cambia: recibe el descuento que corresponde al cotizar.
+- **Apagar, Quitar y Guardar van en la fila del nombre**, a la derecha: solos
+  al pie dejaban una fila casi vacía.
+- **Medidas** (`ficha-promocion`, 1280×650): 578px (era 641); con dos tramos,
+  627. Desde que el Gran Premio del ejemplo trae un tramo (para *🎁
+  Promoción…*), la escena mide 620.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
+  `promoMenu`, `promoSuma`, `promoCondicion` y uno nuevo, `promoShow`.
+
+### Se cotiza con las reglas del vendedor (`cotizarPromocion()`)
+
+La misma función para lo que ve el cliente y lo que se guarda: las líneas pasan
+por `prepararLineas()` con **el show** (incluido en un día público, con su
+mínimo en uno privado con poca gente) y **el arriendo mínimo** del día
+(`arriendoDelDia()`), salvo que la promoción lo perdone. No cotiza hoy ni
+antes, un día arrendado en exclusiva a otro, bajo el mínimo de personas ni con
+un producto sin precio; dice por qué con **un código** (`minimo`, `fecha`,
+`tomado`, `menu`, `sinPrecio`), que el sitio traduce. No pregunta *¿exclusivo?*:
+eso lo conversa el vendedor.
+
+### Lo que cobra otra empresa (`Menu.loCobra`)
+
+- **En el catálogo**, un extra lleva *Lo cobra otra empresa* (columna nueva
+  `Lo cobra` en `Menús`): el karting, el taller de queso. Solo un extra: un
+  menú, el arriendo o el show son nuestros.
+- **Sus líneas van aparte del total** (`cuentasDe()` las deja fuera): no entran
+  en nuestra boleta o factura, el anticipo, la comisión, la reserva, la caja de
+  Fudo ni el simulador. `prepararLineas()` les pone quién cobra desde el
+  catálogo, y queda en la línea (columna nueva `Lo cobra` en `Presupuesto
+  Líneas`). Lo decidió el cliente entre eso y sumarlo como el show.
+- **Se muestra con su detalle**: en la ventana de cotizar, la pastilla *lo
+  cobra Karting Pirque · aparte* y bajo el total *Aparte, lo cobra … $X* y *el
+  día completo, con lo de otras empresas*; en la cotización y el contrato, el
+  recuadro *Aparte: lo cobra otra empresa* con cantidad, precio y quién
+  (`TablaCotizacion`).
+- **El seguimiento** (lo pidió el cliente: *"tengo que organizar este karting,
+  tengo que organizar el taller de queso"*): mientras no esté coordinado, la
+  vendedora ve ***🤝 N por coordinar con otra empresa*** en *Tus pendientes*
+  (cotizaciones vivas o ganadas con el evento por venir), y bajo el total de la
+  cotización marca ***🤝 Ya lo coordiné*** —con *Deshacer*—. Columna nueva
+  `Otras empresas coordinadas` en `Presupuestos` (*empresa · quién · cuándo*),
+  la escribe solo `/api/presupuestos/coordinada`; queda en la bitácora.
+
+### Las cotizaciones que llegan del sitio
+
+- **`/api/publico/promociones`** (las conectadas, para dibujar el cotizador) y
+  **`/api/publico/cotizar`**: `GET` cotiza sin escribir, `POST` manda. Las dos
+  van en `PUBLICAS` del middleware, con CORS abierto como `/api/publico/fechas`,
+  y **los `GET` se guardan 5 minutos en la red de Vercel** (`s-maxage`): cada
+  visita no lee la planilla.
+- **Al mandar**: la ficha del cliente —la que ya tiene ese teléfono o correo, o
+  una nueva a nombre de la cuenta (`fichaDelContacto()`)— y la cotización
+  **enviada** (lo decidió el cliente: ya vio el total; corre la vigencia y cuenta
+  como gente posible), con el descuento de la promoción, el próximo contacto
+  **hoy** y **`Origen` = *Sitio · Gran Premio de Fin de Año*** (columna nueva).
+  Bitácora: *Llegó una cotización del sitio*.
+- **A nombre de quién**: *Configuración → Cotizaciones → Las del sitio van a*
+  (`vendedorSitio`, clave `cotizaciones_sitio_vendedor`), con el buscador de
+  las cuentas que cotizan. Sin nadie, o si esa cuenta se desactivó, queda sin
+  vendedor y la ven quienes asignan (`asignarVendedor`).
+- **Lo que la protege**, porque es pública y escribe: un campo trampa (`web`)
+  que una persona no ve —si llega lleno, se responde como si nada—, el
+  teléfono obligatorio y **un tope de 3 por cliente al día**
+  (`TOPE_SITIO_DIA`). **Una versión de prueba del sitio manda `prueba: true`**:
+  se calcula todo y no se escribe.
+- **La ventana que avisa** (`AvisoCotizacionesSitio`, lo pidió el cliente:
+  *"al vendedor hay que avisar con un popup cuando se mete la próxima vez al
+  panel"*): al entrar a la portada o a Cotizaciones, *🌐 Te llegó una
+  cotización del sitio*, con el cliente, la promoción, el día, la gente y el
+  total. ***✓ Entendido*** las marca vistas (columna nueva `Aviso del sitio
+  visto`, *quién · cuándo*, `/api/presupuestos/sitio-visto`); *Abrir →* marca
+  esa y la abre; *Después* la cierra y sale de nuevo la próxima vez. La ve su
+  vendedor; las sin vendedor, quien asigna. Sale de lo que esas pantallas ya
+  leen: ninguna lectura más. Mide 266px (escena `v-aviso-sitio`, como Daniela).
+
+### Lo de siempre
+
+- **Lecturas de Google**: `/api/promociones` una tanda; `/api/config` sumó
+  `Usuarios` a su tanda (las cuentas para elegir): sigue en una. Las públicas,
+  una tanda por pregunta distinta cada 5 minutos; mandar, una tanda y sus
+  escrituras. `/api/ocupacion` y `/api/presupuestos`, ninguna más.
+- **Ningún permiso nuevo.** Las promociones van con `configurar`; marcar visto
+  y coordinado, con `presupuestos` y la cotización tiene que ser suya (o sin
+  vendedor, para quien asigna).
+- **Columnas nuevas**, todas al final: `Lo cobra` (`Menús` y `Presupuesto
+  Líneas`), `Origen`, `Aviso del sitio visto` y `Otras empresas coordinadas`
+  (`Presupuestos`). **Pestaña nueva** `Promociones`. **Clave nueva** de `Config`.
+- **Ayuda**: el `?` de Productos, `loCobra`, `promoEnElSitio`,
+  `promoCotizador`, `promoMenu`, `promoSuma`, `promoCondicion`, `promoArriendo`,
+  y *Las del sitio van a* en Configuración.
+- **El panel de ejemplo**: el karting (de *Karting Pirque*) y la clase de
+  parrilla en el catálogo, cinco promociones (una apagada), las del sitio van a
+  Daniela —sesión nueva `vendedora`— y una cotización del sitio de Constructora
+  Maipo con el karting, todavía sin ver.
+- **Probado en el panel de ejemplo**: el sábado 14 (público) el Gran Premio
+  lleva el show incluido y el karting aparte; un martes, el show con su precio;
+  con 5 personas responde *minimo 22*; mandar crea la ficha y la cotización
+  enviada, la prueba y el campo trampa no escriben, la misma persona reutiliza
+  su ficha y el cuarto envío del día responde 429. Daniela ve la ventana al
+  entrar y Jorge no; *🤝 Ya lo coordiné* la saca de *por coordinar*.
 
 ## Filtrar por de dónde viene la reserva (2026-11-23)
 
@@ -335,9 +937,25 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   manos de* cada persona que recibió (lo recibido menos lo depositado o
   comprado). No se puede gastar ni entregar más de lo que hay, ni depositar más
   de lo que se tiene.
-- **Entregar** propone al encargado de operaciones (el habitual: *"entregar
-  este dinero a Cristóbal"*) y los demás con el buscador (`BuscarEnLista`), y
-  el monto de partida es todo lo de la caja. Queda **por recibir** hasta que
+- **Entregar** muestra **un botón por cada persona que puede recibir la
+  plata** —el encargado de operaciones, la gerencia y pagos—, con su nombre y
+  su rol, y deja elegido al encargado de operaciones (el habitual:
+  *"entregar este dinero a Cristóbal"*). El monto de partida es todo lo de la
+  caja. **Cambió el 2026-11-24**, lo pidió el cliente dos veces el mismo día:
+  *"el botón entregar en Caja no me gusta… tiene que ser mucho más flexible.
+  Tiene que ser el encargado de operaciones y la gerencia que puede recibir
+  plata. Y eso de la forma más simple posible y elegible sin enredar al
+  usuario"*, y *"tienen que estar el encargado de operaciones y los tres
+  gerentes… todos estos nombres tengo que poder elegir en este
+  formulario"*. Antes salía el habitual y los demás detrás de *Otra
+  persona…*, con un buscador. Ahora la lista es `quienesRecibenCaja()`
+  (`RECIBEN_CAJA` en `lib/caja.ts`, con pruebas): activas, de operaciones,
+  gerencia o pagos, sin la propia, primero operaciones. **Pagos entra** porque
+  un gerente puede tener su cuenta con ese rol, y quedarse fuera por el
+  nombre del rol es lo que el cliente no quiere; **el administrador no**,
+  porque es la cuenta general del panel. Son pocas, así que van a la vista y
+  sin buscador. El servidor valida contra la misma lista. **El permiso
+  `recibirCaja` no cambió.** Queda **por recibir** hasta que
   esa persona aprieta ***✓ Recibí $X*** —en *Te entregaron* de la caja o en su
   bandeja—; si recibió otro monto, *Recibí otro monto…* lo escribe y queda
   marcado para pagos (*⚠ recibió $X*, y *Recibidas con otro monto* arriba).
@@ -383,8 +1001,8 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   encargado *La recepción y qué cobrar*. Lo que puede cada rol sale solo de
   `PERMISOS` (`roles.ts`, `poderes.ts`: los dos poderes nuevos van en *La
   plata*).
-- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` y
-  `ficha-caja-entregar` (262px); la pantalla `caja` entra en la prueba de
+- **Ventanas**: `ficha-recepcion-cobro` (637px), `ficha-caja-gasto` (262px) y
+  `ficha-caja-entregar` (262px; 265 desde que lleva un botón por persona); la pantalla `caja` entra en la prueba de
   espacio. *Dejar la base en cero* suma la fila *Caja chica* y no cabía (676px):
   sus dos listas van con 2px entre filas en el computador, y mide 627px.
 - **El panel de ejemplo**: la caja con su historia (saldo inicial de $7.000,
@@ -3354,8 +3972,9 @@ fichas que todavía tenían botón *Guardar*: **Equipo, Extras y Clientes**.
   *Guardando… / ✓ Guardado* donde estaba el botón.
 - **El nombre se confirma**: se escribe, aparece *Cambiaste el nombre ·
   Guardar el nombre · Deshacer*, y pregunta antes —en Equipo y Extras
-  avisa que los turnos o días guardados siguen con el nombre anterior; en
-  Clientes, que se corrige en sus cotizaciones y reservas—. Va por
+  dice que sus turnos o días pasan al nombre nuevo (desde el 2026-11-24,
+  ver "Cambiar un nombre arrastra lo guardado"; antes seguían con el de
+  antes); en Clientes, que se corrige en sus cotizaciones y reservas—. Va por
   `nuevoNombre` en el `PATCH`, que rechaza un nombre vacío o repetido.
 - **Agregar pide el nombre y crea la ficha en el acto** (`POST`), y la abre
   para completarla; lo demás se guarda solo.
@@ -7507,15 +8126,37 @@ paso de transferir. Todo vive en `ORDEN_TRANSFERENCIA`,
 `NOMBRE_COLUMNA_TRANSFERENCIA` y `filaTransferencia()` de
 `remuneraciones.ts`, **que formatea el RUT y el número en un solo lugar**.
 
-- **Copiar da solo los valores, uno por línea**, en ese orden: ocho
-  líneas, la misma fila de la planilla (`textoTransferencia()` es
-  `filaTransferencia()` unida por saltos de línea). **Sin rótulos**, lo
-  corrigió el cliente el mismo día: *"solo copias Luis Contreras… el pagador
-  copia los datos, abre… el banco y copia los datos nomás"*; el primer corte
-  decía *Nombre y apellido: Luis Contreras* y eso había que borrarlo al
-  pegar. **Sin correo, su línea va vacía**, para que el monto siga siendo la
-  séptima. La fila con tabs de antes suponía que un formulario web pasa de
-  campo con cada tab al pegar, y no lo hace: todo caía en el primer campo.
+- **Copiar, en dos botones** (2026-11-24, lo pidió el cliente: *"simplemente
+  copias el valor total a transferir a través de cada opción, propinas y
+  sueldos. Y luego agregar un botón, copiar los datos bancarios… cuando se
+  tiene que ingresar una nueva cuenta en Mercado Pago, donde es la plataforma
+  que se está usando para las transferencias"*):
+  - **📋 Sueldo $X** y **📋 Propina $X** copian **solo el monto que falta,
+    con dígitos** (`montoParaPegar()`: `147000`), que es lo que acepta el
+    campo del monto. En la tarjeta abierta, el mismo botón dice *Copiar el
+    monto*.
+  - **🏦 Datos bancarios**, al final de la misma fila, copia la cuenta para
+    el formulario de *nueva cuenta* de Mercado Pago (el del pantallazo):
+    **cada dato con el nombre de su campo**, en su orden, y solo esos seis
+    (`textoDatosBancarios()`): *Nombre y apellido: Luis Contreras*, *RUT:
+    15.234.567-8*… **El formulario tiene un botón ✨ que lee lo copiado y
+    rellena cada campo**, y con líneas sueltas no sabía cuál era cuál. Sin
+    correo, no va su línea (es opcional). Los valores son las seis primeras
+    celdas de `filaTransferencia()`: copiar y descargar dicen lo mismo. Va al
+    final porque la cuenta se agrega una vez y se paga muchas.
+  - **La glosa ya no se copia**: va en la planilla para la transferencia
+    masiva.
+  - **El aviso de arriba del Informe cambió de clave** (`informe-copiar-monto`)
+    para que lo vea de nuevo quien lo había cerrado: lo que hacen los botones
+    cambió.
+  - **La historia, por si vuelve la duda**: el 2026-11-21 nació como un solo
+    botón con los nombres de los campos, el monto y la glosa; ese mismo día
+    el cliente pidió solo los valores, uno por línea (*"solo copias Luis
+    Contreras… el pagador copia los datos, abre… el banco y copia los datos
+    nomás"*), pensando en pegar campo por campo. Con el ✨ eso no rellenaba
+    el formulario, y el 2026-11-24 se partió en dos botones. Antes, una fila
+    con tabs suponía que un formulario web pasa de campo con cada tab al
+    pegar, y no lo hace: todo caía en el primer campo.
 - **La planilla para la transferencia masiva** lleva esas ocho columnas,
   con esos nombres y en ese orden.
 - **Las planillas del informe** (*Solo sueldos*, *Solo propinas*,
@@ -9908,6 +10549,10 @@ vienen.** Las tres preguntas y dónde se contestan:
 | ¿Qué me pagaron a la cuenta? | el bloque de pagos, con lo que falta |
 
 ##### Abre en la semana pasada
+
+> **Cambió el 2026-11-24**: el link abre en el mes en curso, con la boleta del
+> mes, y se baja a una semana con *Semana*. Ver "Los links personales abren en
+> el mes", al inicio de este archivo. Lo de abajo es la historia.
 
 Lo fijó el cliente: *"es la semana pasada, no la actual… porque lo primero
 que quiere ver es la semana pasada"*. Y el motivo es el calendario del pago:

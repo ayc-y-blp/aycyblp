@@ -121,7 +121,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Arriba aparecen los días que ya pasaron y a los que les falta algo '
       + 'para poder cerrarse. Entrar acá es que la pantalla te diga qué '
       + 'queda pendiente.',
-      'En cada día del mes, la pastilla 👥 dice cuánta gente hay en el equipo.'
+      'En cada día del mes, la pastilla 👥 dice cuánta gente hay en el equipo, '
+      + 'y la de al lado cuánto cuestan sus sueldos, sin la propina: la '
+      + 'jornada, las horas extra y los ajustes. Cuenta a quien todavía no se '
+      + 'marcó y deja afuera a quien no vino, igual que la tarjeta del día en '
+      + 'Reservas. La ventana del día lo dice arriba.'
     ],
     pasos: [
       'Apreta cualquier día del mes para abrir su ventana.',
@@ -161,7 +165,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Si cambias la cuenta bancaria o lo que se le paga a alguien y no haces '
       + 'los pagos, queda por confirmar hasta que el encargado de pagos lo mire.',
       'Administrar puestos abre la lista de puestos, donde también se ordenan '
-      + 'con las flechas.'
+      + 'con las flechas.',
+      'Cambiarle el nombre a una persona o a un puesto se confirma, y sus '
+      + 'turnos van con él: los de una persona, con sus pagos, boletas y '
+      + 'ajustes; los de un puesto, con las fichas que lo tienen de habitual.',
+      'Si un nombre se corrigió directo en la planilla, arriba sale "Hay '
+      + 'turnos con un nombre que no está en la lista": con Es… (o Pasar a… '
+      + 'para un puesto) le dices a quién corresponde.'
     ],
     ojo: 'A quien ya trabajó alguna vez se le desactiva, no se le quita: sus '
        + 'turnos son el registro de quién trabajó qué día.'
@@ -180,10 +190,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Es una dirección propia de esa persona. Se la mandas por WhatsApp, '
       + 'ella la aprieta y ve su página. No pide contraseña ni correo.',
       'Lo que ve: sus próximos turnos —qué día, desde qué hora, en qué '
-      + 'puesto, cuánta gente se espera y qué menús hay que preparar— y sus '
-      + 'últimos 30 días con el detalle de lo que se le pagó cada uno: la '
-      + 'jornada, las horas extra, los ajustes con su motivo y su parte de '
-      + 'la propina.',
+      + 'puesto, cuánta gente se espera y qué menús hay que preparar— y lo '
+      + 'que ganó, día por día: la jornada, las horas extra, los ajustes con '
+      + 'su motivo y su parte de la propina. Abre en el mes en curso, con la '
+      + 'boleta del mes; con Semana baja a una semana, y con ◀ ▶ se mueve.',
       'Lo que no ve: reservas, nombres de clientes, a los demás trabajadores '
       + 'ni lo que gana nadie más.'
     ],
@@ -221,7 +231,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Abajo, la lista de colaboradores guarda a los que se repiten, con su '
       + 'monto habitual y su cuenta. Si cambias una cuenta o un monto y no '
       + 'haces los pagos, queda por confirmar hasta que el encargado de pagos '
-      + 'lo mire.'
+      + 'lo mire.',
+      'Cambiarle el nombre a un colaborador se confirma, y sus días, pagos y '
+      + 'boletas van con él. Si un nombre se corrigió en la planilla y quedó '
+      + 'suelto, Es… le dice a quién corresponde.'
     ],
     ojo: 'Una actividad sin confirmar no suma: agendar no es pagar.'
   },
@@ -237,6 +250,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cotización.',
       'Un candidato es alguien que preguntó: se anota con cliente, fecha e '
       + 'invitados, y se cotiza después.',
+      'La cotización que recibe el cliente dice qué incluye cada producto, con los textos del '
+      + 'sitio: arriba el menú de la casa y lo que tienen todas las alternativas, y en cada una, '
+      + 'lo que la distingue. Un producto que el sitio no describe, como el arriendo, va sin detalle.',
       'Si el cliente dice que no va, "✕ Se cayó…" la da por perdida con su motivo: '
       + 'está en cada paso de la cotización y al lado de cada fila de la lista. '
       + 'Una ganada no se cae: se cancela, con su devolución.',
@@ -303,7 +319,7 @@ export const AYUDAS: Record<string, Ayuda> = {
     pasos: [
       'La primera vez, 🏁 Saldo inicial: con cuánto parte la caja.',
       '🧾 Anotar un gasto: el monto, en qué y la foto de la boleta.',
-      '📤 Entregar…: a quién (de partida, el encargado de operaciones) y cuánto. Queda por recibir hasta que esa '
+      '📤 Entregar…: a quién —el encargado de operaciones, la gerencia o pagos, todos a la vista; de partida, operaciones— y cuánto. Queda por recibir hasta que esa '
       + 'persona apriete ✓ Recibí, acá o en su bandeja. Si recibió otro monto, lo escribe y queda marcado para pagos.',
       'Quien recibió anota qué hizo con la plata: 🏦 Depósito, con la foto del comprobante, o 🛒 Compra, con la boleta.',
       'Pagos revisa cada movimiento con ✓ Revisado (Por revisar deja solo esos). No frena a nadie.',
@@ -327,11 +343,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
       + 'solo a ellas: esos días no suman, así que mientras haya, los totales '
       + 'están incompletos.',
-      'En la línea de cada persona están los botones para copiar su sueldo y '
-      + 'su propina. Copian solo los datos, uno por línea, en el orden del '
-      + 'formulario del banco —nombre y apellido, RUT, banco, tipo de cuenta, '
-      + 'número de cuenta y e-mail— y después el monto y la glosa: cada línea '
-      + 'se pega tal cual en su campo.',
+      'En la línea de cada persona, 📋 Sueldo y 📋 Propina copian el monto '
+      + 'que falta, solo con números, para pegarlo en la transferencia. '
+      + '🏦 Datos bancarios copia su cuenta para agregarla en Mercado Pago: '
+      + 'cada dato con el nombre de su campo —Nombre y apellido, RUT, Banco, '
+      + 'Tipo de cuenta, Número de cuenta y E-mail—, y el botón ✨ del '
+      + 'formulario los reparte solo. La cuenta se agrega una vez.',
       'Para ver lo que costó el equipo por puesto, las propinas y cuánto fue '
       + 'de las ventas, aprieta 📊 Estadísticas del equipo, arriba.',
       'Para descontar o sumar algo sin ir a Turnos, abre su línea: − Descontar '
@@ -376,7 +393,19 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'a mano; el precio de cotización es el que propone una cotización, y '
       + 'ahí se puede cambiar.',
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
-      + 'esto: el total viene con el pedido.'
+      + 'esto: el total viene con el pedido.',
+      'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
+      + 'en una cotización va aparte del total y no paga comisión.',
+      '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '
+      + 'vende con el evento —el karting, el taller de queso, un transfer—, con su '
+      + 'RUT, contacto, teléfono y correo. Sus datos salen en la cotización y en '
+      + 'una cláusula del contrato, y en la cotización hay *💬 Escribirle* para '
+      + 'coordinar. Cambiarle el nombre arrastra sus productos y cotizaciones.',
+      '*🎁 Promociones* son las de la página de promociones del sitio: cada una '
+      + 'es una receta de estos productos —el menú, lo que incluye, lo que se '
+      + 'puede sumar, desde cuántas personas y su descuento— y se conecta a su '
+      + 'bloque. Ahí el cliente la cotiza solo, con las reglas de siempre: el '
+      + 'show incluido en un día público y el arriendo mínimo en uno que no.'
     ],
     ojo: 'Si acá aparece un menú en amarillo es que alguna reserva usa un '
        + 'nombre que no está en esta lista, y conviene revisarlo.'
@@ -549,6 +578,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Por cada vendedor: lo que ganó en el periodo —comisiones de las '
       + 'cotizaciones que ganó y su sueldo fijo—, lo que ya se le pagó y lo que '
       + 'falta.',
+      'Aparece todo el que vende: las cuentas con rol Vendedor y cualquiera que tenga '
+      + 'cotizaciones a su nombre con otro rol, como el encargado de operaciones. Su trato '
+      + 'parte en 0%: se lo escribes en su tarjeta, y hasta entonces su comisión no se congela.',
       'La comisión cuenta cuando el cliente terminó de pagar el evento y el '
       + 'encargado de pagos revisó esos cobros. Una cotización cancelada no deja '
       + 'comisión.'
@@ -564,7 +596,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Ábrela con el +: los azulejos dicen cuánto toca, cuánto se pagó y '
       + 'cuánto falta, con Pagarle, el detalle de cada venta y su trato.',
       'En Documento: boleta o factura, y si lo que gana trae la retención o el '
-      + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.'
+      + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.',
+      '🔗 Copiar link (vendedores y socios) le copia su link personal: sin '
+      + 'clave, ve su trato, lo que ganó en el mes (o en una semana), lo que viene, lo que se le '
+      + 'pagó y cuánto poner en la boleta o la factura. Renovar crea uno nuevo; '
+      + 'Quitar lo apaga.'
     ],
     ojo: 'Un socio que agrega un vendedor desde la cotización nace con el trato '
        + 'de partida y queda por confirmar: lo confirma el encargado de pagos.'
@@ -628,10 +664,19 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'El monto se propone de la ficha y se puede corregir: lo que queda es lo que se le pagó ese día. Una diferencia por un acuerdo aparte va como ajuste, con su motivo.'
     ]
   },
+  // ---------- Un nombre suelto (2026-11-24) ----------
+  nombreSuelto: {
+    titulo: 'Un nombre que no está en la lista',
+    texto: [
+      'Los turnos guardan el nombre de la persona y del puesto tal como estaba escrito. Este aviso sale cuando uno de esos nombres ya no está en la lista: se corrigió directo en la planilla, o se cambió antes de que el panel lo arrastrara (desde el 24 de noviembre de 2026, cambiar un nombre en el panel lleva sus turnos).',
+      'Es… te pide de quién es, de la lista: sus turnos, pagos, boletas y ajustes pasan a esa ficha. Pasar a… hace lo mismo con los turnos de un puesto y las fichas que lo tienen de habitual.',
+      'Si esa persona ya estaba con su ficha un mismo día, ese día queda dos veces: el panel te dice cuál, y la sacas de uno en la ventana del equipo del día.'
+    ]
+  },
   linkColaborador: {
     titulo: 'El link personal',
     texto: [
-      'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Se la mandas por WhatsApp.',
+      'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Abre en el mes, con la boleta del mes, y se puede bajar a una semana. Se la mandas por WhatsApp.',
       'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga: eso lo hacen el administrador, el encargado de pagos y la gerencia.'
     ]
   },
@@ -760,7 +805,17 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Rebaja la cotización completa, encima de los descuentos de cada línea.',
       'Sale en la hoja del cliente, en el contrato y en el monto de la reserva al ganarla.',
-      'El botón más alto es el tope de Configuración; uno mayor se pide como condición especial.'
+      'El botón más alto es el tope de Configuración; uno mayor se pide como condición especial.',
+      'Con una promoción aplicada, su descuento también vale, aunque pase ese tope.'
+    ]
+  },
+  promoEnCotizacion: {
+    titulo: 'La promoción de esta cotización',
+    texto: [
+      '"🎁 Promoción…", al lado del descuento sobre el total, la aplica: su menú reemplaza al de adulto que haya, suma lo que incluye y pone su descuento. Después se edita todo como siempre.',
+      'Su descuento vale aunque pase el tope del vendedor: es el del tramo que alcanza el grupo. Si cambian los invitados, "Usar −N%" pone el que corresponde.',
+      'Si la promoción no cobra arriendo ese día (de lunes a viernes, o nunca), el arriendo mínimo no se agrega.',
+      'Bajo su mínimo de personas no rige: ni su descuento ni su arriendo. "Quitar" la saca; los productos quedan.'
     ]
   },
   vistaGerencia: {
@@ -1273,6 +1328,85 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Se usan para el monto sugerido al anotar una reserva a mano.',
       'No cambian el precio del sitio público ni el de Shopify: esos se cambian aparte.'
+    ]
+  },
+  promoEnElSitio: {
+    titulo: 'En el sitio',
+    texto: [
+      'A qué promoción de la página de promociones se conecta: ahí aparece su cotizador. Los textos y la foto '
+      + 'de cada bloque están en la página; de acá salen los productos y los precios.',
+      'Cada bloque tiene una sola promoción. Con *Ninguna* queda guardada sin salir.'
+    ]
+  },
+  promoCotizador: {
+    titulo: 'El cotizador',
+    texto: [
+      'Con *Sí*, el bloque de la promoción en el sitio muestra el cotizador: el cliente elige cuántos son, el día '
+      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.',
+      'El link abre la página de promociones con esta ya elegida: es el que va en una publicación de Instagram o '
+      + 'en un anuncio. *Copiar* da el del español; *EN* y *PT*, el de la página en inglés y en portugués. Para '
+      + 'medir de qué campaña llega cada visita, se le pueden sumar parámetros UTM antes del #.'
+    ]
+  },
+  promoMenu: {
+    titulo: 'Los menús',
+    texto: [
+      'Adultos: con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
+      'Niños: el menú de los niños, si la promoción lo lleva. Los menús de niños van solo en esa fila.',
+      'Los precios son los de cotización del catálogo.'
+    ]
+  },
+  promoSuma: {
+    titulo: 'Los extras',
+    texto: [
+      'Cada extra, una vez: No, Incluido (va siempre en la promoción) o Se suma (el cliente lo elige en el sitio).',
+      'Va por persona, o una vez si es un monto fijo. Lo que cobra otra empresa, como el karting, va aparte del total.'
+    ]
+  },
+  promoShow: {
+    titulo: 'El show en una promoción',
+    texto: [
+      'El show sigue la misma regla de Configuración que en una cotización: sin costo en un día abierto al público '
+      + 'y desde el número de personas de Configuración; con menos gente en un día privado, su mínimo.'
+    ]
+  },
+  promoCondicion: {
+    titulo: 'La condición: personas y descuento',
+    texto: [
+      'El primer tramo dice desde cuántas personas se cotiza en el sitio y su descuento sobre el total.',
+      '+ Otro tramo agrega un descuento mayor desde más gente: rige el tramo más alto que alcanza el grupo. '
+      + 'Por ejemplo, 10% desde 22 y 15% desde 50: con 60 personas, el 15%.',
+      'Es la condición especial: la pone quien arma la promoción.'
+    ]
+  },
+  promoArriendo: {
+    titulo: 'El arriendo',
+    texto: [
+      '*Como siempre*: un día que no abrimos al público, con poca gente, lleva el arriendo mínimo de Configuración. '
+      + 'Las otras dos lo perdonan: siempre, o solo de lunes a viernes.',
+      'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.'
+    ]
+  },
+  loCobra: {
+    titulo: 'Lo cobra otra empresa',
+    texto: [
+      'Para un extra que no cobramos nosotros, como el karting: "Otra empresa…" la elige de la '
+      + 'lista de *🤝 Otras empresas*. En una cotización va aparte del total, con “lo cobra …”: '
+      + 'no entra en nuestra boleta o factura, el anticipo ni la comisión. Debajo se dice cuánto '
+      + 'queda el día completo.',
+      'Sus datos salen en la cotización y en una cláusula del contrato. "Nosotros": lo cobramos nosotros.'
+    ]
+  },
+  otrasEmpresas: {
+    titulo: 'Otras empresas',
+    texto: [
+      'Las que prestan y cobran directamente algo que se vende con el evento: el karting, el taller '
+      + 'de queso, un transfer. Su plata no pasa por nosotros: no entra en el total, la boleta ni la '
+      + 'comisión.',
+      'Se eligen en un producto (*Lo cobra*). Su RUT, contacto, teléfono y correo salen bajo lo que '
+      + 'cobran en la cotización, en una cláusula del contrato y en *💬 Escribirle* para coordinar.',
+      'Se guardan con su botón. Cambiar el nombre lo cambia también en sus productos y cotizaciones; '
+      + 'una apagada ya no se ofrece al elegir.'
     ]
   },
   cobro: {

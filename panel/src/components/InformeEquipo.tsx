@@ -53,7 +53,7 @@ import { totalAjustes, motivosDe, diasQueNoSuman, diasParaAjustar, pagoDelTurno,
 import { bancoVacio, sePuedeTransferir, titularDe,
          type Banco } from '@/lib/banco';
 import { aTransferirDe, desglosePago, CONCEPTO, pideBoleta, pagosEnPeriodo,
-         boletaEnPlanilla, textoTransferencia, glosaDe, filaTransferencia,
+         boletaEnPlanilla, textoDatosBancarios, montoParaPegar, glosaDe, filaTransferencia,
          ORDEN_TRANSFERENCIA, NOMBRE_COLUMNA_TRANSFERENCIA, DATOS_DESTINATARIO,
          type PagoEquipo, type Boleta, type Concepto, type Parte,
          type EstadoPago } from '@/lib/remuneraciones';
@@ -281,7 +281,7 @@ interface Dato { que: string; valor: string; tono?: 'rojo' | 'ambar' | 'fuerte' 
  */
 function LineaPersona({
   nombre, detalle, aTransferir, estado, partes, datos, cuentan, fuera, marcarEn, palabraSinMarcar, nota, sinCuenta,
-  boleta, tituloBoleta, desglose = true, sinPropina = false, puedePagar, puedeBoleta = puedePagar, abierta, onAbrir, onCopiar, onPagar,
+  boleta, tituloBoleta, desglose = true, sinPropina = false, puedePagar, puedeBoleta = puedePagar, abierta, onAbrir, onCopiar, onCopiarDatos, onPagar,
   onPagarCompleto, onBoleta, anotados, onVerPagos, porConfirmar, onConfirmar, onAjustar,
   sueltos = [], onQuitarSuelto, antes
 }: {
@@ -324,7 +324,10 @@ function LineaPersona({
   puedeBoleta?: boolean;
   abierta: boolean;
   onAbrir: () => void;
+  /** Copia lo que falta de ese concepto, solo con dígitos. */
   onCopiar: (o: Opcion) => void;
+  /** Copia los datos bancarios para el formulario de cuenta nueva. */
+  onCopiarDatos: () => void;
   /** *Pago parcial*: abre la ventana con el campo del monto. */
   onPagar: (concepto: Concepto) => void;
   /** *Pagado completo*: anota lo que falta de esa parte, sin ventana. */
@@ -541,7 +544,10 @@ function LineaPersona({
       )}
 
       {/* Los de copiar, a la vista con la línea cerrada: es lo que se hace
-          el lunes, persona tras persona. Solo lo que falta pagar. */}
+          el lunes, persona tras persona. Solo lo que falta pagar. **Cada
+          concepto copia su monto, y *🏦 Datos bancarios* los datos para la
+          cuenta nueva en Mercado Pago** (2026-11-24): la cuenta se guarda una
+          vez y se paga muchas, así que va al final. */}
       {/* La fila sigue a la vista cuando todo está pagado: dos pastillas
           verdes son la confirmación de un vistazo, y que la fila desapareciera
           se leía como que algo se había perdido. */}
@@ -567,6 +573,14 @@ function LineaPersona({
               <span className="tabular-nums text-hueso/75">{enPesos(o.parte.falta)}</span>
             </button>
           ))}
+          {partes.some((o) => o.parte.falta > 0) && (
+            <button type="button" onClick={onCopiarDatos}
+              className="tecla flex min-h-[40px] basis-full items-center justify-center gap-2
+                         whitespace-nowrap rounded-xl border-2 border-hueso/30 bg-panel px-3 text-[14px]
+                         font-bold text-hueso/85 hover:border-oro sm:min-h-[44px] md:basis-auto">
+              <span aria-hidden>🏦</span> Datos bancarios
+            </button>
+          )}
         </div>
       )}
 
@@ -732,9 +746,10 @@ function LineaPersona({
                 <p className="text-[13px] text-hueso/65">Pagado {enPesos(o.parte.pagado)}</p>
               )}
               {/* **Los dos pasos de pagar, en el orden en que se hacen**:
-                  copiar los datos y pegarlos en el banco, y después anotar
-                  que se pagó. Copiar va primero y delineado; registrar,
-                  relleno, porque es lo que cierra. */}
+                  copiar el monto y pegarlo en el banco, y después anotar que
+                  se pagó. Copiar va primero y delineado; registrar, relleno,
+                  porque es lo que cierra. Los datos de la cuenta, con *🏦
+                  Datos bancarios*, en la fila de arriba (2026-11-24). */}
               {puedePagar && o.parte.falta > 0 && (
                 <div className="mt-2 grid gap-2 lg:mt-1.5 lg:grid-cols-[1.2fr_1fr_1fr]">
                   {sinCuenta ? (
@@ -749,8 +764,7 @@ function LineaPersona({
                                  rounded-xl border-2 border-oro/70 bg-panel text-[14px]
                                  font-bold hover:border-oro sm:min-h-[48px] sm:text-[15px] lg:min-h-[44px] lg:text-[14px]">
                       <span aria-hidden>📋</span>
-                      <span className="lg:hidden">Copiar datos de transferencia</span>
-                      <span className="hidden lg:inline">Copiar datos</span>
+                      Copiar el monto
                     </button>
                   )}
                   {/* **Completo o parcial, dos botones** (2026-11-04, lo pidió el
@@ -1375,16 +1389,28 @@ export default function InformeEquipo() {
     }
   }
 
-  /** Copia los datos de la transferencia de una parte, con lo que falta. */
-  function copiarTransferencia(quien: string, o: Opcion) {
+  /**
+   * **Copiar, en dos botones** (2026-11-24, lo pidió el cliente: *"simplemente
+   * copias el valor total a transferir a través de cada opción, propinas y
+   * sueldos. Y luego agregar un botón, copiar los datos bancarios… cuando se
+   * tiene que ingresar una nueva cuenta en Mercado Pago"*). El de cada
+   * concepto copia lo que falta, solo con dígitos; *🏦 Datos bancarios*, los
+   * seis campos del formulario de nueva cuenta con su nombre, para el ✨ que
+   * los reparte.
+   */
+  function copiarMonto(quien: string, o: Opcion) {
+    copiarConAviso(montoParaPegar(o.parte.falta),
+                   `${o.concepto} de ${quien} copiado: ${enPesos(o.parte.falta)}`,
+                   `${o.concepto} de ${quien}:`);
+  }
+
+  function copiarDatosBancarios(quien: string) {
     const b = cuentaDe(quien);
-    const texto = textoTransferencia({
+    copiarConAviso(textoDatosBancarios({
       titular: titularDe(b, quien), rut: b.rut, banco: b.banco,
-      tipo: b.tipo, numero: b.numero, monto: o.parte.falta, correo: b.correo,
-      glosa: glosaDe(o.concepto, desde, hasta)
-    });
-    copiarConAviso(texto, `${o.concepto} de ${quien} copiado · ${enPesos(o.parte.falta)}`,
-                   `Datos de ${o.concepto.toLowerCase()} de ${quien}:`);
+      tipo: b.tipo, numero: b.numero, correo: b.correo
+    }), `Datos bancarios de ${quien} copiados: pégalos con ✨ en la cuenta nueva`,
+       `Datos bancarios de ${quien}:`);
   }
 
   /**
@@ -1876,9 +1902,10 @@ export default function InformeEquipo() {
           )}
 
           {puedePagar && (
-            <AvisoFijo clave="informe-copiar" className="mb-4 max-w-2xl">
-              <strong>📋 Copia el sueldo y la propina</strong> de cada persona y
-              pégalos en el banco: son dos transferencias. <strong>Aprieta la
+            <AvisoFijo clave="informe-copiar-monto" className="mb-4 max-w-2xl">
+              <strong>📋 Sueldo</strong> y <strong>📋 Propina</strong> copian el
+              monto de cada transferencia; <strong>🏦 Datos bancarios</strong>, la
+              cuenta para agregarla en Mercado Pago. <strong>Aprieta la
               línea</strong> para registrar el pago o marcar la boleta.
             </AvisoFijo>
           )}
@@ -2014,7 +2041,8 @@ export default function InformeEquipo() {
                       puedeBoleta={puedeBoleta}
                       abierta={abierta === 'e-' + l.trabajador}
                       onAbrir={() => setAbierta((a) => a === 'e-' + l.trabajador ? null : 'e-' + l.trabajador)}
-                      onCopiar={(o) => copiarTransferencia(l.trabajador, o)}
+                      onCopiar={(o) => copiarMonto(l.trabajador, o)}
+                      onCopiarDatos={() => copiarDatosBancarios(l.trabajador)}
                       onBoleta={(r) => void cambiarBoleta(l.trabajador, r)}
                       anotados={pagosEnPeriodo(pagos, l.trabajador, desde, hasta).length}
                       onVerPagos={() => setViendoPagos(l.trabajador)}
@@ -2089,7 +2117,8 @@ export default function InformeEquipo() {
                       puedeBoleta={puedeBoleta}
                       abierta={abierta === 'x-' + l.colaborador}
                       onAbrir={() => setAbierta((a) => a === 'x-' + l.colaborador ? null : 'x-' + l.colaborador)}
-                      onCopiar={(o) => copiarTransferencia(l.colaborador, o)}
+                      onCopiar={(o) => copiarMonto(l.colaborador, o)}
+                      onCopiarDatos={() => copiarDatosBancarios(l.colaborador)}
                       onBoleta={(r) => void cambiarBoleta(l.colaborador, r)}
                       anotados={pagosEnPeriodo(pagos, l.colaborador, desde, hasta).length}
                       onVerPagos={() => setViendoPagos(l.colaborador)}
@@ -2153,7 +2182,8 @@ export default function InformeEquipo() {
                       puedeBoleta={puedeBoleta}
                       abierta={abierta === clave}
                       onAbrir={() => setAbierta((a) => a === clave ? null : clave)}
-                      onCopiar={(o) => copiarTransferencia(l.nombre, o)}
+                      onCopiar={(o) => copiarMonto(l.nombre, o)}
+                      onCopiarDatos={() => copiarDatosBancarios(l.nombre)}
                       onBoleta={(r) => void cambiarBoleta(l.nombre, r)}
                       anotados={pagosEnPeriodo(pagos, l.nombre, desde, hasta).length}
                       onVerPagos={() => setViendoPagos(l.nombre)}

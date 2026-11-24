@@ -50,7 +50,10 @@ export const COL_MENUS = {
   // 2026-11-23. Lo que le cuesta al negocio, por unidad —por persona o una
   // vez, como se cobra—. Lo usa el simulador de evento (`lib/simulador.ts`).
   // En blanco es "sin poner", y el simulador lo dice.
-  costo: 'Costo'
+  costo: 'Costo',
+  // 2026-11-23. El nombre de la empresa que lo cobra, si no lo cobramos
+  // nosotros (el karting). En blanco es nuestro. Ver `Menu.loCobra`.
+  loCobra: 'Lo cobra'
 } as const;
 
 /**
@@ -132,6 +135,17 @@ export interface Menu {
   bonoVendedor: boolean;
   /** Lo que cuesta, en pesos y sin IVA. Cero es *sin poner*. Solo lo ve quien tiene `costos`. */
   costo: number;
+  /**
+   * **La empresa que lo cobra, si no somos nosotros** (2026-11-23, lo pidió
+   * el cliente con el karting del Gran Premio: *"se cobra por la otra empresa
+   * porque el karting es de otra"*). En blanco es nuestro. Una línea de un
+   * producto con otra empresa **va aparte del total**: no entra en nuestra
+   * boleta o factura, el anticipo, la comisión ni la reserva (`cuentasDe()`
+   * la deja fuera). Se muestra debajo, con *Lo cobra …*, para que el cliente
+   * sepa cuánto le cuesta el día entero. Lo decidió el cliente entre eso y
+   * sumarlo como el show.
+   */
+  loCobra: string;
 }
 
 /**
@@ -149,6 +163,7 @@ export function nuevoProducto(p: Partial<Menu> & { nombre: string }): Menu {
     tipo: TIPO_PRODUCTO.menu, sitioPublico: true, cotizacion: false,
     cobro: COBRO.porPersona, precioCotizacion: 0,
     iva: IVA_PRECIO.incluido, moneda: MONEDA.pesos, activo: true, bonoVendedor: false, costo: 0,
+    loCobra: '',
     ...resto
   };
 }
@@ -243,7 +258,8 @@ export function leerMenusDe(filas: string[][]): Menu[] {
       moneda: unoDe(f[9], Object.values(MONEDA), base.moneda),
       activo: blanco(10) ? base.activo : esSiCelda(f[10]),
       bonoVendedor: blanco(11) ? base.bonoVendedor : esSiCelda(f[11]),
-      costo: aMonto(f[12])
+      costo: aMonto(f[12]),
+      loCobra: String(f[13] ?? '').trim()
     });
   }
   return salida;
@@ -260,7 +276,7 @@ export function aFilasMenus(menus: Menu[]): string[][] {
     ...menus.map((m) => [
       m.nombre, monto(m.precioEnLinea), monto(m.precioEnLocal),
       m.tipo, siNo(m.sitioPublico), siNo(m.cotizacion), m.cobro,
-      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : '', monto(m.costo)
+      monto(m.precioCotizacion), m.iva, m.moneda, siNo(m.activo), m.bonoVendedor ? 'sí' : '', monto(m.costo), m.loCobra
     ])
   ];
 }
@@ -394,7 +410,12 @@ export function limpiarProducto(m: Partial<Record<keyof Menu, unknown>>): Menu {
     moneda: unoDe(m?.moneda, Object.values(MONEDA), base.moneda),
     activo: typeof m?.activo === 'boolean' ? m.activo : base.activo,
     bonoVendedor: typeof m?.bonoVendedor === 'boolean' ? m.bonoVendedor : base.bonoVendedor,
-    costo: aMonto(m?.costo)
+    costo: aMonto(m?.costo),
+    // Solo un extra lo cobra otra empresa: un menú, el arriendo o el show
+    // son nuestros. Así un nombre que quedó escrito al cambiar el tipo no
+    // saca del total algo que sí cobramos.
+    loCobra: unoDe(m?.tipo, Object.values(TIPO_PRODUCTO), base.tipo) === TIPO_PRODUCTO.extra
+      ? String(m?.loCobra ?? '').trim().slice(0, 60) : ''
   };
 }
 

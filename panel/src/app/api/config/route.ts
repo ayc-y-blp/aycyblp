@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
-import { leerConfig, guardarConfig , anotar } from '@/lib/datos';
-import { leerConfigDe, aFilasConfig, aDiasSemana, aDescuentos, aFechas } from '@/lib/config';
+import { leerConfig, guardarConfig , anotar, leerUsuarios } from '@/lib/datos';
+import { leerConfigDe, aFilasConfig, aDiasSemana, aDescuentos, aFechas, HOJA_CONFIG } from '@/lib/config';
+import { HOJA_USUARIOS } from '@/lib/usuarios';
+import { puede, type Rol } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = conLecturas([], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_CONFIG, HOJA_USUARIOS], async function GET(req: Request) {
   const no = await exigirVer(req, 'configurar');
   if (no) return no;
   try {
-    return NextResponse.json({ config: await leerConfig() });
+    // **Las cuentas que cotizan** (2026-11-23): para elegir a quién le llegan
+    // las cotizaciones del sitio. Solo el nombre y el rol.
+    const cuentas = (await leerUsuarios().catch(() => []))
+      .filter((u) => u.activo && puede(u.rol as Rol, 'presupuestos'))
+      .map((u) => ({ nombre: u.nombre, rol: u.rol }));
+    return NextResponse.json({ config: await leerConfig(), cuentas });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

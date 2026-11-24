@@ -7,8 +7,9 @@ import { HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS } from '@/lib/equipo';
 import { HOJA_ACTIVIDADES } from '@/lib/extras';
 import {
   leerPuestos, guardarPuestos, leerTrabajadores, guardarTrabajadores, leerTurnos,
-  leerCierres, leerExtras
+  leerCierres, leerExtras, renombrarEnPlanilla
 } from '@/lib/datos';
+import { renombresDeLista, sueltos, fraseDeCambios, cuentaDeCambios, type Renombre } from '@/lib/renombrar';
 import { aEntero, esSi, sinFicha, esContratado, MODALIDAD,
          type Puesto, type Trabajador } from '@/lib/equipo';
 import { normalizar } from '@/lib/columnas';
@@ -97,7 +98,16 @@ export const GET = conLecturas([HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HO
       // Quién tiene turnos y no está en la lista. Pasa al renombrar a
       // alguien que ya estaba asignado; el panel lo muestra en vez de que
       // se descubra cuando el conteo del día no cuadre.
-      sinFicha: sinFicha(turnos, trabajadores)
+      sinFicha: sinFicha(turnos, trabajadores),
+      // **Lo suelto, con cuántos turnos** (2026-11-24): las personas y los
+      // puestos que están en los turnos y no en las listas. Desde ese día un
+      // cambio de nombre arrastra lo guardado; esto queda para lo que se
+      // corrigió directo en la planilla, o antes del arreglo, y se reengancha
+      // con *Es…* / *Pasar a…* (`/api/equipo/renombrar`).
+      sueltos: {
+        personas: sueltos(turnos.map((t) => ({ nombre: t.trabajador })), trabajadores.map((t) => t.nombre)),
+        puestos: sueltos(turnos.map((t) => ({ nombre: t.puesto })), puestos.map((p) => p.nombre))
+      }
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
@@ -128,7 +138,17 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
   const verLinks = puede(rol, 'enviarLink');
   try {
     const cuerpo = await req.json();
-    const salida: { puestos?: Puesto[]; trabajadores?: Trabajador[] } = {};
+    const salida: { puestos?: Puesto[]; trabajadores?: Trabajador[];
+                    renombrados?: (Renombre & { frase: string })[] } = {};
+    /**
+     * **Los puestos que cambiaron de nombre** (2026-11-24, lo pidió el
+     * cliente: *"cambié jefe de turno a encargado de turno / caja y luego ya
+     * no aparece en el turno"*). Cada fila trae `antes`, el nombre con que se
+     * cargó; si cambió, sus turnos y las fichas que lo tienen de puesto
+     * habitual pasan al nombre nuevo. Se hace al final, después de guardar
+     * las dos listas, para que una ficha recién guardada también lo tome.
+     */
+    let renombres: Renombre[] = [];
 
     if (Array.isArray(cuerpo?.puestos)) {
       // Los puestos y su regla son del administrador: ahí se decide cuánta
@@ -145,6 +165,7 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
       }
       await guardarPuestos(limpia);
       salida.puestos = limpia;
+      renombres = renombresDeLista(cuerpo.puestos);
       await anotar({ ...(await quienEs(req)), accion: 'Cambió los puestos',
         detalle: limpia.map((p) => p.nombre).join(', ') });
     }
@@ -224,6 +245,19 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
       await anotar({ ...(await quienEs(req)), accion: 'Cambió la lista de trabajadores',
         detalle: `${limpia.length} en la lista · ` +
                  `${limpia.filter((t) => t.activo).length} activos` });
+    }
+
+    // Todos a la vez (una tanda y una escritura), y después se cuenta cuánto
+    // arrastró cada uno para decirlo.
+    if (renombres.length) {
+      const { celdas } = await renombrarEnPlanilla('puesto', renombres);
+      salida.renombrados = [];
+      for (const r of renombres) {
+        const frase = fraseDeCambios(cuentaDeCambios(celdas, r.de));
+        salida.renombrados.push({ ...r, frase });
+        await anotar({ ...(await quienEs(req)), accion: 'Renombró un puesto',
+          detalle: `${r.de} → ${r.a}${frase ? ` · pasaron ${frase}` : ''}` });
+      }
     }
 
     if (!salida.puestos && !salida.trabajadores) {

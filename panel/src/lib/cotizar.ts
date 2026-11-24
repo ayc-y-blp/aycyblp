@@ -358,7 +358,11 @@ export function prepararLineas(
       // En un día público el show va incluido: ni precio ni descuento.
       precio: esShow && diaPublico ? 0
         : l.precioUF && uf > 0 ? Math.round(l.precioUF * uf) : l.precio,
-      descuento: esShow && diaPublico ? 0 : l.descuento
+      descuento: esShow && diaPublico ? 0 : l.descuento,
+      // **Quién la cobra sale del catálogo** (2026-11-23): marcar el karting
+      // como de otra empresa lo saca del total de toda cotización que se
+      // vuelva a guardar. Una línea libre es nuestra.
+      loCobra: prod ? prod.loCobra || '' : ''
     };
   });
   // La gente de la cotización: la de sus menús, o los invitados si todavía
@@ -386,7 +390,7 @@ export function prepararLineas(
         lineas.push({
           presupuesto: lineas[0]?.presupuesto ?? '', concepto: prod.nombre, cantidad: 1,
           precio: enFormaDeLinea(arriendo.minimo, incluido), personas: 0, descuento: 0,
-          ivaIncluido: incluido, sigue: false, precioUF: 0
+          ivaIncluido: incluido, sigue: false, precioUF: 0, loCobra: ''
         });
       }
     } else if (!actual.enUF && actual.neto < arriendo.minimo) {
@@ -403,7 +407,7 @@ export function prepararLineas(
     lineas.push({
       presupuesto: lineas[0]?.presupuesto ?? '', concepto: show.nombre,
       cantidad: 1, precio: 0, personas: 0, descuento: 0, ivaIncluido: true, sigue: false,
-      precioUF: 0
+      precioUF: 0, loCobra: ''
     });
   }
   return lineas;
