@@ -25,6 +25,7 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
   // en nuestro total, así que tampoco en estas líneas. Va debajo, con quién
   // lo cobra y cuánto queda el día entero.
   const otras = otrasEmpresas(lineas);
+  const deOtras = lineas.filter((l) => String(l.loCobra ?? '').trim());
   lineas = lineas.filter((l) => !String(l.loCobra ?? '').trim());
   return (
     <>
@@ -135,10 +136,14 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
           <p className="text-[13px] font-semibold uppercase tracking-wide text-hueso/60">
             Aparte: lo cobra otra empresa
           </p>
-          {otras.map((o) => (
-            <p key={o.empresa} className="mt-1 flex flex-wrap justify-between gap-x-4">
-              <span>{o.conceptos.join(' · ')} · <strong>lo cobra {o.empresa}</strong></span>
-              <span className="tabular-nums">{enPesos(o.total)} con IVA</span>
+          {/* Con su detalle (2026-11-23, lo pidió el cliente): cuánto, a qué
+              precio y quién lo cobra, para que el cliente sepa con quién lo paga. */}
+          {deOtras.map((l, i) => (
+            <p key={i} className="mt-1 flex flex-wrap justify-between gap-x-4">
+              <span>{l.cantidad > 1 ? `${l.cantidad} × ` : ''}{l.concepto}
+                <span className="text-hueso/70"> · {enPesos(l.precio)}{l.ivaIncluido ? ' con IVA' : ' + IVA'} c/u</span>
+                {' '}· <strong>lo cobra {l.loCobra}</strong></span>
+              <span className="tabular-nums">{enPesos(Math.round(netoDeLinea(l) * (1 + IVA)))} con IVA</span>
             </p>
           ))}
           <p className="mt-1 flex justify-between gap-x-4 border-t border-hueso/15 pt-1 font-semibold">

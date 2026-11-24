@@ -20,6 +20,7 @@
  */
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
 import type { AvisoSitio } from '@/lib/promociones';
+import { porCoordinar } from '@/lib/presupuestos';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import AyudaCorta from './AyudaCorta';
 import Ayuda from './Ayuda';
@@ -294,6 +295,13 @@ export default function CotizacionesVista() {
       onCambio={() => void cargar()} />
   );
   const vencidas = propias.filter((p) => vencidoSinCerrar(p, hoy));
+  // **Lo que falta coordinar con otras empresas** (2026-11-23): el karting o
+  // el taller de queso de una cotización viva o ganada, con el evento por
+  // venir, que nadie marcó *🤝 Ya lo coordiné*.
+  const porCoordinarMias = propias
+    .filter((p) => ['Candidato', 'Borrador', 'Enviada', 'Negociación', 'Ganada'].includes(p.estado) && (!p.fecha || p.fecha >= hoy))
+    .map((p) => ({ p, faltan: porCoordinar(p, datos.lineas) }))
+    .filter((x) => x.faltan.length > 0);
   // **Los avisos de plata** (2026-11-10): anticipo pagado sin ganar, y el
   // saldo de una ganada que vence pronto o ya venció. Ver `avisosDeCobro()`.
   const avisos = avisosDeCobro(
@@ -662,6 +670,15 @@ export default function CotizacionesVista() {
             return <FilaPendiente key={p.id} quien={p.cliente}
               dato={n === 0 ? 'vence hoy' : n === 1 ? 'vence mañana' : `vence en ${n} días`} onAbrir={() => setAbierta({ p })} />;
           })}</div>
+        }] : []),
+        ...(porCoordinarMias.length ? [{
+          clave: 'coordinar', icono: '🤝', tono: 'ambar' as const,
+          texto: porCoordinarMias.length === 1 ? '1 por coordinar con otra empresa' : `${porCoordinarMias.length} por coordinar con otras empresas`,
+          ayuda: 'Llevan algo que cobra otra empresa, como el karting. Cuando lo tengas coordinado, márcalo con 🤝 Ya lo coordiné bajo el total de la cotización.',
+          lista: <div className="space-y-1.5">{porCoordinarMias.map(({ p, faltan }) => (
+            <FilaPendiente key={p.id} quien={p.cliente}
+              dato={faltan.map((f) => `${f.conceptos.join(', ')} · ${f.empresa}`).join(' · ')}
+              onAbrir={() => setAbierta({ p, paso: 3 })} />))}</div>
         }] : []),
         ...(vencidas.length ? [{
           clave: 'vencidas', icono: '·', tono: 'neutro' as const,

@@ -85,6 +85,19 @@ export const EN_EL_SITIO = [
   { clave: 'directorio', nombre: 'Mesa de Directorio', corto: 'Directorio' }
 ] as const;
 
+/** La dirección del sitio, como `SITIO` en `tools/traducir.py`. */
+export const SITIO_PUBLICO = 'https://brasasdelopirque.cl';
+
+/**
+ * **El link de campaña de una promoción** (2026-11-23, lo pidió el cliente:
+ * *"un identificador para que cuando se hace una campaña en Instagram… me
+ * muestre el gran premio dentro de las promociones"*): la página de
+ * promociones con esa ya elegida. En inglés y portugués, su carpeta.
+ */
+export function linkDeCampana(clave: string, idioma: 'es' | 'en' | 'pt' = 'es'): string {
+  return `${SITIO_PUBLICO}/${idioma === 'es' ? '' : idioma + '/'}promociones.html#${clave}`;
+}
+
 export const nombreEnElSitio = (clave: string) =>
   EN_EL_SITIO.find((s) => s.clave === clave)?.nombre ?? '';
 

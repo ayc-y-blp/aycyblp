@@ -272,7 +272,16 @@ export const COL_PRESUPUESTOS = {
    * al panel"*): *quién · cuándo*. Mientras esté en blanco, la ventana le
    * aparece al entrar.
    */
-  avisoVisto: 'Aviso del sitio visto'
+  avisoVisto: 'Aviso del sitio visto',
+  /**
+   * **Lo coordinado con otras empresas** (2026-11-23, lo pidió el cliente:
+   * *"para que se pueda hacer buen seguimiento, saber, oye, tengo que
+   * organizar este karting, tengo que organizar el taller de queso"*). Una
+   * entrada por empresa, *empresa · quién · cuándo*, separadas por `|`.
+   * Mientras una empresa de sus líneas no esté acá, la vendedora lo ve como
+   * pendiente. La escribe solo `/api/presupuestos/coordinada`.
+   */
+  coordinadas: 'Otras empresas coordinadas'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -452,6 +461,8 @@ export interface Presupuesto {
   /** De dónde llegó y cuándo se vio su aviso. Ver `COL_PRESUPUESTOS.origen` y `avisoVisto`. */
   origen?: string;
   avisoVisto?: string;
+  /** Ver `COL_PRESUPUESTOS.coordinadas`. */
+  coordinadas?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -639,6 +650,38 @@ export function otrasEmpresas(
     por.set(clave, g);
   }
   return [...por.values()];
+}
+
+/** Lo coordinado, por empresa (normalizada): quién y cuándo. */
+export function coordinadasDe(valor: string | undefined): Map<string, { empresa: string; quien: string; cuando: string }> {
+  const m = new Map<string, { empresa: string; quien: string; cuando: string }>();
+  for (const parte of String(valor ?? '').split('|')) {
+    const [empresa, quien = '', cuando = ''] = parte.split('·').map((x) => x.trim());
+    if (empresa) m.set(normalizar(empresa), { empresa, quien, cuando });
+  }
+  return m;
+}
+
+/** Marca o desmarca una empresa como coordinada. Devuelve el valor de la columna. */
+export function marcarCoordinada(valor: string | undefined, empresa: string, quien: string, cuando: string, hecho: boolean): string {
+  const m = coordinadasDe(valor);
+  if (hecho) m.set(normalizar(empresa), { empresa: empresa.trim(), quien, cuando });
+  else m.delete(normalizar(empresa));
+  return [...m.values()].map((x) => [x.empresa, x.quien, x.cuando].join(' · ')).join(' | ');
+}
+
+/**
+ * **Lo que falta coordinar con otras empresas** (2026-11-23): las de sus
+ * líneas que todavía no están marcadas. Vacío si no hay nada de otra empresa
+ * o ya se coordinó todo.
+ */
+export function porCoordinar(
+  p: Pick<Presupuesto, 'id' | 'coordinadas'>, lineas: LineaPresupuesto[]
+): { empresa: string; conceptos: string[] }[] {
+  const hechas = coordinadasDe(p.coordinadas);
+  return otrasEmpresas(lineasDe(lineas, p.id))
+    .filter((o) => !hechas.has(normalizar(o.empresa)))
+    .map(({ empresa, conceptos }) => ({ empresa, conceptos }));
 }
 
 /** El total con IVA de una cotización: lo que se cobra. */
@@ -1095,6 +1138,7 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       redactarAntes: esFecha(en(f, i.redactarAntes).slice(0, 10)) ? en(f, i.redactarAntes).slice(0, 10) : '',
       origen: en(f, i.origen).trim(),
       avisoVisto: en(f, i.avisoVisto).trim(),
+      coordinadas: en(f, i.coordinadas).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1179,6 +1223,7 @@ export function filaPresupuesto(
   poner(i.redactarAntes, p.redactarAntes ?? '');
   poner(i.origen, p.origen ?? '');
   poner(i.avisoVisto, p.avisoVisto ?? '');
+  poner(i.coordinadas, p.coordinadas ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

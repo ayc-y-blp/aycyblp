@@ -7183,6 +7183,15 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   const acordadoK = F.acordadoDe({ id: 'P1', descuento: 0 }, vueltaK, cat);
   ok(acordadoK.lineas.length === 1 && acordadoK.total === 833000,
      'lo que cobra otra empresa no va a la caja de Fudo');
+  const pK = { id: 'P1', coordinadas: '' };
+  const lineasP1 = vueltaK.map((l) => ({ ...l, presupuesto: 'P1' }));
+  ok(P.porCoordinar(pK, lineasP1).map((x) => x.empresa).join() === 'Karting Pirque',
+     'lo de otra empresa queda por coordinar');
+  const marcada = P.marcarCoordinada('', 'karting pirque', 'Daniela', '2026-11-24 10:00', true);
+  ok(P.porCoordinar({ ...pK, coordinadas: marcada }, lineasP1).length === 0
+     && P.coordinadasDe(marcada).get('karting pirque')?.quien === 'Daniela'
+     && P.marcarCoordinada(marcada, 'Karting Pirque', 'x', 'y', false) === '',
+     'marcado coordinado deja de estar pendiente, con quién lo marcó; y se puede deshacer');
 }
 
 {

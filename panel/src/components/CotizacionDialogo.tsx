@@ -33,8 +33,9 @@ import { cambiosDeLaCotizacion, textoDeCambios, type CotizacionEnCorreccion } fr
 import Campo from './Campo';
 import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
+import { normalizar } from '@/lib/columnas';
 import {
-  cuentasDe, otrasEmpresas, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
+  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
   DOCUMENTO, documentoDe, numeroONulo, montoONulo, estaMandada, totalDe, estadoNormal, lineasDe, type Documento, type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import {
@@ -551,6 +552,21 @@ export default function CotizacionDialogo({
   const cuentas = cuentasDe(vistas, descuento);
   // Lo que cobra otra empresa (el karting): fuera del total, dicho debajo.
   const otras = otrasEmpresas(vistas);
+  /**
+   * **Lo ya coordinado con cada empresa** (2026-11-23): *🤝 Ya lo coordiné*
+   * bajo el total. Vive acá y se guarda con su ruta, no con el autoguardado:
+   * es un seguimiento, queda a nombre de quien lo marca.
+   */
+  const [coordinadas, setCoordinadas] = useState(p?.coordinadas ?? '');
+  async function coordinar(empresa: string, hecho: boolean) {
+    if (!p) return;
+    const r = await fetch('/api/presupuestos/coordinada', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: p.id, empresa, hecho })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.error) avisar(d.error, 'atencion');
+    else { setCoordinadas(d.coordinadas ?? ''); onCambio(); }
+  }
   /** Cuánta gente suman los menús: tiene que calzar con los invitados. */
   const enMenus = vistas.reduce((n, l) => n + l.personas, 0);
   /** Si en esta cotización el show tiene mínimo: día no público y poca gente. */
@@ -2547,15 +2563,28 @@ export default function CotizacionDialogo({
                 </div>
               </dl>
               {otras.length > 0 && (
-                <p className="w-full text-right text-[14px] text-hueso/80 lg:basis-full">
-                  {otras.map((o) => (
-                    <span key={o.empresa} className="mr-3 inline-block">
-                      Aparte, lo cobra <strong>{o.empresa}</strong>: {enPesos(o.total)}
-                    </span>
-                  ))}
-                  <span className="inline-block">· el día completo, <strong>
-                    {enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</strong></span>
-                </p>
+                <div className="w-full space-y-1 text-[14px] text-hueso/80 lg:basis-full">
+                  {otras.map((o) => {
+                    const hecha = coordinadasDe(coordinadas).get(normalizar(o.empresa));
+                    return (
+                      <p key={o.empresa} className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                        <span>Aparte, lo cobra <strong>{o.empresa}</strong> ({o.conceptos.join(', ')}): {enPesos(o.total)}</span>
+                        {p && (hecha ? (
+                          <span className="flex items-center gap-2">
+                            <span className="font-semibold text-verde-texto">✓ coordinado · {hecha.quien}</span>
+                            <button type="button" className="boton min-h-[36px] !px-2 text-[13px]"
+                              onClick={() => coordinar(o.empresa, false)}>Deshacer</button>
+                          </span>
+                        ) : (
+                          <button type="button" className="boton min-h-[36px] border-ambar-fuerte/60 font-semibold text-ambar-texto"
+                            onClick={() => coordinar(o.empresa, true)}>🤝 Ya lo coordiné</button>
+                        ))}
+                      </p>
+                    );
+                  })}
+                  <p className="text-right">El día completo, con lo de otras empresas: <strong>
+                    {enPesos(cuentas.total + otras.reduce((n, o) => n + o.total, 0))}</strong></p>
+                </div>
               )}
             </div>
             </div>

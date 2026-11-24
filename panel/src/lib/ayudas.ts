@@ -1294,7 +1294,10 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'El cotizador',
     texto: [
       'Con *Sí*, el bloque de la promoción en el sitio muestra el cotizador: el cliente elige cuántos son, el día '
-      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.'
+      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.',
+      'El link abre la página de promociones con esta ya elegida: es el que va en una publicación de Instagram o '
+      + 'en un anuncio. *Copiar* da el del español; *EN* y *PT*, el de la página en inglés y en portugués. Para '
+      + 'medir de qué campaña llega cada visita, se le pueden sumar parámetros UTM antes del #.'
     ]
   },
   promoMenu: {

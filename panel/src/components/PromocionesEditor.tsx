@@ -16,13 +16,13 @@ import { useEffect, useMemo, useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import BotonGuardar from './BotonGuardar';
 import { Aviso } from './CalendarView';
-import { avisar } from './AvisoFlotante';
+import { avisar, copiarConAviso } from './AvisoFlotante';
 import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } from './TarjetaLista';
 import { enPesos } from '@/lib/ocupacion';
 import { IVA_PRECIO, COBRO, precioParaCotizar, type Menu } from '@/lib/menus';
 import {
   EN_EL_SITIO, ARRIENDO_PROMO, nombreEnElSitio, menusParaPromo, extrasParaPromo, nuevaPromocion,
-  nuevoIdPromocion, promocionesParaElSitio, type Promocion
+  nuevoIdPromocion, promocionesParaElSitio, linkDeCampana, type Promocion
 } from '@/lib/promociones';
 
 /** Los botones de la ficha: 40px en el celular, 36 en el computador para que la tarjeta quepa. */
@@ -193,12 +193,23 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                     </div>
                   </Fila>
                   {p.sitio && (
-                    <Fila rotulo="Cotizador" ayuda="promoCotizador">
-                      <div role="radiogroup" aria-label="Cotizador en el sitio" className="flex flex-wrap gap-2">
-                        {([[true, 'Sí, en su bloque'], [false, 'No, solo WhatsApp']] as const).map(([v, texto]) => (
-                          <button key={String(v)} type="button" role="radio" aria-checked={p.cotizador === v}
-                            onClick={() => cambiar(i, { cotizador: v })}
-                            className={`${BOTON} ${p.cotizador === v ? ELEGIDO : ''}`}>{texto}</button>
+                    <Fila rotulo="Cotizador y link" ayuda="promoCotizador">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div role="radiogroup" aria-label="Cotizador en el sitio" className="flex gap-2">
+                          {([[true, 'Sí'], [false, 'No, solo WhatsApp']] as const).map(([v, texto]) => (
+                            <button key={String(v)} type="button" role="radio" aria-checked={p.cotizador === v}
+                              onClick={() => cambiar(i, { cotizador: v })}
+                              className={`${BOTON} ${p.cotizador === v ? ELEGIDO : ''}`}>{texto}</button>
+                          ))}
+                        </div>
+                        <span aria-hidden className="mx-1 hidden h-6 border-l border-hueso/25 sm:inline-block" />
+                        <code className="min-w-0 break-all rounded bg-hueso/10 px-2 py-1 text-[14px]">{linkDeCampana(p.sitio)}</code>
+                        {(['es', 'en', 'pt'] as const).map((idioma) => (
+                          <button key={idioma} type="button" className={BOTON}
+                            aria-label={`Copiar el link${idioma === 'es' ? '' : idioma === 'en' ? ' en inglés' : ' en portugués'}`}
+                            onClick={() => copiarConAviso(linkDeCampana(p.sitio, idioma), 'Link copiado', 'Copia el link:')}>
+                            {idioma === 'es' ? 'Copiar' : idioma.toUpperCase()}
+                          </button>
                         ))}
                       </div>
                     </Fila>
