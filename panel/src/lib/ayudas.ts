@@ -250,6 +250,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cotización.',
       'Un candidato es alguien que preguntó: se anota con cliente, fecha e '
       + 'invitados, y se cotiza después.',
+      'La cotización que recibe el cliente dice qué incluye cada producto, con los textos del '
+      + 'sitio: arriba el menú de la casa y lo que tienen todas las alternativas, y en cada una, '
+      + 'lo que la distingue. Un producto que el sitio no describe, como el arriendo, va sin detalle.',
       'Si el cliente dice que no va, "✕ Se cayó…" la da por perdida con su motivo: '
       + 'está en cada paso de la cotización y al lado de cada fila de la lista. '
       + 'Una ganada no se cae: se cancela, con su devolución.',
@@ -316,7 +319,7 @@ export const AYUDAS: Record<string, Ayuda> = {
     pasos: [
       'La primera vez, 🏁 Saldo inicial: con cuánto parte la caja.',
       '🧾 Anotar un gasto: el monto, en qué y la foto de la boleta.',
-      '📤 Entregar…: a quién —el encargado de operaciones o la gerencia; de partida, operaciones— y cuánto. Queda por recibir hasta que esa '
+      '📤 Entregar…: a quién —el encargado de operaciones, la gerencia o pagos, todos a la vista; de partida, operaciones— y cuánto. Queda por recibir hasta que esa '
       + 'persona apriete ✓ Recibí, acá o en su bandeja. Si recibió otro monto, lo escribe y queda marcado para pagos.',
       'Quien recibió anota qué hizo con la plata: 🏦 Depósito, con la foto del comprobante, o 🛒 Compra, con la boleta.',
       'Pagos revisa cada movimiento con ✓ Revisado (Por revisar deja solo esos). No frena a nadie.',

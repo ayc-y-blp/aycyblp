@@ -33,22 +33,31 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
           panel, y lleva `relative` por lo mismo: sin eso la página entera se
           corría 11px a 393px —venía así de antes— y un documento que se
           abre en un teléfono no puede empezar movido. Al imprimir la caja
-          deja de recortar: la hoja es mucho más ancha y la tabla entra. */}
+          deja de recortar: la hoja es mucho más ancha y la tabla entra.
+          **Y en un teléfono cabe entera** (2026-11-24): desplazarla de lado no
+          se notaba y la tabla se leía cortada (*SUBTOTAL NET*, *$2.882.35*).
+          Bajo 640px, *Cant.* en vez de *Cantidad*, la letra a 13px, 6px entre columnas en vez
+          de 12, sin espaciado de letras en la cabecera y el total a 16px (20
+          desde 640px). Cabe entera desde 360px de ancho. El computador, el
+          contrato impreso y el PDF, igual. */}
       <div className="relative overflow-x-auto caja-tabla">
-      <table className="w-full text-sm">
+      <table className="w-full text-[13px] sm:text-sm">
         <thead className="text-left text-[13px] font-semibold uppercase
-                          tracking-wide text-hueso/60">
+                          text-hueso/60 sm:tracking-wide">
           <tr className="border-b border-hueso/20">
-            <th className="py-2 pr-3">Concepto</th>
-            <th className="py-2 pr-3 text-right">Cantidad</th>
-            <th className="py-2 pr-3 text-right">Precio neto</th>
+            <th className="py-2 pr-1.5 sm:pr-3">Concepto</th>
+            <th className="py-2 pr-1.5 text-right sm:pr-3">
+              <span className="sm:hidden" aria-hidden>Cant.</span>
+              <span className="sr-only sm:not-sr-only">Cantidad</span>
+            </th>
+            <th className="py-2 pr-1.5 text-right sm:pr-3">Precio neto</th>
             <th className="py-2 text-right">Subtotal neto</th>
           </tr>
         </thead>
         <tbody>
           {lineas.map((l, i) => (
             <tr key={i} className="border-b border-hueso/10">
-              <td className="py-2.5 pr-3">
+              <td className="py-2.5 pr-1.5 sm:pr-3">
                 {l.concepto}
                 {l.precioUF > 0 && (
                   <span className="ml-1 text-hueso/60">({enUF(l.precioUF)} c/u)</span>
@@ -56,8 +65,8 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
                 {l.precio === 0 && <span className="text-hueso/60"> · incluido</span>}
                 {l.descuento > 0 && <span className="text-hueso/60"> · {l.descuento}% de descuento</span>}
               </td>
-              <td className="py-2.5 pr-3 text-right tabular-nums">{l.cantidad}</td>
-              <td className="py-2.5 pr-3 text-right tabular-nums">{enPesos(precioNeto(l.precio, l.ivaIncluido))}</td>
+              <td className="py-2.5 pr-1.5 text-right tabular-nums sm:pr-3">{l.cantidad}</td>
+              <td className="py-2.5 pr-1.5 text-right tabular-nums sm:pr-3">{enPesos(precioNeto(l.precio, l.ivaIncluido))}</td>
               <td className="py-2.5 text-right tabular-nums">{enPesos(Math.round(netoDeLinea(l)))}</td>
             </tr>
           ))}
@@ -115,8 +124,8 @@ export default function TablaCotizacion({ lineas, cuentas, descuento, uf, fechaU
                                        text-sm font-semibold">
               Total
             </td>
-            <td className="border-t border-hueso/20 pt-2 text-right text-xl
-                           font-bold tabular-nums text-oro">
+            <td className="border-t border-hueso/20 pt-2 text-right text-base
+                           font-bold tabular-nums text-oro sm:text-xl">
               {enPesos(cuentas.total)}
             </td>
           </tr>

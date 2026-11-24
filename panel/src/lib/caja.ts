@@ -297,28 +297,32 @@ export function fraseMovimiento(m: Pick<Movimiento, 'tipo' | 'monto' | 'detalle'
 /* ---------- A quién se le entrega la caja (2026-11-24) ---------- */
 
 /**
- * **Quién recibe la plata de la caja: el encargado de operaciones y la
- * gerencia** (2026-11-24, lo pidió el cliente: *"tiene que ser el encargado de
- * operaciones y la gerencia que puede recibir plata. Y eso de la forma más
- * simple posible y elegible sin enredar al usuario"*). Hasta ese día la lista
- * salía del permiso `recibirCaja`, que también tienen pagos y el
- * administrador, y se elegía con un buscador detrás de *Otra persona…*.
+ * **Quién recibe la plata de la caja: el encargado de operaciones y los
+ * gerentes** (2026-11-24, lo pidió el cliente dos veces el mismo día: *"tiene
+ * que ser el encargado de operaciones y la gerencia que puede recibir plata.
+ * Y eso de la forma más simple posible y elegible sin enredar al usuario"*, y
+ * *"tienen que estar el encargado de operaciones y los tres gerentes… todos
+ * estos nombres tengo que poder elegir en este formulario"*). Hasta ese día se
+ * veía uno solo y los demás quedaban detrás de *Otra persona…*, con un
+ * buscador.
  *
- * **El permiso `recibirCaja` no cambió**, a propósito: pagos puede todo
- * menos las cuentas y la mantención (regla del 2026-11-01), y la gerencia,
- * por ahora, lo mismo que pagos; quitarle un permiso rompía las dos. Lo que
- * cambia es a quién se le puede entregar algo nuevo, que valida el servidor
- * contra esta misma lista. Quien ya tenía una entrega por recibir la sigue
- * confirmando.
+ * **Entran operaciones, gerencia y pagos**: un gerente puede tener la cuenta
+ * con el rol de pagos, y quedarse fuera por el nombre del rol es justo lo que
+ * el cliente no quiere. **El administrador no**: es la cuenta general del
+ * panel, no una persona a la que se le pasa la plata.
+ *
+ * **El permiso `recibirCaja` no cambió.** Esta lista es la de quienes lo
+ * tienen, menos el administrador; el servidor valida contra ella.
  */
-export const RECIBEN_CAJA: readonly string[] = [ROL.operaciones, ROL.gerencia];
+export const RECIBEN_CAJA: readonly string[] = [ROL.operaciones, ROL.gerencia, ROL.pagos];
 
 export interface Destino { usuario: string; nombre: string; rol: string }
 
 /**
  * Las cuentas a las que se puede entregar la caja, **sin la propia**: activas,
- * de operaciones o gerencia, **primero operaciones** —es el habitual, *"entregar
- * este dinero a Cristóbal"*— y después por nombre. Se nombran por su nombre,
+ * de operaciones, gerencia o pagos, **primero operaciones** —es el habitual,
+ * *"entregar este dinero a Cristóbal"*—, después la gerencia y pagos, y por
+ * nombre dentro de cada rol. Se nombran por su nombre,
  * que es lo que queda en *Para* y lo que trae la sesión de quien recibe.
  */
 export function quienesRecibenCaja(

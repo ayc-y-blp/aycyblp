@@ -225,6 +225,50 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Qué incluye cada producto, en la cotización (2026-11-24)
+
+Lo pidió el cliente: *"que se desglose el detalle del producto en la
+cotización, que incluye qué servicio, qué significa barra abierta… tienes la
+información en el sitio público respecto a cada producto, así extráelo desde
+allá… el menú es el mismo, entonces esto puedes dejarlo arriba como un
+desglose general… y luego especificas abajo el producto cotizado en
+alternativa A o alternativa B. ¿Qué cambia?… Y eso para todos los links"*. Se
+le mostró como maqueta y quedó sin hacer hasta que lo marcó con la foto de una
+cotización de producción: *"la cotización aún se ve igual"*.
+
+- **En la cotización que ve el cliente** (`/presupuesto/<token>`: es la misma
+  del link, del WhatsApp, del correo y del PDF), una caja ***Qué incluye***
+  entre los datos del evento y los precios: **el menú de la casa** en cuatro
+  tiempos —si algún menú de adulto lo lleva— y **cada producto que está en
+  todas las alternativas**, con su texto. En cada alternativa, ***Lo que cambia
+  en la B***: solo lo que la distingue. Con una sola, todo va arriba.
+- **Los textos salen del sitio, tal cual** (`experiencias.html`,
+  `eventos.html`, `dossier.html`), en `DETALLE_DEL_SITIO` de **`lib/detalle.ts`**
+  (puro, con pruebas). **No se inventa nada**: un producto que el sitio no
+  describe —el arriendo, un extra nuevo— va sin detalle. **Si cambia el texto
+  en el sitio, se cambia también ahí.** Sommelier lleva la lista entera del
+  bar abierto: en el sitio dice *"misma libertad que Brasas"*, y una
+  cotización puede no traer Brasas.
+- **Un nombre que no calza exacto, calza igual** (`textoDelSitio()`): en
+  producción el producto es *Desayuno* y en el sitio *Desayuno de campo*. La
+  misma regla del importador (`productoParecido()`): un nombre dentro del otro,
+  con dos palabras de diferencia a lo más, sin *sin* ni *no*, y solo si gana uno.
+- **Lo que cobra otra empresa no entra** en el desglose: ya va aparte, con su
+  detalle, bajo el total.
+- **De paso, la tabla de precios cabe entera en un teléfono**
+  (`TablaCotizacion`, también en el contrato): se desplazaba de lado dentro de
+  su caja y se leía cortada (*SUBTOTAL NET*, *$2.882.35*). Bajo 640px, *Cant.*,
+  la letra a 13px, 6px entre columnas y el total a 16px. Cabe desde 360px. El
+  computador y el PDF, igual.
+- **No está en el contrato** (`/contrato/<token>`): el cliente no lo pidió ahí.
+- **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
+  **Ayuda**: el `?` de Cotizaciones.
+- **Probado en el panel de ejemplo**: Constructora Maipo (una alternativa) con
+  el menú de la casa, A Brasas abiertas y el show arriba, y el karting aparte;
+  Andrés Pino con una B de Sommelier: arriba el menú de la casa, Niños y el
+  show, y en cada alternativa su menú y sus bebestibles. A 393 y 360px la
+  tabla no se sale.
+
 ## Los links personales abren en el mes, con su boleta (2026-11-24)
 
 Lo pidió el cliente: *"en el link personal, tanto de los trabajadores como de
@@ -674,23 +718,25 @@ las recomendaciones"*) y dio el dato de partida: **la caja tiene hoy $7.000**.
   manos de* cada persona que recibió (lo recibido menos lo depositado o
   comprado). No se puede gastar ni entregar más de lo que hay, ni depositar más
   de lo que se tiene.
-- **Entregar** muestra **un botón por cada encargado de operaciones y cada
-  cuenta de gerencia**, con su nombre y su rol, y deja elegido al encargado de
-  operaciones (el habitual: *"entregar este dinero a Cristóbal"*). El monto de
-  partida es todo lo de la caja. **Cambió el 2026-11-24** (lo pidió el cliente:
+- **Entregar** muestra **un botón por cada persona que puede recibir la
+  plata** —el encargado de operaciones, la gerencia y pagos—, con su nombre y
+  su rol, y deja elegido al encargado de operaciones (el habitual:
+  *"entregar este dinero a Cristóbal"*). El monto de partida es todo lo de la
+  caja. **Cambió el 2026-11-24**, lo pidió el cliente dos veces el mismo día:
   *"el botón entregar en Caja no me gusta… tiene que ser mucho más flexible.
   Tiene que ser el encargado de operaciones y la gerencia que puede recibir
   plata. Y eso de la forma más simple posible y elegible sin enredar al
-  usuario"*): antes salía el habitual y los demás detrás de *Otra persona…*,
-  con un buscador, y la lista era todo el que tuviera `recibirCaja` —también
-  pagos y el administrador—. Ahora la lista es `quienesRecibenCaja()`
-  (`RECIBEN_CAJA` en `lib/caja.ts`, con pruebas): activas, de operaciones o
-  gerencia, sin la propia, primero operaciones. Son pocas, así que van a la
-  vista y sin buscador. El servidor valida contra la misma lista. **El permiso
-  `recibirCaja` no cambió, a propósito**: pagos puede todo menos las cuentas y
-  la mantención (regla del 2026-11-01), y la gerencia, por ahora, lo mismo
-  que pagos; quitárselo rompía las dos. Pagos sigue confirmando lo que ya
-  tenía por recibir; lo nuevo ya no se le entrega. Queda **por recibir** hasta que
+  usuario"*, y *"tienen que estar el encargado de operaciones y los tres
+  gerentes… todos estos nombres tengo que poder elegir en este
+  formulario"*. Antes salía el habitual y los demás detrás de *Otra
+  persona…*, con un buscador. Ahora la lista es `quienesRecibenCaja()`
+  (`RECIBEN_CAJA` en `lib/caja.ts`, con pruebas): activas, de operaciones,
+  gerencia o pagos, sin la propia, primero operaciones. **Pagos entra** porque
+  un gerente puede tener su cuenta con ese rol, y quedarse fuera por el
+  nombre del rol es lo que el cliente no quiere; **el administrador no**,
+  porque es la cuenta general del panel. Son pocas, así que van a la vista y
+  sin buscador. El servidor valida contra la misma lista. **El permiso
+  `recibirCaja` no cambió.** Queda **por recibir** hasta que
   esa persona aprieta ***✓ Recibí $X*** —en *Te entregaron* de la caja o en su
   bandeja—; si recibió otro monto, *Recibí otro monto…* lo escribe y queda
   marcado para pagos (*⚠ recibió $X*, y *Recibidas con otro monto* arriba).

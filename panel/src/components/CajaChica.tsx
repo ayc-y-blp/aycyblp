@@ -61,8 +61,8 @@ function Formulario({ tipo, d, tengo, onListo, onVolver }: {
   // **De partida, el encargado de operaciones** (*"entregar este dinero a
   // Cristóbal"*), y los demás a un toque (2026-11-24, lo pidió el cliente:
   // *"tiene que ser mucho más flexible… de la forma más simple posible y
-  // elegible sin enredar al usuario"*). Son pocos —operaciones y gerencia—,
-  // así que van todos a la vista, sin buscador.
+  // elegible sin enredar al usuario"*). Son pocos —operaciones, la gerencia y
+  // pagos—, así que van todos a la vista, sin buscador.
   const habitual = d.destinos.find((x) => x.rol === ROL.operaciones) ?? d.destinos[0];
   const [para, setPara] = useState(habitual?.usuario ?? '');
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -131,7 +131,7 @@ function Formulario({ tipo, d, tengo, onListo, onVolver }: {
               );
             })}
             {!d.destinos.length && (
-              <span className="pt-2.5 text-[15px] text-ambar-texto">No hay un encargado de operaciones ni gerencia con cuenta activa.</span>
+              <span className="pt-2.5 text-[15px] text-ambar-texto">No hay un encargado de operaciones, gerencia ni pagos con cuenta activa.</span>
             )}
           </div>
         </div>

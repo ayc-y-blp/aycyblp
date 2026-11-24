@@ -7114,8 +7114,8 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
     { usuario: 'tomas', nombre: 'Tomás Herrera', rol: 'encargado', activo: true }
   ];
   ok(JSON.stringify(K.quienesRecibenCaja(cuentasK, 'Tomás Herrera').map((d) => d.nombre))
-     === JSON.stringify(['Cristóbal Cornejo', 'Ana Ruiz', 'Rodrigo Vera']),
-     'la caja se entrega a operaciones (primero) y a la gerencia: ni pagos, ni el administrador, ni una cuenta apagada');
+     === JSON.stringify(['Cristóbal Cornejo', 'Ana Ruiz', 'Rodrigo Vera', 'Verónica Lagos']),
+     'la caja se entrega a operaciones (primero), a la gerencia y a pagos, todos a la vista: ni el administrador ni una cuenta apagada');
   ok(!K.quienesRecibenCaja(cuentasK, 'Cristóbal Cornejo').some((d) => d.nombre === 'Cristóbal Cornejo')
      && !K.quienesRecibenCaja(cuentasK, 'cris').some((d) => d.nombre === 'Cristóbal Cornejo'),
      'y nunca a uno mismo, por nombre o por usuario');
@@ -7392,6 +7392,36 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(EQ.semanaParaElMes('2026-10', '2026-11-24') === '2026-10-26' && EQ.semanaParaElMes('2027-01', '2026-11-24') === '2026-12-28',
      'un mes que pasó abre su última semana; uno que viene, la que toca su día 1');
   ok(EQ.mesDeLaSemana('2026-10-26') === '2026-10', 'de semana a mes: el mes de su lunes');
+}
+
+/* ---------- Qué incluye cada producto, en la cotización (2026-11-24) ---------- */
+{
+  const D = await import('./detalle.ts');
+  ok(D.textoDelSitio('Desayuno')?.detalle.startsWith('Pan amasado') === true,
+     'Desayuno (producción) calza con Desayuno de campo (el sitio)');
+  ok(D.textoDelSitio('Menú Niños')?.detalle.startsWith('De 4 a 12 años') === true
+     && D.textoDelSitio('Sommelier')?.casa === true
+     && D.textoDelSitio('A Brasas Abiertas Empresas')?.detalle.includes('bar abierto') === true,
+     'el menú de niños, Sommelier con el menú de la casa, y un nombre con una palabra de más');
+  ok(!D.textoDelSitio('Arriendo') && !D.textoDelSitio('Barra abierta sin alcohol') && !D.textoDelSitio(''),
+     'lo que el sitio no describe no lleva detalle: no se inventa');
+  ok(!D.textoDelSitio('Sommelier')!.detalle.includes('misma libertad'),
+     'Sommelier trae la lista del bar abierto: la cotización puede no traer Brasas');
+  // La cotización de una sola alternativa: todo va arriba.
+  const una = D.desglose([{ id: 'P-1', conceptos: ['Sommelier', 'Desayuno', 'Arriendo'] }]);
+  ok(una.casa && una.comunes.map((x) => x.nombre).join() === 'Sommelier,Desayuno' && una.propios['P-1'].length === 0,
+     'con una alternativa: el menú de la casa y cada producto con texto, arriba; el arriendo, sin detalle');
+  // Dos alternativas: lo común arriba, lo distinto en su caja.
+  const dos = D.desglose([
+    { id: 'A', conceptos: ['Lo Pirque', 'Menú Niños', 'Show ecuestre'] },
+    { id: 'B', conceptos: ['Sommelier', 'Menú Niños', 'Show ecuestre', 'Karting'] }
+  ]);
+  ok(dos.casa && dos.comunes.map((x) => x.nombre).join() === 'Menú Niños,Show ecuestre',
+     'con alternativas: arriba lo que está en todas');
+  ok(dos.propios.A.map((x) => x.nombre).join() === 'Lo Pirque' && dos.propios.B.map((x) => x.nombre).join() === 'Sommelier,Karting',
+     'y en cada una, lo que la distingue');
+  ok(D.partes('Entrada: Tabla campestre').que === 'Entrada' && D.partes('De 4 a 12 años.').que === '',
+     'un renglón con nombre se parte en dos; uno sin nombre va entero');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

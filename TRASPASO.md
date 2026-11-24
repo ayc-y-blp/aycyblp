@@ -364,13 +364,20 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   para el ✨ del formulario de cuenta nueva. Ver `panel/CLAUDE.md`, "Copiar,
   en dos botones". **El cliente iba a mandar otro pantallazo del formulario**:
   si sus campos u orden son otros, se ajusta `NOMBRE_COLUMNA_TRANSFERENCIA`.
-- **Caja → Entregar, a operaciones o gerencia** (24-11-2026, en el mismo PR
-  #338, lo pidió el cliente: *"tiene que ser mucho más flexible… el encargado
-  de operaciones y la gerencia"*): un botón por persona a la vista, con su
-  rol, y operaciones elegido de partida; sin buscador. Pagos y el
-  administrador ya no aparecen. El permiso `recibirCaja` no cambió (pagos
-  puede todo menos cuentas y mantención). Ver `panel/CLAUDE.md`, "El cobro en
+- **Caja → Entregar, a la vista** (24-11-2026, en el mismo PR #338, lo pidió
+  el cliente: *"tienen que estar el encargado de operaciones y los tres
+  gerentes… todos estos nombres tengo que poder elegir"*): un botón por cada
+  encargado de operaciones, gerencia y pagos, con su rol, y operaciones
+  elegido de partida; sin buscador. El administrador (la cuenta general) no
+  aparece. El permiso `recibirCaja` no cambió. **(Por confirmar)** que los
+  tres gerentes de producción tengan el rol *Gerencia general* o *Encargado de
+  pagos*: si alguno tiene otro, no sale. Ver `panel/CLAUDE.md`, "El cobro en
   la mesa y la caja chica".
+- **Qué incluye cada producto, en la cotización** (24-11-2026, en el mismo
+  PR #338, lo pidió el cliente): arriba el menú de la casa y lo común, y en
+  cada alternativa lo que la distingue, con los textos del sitio
+  (`lib/detalle.ts`); y la tabla de precios cabe entera en el teléfono. Ver
+  `panel/CLAUDE.md`, "Qué incluye cada producto, en la cotización".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

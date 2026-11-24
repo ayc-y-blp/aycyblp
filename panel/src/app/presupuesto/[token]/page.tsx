@@ -24,6 +24,7 @@
  */
 import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerConfig } from '@/lib/datos';
+import { desglose, partes, MENU_CASA_DEL_SITIO, type ProductoDetallado } from '@/lib/detalle';
 import { porToken, lineasDe, gentePosible, cuentasDe,
          estadoVisible, folioDe, DOCUMENTO } from '@/lib/presupuestos';
 import { clienteDe, grupoDe, letraDe, paraElLink } from '@/lib/cotizar';
@@ -78,6 +79,11 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
   const ficha = q.documento === DOCUMENTO.factura
     ? clientes.find((c) => c.id === q.idCliente) : undefined;
   const estado = estadoVisible(q, hoy());
+  // **Qué incluye** (2026-11-24, `lib/detalle.ts`): lo común arriba y lo
+  // propio de cada alternativa en su caja. Lo que cobra otra empresa ya va
+  // aparte, con su detalle, en la tabla.
+  const des = desglose(alts.map((a) => ({ id: a.id,
+    conceptos: lineasDe(todas, a.id).filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) })));
   const vencido = estado === 'Vencida';
 
   return (
@@ -155,6 +161,8 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
         </div>
       </div>
 
+      <QueIncluye casa={des.casa} comunes={des.comunes} varias={varias} />
+
       {varias && (
         <p className="mt-7 rounded border border-oro/50 bg-oro/[0.06] p-3 text-[15px]">
           <strong>Te ofrecemos {alts.length} alternativas.</strong> Míralas con calma y
@@ -163,7 +171,7 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
       )}
 
       {alts.map((a) => (
-        <Alternativa key={a.id} p={a} letra={varias ? letraDe(a, lista) : ''}
+        <Alternativa key={a.id} p={a} letra={varias ? letraDe(a, lista) : ''} propios={des.propios[a.id] ?? []}
           lineas={lineasDe(todas, a.id)} cfg={cfg} distintaFecha={varias && a.fecha !== q.fecha} />
       ))}
 
@@ -199,8 +207,10 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
  * varias lleva su letra y su total arriba, para que el cliente pueda decir
  * "la B" sin tener que sumar nada.
  */
-function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
+function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios }: {
   p: Presupuesto; letra: string; lineas: LineaPresupuesto[]; cfg: Config; distintaFecha: boolean;
+  /** Lo que tiene esta alternativa y las otras no, con su detalle. */
+  propios: ProductoDetallado[];
 }) {
   // **Las cuentas como en una cotización** (Fase 2): cada línea en neto, el
   // descuento sobre el total, y el IVA encima. Ver `cuentasDe()`.
@@ -223,6 +233,12 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
             {distintaFecha && personas > 0 && ' · '}
             {personas > 0 && `${personas} ${personas === 1 ? 'persona' : 'personas'}`}
           </p>
+        </div>
+      )}
+      {propios.length > 0 && (
+        <div className="mb-4 break-inside-avoid rounded border border-oro/40 bg-oro/[0.05] p-3">
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-oro">Lo que cambia en la {letra}</p>
+          {propios.map((x, i) => <Producto key={x.nombre} p={x} primero={i === 0} />)}
         </div>
       )}
       <TablaCotizacion lineas={lineas} cuentas={cuentas} descuento={p.descuento}
@@ -267,6 +283,55 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha }: {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Renglones *"Nombre: texto"* en dos columnas desde 640px; en el celular, de
+ * corrido (*Entrada: …*). Un renglón sin nombre va a lo ancho.
+ */
+function Renglones({ texto }: { texto: string }) {
+  return (
+    <dl className="mt-1 space-y-1 text-[14px] leading-snug text-hueso/80 sm:grid sm:grid-cols-[9rem_1fr] sm:gap-x-3 sm:gap-y-1 sm:space-y-0">
+      {texto.split('\n').filter((r) => r.trim()).map((r, i) => {
+        const { que, dice } = partes(r.trim());
+        return que
+          ? <div key={i} className="sm:contents"><dt className="inline font-semibold text-hueso/70 sm:block">{que}<span className="sm:hidden">: </span></dt><dd className="inline sm:block">{dice}</dd></div>
+          : <dd key={i} className="sm:col-span-2">{dice}</dd>;
+      })}
+    </dl>
+  );
+}
+
+function Producto({ p, primero }: { p: ProductoDetallado; primero?: boolean }) {
+  return (
+    <div className={primero ? 'mt-2' : 'mt-3 border-t border-hueso/10 pt-2'}>
+      <p className="text-[15px] font-semibold">{p.nombre}</p>
+      <Renglones texto={p.detalle} />
+    </div>
+  );
+}
+
+/**
+ * **Qué incluye, arriba de las alternativas** (2026-11-24): el menú de la
+ * casa, si algún menú lo lleva, y lo que está en todas. Lo de cada una va en
+ * su caja, *Lo que cambia en la B*. Con una sola, todo va acá.
+ */
+function QueIncluye({ casa, comunes, varias }: { casa: boolean; comunes: ProductoDetallado[]; varias: boolean }) {
+  if (!casa && !comunes.length) return null;
+  return (
+    <section className="mt-7 break-inside-avoid rounded-lg border border-hueso/20 p-4">
+      <p className="text-[13px] font-semibold uppercase tracking-widest text-hueso/60">
+        Qué incluye{varias ? ' · igual en todas las alternativas' : ''}
+      </p>
+      {casa && (
+        <div className="mt-2">
+          <p className="text-[15px] font-semibold">El menú de la casa <span className="font-normal text-hueso/60">· en cuatro tiempos, el mismo en todos los menús de adulto</span></p>
+          <Renglones texto={MENU_CASA_DEL_SITIO} />
+        </div>
+      )}
+      {comunes.map((x, i) => <Producto key={x.nombre} p={x} primero={!casa && i === 0} />)}
+    </section>
   );
 }
 
