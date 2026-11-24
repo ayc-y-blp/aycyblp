@@ -507,7 +507,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **El calendario de Cotizaciones también va al pasado** (24-11-2026, lo pidió
   el cliente): el mismo marco *Lo que viene · Semana · Mes*, con la cuenta
   compartida en `lib/periodoCalendario.ts`. Un día pasado se mira y no se
-  cotiza. Ver `panel/CLAUDE.md`.
+  cotiza. Ver `panel/CLAUDE.md`. **PR #349, mergeado el 24-11-2026** con el
+  *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después.
 - **El lugar exclusivo en el cotizador de promociones** (25-11-2026, lo pidió el
   cliente: *"debe haber… el botón quiero el lugar exclusivo… el arriendo… usa el
   valor estándar, no con el descuento aplicado"*): una casilla en el paso ① que
