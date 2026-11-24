@@ -18,7 +18,7 @@ export const AVISOS_CERRABLES = [
   'equipo-intro', 'equipo-propina', 'equipo-contratado', 'equipo-desactivar',
   'turnos-intro', 'turnos-cerrado', 'turnos-preparacion',
   'extras-intro', 'extras-sin-confirmar', 'extras-fichas',
-  'informe-masiva', 'informe-copiar', 'informe-contratado', 'informe-planilla',
+  'informe-masiva', 'informe-copiar', 'informe-copiar-monto', 'informe-contratado', 'informe-planilla',
   'menus-intro', 'menus-desactivar',
   'clientes-intro',
   'config-intro', 'config-clave',

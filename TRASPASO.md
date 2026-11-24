@@ -354,6 +354,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *👥 8 en el equipo*, y arriba de la ventana del día; el mismo número de la
   tarjeta de Reservas, sin la propina. Ver `panel/CLAUDE.md`, "Turnos: lo que
   cuesta el equipo de cada día".
+- **Los links personales abren en el mes, con su boleta** (24-11-2026, en el
+  mismo PR #338, lo pidió el cliente): trabajador, colaborador, vendedor y
+  socio, con *📅 Mes · Semana* y ◀ ▶ en un marco (sin JavaScript). Ver
+  `panel/CLAUDE.md`, "Los links personales abren en el mes".
+- **Copiar para Mercado Pago, en dos botones** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente): en el Informe, *📋 Sueldo* y *📋 Propina* copian
+  solo el monto, y *🏦 Datos bancarios* la cuenta con el nombre de cada campo,
+  para el ✨ del formulario de cuenta nueva. Ver `panel/CLAUDE.md`, "Copiar,
+  en dos botones". **El cliente iba a mandar otro pantallazo del formulario**:
+  si sus campos u orden son otros, se ajusta `NOMBRE_COLUMNA_TRANSFERENCIA`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

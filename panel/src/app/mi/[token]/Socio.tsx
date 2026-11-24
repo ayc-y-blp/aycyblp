@@ -19,10 +19,11 @@ import { resumenDelPeriodo, porCobrar, comoDe, finesDeMesEntre } from '@/lib/ven
 import { cuentaBoleta, montosDeVendedor } from '@/lib/boletas';
 import CajaBoleta from '@/components/CajaBoleta';
 import type { Boleta } from '@/lib/remuneraciones';
-import { rangoDelPeriodo } from '@/lib/equipo';
+import { rangoDelPeriodo, periodoDelLink } from '@/lib/equipo';
+import ElegirPeriodoLink from './Periodo';
 import { pagosEnPeriodo, faltaDe, type PagoEquipo } from '@/lib/remuneraciones';
 import { enPesos } from '@/lib/ocupacion';
-import { enPalabras, mesEnPalabras, hoy } from '@/lib/fechas';
+import { enPalabras, mesEnPalabras, rangoEnPalabras, hoy } from '@/lib/fechas';
 
 type VentaConFolio = Venta & { folio: string };
 
@@ -49,21 +50,7 @@ function Pestana({ href, elegida, children }: { href: string; elegida: boolean; 
   );
 }
 
-function Flecha({ href, children, etiqueta }: { href: string; children: React.ReactNode; etiqueta: string }) {
-  return (
-    <a href={href} aria-label={etiqueta} title={etiqueta}
-       className="tecla flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-hueso/25
-                  bg-panel text-xl font-bold text-hueso/85 hover:border-oro hover:text-oro">{children}</a>
-  );
-}
 
-const moverMes = (mes: string, n: number) => {
-  let [a, m] = mes.split('-').map(Number);
-  m += n;
-  while (m < 1) { m += 12; a--; }
-  while (m > 12) { m -= 12; a++; }
-  return `${a}-${String(m).padStart(2, '0')}`;
-};
 
 /**
  * **El trato renglón por renglón** (2026-11-24): la comisión por etapas, el
@@ -105,7 +92,9 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
   v?: string;
 }) {
   const ahora = hoy();
-  const periodo = /^\d{4}-\d{2}$/.test(String(p ?? '')) ? String(p) : ahora.slice(0, 7);
+  // El mes en curso, o el periodo de la URL: un mes o una semana (2026-11-24).
+  const periodo = periodoDelLink(p, ahora);
+  const esMes = periodo.length === 7;
   const { desde, hasta } = rangoDelPeriodo(periodo);
   const enlace = (q: string) => `/mi/${encodeURIComponent(token)}${q}`;
   const vista = v === 'viene' ? 'viene' : 'gane';
@@ -117,6 +106,7 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
   const pagado = recibidos.reduce((s, x) => s + x.monto, 0);
   // **Su documento** (2026-11-20): factura o boleta, con el impuesto incluido
   // o aparte. Lo que falta es contra lo que se le transfiere.
+  const comoSeLlama = esMes ? mesEnPalabras(periodo) : rangoEnPalabras([desde, hasta]);
   const documento = cuentaBoleta(montosDeVendedor(r.cuentan, fijo, finesDeMesEntre(desde, hasta)), boletas, socio.nombre,
     desde, hasta, ahora, comoDe(socio));
   const condiciones = tratoEnLineas(socio);
@@ -178,11 +168,9 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
         )
       ) : (
         <>
-          <div className="mt-5 flex items-center gap-2 rounded-2xl border-2 border-oro/60 bg-oro/[0.06] p-2.5">
-            <Flecha href={enlace(`?p=${moverMes(periodo, -1)}`)} etiqueta="Mes anterior">◀</Flecha>
-            <p className="min-w-0 flex-1 text-center text-[17px] font-bold first-letter:uppercase">{mesEnPalabras(periodo)}</p>
-            <Flecha href={enlace(`?p=${moverMes(periodo, 1)}`)} etiqueta="Mes siguiente">▶</Flecha>
-          </div>
+          {/* El periodo en su marco, la misma pieza de los tres links: el mes
+              por defecto, y *Semana* para bajar (2026-11-24). */}
+          <ElegirPeriodoLink periodo={periodo} ahora={ahora} enlace={enlace} />
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="col-span-2">
@@ -198,14 +186,14 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
           {documento.total > 0 && (
             <div className="mt-5">
               <CajaBoleta tu cuenta={documento}
-                titulo={`${socio.documento === 'factura' ? 'Tu factura' : 'Tu boleta'} de ${mesEnPalabras(periodo)}`} />
+                titulo={`${socio.documento === 'factura' ? 'Tu factura' : 'Tu boleta'} ${esMes ? 'de' : 'del'} ${comoSeLlama}`} />
             </div>
           )}
 
           <h3 className="mt-7 text-[13px] font-semibold uppercase tracking-widest text-hueso/60">Evento por evento</h3>
-          <p className="text-[13px] text-hueso/65">Cuentan en el mes en que el cliente terminó de pagar y se revisó.</p>
+          <p className="text-[13px] text-hueso/65">Cuentan en el {esMes ? 'mes' : 'periodo'} en que el cliente terminó de pagar y se revisó.</p>
           {r.cuentan.length === 0 ? (
-            <p className="mt-2 text-[15px] text-hueso/70">Ninguno en este mes.</p>
+            <p className="mt-2 text-[15px] text-hueso/70">Ninguno en {esMes ? 'este mes' : 'esta semana'}.</p>
           ) : (
             <ul className="mt-2 space-y-2">
               {(r.cuentan as VentaConFolio[]).map((x) => (
@@ -221,7 +209,7 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
 
           <h3 className="mt-7 text-[13px] font-semibold uppercase tracking-widest text-hueso/60">Lo que te pagamos</h3>
           {recibidos.length === 0 ? (
-            <p className="mt-2 text-[15px] text-hueso/70">Nada registrado en este mes.</p>
+            <p className="mt-2 text-[15px] text-hueso/70">Nada registrado en {esMes ? 'este mes' : 'esta semana'}.</p>
           ) : (
             <ul className="mt-2 space-y-2">
               {recibidos.map((x) => (

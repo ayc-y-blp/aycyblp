@@ -11,13 +11,14 @@
  */
 import type { Colaborador, Extra } from '@/lib/extras';
 import { informeDeExtras, costoDeExtra } from '@/lib/extras';
-import { VINO, rangoDelPeriodo, semanaPorDefecto, esPeriodo, etiquetaSemana } from '@/lib/equipo';
+import { VINO, rangoDelPeriodo, periodoDelLink, semanaParaElMes } from '@/lib/equipo';
+import ElegirPeriodoLink from './Periodo';
 import { pagosEnPeriodo, faltaDe, type PagoEquipo, type Boleta } from '@/lib/remuneraciones';
 import { cuentaBoleta, montosDeExtras } from '@/lib/boletas';
 import CajaBoleta from '@/components/CajaBoleta';
 import { enPesos } from '@/lib/ocupacion';
 import { normalizar } from '@/lib/columnas';
-import { enPalabras, mesEnPalabras, rangoEnPalabras, sumarDias, hoy } from '@/lib/fechas';
+import { enPalabras, mesEnPalabras, rangoEnPalabras, hoy } from '@/lib/fechas';
 
 function Azulejo({ que, monto, tono, nota, grande = false }: {
   que: string; monto: number; tono: string; nota?: string; grande?: boolean;
@@ -39,14 +40,6 @@ function Pestana({ href, elegida, children }: { href: string; elegida: boolean; 
          ? 'border-oro bg-oro text-tinta' : 'border-hueso/25 bg-panel text-hueso/85 hover:border-oro'}`}>
       {children}
     </a>
-  );
-}
-
-function Flecha({ href, children, etiqueta }: { href: string; children: React.ReactNode; etiqueta: string }) {
-  return (
-    <a href={href} aria-label={etiqueta} title={etiqueta}
-       className="tecla flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-hueso/25
-                  bg-panel text-xl font-bold text-hueso/85 hover:border-oro hover:text-oro">{children}</a>
   );
 }
 
@@ -79,8 +72,9 @@ export default function VistaColaborador({ quien, extras, pagos, boletas, token,
   const pasados = suyos.filter((e) => e.fecha < ahora);
   const vienen = suyos.filter((e) => e.fecha >= ahora).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-  const pedido = String(p ?? '');
-  const periodo = esPeriodo(pedido) ? pedido : semanaPorDefecto(ahora);
+  // **Abre en el mes en curso** (2026-11-24, `periodoDelLink()`), como el
+  // link del trabajador y el del vendedor; *Semana* baja a semanas.
+  const periodo = periodoDelLink(p, ahora);
   const esMes = periodo.length === 7;
   const { desde, hasta } = rangoDelPeriodo(periodo);
   const comoSeLlama = esMes ? mesEnPalabras(periodo) : rangoEnPalabras([desde, hasta]);
@@ -98,11 +92,6 @@ export default function VistaColaborador({ quien, extras, pagos, boletas, token,
   // trabajador, con lo confirmado y sin restar un adelanto.
   const boleta = cuentaBoleta(montosDeExtras(pasados, quien.nombre), boletas, quien.nombre, desde, hasta, ahora);
   const mesesDeLaSemana = [...new Set([desde.slice(0, 7), hasta.slice(0, 7)])];
-  const mesActual = ahora.slice(0, 7);
-  const mesAnterior = (() => {
-    const [a, m] = mesActual.split('-').map(Number);
-    return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`;
-  })();
 
   return (
     <section className="mx-auto max-w-md">
@@ -140,26 +129,8 @@ export default function VistaColaborador({ quien, extras, pagos, boletas, token,
         )
       ) : (
         <>
-          {!esMes && (
-            <div className="mt-5 flex items-center gap-2 rounded-2xl border-2 border-oro/60 bg-oro/[0.06] p-2.5">
-              <Flecha href={enlace(`?p=${sumarDias(desde, -7)}`)} etiqueta="Semana anterior">◀</Flecha>
-              <div className="min-w-0 flex-1 text-center">
-                <span className="inline-block rounded-full border-2 border-hueso/25 px-2.5 py-0.5 text-[13px] font-bold">
-                  {etiquetaSemana(desde, ahora)}
-                </span>
-                <p className="mt-1 text-[17px] font-bold leading-tight first-letter:uppercase">{comoSeLlama}</p>
-              </div>
-              <Flecha href={enlace(`?p=${sumarDias(desde, 7)}`)} etiqueta="Semana siguiente">▶</Flecha>
-            </div>
-          )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            {[mesActual, mesAnterior].map((m) => (
-              <a key={m} href={enlace(`?p=${m}`)} aria-current={periodo === m ? 'page' : undefined}
-                 className={`boton tecla first-letter:uppercase ${periodo === m ? 'boton-relleno' : ''}`}>{mesEnPalabras(m)}</a>
-            ))}
-            {esMes && <a href={enlace('')} className="boton tecla">Por semana</a>}
-          </div>
-          {esMes && <h2 className="mt-6 text-base font-bold first-letter:uppercase">{comoSeLlama}</h2>}
+          {/* El periodo en su marco, la misma pieza de los tres links (2026-11-24). */}
+          <ElegirPeriodoLink periodo={periodo} ahora={ahora} enlace={enlace} />
 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="col-span-2">
@@ -185,7 +156,7 @@ export default function VistaColaborador({ quien, extras, pagos, boletas, token,
                   {esMes ? (
                     <>
                       <span className="text-[13px] text-hueso/75">¿Boleteas por semana?</span>
-                      <a href={enlace('')} className="tecla boton min-h-[44px] font-semibold">Ver por semana →</a>
+                      <a href={enlace(`?p=${semanaParaElMes(periodo, ahora)}`)} className="tecla boton min-h-[44px] font-semibold">Ver por semana →</a>
                     </>
                   ) : (
                     <>

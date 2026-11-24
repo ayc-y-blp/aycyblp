@@ -164,6 +164,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
+| Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
@@ -223,6 +224,43 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Los links personales abren en el mes, con su boleta (2026-11-24)
+
+Lo pidió el cliente: *"en el link personal, tanto de los trabajadores como de
+los vendedores, quiero que por defecto se muestra el mes y con el valor de la
+boleta del mes. Y ahí por elección se puede bajar a semanal"*. Hasta ese día
+el link del trabajador y del colaborador abría en la semana pasada (la que se
+paga el lunes), y el mes se elegía con unas pastillas al pie; el del socio y
+el vendedor ya era por mes, sin semanas.
+
+- **Los tres links** —trabajador, colaborador de las actividades extras y
+  vendedor o socio— **abren en el mes en curso** (`periodoDelLink()` en
+  `lib/equipo.ts`) y la caja de la boleta dice la del mes.
+- **La misma pieza en los tres** (`mi/[token]/Periodo.tsx`): un marco dorado
+  con **📅 Mes · Semana** arriba y ◀ el mes o la semana ▶ debajo, sin tope.
+  Es la idea de `ElegirPeriodo` del panel, **hecha con enlaces**: estas
+  páginas son de servidor y no llevan JavaScript. El periodo viaja en la
+  dirección: `?p=2026-10` un mes, `?p=2026-11-02` la semana que parte ese
+  lunes; el mes en curso es la dirección limpia, la que se manda.
+- **El elegido va con tinte y borde dorado**, no relleno: el relleno de la
+  página es la pestaña *Lo que gané*.
+- **Al pasar de un mes a *Semana*** se va a la semana de ese mes que más
+  importa (`semanaParaElMes()`): la pasada si toca ese mes —la que se paga—,
+  si no la en curso, y en un mes pasado su última semana. **De una semana a
+  *Mes***, al mes de su lunes (`mesDeLaSemana()`).
+- **En semana**, todo lo de antes sigue: *Tus semanas* con su etiqueta
+  (*En curso*, *Semana pasada*…), y la boleta de la semana con *¿Boleteas por
+  mes?*. **En mes**, la caja de la boleta trae *¿Boleteas por semana? Ver por
+  semana →*. Se fueron las pastillas *O mira un mes entero*.
+- **El socio y el vendedor** ganaron las semanas: el resumen, *Evento por
+  evento* y la boleta siguen al periodo elegido.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
+  el `?` del link en Equipo y en Extras, y el de Vendedores.
+- **Probado en el panel de ejemplo**, en el celular: los tres abren en
+  *Noviembre 2026* con *Tu boleta de noviembre 2026*; *Semana* lleva a
+  `?p=2026-11-02`, *Mes* vuelve a la dirección limpia y ◀ a `?p=2026-10`.
+  `revisarPlayStation()` sin hallazgos.
 
 ## Turnos: lo que cuesta el equipo de cada día (2026-11-24)
 
@@ -7809,15 +7847,37 @@ paso de transferir. Todo vive en `ORDEN_TRANSFERENCIA`,
 `NOMBRE_COLUMNA_TRANSFERENCIA` y `filaTransferencia()` de
 `remuneraciones.ts`, **que formatea el RUT y el número en un solo lugar**.
 
-- **Copiar da solo los valores, uno por línea**, en ese orden: ocho
-  líneas, la misma fila de la planilla (`textoTransferencia()` es
-  `filaTransferencia()` unida por saltos de línea). **Sin rótulos**, lo
-  corrigió el cliente el mismo día: *"solo copias Luis Contreras… el pagador
-  copia los datos, abre… el banco y copia los datos nomás"*; el primer corte
-  decía *Nombre y apellido: Luis Contreras* y eso había que borrarlo al
-  pegar. **Sin correo, su línea va vacía**, para que el monto siga siendo la
-  séptima. La fila con tabs de antes suponía que un formulario web pasa de
-  campo con cada tab al pegar, y no lo hace: todo caía en el primer campo.
+- **Copiar, en dos botones** (2026-11-24, lo pidió el cliente: *"simplemente
+  copias el valor total a transferir a través de cada opción, propinas y
+  sueldos. Y luego agregar un botón, copiar los datos bancarios… cuando se
+  tiene que ingresar una nueva cuenta en Mercado Pago, donde es la plataforma
+  que se está usando para las transferencias"*):
+  - **📋 Sueldo $X** y **📋 Propina $X** copian **solo el monto que falta,
+    con dígitos** (`montoParaPegar()`: `147000`), que es lo que acepta el
+    campo del monto. En la tarjeta abierta, el mismo botón dice *Copiar el
+    monto*.
+  - **🏦 Datos bancarios**, al final de la misma fila, copia la cuenta para
+    el formulario de *nueva cuenta* de Mercado Pago (el del pantallazo):
+    **cada dato con el nombre de su campo**, en su orden, y solo esos seis
+    (`textoDatosBancarios()`): *Nombre y apellido: Luis Contreras*, *RUT:
+    15.234.567-8*… **El formulario tiene un botón ✨ que lee lo copiado y
+    rellena cada campo**, y con líneas sueltas no sabía cuál era cuál. Sin
+    correo, no va su línea (es opcional). Los valores son las seis primeras
+    celdas de `filaTransferencia()`: copiar y descargar dicen lo mismo. Va al
+    final porque la cuenta se agrega una vez y se paga muchas.
+  - **La glosa ya no se copia**: va en la planilla para la transferencia
+    masiva.
+  - **El aviso de arriba del Informe cambió de clave** (`informe-copiar-monto`)
+    para que lo vea de nuevo quien lo había cerrado: lo que hacen los botones
+    cambió.
+  - **La historia, por si vuelve la duda**: el 2026-11-21 nació como un solo
+    botón con los nombres de los campos, el monto y la glosa; ese mismo día
+    el cliente pidió solo los valores, uno por línea (*"solo copias Luis
+    Contreras… el pagador copia los datos, abre… el banco y copia los datos
+    nomás"*), pensando en pegar campo por campo. Con el ✨ eso no rellenaba
+    el formulario, y el 2026-11-24 se partió en dos botones. Antes, una fila
+    con tabs suponía que un formulario web pasa de campo con cada tab al
+    pegar, y no lo hace: todo caía en el primer campo.
 - **La planilla para la transferencia masiva** lleva esas ocho columnas,
   con esos nombres y en ese orden.
 - **Las planillas del informe** (*Solo sueldos*, *Solo propinas*,
@@ -10210,6 +10270,10 @@ vienen.** Las tres preguntas y dónde se contestan:
 | ¿Qué me pagaron a la cuenta? | el bloque de pagos, con lo que falta |
 
 ##### Abre en la semana pasada
+
+> **Cambió el 2026-11-24**: el link abre en el mes en curso, con la boleta del
+> mes, y se baja a una semana con *Semana*. Ver "Los links personales abren en
+> el mes", al inicio de este archivo. Lo de abajo es la historia.
 
 Lo fijó el cliente: *"es la semana pasada, no la actual… porque lo primero
 que quiere ver es la semana pasada"*. Y el motivo es el calendario del pago:

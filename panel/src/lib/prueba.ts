@@ -61,7 +61,7 @@ import {
   ENCABEZADO_PAGOS, leerPagosDe, filaPago, cuentaEnPeriodo, pagadoDe,
   estadoDePago, aTransferirDe, faltaDe, pagoDelCuerpo, nuevoIdPago,
   desglosePago, conceptoDe, CONCEPTO, pideBoleta, leerBoletasDe, filaBoleta,
-  ENCABEZADO_BOLETAS, boletaDe, boletaEnPlanilla, textoTransferencia, glosaDe,
+  ENCABEZADO_BOLETAS, boletaDe, boletaEnPlanilla, textoDatosBancarios, montoParaPegar, glosaDe,
   ORDEN_TRANSFERENCIA, filaTransferencia, NOMBRE_COLUMNA_TRANSFERENCIA,
   pagosEnPeriodo, pagosQueNoCaben,
   type PagoEquipo
@@ -3562,19 +3562,20 @@ console.log('\nPagos al equipo');
   const ana = { titular: 'Ana Soto', rut: '11111111-1',
     banco: 'BancoEstado', tipo: 'Cuenta RUT', numero: '11111111', monto: 120000,
     correo: 'ana@correo.cl', glosa: glosaDe('Sueldo', '2026-11-09', '2026-11-15') };
-  const texto = textoTransferencia(ana);
-  ok(texto === ['Ana Soto', '11.111.111-1', 'BancoEstado', 'Cuenta RUT', '11111111',
-       'ana@correo.cl', '120000', 'Sueldo 09/11 al 15/11'].join('\n'),
-     'solo los valores, uno por línea, en el orden del formulario del banco y después el monto y la glosa');
-  ok(!/Nombre y apellido|RUT:|E-mail/.test(texto), 'sin rótulos: cada línea se pega tal cual en su campo');
-  ok(textoTransferencia({ ...ana, correo: '' }).split('\n')[5] === ''
-     && textoTransferencia({ ...ana, correo: '' }).split('\n')[6] === '120000',
-     'sin correo su línea va vacía: el monto sigue en el mismo lugar');
+  const texto = textoDatosBancarios(ana);
+  ok(texto === ['Nombre y apellido: Ana Soto', 'RUT: 11.111.111-1', 'Banco: BancoEstado',
+       'Tipo de cuenta: Cuenta RUT', 'Número de cuenta: 11111111', 'E-mail: ana@correo.cl'].join('\n'),
+     'datos bancarios: cada dato con el nombre de su campo, en el orden del formulario (para el ✨ que lo rellena)');
+  ok(!/120000|Sueldo/.test(texto), 'sin el monto ni la glosa: van aparte, no son campos de ese formulario');
+  ok(!textoDatosBancarios({ ...ana, correo: '' }).includes('E-mail'),
+     'sin correo no va su línea: es opcional');
+  ok(montoParaPegar(147000) === '147000' && montoParaPegar(42500.4) === '42500' && montoParaPegar(-5) === '0',
+     'el monto se copia solo con dígitos, sin signo peso ni puntos');
   ok(JSON.stringify(ORDEN_TRANSFERENCIA.slice(0, 6).map((k) => NOMBRE_COLUMNA_TRANSFERENCIA[k]))
      === JSON.stringify(['Nombre y apellido', 'RUT', 'Banco', 'Tipo de cuenta', 'Número de cuenta', 'E-mail']),
      'las columnas de la planilla para el banco: los mismos rótulos, en el mismo orden');
-  ok(texto.split('\n')[6] === '120000',
-     'el monto va sin puntos ni signo peso: es lo que un banco acepta pegar');
+  ok(filaTransferencia(ana)[ORDEN_TRANSFERENCIA.indexOf('monto')] === '120000',
+     'en la planilla, el monto va sin puntos ni signo peso: es lo que un banco acepta pegar');
   ok(glosaDe('Propina', '2026-11-09', '2026-11-15').length <= 30,
      'y la glosa cabe en los 30 caracteres que dejan los bancos');
   ok(ORDEN_TRANSFERENCIA.every((k) => !!NOMBRE_COLUMNA_TRANSFERENCIA[k]),
@@ -3583,8 +3584,9 @@ console.log('\nPagos al equipo');
   ok(filaAna[ORDEN_TRANSFERENCIA.indexOf('rut')] === '9.876.543-K'
      && filaAna[ORDEN_TRANSFERENCIA.indexOf('numero')] === '001234567809',
      'la planilla lleva el RUT con puntos y la cuenta solo con dígitos, con sus ceros de adelante');
-  ok(texto === filaTransferencia(ana).join('\n'),
-     'copiar y la planilla para el banco dicen lo mismo: es la misma fila, una celda por línea');
+  ok(texto.split('\n').map((l) => l.slice(l.indexOf(': ') + 2)).join('|')
+     === filaTransferencia(ana).slice(0, 6).join('|'),
+     'copiar y la planilla para el banco dicen lo mismo: los valores son las primeras seis celdas de la fila');
   ok(CONCEPTO.propina === 'Propina', 'el concepto propina se llama así en la planilla');
 
   ok(leerPagosDe([ENCABEZADO_PAGOS]).length === 0, 'una pestaña vacía no inventa pagos');
@@ -7359,6 +7361,21 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   const S = await import('./sheets.ts');
   ok(S.letraDeColumna(0) === 'A' && S.letraDeColumna(25) === 'Z' && S.letraDeColumna(26) === 'AA' && S.letraDeColumna(27) === 'AB',
      'la letra de la columna');
+}
+
+/* ---------- El link personal abre en el mes (2026-11-24) ---------- */
+{
+  const EQ = await import('./equipo.ts');
+  ok(EQ.periodoDelLink('', '2026-11-24') === '2026-11' && EQ.periodoDelLink('chao', '2026-11-24') === '2026-11'
+     && EQ.periodoDelLink('2026-11-16', '2026-11-24') === '2026-11-16' && EQ.periodoDelLink('2026-10', '2026-11-24') === '2026-10',
+     'el link abre en el mes en curso; lo que viene en la URL manda si es un periodo');
+  ok(EQ.semanaParaElMes('2026-11', '2026-11-24') === '2026-11-16',
+     'de noviembre a semana, a mitad de mes: la semana pasada');
+  ok(EQ.semanaParaElMes('2026-12', '2026-12-02') === '2026-11-30',
+     'el 2 de diciembre, la semana pasada es de noviembre: va la en curso, que toca diciembre');
+  ok(EQ.semanaParaElMes('2026-10', '2026-11-24') === '2026-10-26' && EQ.semanaParaElMes('2027-01', '2026-11-24') === '2026-12-28',
+     'un mes que pasó abre su última semana; uno que viene, la que toca su día 1');
+  ok(EQ.mesDeLaSemana('2026-10-26') === '2026-10', 'de semana a mes: el mes de su lunes');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

@@ -190,10 +190,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Es una dirección propia de esa persona. Se la mandas por WhatsApp, '
       + 'ella la aprieta y ve su página. No pide contraseña ni correo.',
       'Lo que ve: sus próximos turnos —qué día, desde qué hora, en qué '
-      + 'puesto, cuánta gente se espera y qué menús hay que preparar— y sus '
-      + 'últimos 30 días con el detalle de lo que se le pagó cada uno: la '
-      + 'jornada, las horas extra, los ajustes con su motivo y su parte de '
-      + 'la propina.',
+      + 'puesto, cuánta gente se espera y qué menús hay que preparar— y lo '
+      + 'que ganó, día por día: la jornada, las horas extra, los ajustes con '
+      + 'su motivo y su parte de la propina. Abre en el mes en curso, con la '
+      + 'boleta del mes; con Semana baja a una semana, y con ◀ ▶ se mueve.',
       'Lo que no ve: reservas, nombres de clientes, a los demás trabajadores '
       + 'ni lo que gana nadie más.'
     ],
@@ -340,11 +340,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
       + 'solo a ellas: esos días no suman, así que mientras haya, los totales '
       + 'están incompletos.',
-      'En la línea de cada persona están los botones para copiar su sueldo y '
-      + 'su propina. Copian solo los datos, uno por línea, en el orden del '
-      + 'formulario del banco —nombre y apellido, RUT, banco, tipo de cuenta, '
-      + 'número de cuenta y e-mail— y después el monto y la glosa: cada línea '
-      + 'se pega tal cual en su campo.',
+      'En la línea de cada persona, 📋 Sueldo y 📋 Propina copian el monto '
+      + 'que falta, solo con números, para pegarlo en la transferencia. '
+      + '🏦 Datos bancarios copia su cuenta para agregarla en Mercado Pago: '
+      + 'cada dato con el nombre de su campo —Nombre y apellido, RUT, Banco, '
+      + 'Tipo de cuenta, Número de cuenta y E-mail—, y el botón ✨ del '
+      + 'formulario los reparte solo. La cuenta se agrega una vez.',
       'Para ver lo que costó el equipo por puesto, las propinas y cuánto fue '
       + 'de las ventas, aprieta 📊 Estadísticas del equipo, arriba.',
       'Para descontar o sumar algo sin ir a Turnos, abre su línea: − Descontar '
@@ -586,7 +587,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       'En Documento: boleta o factura, y si lo que gana trae la retención o el '
       + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.',
       '🔗 Copiar link (vendedores y socios) le copia su link personal: sin '
-      + 'clave, ve su trato, lo que ganó cada mes, lo que viene, lo que se le '
+      + 'clave, ve su trato, lo que ganó en el mes (o en una semana), lo que viene, lo que se le '
       + 'pagó y cuánto poner en la boleta o la factura. Renovar crea uno nuevo; '
       + 'Quitar lo apaga.'
     ],
@@ -664,7 +665,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   linkColaborador: {
     titulo: 'El link personal',
     texto: [
-      'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Se la mandas por WhatsApp.',
+      'Una dirección propia de esa persona, sin contraseña: ve sus días, lo que ganó y lo que se le pagó. Abre en el mes, con la boleta del mes, y se puede bajar a una semana. Se la mandas por WhatsApp.',
       'Renovar crea uno nuevo y el anterior deja de servir. Quitar link lo apaga: eso lo hacen el administrador, el encargado de pagos y la gerencia.'
     ]
   },

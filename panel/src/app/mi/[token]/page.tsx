@@ -85,9 +85,10 @@ import CajaBoleta from '@/components/CajaBoleta';
 import { HOJA_COLABORADORES, HOJA_ACTIVIDADES } from '@/lib/extras';
 import { menusDe } from '@/lib/shopify';
 import { trabajadorPorToken, turnosDe, pagoDe, esContratado, esPreparacion,
-         totalAjustes, informeDelPeriodo, rangoDelPeriodo, semanaPorDefecto,
-         periodosDelLink, esPeriodo, VINO, etiquetaSemana, escaleraDeSemanas,
+         totalAjustes, informeDelPeriodo, rangoDelPeriodo, periodoDelLink, semanaParaElMes,
+         VINO, etiquetaSemana, escaleraDeSemanas,
          type Turno } from '@/lib/equipo';
+import ElegirPeriodoLink, { EtiquetaSemana } from './Periodo';
 import { pagosEnPeriodo, pagosQueNoCaben, aTransferirDe, faltaDe,
          estadoDePago } from '@/lib/remuneraciones';
 import { enPesos, ocupaLugar } from '@/lib/ocupacion';
@@ -176,28 +177,6 @@ function Azulejo({ que, monto, color = 'oro', nota, grande = false }: {
 }
 
 /**
- * Una pastilla del filtro. El periodo elegido va **relleno de dorado**, que
- * es el único relleno de la pantalla: se distingue por forma y no solo por
- * color, que es lo que pide la regla del panel.
- */
-function Pastilla({ token, periodo, actual, children }: {
-  token: string;
-  periodo: string;
-  actual: string;
-  children: React.ReactNode;
-}) {
-  const elegida = periodo === actual;
-  return (
-    <a href={`/mi/${encodeURIComponent(token)}?p=${periodo}`}
-       aria-current={elegida ? 'page' : undefined}
-       className={`boton tecla boton-angosto first-letter:uppercase ${
-         elegida ? 'boton-relleno' : ''}`}>
-      {children}
-    </a>
-  );
-}
-
-/**
  * El pronóstico de un día, para quien va a trabajar: si hay que venir con
  * bloqueador o con parka. Lo pide el servidor a MET Norway, igual que el
  * panel, y se guarda una hora. **Si MET no responde, la página sale igual**,
@@ -213,32 +192,6 @@ async function pronostico(): Promise<Clima[]> {
   } catch { return []; }
 }
 
-/**
- * La etiqueta de una semana: *En curso*, *Semana pasada*, *Próxima semana*…
- *
- * **Cada una con su color**, que es lo que la hace reconocible sin leerla:
- * la en curso va **rellena de dorado y con un punto que late** —es la que
- * corre—, la pasada en verde porque es la que te pagan, las que vienen en
- * celeste. Y con borde, para que se distingan por forma y no solo por color.
- */
-function EtiquetaSemana({ texto }: { texto: string }) {
-  const tono = texto === 'En curso'
-    ? 'border-oro bg-oro text-tinta'
-    : texto === 'Semana pasada'
-      ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
-      : texto.startsWith('En ') || texto === 'Próxima semana'
-        ? 'border-cielo-fuerte/60 bg-cielo/10 text-cielo-texto'
-        : 'border-hueso/25 text-hueso/70';
-  return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full
-                      border-2 px-2.5 py-0.5 text-[13px] font-bold ${tono}`}>
-      {texto === 'En curso' && (
-        <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-tinta" />
-      )}
-      {texto}
-    </span>
-  );
-}
 
 /** Lo que la tarjeta de un turno que viene necesita saber de su día. */
 interface DatosDelTurno {
@@ -352,19 +305,6 @@ function Pestana({ href, elegida, children }: {
   );
 }
 
-/** Una flecha del navegador de semanas: 48px, para el dedo. */
-function Flecha({ href, children, etiqueta }: {
-  href: string; children: React.ReactNode; etiqueta: string;
-}) {
-  return (
-    <a href={href} aria-label={etiqueta} title={etiqueta}
-       className="tecla flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
-                  border-2 border-hueso/25 bg-panel text-xl font-bold text-hueso/85
-                  hover:border-oro hover:text-oro">
-      {children}
-    </a>
-  );
-}
 
 async function PaginaDeLaEmpresa({ params, searchParams }: {
   params: { token: string };
@@ -490,25 +430,24 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
    * `?p=` con basura se ignora en vez de armar un rango con `NaN` y
    * mostrar una página vacía sin decir por qué.
    */
-  const pedido = String(searchParams?.p ?? '');
-  const periodo = esPeriodo(pedido) ? pedido : semanaPorDefecto(ahora);
+  // **Abre en el mes en curso** (2026-11-24, `periodoDelLink()`); antes, en
+  // la semana pasada. Se baja a semanas con *Semana*, en el marco.
+  const periodo = periodoDelLink(searchParams?.p, ahora);
   const esMes = periodo.length === 7;
   const { desde, hasta } = rangoDelPeriodo(periodo);
   const comoSeLlama = esMes ? mesEnPalabras(periodo) : rangoEnPalabras([desde, hasta]);
 
-  const { meses } = periodosDelLink(trabajados, ahora);
   /**
-   * La escalera de semanas: la que viene, la en curso, la pasada y las
-   * anteriores con turnos. Si alguien llegó con las flechas a una que no
-   * está, se le agrega: sin esto estaría mirando una semana y ninguna fila
-   * se vería marcada, que se lee como que el filtro está roto. Lo mismo con
-   * los meses.
+   * La escalera de semanas (solo en *Semana*): la que viene, la en curso, la
+   * pasada y las anteriores con turnos. Si alguien llegó con las flechas a
+   * una que no está, se le agrega: sin esto estaría mirando una semana y
+   * ninguna fila se vería marcada, que se lee como que el filtro está roto.
+   * Los meses ya no van en pastillas: se mueven con las flechas del marco.
    */
   const escalera = escaleraDeSemanas(suyos, ahora);
-  const lista = esMes ? meses : escalera;
-  if (!lista.includes(esMes ? periodo : desde)) {
-    lista.push(esMes ? periodo : desde);
-    lista.sort().reverse();
+  if (!esMes && !escalera.includes(desde)) {
+    escalera.push(desde);
+    escalera.sort().reverse();
   }
 
   /**
@@ -681,32 +620,14 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
       ) : (
         /* ====================== LO QUE GANÉ ====================== */
         <>
-          {/* ---------- La semana que se mira, con flechas ---------- */}
+          {/* ---------- El periodo: Mes · Semana, y sus flechas ---------- */}
 
-          {!esMes && (
-            /* **La semana elegida en grande, con flechas a los lados**
-               (2026-11-04). Se lee qué semana es —*Semana pasada*, *En
-               curso*— y no solo sus fechas, y las flechas llevan a la
-               anterior o a la siguiente sin tope: se puede ir próxima,
-               próxima, próxima. Son enlaces, así que no hay JavaScript. */
-            <div className="mt-5 flex items-center gap-2 rounded-2xl border-2 border-oro/60
-                            bg-oro/[0.06] p-2.5">
-              <Flecha href={enlace(`?p=${sumarDias(desde, -7)}`)} etiqueta="Semana anterior">◀</Flecha>
-              <div className="min-w-0 flex-1 text-center">
-                <EtiquetaSemana texto={etiquetaSemana(desde, ahora)} />
-                <p className="mt-1 text-[17px] font-bold leading-tight first-letter:uppercase">
-                  {comoSeLlama}
-                </p>
-              </div>
-              <Flecha href={enlace(`?p=${sumarDias(desde, 7)}`)} etiqueta="Semana siguiente">▶</Flecha>
-            </div>
-          )}
-
-          {/* ---------- Los números del periodo ---------- */}
-
-          {esMes && (
-            <h2 className="mt-7 text-base font-bold first-letter:uppercase">{comoSeLlama}</h2>
-          )}
+          {/* **Un solo marco para el mes y la semana** (2026-11-24, lo pidió el
+              cliente: *"por defecto se muestra el mes y con el valor de la
+              boleta del mes. Y ahí por elección se puede bajar a semanal"*).
+              Antes la semana iba en grande con sus flechas y el mes era un
+              título suelto, con sus pastillas al pie de la página. */}
+          <ElegirPeriodoLink periodo={periodo} ahora={ahora} enlace={enlace} />
 
           {/* Los turnos que todavía vienen en esta semana: en la semana en
               curso y en las que vienen, es lo primero que hay que ver. */}
@@ -842,9 +763,12 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
                 titulo={esMes ? `Tu boleta de ${comoSeLlama}` : `Tu boleta del ${comoSeLlama}`}>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {esMes ? (
-                    <p className="text-[13px] text-hueso/75">
-                      ¿Boleteas por semana? Elige la semana en <strong>Tus semanas</strong>, más abajo.
-                    </p>
+                    <>
+                      <span className="text-[13px] text-hueso/75">¿Boleteas por semana?</span>
+                      <a href={enlace(`?p=${semanaParaElMes(periodo, ahora)}`)} className="tecla boton min-h-[44px] font-semibold">
+                        Ver por semana →
+                      </a>
+                    </>
                   ) : (
                     <>
                       <span className="text-[13px] text-hueso/75">¿Boleteas por mes?</span>
@@ -1000,6 +924,7 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
               cada una con su etiqueta y con si tuvo actividad. La elegida va
               marcada con borde dorado. Antes eran pastillas sueltas con
               fechas, y había que leerlas para saber cuál era la que pagan. */}
+          {!esMes && (<>
           <h3 className={`${rotulo} mt-9`}>Tus semanas</h3>
           <nav className="mt-2 space-y-2">
             {escalera.map((lunes) => {
@@ -1031,14 +956,7 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
             })}
           </nav>
 
-          <p className={`${rotulo} mt-6`}>O mira un mes entero</p>
-          <nav className="mt-1.5 flex flex-wrap gap-1.5">
-            {meses.map((m) => (
-              <Pastilla key={m} token={params.token} periodo={m} actual={periodo}>
-                {mesEnPalabras(m)}
-              </Pastilla>
-            ))}
-          </nav>
+          </>)}
         </>
       )}
 

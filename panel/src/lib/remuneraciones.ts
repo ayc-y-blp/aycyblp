@@ -508,8 +508,9 @@ export const boletaEnPlanilla = (aplica: boolean, recibida: boolean) =>
  *
  * Es una sola lista para el botón de copiar, la planilla para la
  * transferencia masiva y las columnas del banco de las planillas del
- * informe: cambiarla acá cambia las tres. Los rótulos van en las planillas;
- * el botón copia solo los valores (`textoTransferencia()`).
+ * informe: cambiarla acá cambia las tres. *🏦 Datos bancarios* copia los
+ * seis datos del formulario con el nombre de su campo
+ * (`textoDatosBancarios()`), y el botón de cada concepto, solo el monto.
  */
 export const ORDEN_TRANSFERENCIA = [
   'titular', 'rut', 'banco', 'tipo', 'numero', 'correo', 'monto', 'glosa'
@@ -541,35 +542,59 @@ export const filaTransferencia = (d: DatosTransferencia): string[] =>
       : k === 'numero' ? numeroDeCuenta(d.numero)
         : String(d[k] ?? ''));
 
+/** Lo que pide el formulario de nueva cuenta: los datos sin el monto ni la glosa. */
+export type DatosBancarios = Pick<DatosTransferencia, typeof DATOS_DESTINATARIO[number]>;
+
 /**
- * Los datos de una transferencia como texto para pegar: **solo los valores,
- * uno por línea**, en el orden del formulario del banco y después el monto y
- * la glosa.
+ * **Copiar datos bancarios** (2026-11-24): el texto para pegar en el
+ * formulario de *nueva cuenta* de Mercado Pago, que es donde se hacen las
+ * transferencias. **Cada dato con el nombre de su campo**, en el orden del
+ * formulario.
  *
  * ```
- * Ana Soto
- * 11.111.111-1
- * BancoEstado
- * Cuenta RUT
- * 11111111
- * ana@correo.cl
- * 120000
- * Sueldo 09/11 al 15/11
+ * Nombre y apellido: Ana Soto
+ * RUT: 11.111.111-1
+ * Banco: BancoEstado
+ * Tipo de cuenta: Cuenta RUT
+ * Número de cuenta: 11111111
+ * E-mail: ana@correo.cl
  * ```
  *
- * - **Sin rótulos** (lo corrigió el cliente el mismo día: *"solo copias Luis
- *   Contreras… el pagador copia los datos, abre… el banco y copia los datos
- *   nomás"*): cada línea se pega tal cual en su campo. El primer corte decía
- *   *Nombre y apellido: Ana Soto*, y eso había que borrarlo al pegar.
- * - **Siempre ocho líneas, en el mismo lugar**: sin correo, su línea va
- *   vacía, para que el monto siga siendo la séptima.
- * - **Es la misma fila de la planilla para el banco** (`filaTransferencia()`),
- *   una celda por línea: copiar y descargar no pueden decir cosas distintas.
- *   Antes iba separada por tabs, pensando en que un formulario web pasara de
- *   un campo al siguiente al pegar; pegar no hace eso.
+ * - **Con el nombre del campo** (lo pidió el cliente: *"se tiene que copiar
+ *   con el formato para rellenar el formulario con sus campos. Y el
+ *   formulario se rige a través del pantallazo"*). El formulario tiene un
+ *   botón ✨ que lee lo copiado y rellena cada campo: con líneas sueltas no
+ *   sabía cuál era cuál. Los nombres son los del pantallazo
+ *   (`NOMBRE_COLUMNA_TRANSFERENCIA`).
+ * - **Solo los seis datos del formulario**: el monto va en otro botón
+ *   (`montoParaPegar()`), porque Mercado Pago lo pide en otra pantalla, y una
+ *   cuenta se guarda una vez y después se paga muchas.
+ * - **Lo que falta no va**: sin correo —es opcional—, no hay línea de E-mail.
+ * - **Los valores son los de la planilla para el banco** (`filaTransferencia()`):
+ *   el RUT con puntos y guion, y la cuenta solo con dígitos. Copiar y
+ *   descargar no pueden decir cosas distintas.
+ *
+ * **La historia**: el 2026-11-21 nació como un solo botón con los nombres, el
+ * monto y la glosa; ese mismo día el cliente pidió solo los valores, uno por
+ * línea, pensando en pegar campo por campo. Con el ✨ eso no rellenaba el
+ * formulario, y el 2026-11-24 se partió en dos botones: el monto y los datos.
  */
-export const textoTransferencia = (d: DatosTransferencia): string =>
-  filaTransferencia(d).join('\n');
+export const textoDatosBancarios = (d: DatosBancarios): string => {
+  const fila = filaTransferencia({ ...d, monto: 0, glosa: '' });
+  return DATOS_DESTINATARIO
+    .map((k) => [NOMBRE_COLUMNA_TRANSFERENCIA[k], fila[ORDEN_TRANSFERENCIA.indexOf(k)].trim()])
+    .filter(([, valor]) => valor !== '')
+    .map(([campo, valor]) => `${campo}: ${valor}`)
+    .join('\n');
+};
+
+/**
+ * **El monto para pegar** (2026-11-24, lo pidió el cliente: *"simplemente
+ * copias el valor total a transferir… propinas y sueldos completos"*): solo
+ * los dígitos, `147000`, sin signo peso ni puntos, que es lo que acepta el
+ * campo del monto al pegar.
+ */
+export const montoParaPegar = (monto: number): string => String(Math.max(0, Math.round(monto)));
 
 /**
  * La glosa de la transferencia: qué es y de qué periodo —*"Sueldo 26/10 al
