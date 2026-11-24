@@ -542,11 +542,52 @@ doblaba y la ventana medía 654px; ahora 612.
   Configuración. Lo ve y lo cambia quien tiene `configurar`.
 - **Pestaña nueva `Promociones`**: `ID`, `Nombre`, `En el sitio`, `Activa`,
   `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar` (los tres con `|`),
-  `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador`. Se crea sola con
+  `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador` y, desde el
+  2026-11-24, `Más tramos`. Se crea sola con
   su encabezado; *Dejar la base en cero* la **conserva** (es configuración).
 - La tarjeta abierta del Gran Premio mide 641px a 1280×650 (escena
   `ficha-promocion`): los botones van a 36px en el computador y *Cotizador y
   link* comparte fila.
+
+### La ficha, ordenada: menús, extras y condición (2026-11-24)
+
+Lo marcó el cliente con una foto de la ficha abierta: *"en promociones falta
+todo orden según reglas gráficas y lógicas… aparecen productos doblados en
+menú de niños… necesitamos poder agregar otro tramo de condición o otros
+tramos de condición con un más… para el show tiene que contar la misma regla
+de la configuración"*.
+
+- **Tres secciones con su marco** (`Seccion`, más fino que el de la
+  tarjeta): **🍽 Menús** y **🏷 Condición** a la izquierda y **➕ Extras** a la
+  derecha en el computador; una debajo de otra en el celular. Adentro, los
+  nombres en su columna de 7rem (`FilaSeccion`), para que los botones no se
+  doblen en tres renglones en media tarjeta.
+- **Cada menú sale una vez**: *Adultos* trae solo los de adulto y *Niños* solo
+  los de niños (`esMenuDeNinos()`: *Niños*, *Pequeños*…). Antes las dos filas
+  tenían la misma lista.
+- **Cada extra sale una vez**, con su estado: ***No · Incluido · Se suma***.
+  Antes *Incluye siempre* y *Se puede sumar* eran dos filas con los mismos
+  productos. El servidor también lo cuida: lo incluido no queda además para
+  sumar (`limpiarPromocion()`).
+- **El show no dice un precio**: dice *regla de Configuración*, con su `?`
+  (`promoShow`). Ya se cotizaba así —`prepararLineas()` lo deja sin costo en
+  un día público y desde N personas, y con su mínimo bajo eso—; el *$400.000
+  fijo* que mostraba el botón confundía.
+- **La condición en tramos**: el primero es desde cuántas personas sale la
+  promoción y su descuento (`Mínimo de personas` y `Descuento`, como antes);
+  **+ Otro tramo**, en la línea del título, suma uno con un descuento mayor
+  desde más gente, hasta cinco, cada uno con su ✕. **Rige el tramo más alto
+  que alcance el grupo** (`descuentoPara()`, en `cotizarPromocion()`): con 10%
+  desde 22 y 15% desde 50, 60 personas llevan el 15%. Los tramos de más van en
+  la columna nueva **`Más tramos`** de `Promociones` (`50:15 | 80:20`); una
+  fila de antes se lee con uno solo. La cabecera de la tarjeta dice *−10% a
+  −15%*. El sitio no cambia: recibe el descuento que corresponde al cotizar.
+- **Apagar, Quitar y Guardar van en la fila del nombre**, a la derecha: solos
+  al pie dejaban una fila casi vacía.
+- **Medidas** (`ficha-promocion`, 1280×650): 578px (era 641); con dos tramos,
+  627.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
+  `promoMenu`, `promoSuma`, `promoCondicion` y uno nuevo, `promoShow`.
 
 ### Se cotiza con las reglas del vendedor (`cotizarPromocion()`)
 

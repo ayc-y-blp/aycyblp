@@ -19,10 +19,10 @@ import { Aviso } from './CalendarView';
 import { avisar, copiarConAviso } from './AvisoFlotante';
 import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } from './TarjetaLista';
 import { enPesos } from '@/lib/ocupacion';
-import { IVA_PRECIO, COBRO, precioParaCotizar, type Menu } from '@/lib/menus';
+import { IVA_PRECIO, COBRO, TIPO_PRODUCTO, precioParaCotizar, type Menu } from '@/lib/menus';
 import {
-  EN_EL_SITIO, ARRIENDO_PROMO, nombreEnElSitio, menusParaPromo, extrasParaPromo, nuevaPromocion,
-  nuevoIdPromocion, promocionesParaElSitio, linkDeCampana, type Promocion
+  EN_EL_SITIO, ARRIENDO_PROMO, nombreEnElSitio, menusAdultoParaPromo, menusNinosParaPromo, extrasParaPromo,
+  nuevaPromocion, nuevoIdPromocion, promocionesParaElSitio, linkDeCampana, type Promocion, type Tramo
 } from '@/lib/promociones';
 
 /** Los botones de la ficha: 40px en el celular, 36 en el computador para que la tarjeta quepa. */
@@ -65,6 +65,140 @@ function Elegir({ opciones, elegidos, onCambio, etiqueta, uno = false }: {
   );
 }
 
+/**
+ * **Una sección de la ficha** (2026-11-24, lo pidió el cliente con una foto:
+ * *"falta todo orden según reglas gráficas y lógicas"*): *Menús*, *Extras* y
+ * *Condición*, cada una en su marco, más fino que el de la tarjeta (la regla
+ * *el marco de la tarjeta manda*).
+ */
+function Seccion({ titulo, ayuda, accion, children }: {
+  titulo: string; ayuda?: string;
+  /** Un botón en la línea del título, a la derecha (*+ Otro tramo*). */
+  accion?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={`${marcoTarjeta(false, 'normal', false, true)} space-y-2 p-2.5 lg:space-y-1.5`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center text-[15px] font-bold">{titulo}{ayuda && <AyudaCorta tema={ayuda} />}</p>
+        {accion}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const ESTADOS_EXTRA = [['no', 'No'], ['incluye', 'Incluido'], ['suma', 'Se suma']] as const;
+
+/**
+ * **Los extras, cada uno una vez** (2026-11-24): antes eran dos filas con la
+ * misma lista —*Incluye siempre* y *Se puede sumar*— y cada producto salía dos
+ * veces. Ahora una fila por extra con su estado: *No*, *Incluido* (va siempre)
+ * o *Se suma* (el cliente lo elige en el sitio). **El show** no dice un precio:
+ * sigue la regla de Configuración (sin costo en un día público y desde N
+ * personas; bajo eso, su mínimo), igual que en una cotización.
+ */
+function Extras({ extras, incluye, suma, onCambio }: {
+  extras: Menu[]; incluye: string[]; suma: string[];
+  onCambio: (incluye: string[], suma: string[]) => void;
+}) {
+  if (!extras.length) {
+    return <p className="text-[14px] text-hueso/60">No hay extras para elegir: márcalos “Se puede cotizar” en el catálogo.</p>;
+  }
+  return (
+    <ul className="divide-y divide-hueso/10">
+      {extras.map((m) => {
+        const estado = incluye.includes(m.nombre) ? 'incluye' : suma.includes(m.nombre) ? 'suma' : 'no';
+        const poner = (e: typeof estado) => {
+          const sinEl = (l: string[]) => l.filter((x) => x !== m.nombre);
+          onCambio(e === 'incluye' ? [...sinEl(incluye), m.nombre] : sinEl(incluye),
+                   e === 'suma' ? [...sinEl(suma), m.nombre] : sinEl(suma));
+        };
+        const show = m.tipo === TIPO_PRODUCTO.show;
+        return (
+          // En el celular, el nombre arriba y los tres botones debajo, a lo ancho:
+          // al lado no cabían y el precio chocaba con *No*.
+          <li key={m.nombre} className="grid gap-1 py-1.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-2 sm:py-1">
+            <span className="min-w-0 text-[15px] leading-tight">
+              <span className="font-semibold">{m.nombre}</span>
+              <span className="ml-1.5 text-[13px] text-hueso/70">
+                {show ? 'regla de Configuración' : precioCorto(m)}
+              </span>
+              {show && <AyudaCorta tema="promoShow" />}
+              {m.loCobra && <span className="ml-1.5 text-[13px] font-semibold text-ambar-texto">· lo cobra {m.loCobra}</span>}
+            </span>
+            <span role="radiogroup" aria-label={m.nombre} className="flex gap-1">
+              {ESTADOS_EXTRA.map(([e, texto]) => (
+                <button key={e} type="button" role="radio" aria-checked={estado === e} onClick={() => poner(e)}
+                  className={`${BOTON} flex-1 !px-2.5 text-[14px] sm:flex-none ${estado === e ? ELEGIDO : 'text-hueso/75'}`}>
+                  {texto}
+                </button>
+              ))}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * **La condición en tramos** (2026-11-24, lo pidió el cliente: *"necesitamos
+ * poder agregar otro tramo de condición o otros tramos de condición con un
+ * más"*): el primero es desde cuántas personas sale la promoción y su
+ * descuento; cada tramo de más, un descuento mayor desde más gente. Rige el
+ * más alto que alcance el grupo (`descuentoPara()`).
+ */
+function Tramos({ p, onCambio }: { p: Promocion; onCambio: (c: Partial<Promocion>) => void }) {
+  const numero = (v: string, max: number) => Math.min(max, Math.max(0, Math.round(Number(v) || 0)));
+  const filas: (Tramo & { primero?: boolean })[] = [{ desde: p.minimo, descuento: p.descuento, primero: true }, ...p.tramos];
+  const cambiarTramo = (k: number, t: Partial<Tramo>) => {
+    if (k === 0) return onCambio({ ...(t.desde !== undefined ? { minimo: t.desde } : {}), ...(t.descuento !== undefined ? { descuento: t.descuento } : {}) });
+    onCambio({ tramos: p.tramos.map((x, j) => (j === k - 1 ? { ...x, ...t } : x)) });
+  };
+  return (
+    <FilaSeccion rotulo="Tramos">
+      <div className="space-y-1.5">
+        {filas.map((t, k) => (
+          <div key={k} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px]">
+            <span className="text-hueso/70">desde</span>
+            <input type="number" min={1} value={t.desde || ''} placeholder={k === 0 ? '1' : ''}
+              aria-label={k === 0 ? 'Mínimo de personas' : `Tramo ${k + 1}: desde cuántas personas`}
+              onChange={(e) => cambiarTramo(k, { desde: numero(e.target.value, 10000) })}
+              className={`${ENTRADA} !w-[4.5rem] text-center lg:py-1`} />
+            <span>personas:</span>
+            <input type="number" min={0} max={100} value={t.descuento || ''} placeholder="0"
+              aria-label={k === 0 ? 'Descuento de la promoción' : `Tramo ${k + 1}: descuento`}
+              onChange={(e) => cambiarTramo(k, { descuento: numero(e.target.value, 100) })}
+              className={`${ENTRADA} !w-14 text-center lg:py-1`} />
+            <span>% de descuento</span>
+            {k > 0 && (
+              <button type="button" aria-label={`Quitar el tramo ${k + 1}`} title="Quitar el tramo"
+                onClick={() => onCambio({ tramos: p.tramos.filter((_, j) => j !== k - 1) })}
+                className={`${BOTON} !px-2.5 hover:border-rojo-fuerte hover:text-rojo-texto`}>✕</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </FilaSeccion>
+  );
+}
+
+/**
+ * Una fila **dentro de una sección**: la columna del nombre es más angosta que
+ * la de la ficha (7rem), para que los botones no se doblen en tres renglones
+ * en media tarjeta. Los nombres de una sección miden lo mismo: los valores
+ * parten en la misma vertical.
+ */
+function FilaSeccion({ rotulo, ayuda, children }: { rotulo: string; ayuda?: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-x-2">
+      <p className="rotulo-ficha flex items-center">{rotulo}{ayuda && <AyudaCorta tema={ayuda} />}</p>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
 /** Una fila de la ficha: el nombre a la izquierda, en su columna, y lo suyo a la derecha. */
 function Fila({ rotulo, ayuda, children }: { rotulo: string; ayuda?: string; children: React.ReactNode }) {
   return (
@@ -91,7 +225,8 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
     }).catch((e) => setError(String(e)));
   }, []);
 
-  const menus = useMemo(() => menusParaPromo(catalogo), [catalogo]);
+  const menus = useMemo(() => menusAdultoParaPromo(catalogo), [catalogo]);
+  const menusNinos = useMemo(() => menusNinosParaPromo(catalogo), [catalogo]);
   /** Desde cuánto por persona, neto: lo mismo que dirá el sitio. 0 si le falta algo. */
   const desde = (p: Promocion) => promocionesParaElSitio([{ ...p, activa: true, sitio: p.sitio || 'ia' }], catalogo)[0]?.desde ?? 0;
   const extras = useMemo(() => extrasParaPromo(catalogo), [catalogo]);
@@ -159,7 +294,11 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                 )}
                 {p.minimo > 0 && <span className="text-[14px] text-hueso/70">desde {p.minimo} personas</span>}
                 {desde(p) > 0 && <span className="text-[14px] text-hueso/70">· desde {enPesos(desde(p))} + IVA por persona</span>}
-                {p.descuento > 0 && <span className="text-[14px] font-semibold text-verde-texto">−{p.descuento}%</span>}
+                {(p.descuento > 0 || p.tramos.length > 0) && (
+                  <span className="text-[14px] font-semibold text-verde-texto">
+                    −{p.descuento}%{p.tramos.length ? ` a −${Math.max(p.descuento, ...p.tramos.map((t) => t.descuento))}%` : ''}
+                  </span>
+                )}
               </button>
 
               {abierta === i && (
@@ -171,8 +310,23 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                     </p>
                   )}
                   <Fila rotulo="Nombre">
-                    <input value={p.nombre} maxLength={80} className={`${ENTRADA} sm:max-w-md lg:py-1.5`}
-                      placeholder="Como la llaman ustedes" onChange={(e) => cambiar(i, { nombre: e.target.value })} />
+                    {/* Apagar, quitar y guardar van en esta fila, a la derecha
+                        (2026-11-24): solos al pie de la tarjeta dejaban una fila
+                        casi vacía y la tarjeta no cabía en la pantalla. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input value={p.nombre} maxLength={80} className={`${ENTRADA} min-w-0 flex-1 sm:max-w-md lg:py-1.5`}
+                        placeholder="Como la llaman ustedes" onChange={(e) => cambiar(i, { nombre: e.target.value })} />
+                      <div className="ml-auto flex flex-wrap items-center gap-2">
+                        <button type="button" className={BOTON} onClick={() => cambiar(i, { activa: !p.activa })}>
+                          {p.activa ? 'Apagar' : 'Encender'}
+                        </button>
+                        <button type="button" className={`${BOTON} hover:border-rojo-fuerte hover:text-rojo-texto`}
+                          onClick={() => { setPromos(promos.filter((_, k) => k !== i)); setAbierta(null); setSucio(true); }}>
+                          Quitar
+                        </button>
+                        {sucio && botonGuardar}
+                      </div>
+                    </div>
                   </Fila>
                   <Fila rotulo="En el sitio" ayuda="promoEnElSitio">
                     <div role="radiogroup" aria-label="En el sitio" className="flex flex-wrap gap-2">
@@ -214,59 +368,41 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                       </div>
                     </Fila>
                   )}
-                  <Fila rotulo="Menú" ayuda="promoMenu">
-                    <Elegir etiqueta="Menú" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
-                  </Fila>
-                  <Fila rotulo="Menú de niños">
-                    <Elegir etiqueta="Menú de niños" uno opciones={menus} elegidos={p.ninos ? [p.ninos] : []}
-                      onCambio={(v) => cambiar(i, { ninos: v[0] ?? '' })} />
-                  </Fila>
-                  <Fila rotulo="Incluye siempre">
-                    <Elegir etiqueta="Incluye siempre" opciones={extras} elegidos={p.incluye}
-                      onCambio={(v) => cambiar(i, { incluye: v, suma: p.suma.filter((x) => !v.includes(x)) })} />
-                  </Fila>
-                  <Fila rotulo="Se puede sumar" ayuda="promoSuma">
-                    <Elegir etiqueta="Se puede sumar" opciones={extras.filter((m) => !p.incluye.includes(m.nombre))}
-                      elegidos={p.suma} onCambio={(v) => cambiar(i, { suma: v })} />
-                  </Fila>
-                  <Fila rotulo="Condición" ayuda="promoCondicion">
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                      <label className="flex items-center gap-2 text-[15px]">
-                        desde
-                        <input type="number" min={1} value={p.minimo || ''} placeholder="1" aria-label="Mínimo de personas"
-                          onChange={(e) => cambiar(i, { minimo: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
-                          className={`${ENTRADA} !w-24 text-center lg:py-1`} />
-                        personas
-                      </label>
-                      <label className="flex items-center gap-2 text-[15px]">
-                        descuento
-                        <input type="number" min={0} max={100} value={p.descuento || ''} placeholder="0" aria-label="Descuento de la promoción"
-                          onChange={(e) => cambiar(i, { descuento: Math.min(100, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
-                          className={`${ENTRADA} !w-20 text-center lg:py-1`} />
-                        % sobre el total
-                      </label>
-                    </div>
-                  </Fila>
-                  <Fila rotulo="Arriendo" ayuda="promoArriendo">
-                    <div role="radiogroup" aria-label="Arriendo" className="flex flex-wrap gap-2">
-                      {Object.values(ARRIENDO_PROMO).map((a) => (
-                        <button key={a} type="button" role="radio" aria-checked={p.arriendo === a}
-                          onClick={() => cambiar(i, { arriendo: a })}
-                          className={`${BOTON} ${p.arriendo === a ? ELEGIDO : ''}`}>
-                          {a}
+                  <div className="grid gap-3 lg:grid-cols-2 lg:gap-2.5">
+                    <div className="space-y-3 lg:space-y-2.5">
+                      <Seccion titulo="🍽 Menús" ayuda="promoMenu">
+                        <FilaSeccion rotulo="Adultos">
+                          <Elegir etiqueta="Menú de adultos" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
+                        </FilaSeccion>
+                        <FilaSeccion rotulo="Niños">
+                          <Elegir etiqueta="Menú de niños" uno opciones={menusNinos} elegidos={p.ninos ? [p.ninos] : []}
+                            onCambio={(v) => cambiar(i, { ninos: v[0] ?? '' })} />
+                        </FilaSeccion>
+                      </Seccion>
+                      <Seccion titulo="🏷 Condición" ayuda="promoCondicion" accion={p.tramos.length < 5 && (
+                        <button type="button" className={`${BOTON} text-[14px]`}
+                          onClick={() => cambiar(i, { tramos: [...p.tramos, { desde: 0, descuento: 0 }] })}>
+                          + Otro tramo
                         </button>
-                      ))}
+                      )}>
+                        <Tramos p={p} onCambio={(c) => cambiar(i, c)} />
+                        <FilaSeccion rotulo="Arriendo" ayuda="promoArriendo">
+                          <div role="radiogroup" aria-label="Arriendo" className="flex flex-wrap gap-1.5">
+                            {Object.values(ARRIENDO_PROMO).map((a) => (
+                              <button key={a} type="button" role="radio" aria-checked={p.arriendo === a}
+                                onClick={() => cambiar(i, { arriendo: a })}
+                                className={`${BOTON} ${p.arriendo === a ? ELEGIDO : ''}`}>
+                                {a}
+                              </button>
+                            ))}
+                          </div>
+                        </FilaSeccion>
+                      </Seccion>
                     </div>
-                  </Fila>
-                  <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-                    <button type="button" className={BOTON} onClick={() => cambiar(i, { activa: !p.activa })}>
-                      {p.activa ? 'Apagar' : 'Encender'}
-                    </button>
-                    <button type="button" className={`${BOTON} hover:border-rojo-fuerte hover:text-rojo-texto`}
-                      onClick={() => { setPromos(promos.filter((_, k) => k !== i)); setAbierta(null); setSucio(true); }}>
-                      Quitar
-                    </button>
-                    {sucio && botonGuardar}
+                    <Seccion titulo="➕ Extras" ayuda="promoSuma">
+                      <Extras extras={extras} incluye={p.incluye} suma={p.suma}
+                        onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
+                    </Seccion>
                   </div>
                 </fieldset>
               )}

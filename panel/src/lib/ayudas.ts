@@ -1334,24 +1334,34 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     ]
   },
   promoMenu: {
-    titulo: 'El menú',
+    titulo: 'Los menús',
     texto: [
-      'Con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
+      'Adultos: con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
+      'Niños: el menú de los niños, si la promoción lo lleva. Los menús de niños van solo en esa fila.',
       'Los precios son los de cotización del catálogo.'
     ]
   },
   promoSuma: {
-    titulo: 'Se puede sumar',
+    titulo: 'Los extras',
     texto: [
-      'Lo que el cliente puede agregar en el sitio. Va por persona, o una vez si es un monto fijo. '
-      + 'Lo que cobra otra empresa, como el karting, va aparte del total.'
+      'Cada extra, una vez: No, Incluido (va siempre en la promoción) o Se suma (el cliente lo elige en el sitio).',
+      'Va por persona, o una vez si es un monto fijo. Lo que cobra otra empresa, como el karting, va aparte del total.'
+    ]
+  },
+  promoShow: {
+    titulo: 'El show en una promoción',
+    texto: [
+      'El show sigue la misma regla de Configuración que en una cotización: sin costo en un día abierto al público '
+      + 'y desde el número de personas de Configuración; con menos gente en un día privado, su mínimo.'
     ]
   },
   promoCondicion: {
-    titulo: 'Personas y descuento',
+    titulo: 'La condición: personas y descuento',
     texto: [
-      'Desde cuántas personas se cotiza en el sitio, y el descuento de la promoción sobre el total. '
-      + 'Es la condición especial: la pone quien arma la promoción.'
+      'El primer tramo dice desde cuántas personas se cotiza en el sitio y su descuento sobre el total.',
+      '+ Otro tramo agrega un descuento mayor desde más gente: rige el tramo más alto que alcanza el grupo. '
+      + 'Por ejemplo, 10% desde 22 y 15% desde 50: con 60 personas, el 15%.',
+      'Es la condición especial: la pone quien arma la promoción.'
     ]
   },
   promoArriendo: {

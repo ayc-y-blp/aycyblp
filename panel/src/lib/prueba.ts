@@ -7263,6 +7263,25 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(comb.ok && comb.arriendo === 0 && comb.lineas.length === 1 && comb.lineas[0].concepto === 'Brasas'
      && comb.cuentas.total === Math.round(12 * 70000 * 1.19 * 0.9),
      'menú fijo, sin arriendo de lunes a viernes y el descuento de la promoción');
+  // Tramos de la condición (2026-11-24): el del tramo más alto que alcanza.
+  const conTramos = { ...combate, tramos: PR.tramosDe('30:15 | 20:12 | 5:99 | 30:50', combate.minimo) };
+  ok(JSON.stringify(conTramos.tramos) === JSON.stringify([{ desde: 20, descuento: 12 }, { desde: 30, descuento: 15 }]),
+     'los tramos se ordenan, sin repetir un desde y solo sobre el primero (10)');
+  ok(PR.descuentoPara(conTramos, 12) === 10 && PR.descuentoPara(conTramos, 20) === 12 && PR.descuentoPara(conTramos, 45) === 15,
+     'el descuento es el del tramo más alto que alcanza el grupo');
+  const comb30 = PR.cotizarPromocion(conTramos, { adultos: 30, ninos: 0, menu: '', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(comb30.ok && comb30.descuento === 15 && comb30.cuentas.total === Math.round(30 * 70000 * 1.19 * 0.85),
+     'al cotizar, 30 personas llevan el 15%');
+  const fila = PR.aFilasPromociones([conTramos])[1];
+  ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES, fila])[0].tramos.length === 2
+     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), fila.slice(0, -1)])[0].tramos.length === 0,
+     'los tramos se guardan y se leen; una fila de antes, sin la columna, queda con uno solo');
+  ok(PR.esMenuDeNinos('Niños') && PR.esMenuDeNinos('Menú Pequeños') && !PR.esMenuDeNinos('Lo Pirque')
+     && PR.menusAdultoParaPromo(cat).every((m) => !PR.esMenuDeNinos(m.nombre))
+     && PR.menusNinosParaPromo(cat).map((m) => m.nombre).join() === 'Niños',
+     'los menús de niños van en su fila y los de adulto en la suya: ninguno sale dos veces');
+  ok(PR.limpiarPromocion({ id: 'x', nombre: 'x', incluye: ['Karting'], suma: ['Karting', 'Show ecuestre'] }, cat).suma.join() === 'Show ecuestre',
+     'un extra incluido no queda además para sumar');
   const campoC = PR.cotizarPromocion(campo, { adultos: 10, ninos: 5, menu: '', suma: [], fecha: '2026-11-28' }, ctx);
   ok(campoC.ok && campoC.invitados === 15 && campoC.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 5),
      'con menú de niños: los niños van en su línea y cuentan para el total de personas');

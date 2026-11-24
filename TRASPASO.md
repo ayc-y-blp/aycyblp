@@ -384,6 +384,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `cuentasQueVenden()` en la lista, el Informe, el link personal y el congelado
   de la comisión. Su trato parte en 0% y sin ficha la comisión no se congela.
   Ver `panel/CLAUDE.md`, "Vende quien cotiza".
+- **La ficha de una promoción, ordenada** (24-11-2026, en el mismo PR #338,
+  lo marcó el cliente con una foto): secciones *Menús* (adultos y niños, cada
+  menú una vez), *Extras* (cada uno con *No · Incluido · Se suma*; el show con
+  la regla de Configuración) y *Condición* en tramos con *+ Otro tramo*
+  (columna nueva `Más tramos`). Ver `panel/CLAUDE.md`, "La ficha, ordenada".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -555,7 +560,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
-| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador` | `Menús` por nombre |
+| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento` (el primer tramo), `Arriendo`, `Cotizador`, `Más tramos` (`50:15 \| 80:20`) | `Menús` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |

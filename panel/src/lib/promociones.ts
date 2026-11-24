@@ -65,7 +65,15 @@ export const COL_PROMOCIONES = {
    * *"en la promoción tengo que poder elegir si aparece el cotizador o no"*).
    * En blanco es sí. Con no, el bloque queda como antes: solo WhatsApp.
    */
-  cotizador: 'Cotizador'
+  cotizador: 'Cotizador',
+  /**
+   * **Los tramos de la condición, después del primero** (2026-11-24, lo
+   * pidió el cliente: *"necesitamos poder agregar otro tramo de condición o
+   * otros tramos de condición con un más"*): `50:15 | 80:20` es 15% desde 50
+   * personas y 20% desde 80. El primer tramo sigue en `Mínimo de personas` y
+   * `Descuento`, así una fila de antes se lee igual.
+   */
+  tramos: 'Más tramos'
 } as const;
 
 export const ENCABEZADO_PROMOCIONES: string[] = Object.values(COL_PROMOCIONES);
@@ -114,6 +122,9 @@ export const ARRIENDO_PROMO = {
 } as const;
 export type ArriendoPromo = (typeof ARRIENDO_PROMO)[keyof typeof ARRIENDO_PROMO];
 
+/** Un tramo de la condición: desde cuántas personas, cuánto descuento. */
+export interface Tramo { desde: number; descuento: number }
+
 export interface Promocion {
   id: string;
   nombre: string;
@@ -127,6 +138,8 @@ export interface Promocion {
   descuento: number;
   arriendo: ArriendoPromo;
   cotizador: boolean;
+  /** Los tramos después del primero (`minimo` y `descuento`), de menos a más gente. */
+  tramos: Tramo[];
 }
 
 export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocion {
@@ -134,7 +147,7 @@ export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocio
   const { id, ...resto } = p;
   return {
     id, nombre: '', sitio: '', activa: true, menus: [], ninos: '', incluye: [], suma: [],
-    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, ...resto
+    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, tramos: [], ...resto
   };
 }
 
@@ -146,6 +159,39 @@ const entero = (v: unknown, max: number) => {
 const esSi = (v: unknown) => ['si', 'sí', 'x', 'true', '1'].includes(String(v ?? '').trim().toLowerCase());
 const arriendoDe = (v: unknown): ArriendoPromo =>
   Object.values(ARRIENDO_PROMO).find((a) => normalizar(a) === normalizar(String(v ?? ''))) ?? ARRIENDO_PROMO.siempre;
+/**
+ * Los tramos, limpios: solo los que parten **sobre el primero** (`minimo`),
+ * con un descuento de 0 a 100, de menos a más gente, sin dos desde el mismo
+ * número y a lo más cinco. Llegan como `50:15 | 80:20` o como lista.
+ */
+export function tramosDe(v: unknown, minimo: number): Tramo[] {
+  const crudos = Array.isArray(v) ? v
+    : String(v ?? '').split('|').map((t) => { const [d, x] = t.split(':'); return { desde: d, descuento: x }; });
+  const vistos = new Set<number>();
+  return crudos
+    .map((t) => ({ desde: entero((t as Tramo)?.desde, 10000), descuento: entero((t as Tramo)?.descuento, 100) }))
+    .filter((t) => t.desde > Math.max(0, minimo) && !vistos.has(t.desde) && vistos.add(t.desde))
+    .sort((a, b) => a.desde - b.desde)
+    .slice(0, 5);
+}
+
+/**
+ * **El descuento que le toca a un grupo**: el del tramo más alto que alcanza.
+ * Con 60 personas y tramos desde 22 (10%) y 50 (15%), el 15%.
+ */
+export function descuentoPara(p: Pick<Promocion, 'minimo' | 'descuento' | 'tramos'>, personas: number): number {
+  let d = p.descuento;
+  for (const t of p.tramos ?? []) if (personas >= t.desde) d = t.descuento;
+  return d;
+}
+
+/**
+ * **Un menú de niños** (2026-11-24): *Niños*, *Pequeños*… En la promoción
+ * van en su fila, y los de adulto en la suya: con la misma lista en las dos,
+ * cada menú aparecía dos veces.
+ */
+export const esMenuDeNinos = (nombre: string) => /\b(nino|ninos|pequeno|pequenos|infantil|guagua)\b/.test(normalizar(nombre));
+
 const sitioDe = (v: unknown) => {
   const c = String(v ?? '').trim();
   return EN_EL_SITIO.some((s) => s.clave === c) ? c : '';
@@ -176,7 +222,8 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
       minimo: entero(en(f, i.minimo), 10000),
       descuento: entero(en(f, i.descuento), 100),
       arriendo: arriendoDe(en(f, i.arriendo)),
-      cotizador: en(f, i.cotizador).trim() === '' ? true : esSi(en(f, i.cotizador))
+      cotizador: en(f, i.cotizador).trim() === '' ? true : esSi(en(f, i.cotizador)),
+      tramos: tramosDe(en(f, i.tramos), entero(en(f, i.minimo), 10000))
     });
   }
   return salida;
@@ -186,7 +233,8 @@ export function aFilasPromociones(promos: Promocion[]): string[][] {
   return [ENCABEZADO_PROMOCIONES, ...promos.map((p) => [
     p.id, p.nombre, p.sitio, p.activa ? 'sí' : 'no', p.menus.join(' | '), p.ninos,
     p.incluye.join(' | '), p.suma.join(' | '), p.minimo ? String(p.minimo) : '',
-    p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no'
+    p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no',
+    (p.tramos ?? []).map((t) => `${t.desde}:${t.descuento}`).join(' | ')
   ])];
 }
 
@@ -199,6 +247,10 @@ export function nuevoIdPromocion(promos: Pick<Promocion, 'id'>[]): string {
 /** Lo que se ofrece como menú de una promoción: los menús que se cotizan, en pesos. */
 export const menusParaPromo = (catalogo: Menu[]) => catalogo.filter((m) =>
   m.activo && m.cotizacion && m.tipo === TIPO_PRODUCTO.menu && m.moneda !== MONEDA.uf);
+/** Los menús de adulto, para la fila *Menú*. */
+export const menusAdultoParaPromo = (catalogo: Menu[]) => menusParaPromo(catalogo).filter((m) => !esMenuDeNinos(m.nombre));
+/** Los de niños, para la fila *Menú de niños*. */
+export const menusNinosParaPromo = (catalogo: Menu[]) => menusParaPromo(catalogo).filter((m) => esMenuDeNinos(m.nombre));
 /** Lo que puede ir incluido o sumarse: los extras y el show que se cotizan, en pesos. */
 export const extrasParaPromo = (catalogo: Menu[]) => catalogo.filter((m) =>
   m.activo && m.cotizacion && (m.tipo === TIPO_PRODUCTO.extra || m.tipo === TIPO_PRODUCTO.show)
@@ -215,6 +267,9 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     .map((n) => productoDe(String(n), catalogo)?.nombre ?? '')
     .filter((n, i, a) => n && a.indexOf(n) === i);
   const ninos = productoDe(String(x?.ninos ?? ''), catalogo);
+  const minimo = entero(x?.minimo, 10000);
+  // Lo incluido no se puede además sumar: cada extra va una vez.
+  const incluye = enCatalogo(x?.incluye);
   return {
     id: String(x?.id ?? '').trim(),
     nombre: String(x?.nombre ?? '').trim().slice(0, 80),
@@ -222,12 +277,13 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     activa: typeof x?.activa === 'boolean' ? x.activa : true,
     menus: enCatalogo(x?.menus),
     ninos: ninos ? canonizar(ninos.nombre, catalogo) : '',
-    incluye: enCatalogo(x?.incluye),
-    suma: enCatalogo(x?.suma),
-    minimo: entero(x?.minimo, 10000),
+    incluye,
+    suma: enCatalogo(x?.suma).filter((n) => !incluye.includes(n)),
+    minimo,
     descuento: entero(x?.descuento, 100),
     arriendo: arriendoDe(x?.arriendo),
-    cotizador: typeof x?.cotizador === 'boolean' ? x.cotizador : true
+    cotizador: typeof x?.cotizador === 'boolean' ? x.cotizador : true,
+    tramos: tramosDe(x?.tramos, minimo)
   };
 }
 
@@ -299,7 +355,8 @@ const neto = (m: Menu) => {
  *   con poca gente (`prepararLineas()`);
  * - **el arriendo mínimo** de un día no abierto al público, salvo que la
  *   promoción lo perdone (`ARRIENDO_PROMO`);
- * - el descuento de la promoción, sobre el total.
+ * - el descuento de la promoción, sobre el total: el del tramo más alto que
+ *   alcanza el grupo (`descuentoPara()`).
  *
  * No se cotiza antes de mañana, ni un día arrendado en exclusiva a otro,
  * ni bajo el mínimo de personas, ni con un producto sin precio.
@@ -341,9 +398,11 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
     ctx.diasAbiertos, false, ctx.reservasDelDia(e.fecha));
   const lineas = prepararLineas(entrantes, ctx.catalogo, invitados, publico, 0, ctx.reglaShow, arriendo);
   const minimo = arriendo ? arriendo(personasParaMinimos(lineas, invitados)) : null;
-  const cuentas = cuentasDe(lineas, promo.descuento);
+  // El descuento del tramo que alcanza el grupo (2026-11-24).
+  const descuento = descuentoPara(promo, invitados);
+  const cuentas = cuentasDe(lineas, descuento);
   return {
-    ok: true, lineas, invitados, descuento: promo.descuento, cuentas,
+    ok: true, lineas, invitados, descuento, cuentas,
     otras: otrasEmpresas(lineas),
     porPersona: invitados > 0 ? Math.round(cuentas.total / invitados) : 0,
     publico, arriendo: minimo?.minimo ?? 0
