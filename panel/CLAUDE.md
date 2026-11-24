@@ -981,6 +981,49 @@ un producto sin precio; dice por qué con **un código** (`minimo`, `fecha`,
 `tomado`, `menu`, `sinPrecio`), que el sitio traduce. No pregunta *¿exclusivo?*:
 eso lo conversa el vendedor.
 
+**Con cuántos días de anticipación** (2026-11-24, lo pidió el cliente:
+*"para ciertas actividades extras como taller de queso, karting… estos no se
+pueden gestionar y organizar sin tiempo… necesito… un campo que me permite
+definir cuántos días de anticipación tiene que tener la cotización con esta
+promoción"*, y *"eso cuenta también si cotiza un vendedor una
+promoción"*):
+
+- **En la ficha de la promoción**, la sección ***⏳ Anticipación***, con el
+  campo al lado del título (*21 días antes del evento, como mínimo*), en la
+  columna de los extras: ahí sobra alto, y la ficha del Gran Premio sigue en
+  620px. En Condición pasaba a 658 y no cabía. Columna nueva al final de
+  `Promociones`: **`Días de anticipación`**; en blanco o 0, sin plazo.
+- **`faltaAnticipacion()`** (`lib/promociones.ts`, con pruebas): los días que
+  pide si el evento es antes de hoy + esos días; si alcanza, no pide plazo o
+  no hay día exacto, 0.
+- **En el sitio** no se cotiza dentro del plazo: `cotizarPromocion()`
+  responde `{ codigo: 'anticipacion', dias }`, y `/api/publico/promociones`
+  manda `anticipacion` para que el calendario no ofrezca un día antes.
+- **El vendedor no la aplica, ni le mueve el día, dentro del plazo**: en
+  *🎁 Promoción…* esa opción va apagada, punteada, con *⚠ El evento es antes
+  de 21 días: no se puede aplicar*, y el `PATCH` de `/api/presupuestos`
+  responde 409 si llega igual (al aplicarla o al cambiar el día con ella
+  puesta). **La gerencia, pagos y el administrador sí** (`showBajoMinimo`,
+  como los otros plazos), con un aviso en la ventana.
+- **Se mira al aplicarla, no después**: una promoción bien aplicada no deja de
+  valer porque pasen los días, y ganar no lo vuelve a mirar.
+- **Ninguna lectura más, ningún permiso nuevo.** **Ayuda**: uno nuevo,
+  `promoAnticipacion`, y `promoEnCotizacion`. **El panel de ejemplo**: el
+  Día de Campo pide 21 días, así que para Andrés Pino (el 28) no alcanza.
+
+**Lo que se suma va para cuántos lo pidió el cliente** (2026-11-24, lo pidió
+el cliente: *"de los 22 que quieren menú, solo 15 quieren andar en
+go-kart"*): el sitio manda `cuantos`, en el orden de `suma`
+(`Eleccion.cuantos`); 0 o sin el dato —un `cotizador.js` de antes—, para
+todo el grupo, y nunca más que el grupo. Va aparte de `suma` para que un
+panel de antes lo ignore y cobre para todos, en vez de no reconocer el
+extra.
+Lo *Incluido* sigue yendo para todos. La línea de la cotización que llega
+trae esa cantidad, y lo aparte que vuelve al sitio dice *15 × Karting*. En
+la cotización del vendedor no cambia nada: la cantidad de una línea ya se
+escribe. **Ninguna lectura más, ningún permiso ni columna.** **Ayuda**:
+`promoSuma`.
+
 ### Lo que cobra otra empresa (`Menu.loCobra`)
 
 - **En el catálogo**, un extra lleva *Lo cobra otra empresa* (columna nueva

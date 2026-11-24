@@ -109,7 +109,8 @@ H['Promociones'] = prm.aFilasPromociones([
     // Un tramo sobre el tope del vendedor (15%): Andrés Pino, con 80, lleva el 20%.
     tramos: [{ desde: 60, descuento: 20 }], mostrar: true }),
   PR({ id: 'PR-04', nombre: 'Día de Campo en Familia', sitio: 'dia-de-campo', menus: ['Lo Pirque'], ninos: ['Niños', 'Pequeños'],
-    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30, mostrar: true }),
+    // Con 21 días de anticipación (2026-11-24): para Andrés Pino, el 28, no alcanza.
+    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30, mostrar: true, anticipacion: 21 }),
   PR({ id: 'PR-05', nombre: 'Mesa de Directorio', menus: ['Sommelier'], minimo: 8, activa: false })
 ]);
 

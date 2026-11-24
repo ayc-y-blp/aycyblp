@@ -45,7 +45,7 @@
       titulo: 'Cotiza en línea', bajada: 'Elige y ve el total al tiro. Te la mandamos formal y te contactamos hoy.',
       paso1: '¿Cuántos y qué día?', paso2: '¿Qué menú?', paso3: 'Tu cotización', quiero: 'Quiero esta cotización', volver: '← Ver el detalle',
       personas: 'Personas', adultos: 'Adultos', ninos: 'Niños', dia: 'Día del evento',
-      menos: 'Uno menos', mas: 'Uno más', menuFijo: 'Menú', incluye: 'Incluye', suma: 'Se puede sumar',
+      menos: 'Uno menos', mas: 'Uno más', menuFijo: 'Menú', incluye: 'Incluye', suma: 'Se puede sumar', cuantos: '¿Cuántos?',
       porPersona: 'por persona', fijo: 'una vez', masIva: '+ IVA', loCobra: 'lo cobra',
       neto: 'Neto', descuento: 'Descuento', iva: 'IVA 19%', total: 'Total', incluido: 'incluido',
       totalPersona: 'por persona, IVA incluido',
@@ -55,6 +55,8 @@
       faltaDia: 'Elige el día para ver el total.',
       calculando: 'Calculando…',
       minimo: 'Esta promoción es desde {n} personas.',
+      anticipacion: 'Esta promoción se cotiza con al menos {n} días de anticipación: elige un día más adelante.',
+      conAnticipacion: 'Con al menos {n} días de anticipación.',
       fecha: 'Elige un día desde mañana.',
       tomado: 'Ese día ya está tomado. Prueba con otro.',
       menu: 'Elige un menú.',
@@ -76,7 +78,7 @@
       titulo: 'Get a quote online', bajada: 'Choose and see the total right away. We send you the formal quote and contact you today.',
       paso1: 'How many and which day?', paso2: 'Which menu?', paso3: 'Your quote', quiero: 'I want this quote', volver: '← See the details',
       personas: 'People', adultos: 'Adults', ninos: 'Children', dia: 'Event date',
-      menos: 'One less', mas: 'One more', menuFijo: 'Menu', incluye: 'Includes', suma: 'You can add',
+      menos: 'One less', mas: 'One more', menuFijo: 'Menu', incluye: 'Includes', suma: 'You can add', cuantos: 'How many?',
       porPersona: 'per person', fijo: 'one time', masIva: '+ VAT', loCobra: 'charged by',
       neto: 'Net', descuento: 'Discount', iva: 'VAT 19%', total: 'Total', incluido: 'included',
       totalPersona: 'per person, VAT included',
@@ -86,6 +88,8 @@
       faltaDia: 'Choose the date to see the total.',
       calculando: 'Calculating…',
       minimo: 'This offer starts at {n} people.',
+      anticipacion: 'This offer needs at least {n} days\u2019 notice: choose a later date.',
+      conAnticipacion: 'At least {n} days in advance.',
       fecha: 'Choose a date from tomorrow on.',
       tomado: 'That day is already booked. Try another one.',
       menu: 'Choose a menu.',
@@ -107,7 +111,7 @@
       titulo: 'Faça seu orçamento online', bajada: 'Escolha e veja o total na hora. Enviamos o orçamento formal e entramos em contato hoje.',
       paso1: 'Quantos e em que dia?', paso2: 'Qual cardápio?', paso3: 'Seu orçamento', quiero: 'Quero este orçamento', volver: '← Ver o detalhe',
       personas: 'Pessoas', adultos: 'Adultos', ninos: 'Crianças', dia: 'Data do evento',
-      menos: 'Um a menos', mas: 'Um a mais', menuFijo: 'Cardápio', incluye: 'Inclui', suma: 'Você pode somar',
+      menos: 'Um a menos', mas: 'Um a mais', menuFijo: 'Cardápio', incluye: 'Inclui', suma: 'Você pode somar', cuantos: 'Quantos?',
       porPersona: 'por pessoa', fijo: 'uma vez', masIva: '+ IVA', loCobra: 'cobrado por',
       neto: 'Líquido', descuento: 'Desconto', iva: 'IVA 19%', total: 'Total', incluido: 'incluído',
       totalPersona: 'por pessoa, IVA incluído',
@@ -117,6 +121,8 @@
       faltaDia: 'Escolha o dia para ver o total.',
       calculando: 'Calculando…',
       minimo: 'Esta promoção é a partir de {n} pessoas.',
+      anticipacion: 'Esta promoção precisa de pelo menos {n} dias de antecedência: escolha uma data mais adiante.',
+      conAnticipacion: 'Com pelo menos {n} dias de antecedência.',
       fecha: 'Escolha um dia a partir de amanhã.',
       tomado: 'Esse dia já está reservado. Tente outro.',
       menu: 'Escolha um cardápio.',
@@ -277,8 +283,9 @@
     if (texto != null) e.textContent = texto;
     return e;
   }
-  function manana() {
-    var d = new Date(); d.setDate(d.getDate() + 1);
+  /** `AAAA-MM-DD` de dentro de `n` días, en la hora del navegador. */
+  function diaEn(n) {
+    var d = new Date(); d.setDate(d.getDate() + n);
     var m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
     return d.getFullYear() + '-' + m + '-' + dd;
   }
@@ -286,20 +293,28 @@
     return pesos(x.precio) + (x.masIva ? ' ' + T.masIva : '') + ' ' + (x.fijo ? T.fijo : T.porPersona);
   }
 
-  /** El contador de − y +, de 44px, como el de la reserva. */
-  function contador(rotulo, valor, minimo, alCambiar) {
+  /**
+   * El contador de − y +, de 44px, como el de la reserva. `maximo`, si va,
+   * es una función: el tope se mueve con el grupo. `fila.fijar(n)` cambia el
+   * número sin avisar (lo usa quien lo sigue desde afuera).
+   */
+  function contador(rotulo, valor, minimo, alCambiar, maximo) {
     var fila = el('div', 'cot-contador');
     var nombre = el('span', 'cot-rotulo', rotulo);
     var menos = el('button', 'cot-tecla', '−'); menos.type = 'button'; menos.setAttribute('aria-label', T.menos + ' · ' + rotulo);
     var campo = el('input', 'cot-numero'); campo.type = 'number'; campo.min = String(minimo); campo.value = String(valor);
     campo.setAttribute('aria-label', rotulo); campo.inputMode = 'numeric';
     var mas = el('button', 'cot-tecla', '+'); mas.type = 'button'; mas.setAttribute('aria-label', T.mas + ' · ' + rotulo);
-    function poner(n) { n = Math.max(minimo, Math.min(2000, Math.round(Number(n) || 0))); campo.value = String(n); alCambiar(n); }
+    function poner(n) {
+      n = Math.max(minimo, Math.min(maximo ? maximo() : 2000, Math.round(Number(n) || 0)));
+      campo.value = String(n); alCambiar(n);
+    }
     menos.addEventListener('click', function () { poner(Number(campo.value) - 1); });
     mas.addEventListener('click', function () { poner(Number(campo.value) + 1); });
     campo.addEventListener('change', function () { poner(campo.value); });
     var teclas = el('div', 'cot-teclas'); teclas.append(menos, campo, mas);
     fila.append(nombre, teclas);
+    fila.fijar = function (n) { campo.value = String(n); };
     return fila;
   }
 
@@ -311,8 +326,22 @@
     var menusNinos = Array.isArray(promo.ninos) ? promo.ninos : (promo.ninos ? [promo.ninos] : []);
     var estado = {
       adultos: promo.minimo, ninos: menusNinos.map(function () { return 0; }), fecha: '',
-      menu: promo.menus.length === 1 ? promo.menus[0].nombre : '', suma: []
+      menu: promo.menus.length === 1 ? promo.menus[0].nombre : '', suma: [],
+      // Para cuántos va cada extra sumado que se cobra por persona, y si el
+      // cliente ya lo movió: mientras no lo toque, sigue al grupo.
+      cuantos: {}, tocado: {}
     };
+    function invitados() { return estado.adultos + estado.ninos.reduce(function (a, n) { return a + n; }, 0); }
+    var siguen = [];
+    /** El grupo cambió: lo sumado sin tocar va para todos, y nada pasa del grupo. */
+    function grupoCambio() {
+      var n = Math.max(1, invitados());
+      siguen.forEach(function (x) {
+        var c = estado.tocado[x.nombre] ? Math.min(estado.cuantos[x.nombre] || n, n) : n;
+        estado.cuantos[x.nombre] = c; x.fila.fijar(c);
+      });
+      calcular();
+    }
     var reloj = null, ultima = null;
 
     // Los datos del bloque dicen lo del panel: desde cuánto y desde cuántas personas.
@@ -347,16 +376,22 @@
 
     // 1. Cuántos y qué día.
     var p1 = paso(1, T.paso1);
-    p1.appendChild(contador(menusNinos.length ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; calcular(); }));
+    p1.appendChild(contador(menusNinos.length ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; grupoCambio(); }));
     // Con un solo menú de niños, el contador dice "Niños"; con varios, el nombre de cada menú.
     menusNinos.forEach(function (m, k) {
-      p1.appendChild(contador(menusNinos.length === 1 ? T.ninos : m.nombre, 0, 0, function (n) { estado.ninos[k] = n; calcular(); }));
+      p1.appendChild(contador(menusNinos.length === 1 ? T.ninos : m.nombre, 0, 0, function (n) { estado.ninos[k] = n; grupoCambio(); }));
     });
     var dia = el('label', 'cot-dia');
     dia.appendChild(el('span', 'cot-rotulo', T.dia));
-    var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = manana();
+    // **Desde mañana, o desde el plazo de la promoción** (2026-11-24, lo pidió
+    // el cliente: el karting o el taller de queso no se organizan sin tiempo).
+    // El calendario no deja elegir antes, y bajo el campo se dice.
+    var plazo = Math.max(1, Number(promo.anticipacion) || 0);
+    var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = diaEn(plazo);
     fecha.addEventListener('change', function () { estado.fecha = fecha.value; calcular(); });
-    dia.appendChild(fecha); p1.appendChild(dia);
+    dia.appendChild(fecha);
+    if (plazo > 1) dia.appendChild(el('span', 'cot-plazo', T.conAnticipacion.replace('{n}', plazo)));
+    p1.appendChild(dia);
 
     // 2. Qué menú y qué se suma.
     var p2 = paso(2, T.paso2);
@@ -384,16 +419,39 @@
     }
     if (promo.suma.length) {
       p2.appendChild(el('p', 'cot-rotulo cot-rotulo-suelto', T.suma));
+      // **Lo que se cobra por persona, para cuántos** (2026-11-24, lo pidió el
+      // cliente: *"de los 22 que quieren menú, solo 15 quieren andar en
+      // go-kart"*): al marcarlo aparece *¿Cuántos?*, con todo el grupo; se
+      // baja, y no pasa del grupo. Un monto fijo, solo la casilla.
       promo.suma.forEach(function (s) {
+        var caja = el('div', 'cot-extra');
         var o = el('label', 'cot-opcion');
         var c = el('input'); c.type = 'checkbox'; c.value = s.nombre;
+        // El nombre y su precio en un renglón, como los menús; quién lo cobra, debajo.
+        var texto = el('span', 'cot-opcion-texto');
+        texto.append(el('strong', '', s.nombre), el('span', 'cot-precio', precioDe(s)));
+        if (s.loCobra) texto.appendChild(el('span', 'cot-cobra', T.loCobra + ' ' + s.loCobra));
+        o.append(c, texto); caja.appendChild(o);
+        var fila = null;
+        if (!s.fijo) {
+          fila = contador(T.cuantos, invitados(), 1, function (n) {
+            estado.cuantos[s.nombre] = n; estado.tocado[s.nombre] = n < invitados(); calcular();
+          }, function () { return Math.max(1, invitados()); });
+          fila.classList.add('cot-cuantos'); fila.hidden = true;
+          fila.querySelector('.cot-numero').setAttribute('aria-label', T.cuantos + ' · ' + s.nombre);
+          siguen.push({ nombre: s.nombre, fila: fila });
+          caja.appendChild(fila);
+        }
         c.addEventListener('change', function () {
           estado.suma = c.checked ? estado.suma.concat(s.nombre) : estado.suma.filter(function (x) { return x !== s.nombre; });
+          if (fila) {
+            // Al marcarlo, para todo el grupo.
+            estado.cuantos[s.nombre] = Math.max(1, invitados()); estado.tocado[s.nombre] = false;
+            fila.fijar(estado.cuantos[s.nombre]); fila.hidden = !c.checked;
+          }
           calcular();
         });
-        var texto = el('span', 'cot-opcion-texto');
-        texto.append(el('strong', '', s.nombre), el('span', 'cot-precio', precioDe(s) + (s.loCobra ? ' · ' + T.loCobra + ' ' + s.loCobra : '')));
-        o.append(c, texto); p2.appendChild(o);
+        p2.appendChild(caja);
       });
     }
 
@@ -447,8 +505,9 @@
     // El botón de WhatsApp del bloque pasa a ser la segunda opción.
     if (bloque) Array.prototype.forEach.call(bloque.querySelectorAll('.btn-whatsapp'), function (w) { w.classList.add('cot-secundario'); });
 
-    function textoError(codigo, minimo) {
+    function textoError(codigo, minimo, dias) {
       if (codigo === 'minimo') return T.minimo.replace('{n}', minimo);
+      if (codigo === 'anticipacion') return T.anticipacion.replace('{n}', dias || plazo);
       return T[codigo] || (codigo === 'sinPrecio' || codigo === 'promocion' ? T.sinCotizar : T.error);
     }
 
@@ -458,7 +517,7 @@
       boton.disabled = !ultima; quiero.disabled = !ultima;
       if (!ultima) verDatos(false);
       if (!r) { boleta.appendChild(el('p', 'cot-aviso', T.faltaDia)); return; }
-      if (!r.ok) { boleta.appendChild(el('p', 'cot-aviso cot-aviso-alerta', textoError(r.codigo, r.minimo))); return; }
+      if (!r.ok) { boleta.appendChild(el('p', 'cot-aviso cot-aviso-alerta', textoError(r.codigo, r.minimo, r.dias))); return; }
       var lista = el('ul', 'cot-lineas');
       r.lineas.forEach(function (l) {
         var li = el('li');
@@ -483,9 +542,20 @@
       else if (r.arriendo > 0) boleta.appendChild(el('p', 'cot-nota', T.arriendo + ' ' + pesos(r.arriendo) + ' ' + T.masIva + '.'));
     }
 
+    /**
+     * Para cuántos va cada extra sumado, en el orden de `suma`; 0 es para todo
+     * el grupo (un monto fijo). Va aparte de `suma`: un panel de antes lo
+     * ignora y cobra para todos, en vez de no reconocer el extra.
+     */
+    function cuantos() {
+      return estado.suma.map(function (n) { return estado.cuantos[n] || 0; });
+    }
+
     function calcular() {
       clearTimeout(reloj);
       if (!estado.fecha) { dibujar(null); return; }
+      // Un día escrito a mano antes del plazo: se dice sin preguntarle al panel.
+      if (estado.fecha < fecha.min) { dibujar({ ok: false, codigo: plazo > 1 ? 'anticipacion' : 'fecha', dias: plazo }); return; }
       if (!estado.menu) { dibujar({ ok: false, codigo: 'menu' }); return; }
       var ninos = estado.ninos.reduce(function (a, n) { return a + n; }, 0);
       if (estado.adultos + ninos < promo.minimo) { dibujar({ ok: false, codigo: 'minimo', minimo: promo.minimo }); return; }
@@ -495,7 +565,7 @@
       reloj = setTimeout(function () {
         var q = new URLSearchParams({
           promo: promo.sitio, adultos: String(estado.adultos), ninos: estado.ninos.join(','),
-          menu: estado.menu, suma: estado.suma.join('|'), fecha: estado.fecha
+          menu: estado.menu, suma: estado.suma.join('|'), cuantos: cuantos().join('|'), fecha: estado.fecha
         });
         fetch(panel + '/api/publico/cotizar?' + q.toString())
           .then(function (r) { return r.json(); })
@@ -514,14 +584,14 @@
       fetch(panel + '/api/publico/cotizar', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          promo: promo.sitio, adultos: estado.adultos, ninos: estado.ninos, menu: estado.menu, suma: estado.suma,
+          promo: promo.sitio, adultos: estado.adultos, ninos: estado.ninos, menu: estado.menu, suma: estado.suma, cuantos: cuantos(),
           fecha: estado.fecha, nombre: nombre, empresa: fEmpresa.value.trim(), telefono: telefono, correo: correo,
           web: trampa.value, idioma: idioma, prueba: !esReal
         })
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) {
           var t = d.codigo === 'nombre' ? T.faltaNombre : d.codigo === 'telefono' ? T.faltaTelefono
-            : d.codigo === 'correo' ? T.faltaCorreo : d.codigo === 'tope' ? T.tope : textoError(d.codigo, d.minimo);
+            : d.codigo === 'correo' ? T.faltaCorreo : d.codigo === 'tope' ? T.tope : textoError(d.codigo, d.minimo, d.dias);
           mensaje.textContent = t; mensaje.className = 'cot-mensaje cot-aviso-alerta';
           boton.disabled = false; boton.textContent = T.enviar;
           return;

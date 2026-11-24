@@ -449,6 +449,20 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                             onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
                         </Seccion>
                       )}
+                      {/* **Con cuántos días de anticipación** (2026-11-24, lo pidió el
+                          cliente: el karting o el taller de queso no se organizan sin
+                          tiempo). Vale en el sitio y cuando un vendedor la aplica. Una
+                          sección de una línea, con el campo al lado del título: en esta
+                          columna sobra alto, y así la ficha sigue cabiendo en la pantalla. */}
+                      <Seccion titulo="⏳ Anticipación" ayuda="promoAnticipacion" accion={(
+                        <label className="flex items-center gap-2 text-[15px]">
+                          <input type="number" min={0} max={365} value={p.anticipacion || ''} placeholder="0"
+                            aria-label="Días de anticipación"
+                            onChange={(e) => cambiar(i, { anticipacion: Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
+                            className={`${ENTRADA} !w-[4.5rem] text-center lg:py-1`} />
+                          <span>{p.anticipacion > 0 ? 'días antes del evento, como mínimo' : 'días: sin plazo'}</span>
+                        </label>
+                      )}>{null}</Seccion>
                     </div>
                   </div>
                 </fieldset>

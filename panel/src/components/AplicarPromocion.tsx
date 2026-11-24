@@ -13,6 +13,11 @@
  *   ese día. Lo demás de la cotización se queda (`aplicarALineas()`).
  * - **Bajo su mínimo de personas no rige** (`rigePromocion()`): se puede
  *   aplicar igual —el grupo puede crecer—, y lo dice.
+ * - **Con el evento dentro de su plazo de anticipación no se aplica**
+ *   (2026-11-24, `faltaAnticipacion()`): el karting o el taller de queso no
+ *   se alcanzan a organizar. El botón de esa promoción se apaga y dice por
+ *   qué; quien aprueba la puede aplicar igual, con el aviso. El servidor lo
+ *   vuelve a mirar.
  * - Después todo se edita como siempre: cantidades, precios, quitar o sumar
  *   productos. **Su descuento vale aunque pase el tope del vendedor**
  *   (lo decidió el cliente: *"que valga el descuento de la promoción"*); lo
@@ -22,26 +27,33 @@ import { useState } from 'react';
 import Dialogo from './Dialogo';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
 import {
-  ARRIENDO_PROMO, beneficioDePromocion, rigePromocion, aplicarALineas, type Promocion
+  ARRIENDO_PROMO, beneficioDePromocion, rigePromocion, aplicarALineas, faltaAnticipacion, type Promocion
 } from '@/lib/promociones';
+import { hoy } from '@/lib/fechas';
 import type { Menu } from '@/lib/menus';
 
 /** *−10% · −15% desde 50*: el descuento de la promoción con sus tramos. */
 export const textoDescuentoPromo = (p: Pick<Promocion, 'descuento' | 'tramos'>) =>
   [p.descuento ? `−${p.descuento}%` : 'sin descuento', ...p.tramos.map((t) => `−${t.descuento}% desde ${t.desde}`)].join(' · ');
 
-export default function AplicarPromocion({ promociones, catalogo, invitados, fecha, yaEstan, onCerrar, onAplicar }: {
+export default function AplicarPromocion({ promociones, catalogo, invitados, fecha, pasaPorEncima, yaEstan, onCerrar, onAplicar }: {
   promociones: Promocion[];
   catalogo: Menu[];
   invitados: number;
   fecha: string;
+  /** Quien aprueba (`showBajoMinimo`): aplica una promoción aunque el evento esté dentro de su plazo. */
+  pasaPorEncima: boolean;
   /** Las líneas que ya tiene la cotización: lo que ya está no se repite. */
   yaEstan: { concepto: string; personas: number }[];
   onCerrar: () => void;
   onAplicar: (promo: Promocion, menu: string) => void;
 }) {
   const activas = promociones.filter((p) => p.activa);
-  const [elegida, setElegida] = useState<Promocion | null>(activas.length === 1 ? activas[0] : null);
+  const hoyChile = hoy();
+  /** Los días de anticipación que le faltan a esa promoción con el día de la cotización, o 0. */
+  const falta = (p: Promocion) => faltaAnticipacion(p, fecha, hoyChile);
+  const [elegida, setElegida] = useState<Promocion | null>(
+    activas.length === 1 && (pasaPorEncima || !falta(activas[0])) ? activas[0] : null);
   const [menu, setMenu] = useState('');
   const faltaMenu = !!elegida && elegida.menus.length > 1 && !menu;
   const resultado = elegida && !faltaMenu
@@ -63,15 +75,23 @@ export default function AplicarPromocion({ promociones, catalogo, invitados, fec
           <div role="radiogroup" aria-label="Promoción" className="mt-2 grid gap-2 lg:grid-cols-2">
             {activas.map((p) => {
               const es = elegida?.id === p.id;
+              const fuera = falta(p) > 0;
+              const apagada = fuera && !pasaPorEncima;
               return (
-                <button key={p.id} type="button" role="radio" aria-checked={es}
+                <button key={p.id} type="button" role="radio" aria-checked={es} disabled={apagada}
                   onClick={() => { setElegida(p); setMenu(''); }}
-                  className={`${marcoTarjeta(es, 'normal', false, true)} block min-h-[44px] w-full px-3 py-2 text-left`}>
+                  className={`${marcoTarjeta(es, 'normal', false, true)} block min-h-[44px] w-full px-3 py-2 text-left disabled:cursor-not-allowed disabled:border-dashed disabled:opacity-60`}>
                   <span className="block text-[15px] font-semibold">{p.nombre}</span>
                   <span className="block text-[13px] text-hueso/75">
                     Desde {Math.max(1, p.minimo)} personas · {textoDescuentoPromo(p)}
                     {p.arriendo !== ARRIENDO_PROMO.siempre ? ` · ${p.arriendo.toLowerCase()}` : ''}
+                    {p.anticipacion > 0 ? ` · con ${p.anticipacion} días de anticipación` : ''}
                   </span>
+                  {fuera && (
+                    <span className="mt-0.5 block text-[13px] font-semibold text-ambar-texto">
+                      ⚠ El evento es antes de {p.anticipacion} días{apagada ? ': no se puede aplicar' : ''}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -95,6 +115,12 @@ export default function AplicarPromocion({ promociones, catalogo, invitados, fec
 
       {elegida && beneficio && !faltaMenu && (
         <div className="mt-3 space-y-1 text-[15px]">
+          {falta(elegida) > 0 && (
+            <p className="text-ambar-texto">
+              ⚠ Se cotiza con al menos {falta(elegida)} días de anticipación, y el evento es antes. Tú la puedes
+              aplicar igual: lo que incluye puede no alcanzar a organizarse.
+            </p>
+          )}
           <p>
             {resultado?.reemplazadas.length ? (
               <>{resultado.reemplazadas.map((l) => `${l.concepto} (${l.personas})`).join(' y ')} pasa a <b>{menuElegido}</b>. </>

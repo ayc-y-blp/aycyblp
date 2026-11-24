@@ -66,6 +66,10 @@ function eleccionDe(x: Record<string, unknown>): Eleccion & { promo: string } {
     ninos: (Array.isArray(x.ninos) ? x.ninos : String(x.ninos ?? '').split(',')).slice(0, 5).map((n) => Number(n) || 0),
     menu: String(x.menu ?? '').trim().slice(0, 80),
     suma: suma.map((s) => s.trim()).filter(Boolean).slice(0, 20),
+    // Para cuántos va cada uno de `suma` (2026-11-24): `15|` en la dirección,
+    // una lista en el cuerpo; vacío es para todo el grupo.
+    cuantos: (Array.isArray(x.cuantos) ? x.cuantos : String(x.cuantos ?? '').split('|'))
+      .slice(0, 20).map((n) => Number(n) || 0),
     fecha: String(x.fecha ?? '').trim().slice(0, 10)
   };
 }
@@ -93,7 +97,14 @@ function respuesta(r: Cotizada) {
       neto: Math.round(l.cantidad * l.precio * (1 - (l.descuento || 0) / 100) / (l.ivaIncluido === false ? 1 : 1.19)),
       incluido: l.precio === 0
     })),
-    cuentas: r.cuentas, otras: r.otras, porPersona: r.porPersona, invitados: r.invitados,
+    // Lo aparte dice para cuántos (2026-11-24): *15 × Karting*, que el
+    // cliente puede sumarlo solo para una parte del grupo.
+    cuentas: r.cuentas, porPersona: r.porPersona, invitados: r.invitados,
+    otras: r.otras.map((o) => ({
+      ...o,
+      conceptos: r.lineas.filter((l) => normalizar(l.loCobra ?? '') === normalizar(o.empresa))
+        .map((l) => (l.cantidad > 1 ? `${l.cantidad} × ` : '') + l.concepto)
+    })),
     publico: r.publico, arriendo: r.arriendo, descuento: r.descuento
   };
 }

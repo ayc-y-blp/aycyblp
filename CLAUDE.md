@@ -1315,6 +1315,42 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   computador, los tres lado a lado: **433px, y 452 con los datos, en el
   notebook del cliente (1262×573)**; en portugués, con los textos más largos,
   unos 470.
+- **Lo que se suma, para cuántos** (2026-11-24, lo pidió el cliente: *"de
+  los 22 personas que quieren menú, solo 15 quieren andar en go-kart… el
+  karting tiene un campo propio de cuántas personas quieren usar este
+  extra"*). Un extra que se cobra por persona, al marcarlo, muestra
+  ***¿Cuántos?*** con − y +, en el mismo marco: **parte con el grupo
+  entero**, se baja, y no pasa del grupo. Mientras no se toque, sigue al
+  grupo; tocado, se queda (y baja si el grupo queda más chico). Uno de monto
+  fijo, solo la casilla. Lo *Incluido* en la promoción sigue yendo para
+  todos.
+  - El nombre y el precio van en un renglón, como los menús, y *lo cobra …*
+    debajo.
+  - **Al panel viaja en `cuantos`, aparte de `suma`**: `suma=Karting` y
+    `cuantos=15`, en el mismo orden (`Eleccion.cuantos` en
+    `panel/src/lib/promociones.ts`); 0 o sin el dato es para todo el grupo.
+    **Aparte a propósito**: un panel de antes lo ignora y cobra para todos,
+    en vez de no reconocer el extra. Así no importa cuál de los dos proyectos
+    de Vercel se publica primero, y la versión de prueba del sitio, que le
+    habla al panel de producción, no se rompe. La cotización que llega trae
+    la línea con esa cantidad, y la boleta del sitio dice *15 × Karting: $…,
+    aparte*.
+  - **Medidas con un extra marcado** (sin marcar, igual que antes): 460px en
+    1262×573, que cabe. Pasa del margen seguro mientras está marcado: en
+    inglés 479 y en portugués 504 en ese notebook (con el precio de ejemplo
+    *+ IVA*, que dobla un renglón), y a 1024×600, 534, porque ahí *¿Cuántos?*
+    no cabe al lado de sus teclas y bajan a otro renglón. En el celular las
+    teclas bajan igual, a la derecha.
+- **Con cuántos días de anticipación** (2026-11-24, lo pidió el cliente:
+  *"para ciertas actividades extras como taller de queso, karting… no se
+  pueden gestionar y organizar sin tiempo… cuántos días de anticipación
+  tiene que tener la cotización con esta promoción"*). Cada promoción lo dice
+  en el panel (*⏳ Anticipación*). **En el sitio**, el calendario del
+  cotizador no deja elegir un día antes (`min`), bajo el campo dice *Con al
+  menos N días de anticipación*, y si igual llega uno antes, el panel
+  responde `anticipacion` y la boleta dice que se elija un día más adelante,
+  en los tres idiomas. Sin plazo, desde mañana, como siempre. El vendedor,
+  en `panel/CLAUDE.md`.
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde

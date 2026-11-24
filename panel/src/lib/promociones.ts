@@ -84,7 +84,17 @@ export const COL_PROMOCIONES = {
    * las promociones de antes de esta columna no desaparecen solas. Una nueva
    * nace sin marcar (`nuevaPromocion()`).
    */
-  mostrar: 'Mostrar en el sitio'
+  mostrar: 'Mostrar en el sitio',
+  /**
+   * **Con cuántos días de anticipación se cotiza** (2026-11-24, lo pidió el
+   * cliente: *"para ciertas actividades extras como taller de queso,
+   * karting… estos no se pueden gestionar y organizar sin tiempo… cuántos
+   * días de anticipación tiene que tener la cotización con esta
+   * promoción"*). En blanco o 0, sin plazo: el sitio cotiza desde mañana, como
+   * siempre. Vale en el sitio y cuando un vendedor la aplica
+   * (`faltaAnticipacion()`).
+   */
+  anticipacion: 'Días de anticipación'
 } as const;
 
 export const ENCABEZADO_PROMOCIONES: string[] = Object.values(COL_PROMOCIONES);
@@ -176,6 +186,8 @@ export interface Promocion {
   tramos: Tramo[];
   /** Si sale en la lista de la página. Ver `COL_PROMOCIONES.mostrar`. */
   mostrar: boolean;
+  /** Los días de anticipación que pide; 0 es sin plazo. Ver `COL_PROMOCIONES.anticipacion`. */
+  anticipacion: number;
 }
 
 export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocion {
@@ -185,7 +197,7 @@ export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocio
     id, nombre: '', sitio: '', activa: true, menus: [], ninos: [], incluye: [], suma: [],
     minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, tramos: [],
     // Una nueva no sale en la lista hasta que se marque (el modo estricto).
-    mostrar: false, ...resto
+    mostrar: false, anticipacion: 0, ...resto
   };
 }
 
@@ -263,7 +275,8 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
       cotizador: en(f, i.cotizador).trim() === '' ? true : esSi(en(f, i.cotizador)),
       tramos: tramosDe(en(f, i.tramos), entero(en(f, i.minimo), 10000)),
       // En blanco es sí: una promoción de antes de la columna sigue saliendo.
-      mostrar: en(f, i.mostrar).trim() === '' ? true : esSi(en(f, i.mostrar))
+      mostrar: en(f, i.mostrar).trim() === '' ? true : esSi(en(f, i.mostrar)),
+      anticipacion: entero(en(f, i.anticipacion), 365)
     });
   }
   return salida;
@@ -275,7 +288,8 @@ export function aFilasPromociones(promos: Promocion[]): string[][] {
     p.incluye.join(' | '), p.suma.join(' | '), p.minimo ? String(p.minimo) : '',
     p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no',
     (p.tramos ?? []).map((t) => `${t.desde}:${t.descuento}`).join(' | '),
-    p.mostrar ? 'sí' : 'no'
+    p.mostrar ? 'sí' : 'no',
+    p.anticipacion ? String(p.anticipacion) : ''
   ])];
 }
 
@@ -325,7 +339,8 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     cotizador: typeof x?.cotizador === 'boolean' ? x.cotizador : true,
     tramos: tramosDe(x?.tramos, minimo),
     // Sin el dato (una pantalla de antes), sí: guardar no la saca de la lista.
-    mostrar: typeof x?.mostrar === 'boolean' ? x.mostrar : true
+    mostrar: typeof x?.mostrar === 'boolean' ? x.mostrar : true,
+    anticipacion: entero(x?.anticipacion, 365)
   };
 }
 
@@ -342,6 +357,20 @@ export function perdonaArriendo(promo: Pick<Promocion, 'arriendo'> | undefined, 
   if (promo.arriendo === ARRIENDO_PROMO.nunca) return true;
   return promo.arriendo === ARRIENDO_PROMO.semana && /^\d{4}-\d{2}-\d{2}$/.test(fecha)
     && [1, 2, 3, 4, 5].includes(diaSemana(fecha));
+}
+
+/**
+ * **Los días de anticipación que faltan** (2026-11-24): si el evento es antes
+ * de `hoy` + los días que pide la promoción, devuelve esos días; si alcanza,
+ * no pide plazo o todavía no hay día exacto, 0. Lo usan el sitio
+ * (`cotizarPromocion()`) y el servidor cuando un vendedor la aplica o le
+ * cambia el día. **Se mira al aplicarla, no después**: una promoción bien
+ * aplicada no deja de valer porque pasen los días.
+ */
+export function faltaAnticipacion(promo: Pick<Promocion, 'anticipacion'> | undefined, fecha: string, hoy: string): number {
+  const dias = Math.max(0, Math.round(promo?.anticipacion ?? 0));
+  if (!dias || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return 0;
+  return fecha < sumarDias(hoy, dias) ? dias : 0;
 }
 
 /** Si la promoción rige para ese grupo: desde su mínimo de personas. */
@@ -443,6 +472,14 @@ export interface Eleccion {
   menu: string;
   /** Lo que sumó, de `suma`. */
   suma: string[];
+  /**
+   * **Para cuántos va cada uno de `suma`**, en el mismo orden (2026-11-24:
+   * *"de los 22 que piden menú, solo 15 quieren andar en go-kart"*). Un 0, o
+   * sin el dato —un `cotizador.js` de antes—, es para todo el grupo. Va
+   * aparte de `suma` a propósito: un panel de antes lo ignora y cobra para
+   * todos, en vez de no reconocer el extra.
+   */
+  cuantos?: number[];
   /** `AAAA-MM-DD`. */
   fecha: string;
 }
@@ -465,7 +502,9 @@ export interface ContextoCotizar {
  */
 export type NoSeCotiza =
   | { ok: false; codigo: 'promocion' | 'menu' | 'fecha' | 'tomado' | 'sinPrecio'; minimo?: number }
-  | { ok: false; codigo: 'minimo'; minimo: number };
+  | { ok: false; codigo: 'minimo'; minimo: number }
+  /** El día está dentro del plazo de anticipación: `dias` es lo que pide. */
+  | { ok: false; codigo: 'anticipacion'; dias: number };
 
 export interface Cotizada {
   ok: true;
@@ -516,6 +555,8 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fecha) || e.fecha <= ctx.hoy || e.fecha > sumarDias(ctx.hoy, 730)) {
     return { ok: false, codigo: 'fecha' };
   }
+  const falta = faltaAnticipacion(promo, e.fecha, ctx.hoy);
+  if (falta) return { ok: false, codigo: 'anticipacion', dias: falta };
   if (ctx.fechas.some((d) => d.fecha === e.fecha && normalizar(d.estado) === normalizar(ESTADO_DIA.exclusiva))) {
     return { ok: false, codigo: 'tomado' };
   }
@@ -527,8 +568,13 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   const productos: [Menu | undefined, number][] = [[menu, adultos]];
   promo.ninos.forEach((n, k) => { if (porMenuNinos[k] > 0) productos.push([productoDe(n, ctx.catalogo), porMenuNinos[k]]); });
   for (const n of promo.incluye) productos.push([productoDe(n, ctx.catalogo), invitados]);
-  const sumados = promo.suma.filter((n) => (e.suma ?? []).some((s) => normalizar(s) === normalizar(n)));
-  for (const n of sumados) productos.push([productoDe(n, ctx.catalogo), invitados]);
+  // Lo sumado, para cuántos lo pidió el cliente: nunca más que el grupo.
+  for (const n of promo.suma) {
+    const k = (e.suma ?? []).findIndex((s) => normalizar(s) === normalizar(n));
+    if (k === -1) continue;
+    const pedidos = entero(e.cuantos?.[k], 2000);
+    productos.push([productoDe(n, ctx.catalogo), pedidos > 0 ? Math.min(invitados, pedidos) : invitados]);
+  }
   if (productos.some(([p]) => !p || p.moneda === MONEDA.uf || !(precioParaCotizar(p) > 0))) {
     return { ok: false, codigo: 'sinPrecio' };
   }
@@ -582,6 +628,8 @@ export interface PromocionSitio {
   suma: ProductoSitio[];
   /** Desde cuánto por persona, neto (+ IVA), con el menú más barato y el descuento. */
   desde: number;
+  /** Los días de anticipación que pide; 0 es sin plazo (desde mañana). */
+  anticipacion: number;
 }
 
 const paraSitio = (m: Menu): ProductoSitio => ({
@@ -614,7 +662,8 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
       ninos: (ninos as Menu[]).map(paraSitio),
       incluye: (incluye as Menu[]).map((m) => m.nombre),
       suma: (suma as Menu[]).map(paraSitio),
-      desde: Math.round((masBarato + porPersona) * (1 - p.descuento / 100))
+      desde: Math.round((masBarato + porPersona) * (1 - p.descuento / 100)),
+      anticipacion: p.anticipacion
     });
   }
   return salida;
