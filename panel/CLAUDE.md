@@ -174,6 +174,8 @@ revisan antes de cada cambio en esta carpeta.
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
+  | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
+  | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
   en la raíz). Un cambio que altera algo que una ayuda describe la
@@ -220,6 +222,145 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Las promociones del sitio, su cotizador y lo que cobra otra empresa (2026-11-23)
+
+Lo pidió el cliente: *"en cada página de promociones debe haber un cotizador,
+según las reglas del sitio público elegante, simple… el Gran Premio se debe
+poder incluir el karting… se cobra por la otra empresa porque el karting es de
+otra… combate de parrillero… tiene fijo el [A Brasas] abiertas como menú…
+aplicar las mismas reglas condicionales que se aplican para la cotización de
+un vendedor… a qué vendedor se asignan estas cotizaciones… configurable…
+Y yo en el sistema necesito en productos una subcategoría promociones"*.
+Decidió tres cosas (*Total en vivo*, *Aparte del total*, *Enviada de
+inmediato*) y sumó tres más mientras se armaba: el aviso al vendedor al entrar,
+elegir si una promoción muestra el cotizador, y un link por promoción para las
+campañas. **Este PR es la mitad del panel**; el cotizador en
+`promociones.html` va en un PR aparte, después de mergear éste (el sitio de
+una versión de prueba llama al panel de producción).
+
+### *Productos → 🎁 Promociones* (`lib/promociones.ts`, `PromocionesEditor`)
+
+- **Una promoción es una receta de productos del catálogo**: el menú (uno queda
+  fijo; con varios el cliente elige), el de niños, lo que incluye siempre, lo
+  que se puede sumar, desde cuántas personas, **su descuento sobre el total**
+  (la condición especial) y el arriendo (*Como siempre*, *Sin arriendo de lunes
+  a viernes* —la de fin de año— o *Sin arriendo*). El precio sale de los
+  productos: **un solo lugar donde se edita**.
+- **Se conecta a un bloque de `promociones.html`** (`EN_EL_SITIO`: fin de año,
+  Combate, Gran Premio, Día de Campo, IA a las Brasas, Directorio). Cada bloque
+  tiene una sola; los que ya tienen otra salen con 🔒. Los textos y las fotos
+  del bloque siguen en la página, en sus tres idiomas: **un bloque nuevo es un
+  PR del sitio** y su clave se agrega a `EN_EL_SITIO`.
+- ***Cotizador y link***: si el bloque muestra el cotizador (con *No*, queda
+  como antes, solo WhatsApp) y **el link de campaña**
+  (`promociones.html#gran-premio`, `linkDeCampana()`), con *Copiar*, *EN* y
+  *PT*: abre la página con esa promoción elegida, para Instagram.
+- Cerrada dice a qué bloque va, desde cuántas personas y **desde cuánto por
+  persona** (+ IVA, con el menú más barato y el descuento: lo mismo que dirá el
+  sitio). Una conectada que no puede cotizar —un producto sin precio de
+  cotización— dice *no sale* y su bloque se queda con WhatsApp.
+- **Se guarda con su botón**, no sola: cambia lo que ve el sitio, como la
+  Configuración. Lo ve y lo cambia quien tiene `configurar`.
+- **Pestaña nueva `Promociones`**: `ID`, `Nombre`, `En el sitio`, `Activa`,
+  `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar` (los tres con `|`),
+  `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador`. Se crea sola con
+  su encabezado; *Dejar la base en cero* la **conserva** (es configuración).
+- La tarjeta abierta del Gran Premio mide 641px a 1280×650 (escena
+  `ficha-promocion`): los botones van a 36px en el computador y *Cotizador y
+  link* comparte fila.
+
+### Se cotiza con las reglas del vendedor (`cotizarPromocion()`)
+
+La misma función para lo que ve el cliente y lo que se guarda: las líneas pasan
+por `prepararLineas()` con **el show** (incluido en un día público, con su
+mínimo en uno privado con poca gente) y **el arriendo mínimo** del día
+(`arriendoDelDia()`), salvo que la promoción lo perdone. No cotiza hoy ni
+antes, un día arrendado en exclusiva a otro, bajo el mínimo de personas ni con
+un producto sin precio; dice por qué con **un código** (`minimo`, `fecha`,
+`tomado`, `menu`, `sinPrecio`), que el sitio traduce. No pregunta *¿exclusivo?*:
+eso lo conversa el vendedor.
+
+### Lo que cobra otra empresa (`Menu.loCobra`)
+
+- **En el catálogo**, un extra lleva *Lo cobra otra empresa* (columna nueva
+  `Lo cobra` en `Menús`): el karting, el taller de queso. Solo un extra: un
+  menú, el arriendo o el show son nuestros.
+- **Sus líneas van aparte del total** (`cuentasDe()` las deja fuera): no entran
+  en nuestra boleta o factura, el anticipo, la comisión, la reserva, la caja de
+  Fudo ni el simulador. `prepararLineas()` les pone quién cobra desde el
+  catálogo, y queda en la línea (columna nueva `Lo cobra` en `Presupuesto
+  Líneas`). Lo decidió el cliente entre eso y sumarlo como el show.
+- **Se muestra con su detalle**: en la ventana de cotizar, la pastilla *lo
+  cobra Karting Pirque · aparte* y bajo el total *Aparte, lo cobra … $X* y *el
+  día completo, con lo de otras empresas*; en la cotización y el contrato, el
+  recuadro *Aparte: lo cobra otra empresa* con cantidad, precio y quién
+  (`TablaCotizacion`).
+- **El seguimiento** (lo pidió el cliente: *"tengo que organizar este karting,
+  tengo que organizar el taller de queso"*): mientras no esté coordinado, la
+  vendedora ve ***🤝 N por coordinar con otra empresa*** en *Tus pendientes*
+  (cotizaciones vivas o ganadas con el evento por venir), y bajo el total de la
+  cotización marca ***🤝 Ya lo coordiné*** —con *Deshacer*—. Columna nueva
+  `Otras empresas coordinadas` en `Presupuestos` (*empresa · quién · cuándo*),
+  la escribe solo `/api/presupuestos/coordinada`; queda en la bitácora.
+
+### Las cotizaciones que llegan del sitio
+
+- **`/api/publico/promociones`** (las conectadas, para dibujar el cotizador) y
+  **`/api/publico/cotizar`**: `GET` cotiza sin escribir, `POST` manda. Las dos
+  van en `PUBLICAS` del middleware, con CORS abierto como `/api/publico/fechas`,
+  y **los `GET` se guardan 5 minutos en la red de Vercel** (`s-maxage`): cada
+  visita no lee la planilla.
+- **Al mandar**: la ficha del cliente —la que ya tiene ese teléfono o correo, o
+  una nueva a nombre de la cuenta (`fichaDelContacto()`)— y la cotización
+  **enviada** (lo decidió el cliente: ya vio el total; corre la vigencia y cuenta
+  como gente posible), con el descuento de la promoción, el próximo contacto
+  **hoy** y **`Origen` = *Sitio · Gran Premio de Fin de Año*** (columna nueva).
+  Bitácora: *Llegó una cotización del sitio*.
+- **A nombre de quién**: *Configuración → Cotizaciones → Las del sitio van a*
+  (`vendedorSitio`, clave `cotizaciones_sitio_vendedor`), con el buscador de
+  las cuentas que cotizan. Sin nadie, o si esa cuenta se desactivó, queda sin
+  vendedor y la ven quienes asignan (`asignarVendedor`).
+- **Lo que la protege**, porque es pública y escribe: un campo trampa (`web`)
+  que una persona no ve —si llega lleno, se responde como si nada—, el
+  teléfono obligatorio y **un tope de 3 por cliente al día**
+  (`TOPE_SITIO_DIA`). **Una versión de prueba del sitio manda `prueba: true`**:
+  se calcula todo y no se escribe.
+- **La ventana que avisa** (`AvisoCotizacionesSitio`, lo pidió el cliente:
+  *"al vendedor hay que avisar con un popup cuando se mete la próxima vez al
+  panel"*): al entrar a la portada o a Cotizaciones, *🌐 Te llegó una
+  cotización del sitio*, con el cliente, la promoción, el día, la gente y el
+  total. ***✓ Entendido*** las marca vistas (columna nueva `Aviso del sitio
+  visto`, *quién · cuándo*, `/api/presupuestos/sitio-visto`); *Abrir →* marca
+  esa y la abre; *Después* la cierra y sale de nuevo la próxima vez. La ve su
+  vendedor; las sin vendedor, quien asigna. Sale de lo que esas pantallas ya
+  leen: ninguna lectura más. Mide 266px (escena `v-aviso-sitio`, como Daniela).
+
+### Lo de siempre
+
+- **Lecturas de Google**: `/api/promociones` una tanda; `/api/config` sumó
+  `Usuarios` a su tanda (las cuentas para elegir): sigue en una. Las públicas,
+  una tanda por pregunta distinta cada 5 minutos; mandar, una tanda y sus
+  escrituras. `/api/ocupacion` y `/api/presupuestos`, ninguna más.
+- **Ningún permiso nuevo.** Las promociones van con `configurar`; marcar visto
+  y coordinado, con `presupuestos` y la cotización tiene que ser suya (o sin
+  vendedor, para quien asigna).
+- **Columnas nuevas**, todas al final: `Lo cobra` (`Menús` y `Presupuesto
+  Líneas`), `Origen`, `Aviso del sitio visto` y `Otras empresas coordinadas`
+  (`Presupuestos`). **Pestaña nueva** `Promociones`. **Clave nueva** de `Config`.
+- **Ayuda**: el `?` de Productos, `loCobra`, `promoEnElSitio`,
+  `promoCotizador`, `promoMenu`, `promoSuma`, `promoCondicion`, `promoArriendo`,
+  y *Las del sitio van a* en Configuración.
+- **El panel de ejemplo**: el karting (de *Karting Pirque*) y la clase de
+  parrilla en el catálogo, cinco promociones (una apagada), las del sitio van a
+  Daniela —sesión nueva `vendedora`— y una cotización del sitio de Constructora
+  Maipo con el karting, todavía sin ver.
+- **Probado en el panel de ejemplo**: el sábado 14 (público) el Gran Premio
+  lleva el show incluido y el karting aparte; un martes, el show con su precio;
+  con 5 personas responde *minimo 22*; mandar crea la ficha y la cotización
+  enviada, la prueba y el campo trampa no escriben, la misma persona reutiliza
+  su ficha y el cuarto envío del día responde 429. Daniela ve la ventana al
+  entrar y Jorge no; *🤝 Ya lo coordiné* la saca de *por coordinar*.
 
 ## Filtrar por de dónde viene la reserva (2026-11-23)
 

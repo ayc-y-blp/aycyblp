@@ -320,6 +320,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *Visitas · Eventos*, y va en la fila de *Volver* para que el marco del
   periodo quepa en una) y en la página del día, al lado de *Mías*. Ver
   `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
+- **Las promociones del sitio, la mitad del panel** (23 y 24-11-2026, PR
+  abierto, espera el *"mergea"*): *Productos → 🎁 Promociones* (una promoción es
+  una receta de productos, con su descuento, y se conecta a un bloque de
+  `promociones.html`), *Lo cobra otra empresa* en el catálogo (el karting va
+  aparte del total, con su detalle, y la vendedora lo ve *🤝 por coordinar*),
+  *Las del sitio van a* en Configuración, las rutas públicas del cotizador, la
+  ventana que avisa al vendedor y el link de campaña por promoción. **El
+  cotizador en `promociones.html` va en el PR siguiente**, después del merge:
+  será la cuarta excepción de JavaScript del sitio (decidido por el cliente:
+  *total en vivo*). Ver `panel/CLAUDE.md`, "Las promociones del sitio".
+  **Por decidir**: si una promoción nueva (*Karting*) puede crear su propio
+  bloque desde el panel, o cada bloque nuevo sigue siendo un PR del sitio.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -474,10 +486,10 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Reservas` | una reserva | `ID Orden` (id de Shopify, `MANUAL-…` a mano), `Fecha Reserva`, `Nombre`, `Email`, `Teléfono`, `Menú`, `Personas`, `Monto`, `Tipo Pago` (solo Shopify: *Pago directo / Solo reserva*), `Estado Pago Shopify` (`paid`, `pending`, `partially_paid`, `cancelled`, `refunded`, `voided`), `Asistencia`, `Nota de pago`, `Abonado`, `Se cayó por cupo`, `Anotada por`, `Pago anotado`, `Pago revisado`, `Agregados`, `Valor final`, `Mesa cerrada`, `Cobrado en el local`, `Comprobante del cobro`, `Cobro cerrado`… | `Fechas Hábiles` por fecha; `Presupuestos.ID Reserva` |
 | `Fechas Hábiles` | un día del calendario | `Fecha`, `Capacidad Máx`, `Hora Apertura`, `Estado` (*Abierta / Privada / Privada exclusiva / Cerrada*), `Notas`, `Cupo pedido` | `Reservas`, `Turnos`, `Actividades` por fecha |
 | `Config` | un parámetro | `Clave` · `Valor` (días que se abre, cupo, vigencia, descuentos, anticipo, mínimo del show, datos de la empresa, carpeta de Drive…) | todo |
-| `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor` | Reservas (por nombre), líneas de cotización |
+| `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor`, `Costo`, `Lo cobra` | Reservas (por nombre), líneas de cotización |
 | `Clientes` | una ficha | `ID` (`C-0001`), `Nombre`, `Empresa del cliente`, `RUT`, `Domicilio`, `Teléfono`, `Correo`, `Giro`, `Creado por` | `Presupuestos.ID Cliente` |
-| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
-| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF` | `Presupuestos` |
+| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Origen` (*Sitio · …*), `Aviso del sitio visto`, `Otras empresas coordinadas`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
+| `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF`, `Lo cobra` (otra empresa: va aparte del total) | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |
 | `Trabajadores` | una ficha | `Nombre` (es la identidad), `Puesto habitual`, `Activo`, `Token de acceso`, `Modalidad` (*por turno / contratado*), `Pago por jornada`, `Valor hora extra`, `Participa en propina` (en blanco = sí), `Nota de pago` (datos bancarios), `Por confirmar`, `Pago jornada preparación` | `Turnos.Trabajador` por nombre |
@@ -491,6 +503,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
+| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento`, `Arriendo`, `Cotizador` | `Menús` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
 | `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |
