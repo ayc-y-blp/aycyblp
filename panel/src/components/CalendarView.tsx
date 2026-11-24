@@ -692,7 +692,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
               </h2>
               <span className="h-px flex-1 bg-hueso/10" />
               <span className="text-[13px] text-hueso/55">
-                {diasVisibles.filter((d) => mesDe(d.fecha) === mes).length} días
+                {((n) => `${n} ${n === 1 ? 'día' : 'días'}`)(diasVisibles.filter((d) => mesDe(d.fecha) === mes).length)}
               </span>
             </div>
           )}
