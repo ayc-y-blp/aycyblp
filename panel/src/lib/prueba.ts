@@ -7246,6 +7246,45 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      && limpia.descuento === 100 && limpia.nombre === 'X',
      'lo que llega se limpia: productos del catálogo, sin repetidos, y una clave del sitio que existe');
   ok(PR.nuevoIdPromocion([gran, combate, campo]) === 'PR-04', 'el próximo ID de promoción');
+  const sinCot = { ...gran, cotizador: false };
+  ok(PR.promocionesParaElSitio([sinCot], cat).length === 0
+     && no(PR.cotizarPromocion(sinCot, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'promocion'
+     && PR.leerPromocionesDe(PR.aFilasPromociones([sinCot]))[0].cotizador === false,
+     'con el cotizador apagado la promoción no sale en el sitio ni se cotiza, y se guarda así');
+  // --- Lo que manda el sitio ---
+  const lc = PR.limpiarContactoSitio({ nombre: '  Ana   Pérez ', telefono: '+56 9 1111-2222', correo: 'ANA@Ejemplo.cl ' });
+  ok('nombre' in lc && lc.nombre === 'Ana Pérez' && lc.correo === 'ana@ejemplo.cl' && lc.telefono === '+56 9 11112222',
+     'el contacto del sitio se limpia');
+  ok('codigo' in PR.limpiarContactoSitio({ nombre: 'Ana', telefono: '123' })
+     && 'codigo' in PR.limpiarContactoSitio({ nombre: 'Ana', telefono: '+56911112222', correo: 'no-es-correo' }),
+     'sin un teléfono de verdad, o con un correo mal escrito, no se manda');
+  const fichas = [{ id: 'C-0001', telefono: '9 1111 2222', correo: '' }, { id: 'C-0002', telefono: '', correo: 'luis@x.cl' }] as never[];
+  ok(PR.fichaDelContacto({ telefono: '+56 9 1111 2222', correo: '' }, fichas)?.id === 'C-0001'
+     && PR.fichaDelContacto({ telefono: '+56 9 3333 4444', correo: 'luis@x.cl' }, fichas)?.id === 'C-0002'
+     && !PR.fichaDelContacto({ telefono: '+56 9 3333 4444', correo: '' }, fichas),
+     'un cliente que vuelve calza por teléfono o correo: no queda con dos fichas');
+  const sab2 = PR.cotizarPromocion(gran, { adultos: 30, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx);
+  if (sab2.ok) {
+    const pres = PR.cotizacionDelSitio({ id: 'PRE-9', token: 't', idCliente: 'C-0001', promo: gran, cotizada: sab2, fecha: '2026-11-28',
+      empresa: 'Acme', vendedor: 'Carmen', hoy: '2026-11-24', ahora: '2026-11-24 10:00', vigenciaDias: 15 });
+    ok(pres.estado === 'Enviada' && pres.enviada === '2026-11-24 10:00' && pres.validoHasta === '2026-11-27'
+       && pres.recontactar === '2026-11-24' && pres.origen === 'Sitio · Gran Premio' && pres.creadoPor === 'Carmen'
+       && pres.invitados === 30 && PR.esDelSitio(pres),
+       'la cotización del sitio nace enviada, vigente hasta el día antes del evento, con el contacto hoy y a nombre de la cuenta');
+    ok(PR.delSitioHoy([{ idCliente: 'C-0001', origen: pres.origen, creado: '2026-11-24 10:00' },
+      { idCliente: 'C-0001', origen: '', creado: '2026-11-24 11:00' }], 'C-0001', '2026-11-24') === 1,
+       'el tope cuenta solo las del sitio de ese cliente, de hoy');
+    const lineasP = sab2.lineas.map((l, k) => ({ ...l, presupuesto: 'PRE-9', fila: k + 2 }));
+    const otra = { ...pres, id: 'PRE-8', creadoPor: '' };
+    const vista = { ...pres, id: 'PRE-7', avisoVisto: 'Carmen · ayer' };
+    const deCarmen = PR.avisosDelSitio([pres, otra, vista], lineasP, { usuario: 'carmen', asigna: false });
+    ok(deCarmen.length === 1 && deCarmen[0].id === 'PRE-9' && deCarmen[0].promo === 'Gran Premio'
+       && deCarmen[0].total === sab2.cuentas.total,
+       'el aviso: a su vendedor, las del sitio que no ha visto');
+    ok(PR.avisosDelSitio([pres, otra], lineasP, { usuario: 'Rodrigo', asigna: true }).map((a) => a.id).join() === 'PRE-8'
+       && PR.avisosDelSitio([{ ...pres, estado: 'Perdida' }], lineasP, { usuario: 'Carmen', asigna: false }).length === 0,
+       'las sin vendedor las ve quien asigna; una que ya se cayó no avisa');
+  } else ok(false, 'el sábado se cotiza para armar la cotización del sitio');
   const sitio = PR.promocionesParaElSitio([gran, combate, PR.nuevaPromocion({ id: 'PR-05', sitio: 'ia', menus: ['Brasas'], incluye: ['Sin precio'] })], cat);
   ok(sitio.length === 2 && sitio[0].desde === 50000 && sitio[1].desde === 63000
      && sitio[0].suma[0].loCobra === 'Karting Pirque' && !('costo' in sitio[0].menus[0]),

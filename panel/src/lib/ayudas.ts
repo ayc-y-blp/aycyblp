@@ -1290,6 +1290,13 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Cada bloque tiene una sola promoción. Con *Ninguna* queda guardada sin salir.'
     ]
   },
+  promoCotizador: {
+    titulo: 'El cotizador',
+    texto: [
+      'Con *Sí*, el bloque de la promoción en el sitio muestra el cotizador: el cliente elige cuántos son, el día '
+      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.'
+    ]
+  },
   promoMenu: {
     titulo: 'El menú',
     texto: [

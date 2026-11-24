@@ -259,7 +259,20 @@ export const COL_PRESUPUESTOS = {
    * cumple al mandarla.
    */
   recontactar: 'Recontactar el',
-  redactarAntes: 'Redactar antes del'
+  redactarAntes: 'Redactar antes del',
+  /**
+   * **De dónde llegó** (2026-11-23): *Sitio · Gran Premio de Fin de Año* si
+   * la armó un cliente en el cotizador de promociones. En blanco, la hizo un
+   * vendedor. La escribe solo `/api/publico/cotizar`.
+   */
+  origen: 'Origen',
+  /**
+   * **Cuándo vio el aviso su vendedor** (2026-11-23, lo pidió el cliente:
+   * *"al vendedor hay que avisar con un popup cuando se mete la próxima vez
+   * al panel"*): *quién · cuándo*. Mientras esté en blanco, la ventana le
+   * aparece al entrar.
+   */
+  avisoVisto: 'Aviso del sitio visto'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -436,6 +449,9 @@ export interface Presupuesto {
   /** La agenda: ver `COL_PRESUPUESTOS.recontactar` y `redactarAntes`. `AAAA-MM-DD` o vacío. */
   recontactar?: string;
   redactarAntes?: string;
+  /** De dónde llegó y cuándo se vio su aviso. Ver `COL_PRESUPUESTOS.origen` y `avisoVisto`. */
+  origen?: string;
+  avisoVisto?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -1077,6 +1093,8 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       renovaciones: Math.max(0, aEntero(en(f, i.renovaciones))),
       recontactar: esFecha(en(f, i.recontactar).slice(0, 10)) ? en(f, i.recontactar).slice(0, 10) : '',
       redactarAntes: esFecha(en(f, i.redactarAntes).slice(0, 10)) ? en(f, i.redactarAntes).slice(0, 10) : '',
+      origen: en(f, i.origen).trim(),
+      avisoVisto: en(f, i.avisoVisto).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1159,6 +1177,8 @@ export function filaPresupuesto(
   poner(i.renovaciones, p.renovaciones ? String(p.renovaciones) : '');
   poner(i.recontactar, p.recontactar ?? '');
   poner(i.redactarAntes, p.redactarAntes ?? '');
+  poner(i.origen, p.origen ?? '');
+  poner(i.avisoVisto, p.avisoVisto ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

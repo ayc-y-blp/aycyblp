@@ -29,7 +29,12 @@ import {
   prepararLineas, productoDe, esDiaPublico, arriendoDelDia, personasParaMinimos,
   type ReglaShow, type ReglaArriendo
 } from './cotizar.ts';
-import { cuentasDe, otrasEmpresas, IVA, type LineaEntrante, type LineaPresupuesto, type Cuentas } from './presupuestos.ts';
+import {
+  cuentasDe, otrasEmpresas, IVA, ESTADO_PRESUPUESTO, totalDe, lineasDe, folioDe, estadoNormal,
+  type LineaEntrante, type LineaPresupuesto, type Cuentas, type Presupuesto
+} from './presupuestos.ts';
+import { vigenciaHasta } from './condiciones.ts';
+import type { Cliente } from './clientes.ts';
 import { diaSemana, sumarDias } from './fechas.ts';
 import type { FechaHabil } from './tipos.ts';
 
@@ -54,7 +59,13 @@ export const COL_PROMOCIONES = {
   /** La condición especial: un descuento sobre el total, en %. */
   descuento: 'Descuento',
   /** Si se cobra el arriendo mínimo (`ARRIENDO_PROMO`). */
-  arriendo: 'Arriendo'
+  arriendo: 'Arriendo',
+  /**
+   * **Si su bloque muestra el cotizador** (2026-11-23, lo pidió el cliente:
+   * *"en la promoción tengo que poder elegir si aparece el cotizador o no"*).
+   * En blanco es sí. Con no, el bloque queda como antes: solo WhatsApp.
+   */
+  cotizador: 'Cotizador'
 } as const;
 
 export const ENCABEZADO_PROMOCIONES: string[] = Object.values(COL_PROMOCIONES);
@@ -102,6 +113,7 @@ export interface Promocion {
   minimo: number;
   descuento: number;
   arriendo: ArriendoPromo;
+  cotizador: boolean;
 }
 
 export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocion {
@@ -109,7 +121,7 @@ export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocio
   const { id, ...resto } = p;
   return {
     id, nombre: '', sitio: '', activa: true, menus: [], ninos: '', incluye: [], suma: [],
-    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, ...resto
+    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, ...resto
   };
 }
 
@@ -150,7 +162,8 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
       suma: lista(en(f, i.suma)),
       minimo: entero(en(f, i.minimo), 10000),
       descuento: entero(en(f, i.descuento), 100),
-      arriendo: arriendoDe(en(f, i.arriendo))
+      arriendo: arriendoDe(en(f, i.arriendo)),
+      cotizador: en(f, i.cotizador).trim() === '' ? true : esSi(en(f, i.cotizador))
     });
   }
   return salida;
@@ -160,7 +173,7 @@ export function aFilasPromociones(promos: Promocion[]): string[][] {
   return [ENCABEZADO_PROMOCIONES, ...promos.map((p) => [
     p.id, p.nombre, p.sitio, p.activa ? 'sí' : 'no', p.menus.join(' | '), p.ninos,
     p.incluye.join(' | '), p.suma.join(' | '), p.minimo ? String(p.minimo) : '',
-    p.descuento ? String(p.descuento) : '', p.arriendo
+    p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no'
   ])];
 }
 
@@ -200,7 +213,8 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     suma: enCatalogo(x?.suma),
     minimo: entero(x?.minimo, 10000),
     descuento: entero(x?.descuento, 100),
-    arriendo: arriendoDe(x?.arriendo)
+    arriendo: arriendoDe(x?.arriendo),
+    cotizador: typeof x?.cotizador === 'boolean' ? x.cotizador : true
   };
 }
 
@@ -278,7 +292,7 @@ const neto = (m: Menu) => {
  * ni bajo el mínimo de personas, ni con un producto sin precio.
  */
 export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx: ContextoCotizar): Cotizada | NoSeCotiza {
-  if (!promo || !promo.activa) return { ok: false, codigo: 'promocion' };
+  if (!promo || !promo.activa || !promo.cotizador) return { ok: false, codigo: 'promocion' };
   const adultos = entero(e.adultos, 2000);
   const ninos = promo.ninos ? entero(e.ninos, 2000) : 0;
   const invitados = adultos + ninos;
@@ -356,14 +370,15 @@ const paraSitio = (m: Menu): ProductoSitio => ({
 });
 
 /**
- * Las promociones activas y conectadas, como las ve el sitio. **Una con un
- * producto que falta o sin precio no sale**: su bloque se queda con el botón
- * de WhatsApp, en vez de un cotizador que no puede cotizar.
+ * Las promociones activas, conectadas y **con el cotizador encendido**, como
+ * las ve el sitio. **Una con un producto que falta o sin precio no sale**:
+ * su bloque se queda con el botón de WhatsApp, en vez de un cotizador que no
+ * puede cotizar.
  */
 export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): PromocionSitio[] {
   const salida: PromocionSitio[] = [];
   for (const p of promos) {
-    if (!p.activa || !p.sitio) continue;
+    if (!p.activa || !p.sitio || !p.cotizador) continue;
     const buscar = (n: string) => productoDe(n, catalogo);
     const menus = p.menus.map(buscar);
     const ninos = p.ninos ? buscar(p.ninos) : undefined;
@@ -384,3 +399,126 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
   }
   return salida;
 }
+
+/* ---------- lo que manda el sitio ---------- */
+
+/** El contacto que deja el cliente en el sitio. */
+export interface ContactoSitio { nombre: string; empresa: string; telefono: string; correo: string }
+
+const digitos = (t: string) => String(t ?? '').replace(/\D/g, '');
+
+/**
+ * El contacto del formulario, limpio, o el código de lo que falta. **El
+ * teléfono es obligatorio**: es por donde el vendedor lo llama, y frena el
+ * envío que no es de una persona. El correo es opcional.
+ */
+export function limpiarContactoSitio(x: Partial<Record<keyof ContactoSitio, unknown>>):
+  ContactoSitio | { codigo: 'nombre' | 'telefono' | 'correo' } {
+  const nombre = String(x?.nombre ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const empresa = String(x?.empresa ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  const telefono = String(x?.telefono ?? '').replace(/[^\d+ ]/g, '').trim().slice(0, 20);
+  const correo = String(x?.correo ?? '').trim().toLowerCase().slice(0, 120);
+  if (nombre.length < 2) return { codigo: 'nombre' };
+  if (digitos(telefono).length < 8) return { codigo: 'telefono' };
+  if (correo && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) return { codigo: 'correo' };
+  return { nombre, empresa, telefono, correo };
+}
+
+/**
+ * **La ficha que ya existe para este contacto**: el mismo teléfono (los
+ * últimos 9 dígitos, sin importar el +56 ni los espacios) o el mismo correo.
+ * Así un cliente que cotiza dos veces no queda con dos fichas.
+ */
+export function fichaDelContacto(c: Pick<ContactoSitio, 'telefono' | 'correo'>, clientes: Cliente[]): Cliente | undefined {
+  const tel = digitos(c.telefono).slice(-9);
+  return clientes.find((x) => (tel.length >= 8 && digitos(x.telefono).slice(-9) === tel)
+    || (!!c.correo && x.correo.trim().toLowerCase() === c.correo));
+}
+
+/** Cuántas cotizaciones del sitio puede mandar un mismo cliente en un día. */
+export const TOPE_SITIO_DIA = 3;
+
+/** Las que este cliente ya mandó hoy desde el sitio: para el tope. */
+export const delSitioHoy = (presupuestos: Pick<Presupuesto, 'idCliente' | 'origen' | 'creado'>[], idCliente: string, hoy: string) =>
+  presupuestos.filter((p) => p.idCliente === idCliente && /^sitio/i.test(p.origen ?? '')
+    && String(p.creado ?? '').startsWith(hoy)).length;
+
+/** La marca de origen de una cotización del sitio. */
+export const ORIGEN_SITIO = 'Sitio';
+export const esDelSitio = (p: Pick<Presupuesto, 'origen'>) => /^sitio/i.test(p.origen ?? '');
+
+/**
+ * **La cotización que nace del sitio** (2026-11-23). La decidió el cliente:
+ * *enviada de inmediato* —el cliente ya vio el total, así que corre la
+ * vigencia y cuenta como gente posible—, a nombre de la cuenta de
+ * Configuración, con el próximo contacto hoy para que su vendedor lo llame.
+ * El descuento es el de la promoción; el resto de las condiciones, las de
+ * Configuración, como en toda cotización.
+ */
+export function cotizacionDelSitio(a: {
+  id: string; token: string; idCliente: string; promo: Promocion; cotizada: Cotizada;
+  fecha: string; empresa: string; vendedor: string; hoy: string; ahora: string; vigenciaDias: number;
+}): Omit<Presupuesto, 'fila'> {
+  return {
+    id: a.id, fecha: a.fecha as Presupuesto['fecha'], periodo: '',
+    cliente: '', email: '', telefono: '', idCliente: a.idCliente,
+    estado: ESTADO_PRESUPUESTO.enviado,
+    validoHasta: vigenciaHasta(a.hoy, a.vigenciaDias, a.fecha), token: a.token,
+    notas: `Cotizada por el cliente en el sitio: ${a.promo.nombre}${a.empresa ? ` · ${a.empresa}` : ''}.`,
+    idReserva: '', invitados: a.cotizada.invitados, tipoEvento: 'Empresa', grupo: '',
+    descuento: a.cotizada.descuento, motivo: '', documento: '',
+    anticipo: null, anticipoMonto: null, saldoDias: null, uf: 0, fechaUF: '',
+    horario: '', ley20393: false, acuerdos: '', contrato: '', contratoSubidoPor: '', contratoSubido: '',
+    cambiosFecha: null, cancelacionDias: null, reembolso: null,
+    devolucion: 0, canceladaPor: '', cancelada: '', diaAbierto: '',
+    enviada: a.ahora, ultimoSeguimiento: '', contratoEnviado: '', seguimientoDias: null, avisoEvento: null,
+    recontactar: a.hoy, origen: `${ORIGEN_SITIO} · ${a.promo.nombre}`, avisoVisto: '',
+    creadoPor: a.vendedor, creado: a.ahora
+  };
+}
+
+/* ---------- el aviso al vendedor ---------- */
+
+/** Una cotización del sitio que su vendedor todavía no vio. */
+export interface AvisoSitio {
+  id: string;
+  folio: string;
+  cliente: string;
+  promo: string;
+  fecha: string;
+  invitados: number;
+  total: number;
+}
+
+const SIGUE = new Set<string>([ESTADO_PRESUPUESTO.candidato, ESTADO_PRESUPUESTO.borrador,
+  ESTADO_PRESUPUESTO.enviado, ESTADO_PRESUPUESTO.negociacion]);
+
+/**
+ * **Las cotizaciones del sitio que esta cuenta tiene que ver** (2026-11-23,
+ * lo pidió el cliente: *"al vendedor hay que avisar con un popup cuando se
+ * mete la próxima vez al panel que le entraron cotizaciones desde el
+ * sitio"*): las suyas que todavía no marcó vistas y siguen en carrera. Las
+ * que llegaron **sin vendedor** las ve quien puede asignarlas (la gerencia,
+ * pagos y el administrador), para que alguien se haga cargo.
+ */
+export function avisosDelSitio(
+  presupuestos: (Pick<Presupuesto, 'id' | 'origen' | 'avisoVisto' | 'estado' | 'creadoPor' | 'fecha' | 'invitados' | 'descuento'>
+    & { cliente?: string })[],
+  lineas: LineaPresupuesto[],
+  cuenta: { usuario: string; asigna: boolean }
+): AvisoSitio[] {
+  const yo = normalizar(cuenta.usuario);
+  return presupuestos
+    .filter((p) => esDelSitio(p) && !String(p.avisoVisto ?? '').trim() && SIGUE.has(estadoNormal(p.estado))
+      && (p.creadoPor ? !!yo && normalizar(p.creadoPor) === yo : cuenta.asigna))
+    .map((p) => ({
+      id: p.id, folio: folioDe(p), cliente: p.cliente ?? '',
+      promo: String(p.origen ?? '').replace(/^sitio\s*·\s*/i, ''),
+      fecha: String(p.fecha ?? ''), invitados: p.invitados,
+      total: totalDe(lineasDe(lineas, p.id), p.descuento)
+    }))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+/** La marca de visto: *quién · cuándo*. */
+export const marcaVisto = (usuario: string, cuando: string) => `${usuario} · ${cuando}`;

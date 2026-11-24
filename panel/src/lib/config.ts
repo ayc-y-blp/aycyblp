@@ -111,6 +111,13 @@ export interface Config {
    * En 0 no se pregunta.
    */
   seguimientoDias: number;
+  /**
+   * **A quién le llegan las cotizaciones del sitio** (2026-11-23, lo pidió el
+   * cliente: *"en este momento las cotizaciones que vienen por este canal van
+   * asignadas a la cuenta de Carmen Barros"*). El nombre de una cuenta que
+   * cotiza; en blanco quedan sin vendedor y las ve la gerencia.
+   */
+  vendedorSitio: string;
   avisoEvento: number;
   /**
    * **Días mínimos para liberar un día por un evento exclusivo** (2026-11-12,
@@ -233,6 +240,7 @@ export const POR_DEFECTO: Config = {
   cancelacionDias: 60,
   reembolsoPct: 20,
   seguimientoDias: 5,
+  vendedorSitio: '',
   avisoEvento: 14,
   exclusivoDias: 7,
   // Los fijó el cliente el 2026-11-20: bajo 25 personas, $100.000 + IVA.
@@ -279,6 +287,7 @@ export const CLAVES = {
   cancelacionDias: 'contrato_cancelacion_dias',
   reembolsoPct: 'contrato_reembolso',
   seguimientoDias: 'seguimiento_dias',
+  vendedorSitio: 'cotizaciones_sitio_vendedor',
   avisoEvento: 'seguimiento_antes_evento',
   exclusivoDias: 'exclusivo_dias_minimos',
   showGratisDesde: 'show_gratis_desde',
@@ -456,6 +465,7 @@ export function leerConfigDe(filas: string[][]): Config {
     cancelacionDias: numero(v(CLAVES.cancelacionDias), POR_DEFECTO.cancelacionDias, 0, 365),
     reembolsoPct: numero(v(CLAVES.reembolsoPct), POR_DEFECTO.reembolsoPct, 0, 100),
     seguimientoDias: numero(v(CLAVES.seguimientoDias), POR_DEFECTO.seguimientoDias, 0, 365),
+    vendedorSitio: String(v(CLAVES.vendedorSitio) ?? '').trim(),
     avisoEvento: numero(v(CLAVES.avisoEvento), POR_DEFECTO.avisoEvento, 0, 365),
     exclusivoDias: numero(v(CLAVES.exclusivoDias), POR_DEFECTO.exclusivoDias, 0, 365),
     // En cero no hay mínimo: es un valor que alguien puede querer.
@@ -512,6 +522,7 @@ export function aFilasConfig(c: Config): string[][] {
     [CLAVES.cancelacionDias, String(c.cancelacionDias)],
     [CLAVES.reembolsoPct, String(c.reembolsoPct)],
     [CLAVES.seguimientoDias, String(c.seguimientoDias)],
+    [CLAVES.vendedorSitio, c.vendedorSitio],
     [CLAVES.avisoEvento, String(c.avisoEvento)],
     [CLAVES.exclusivoDias, String(c.exclusivoDias)],
     [CLAVES.showGratisDesde, String(c.showGratisDesde)],

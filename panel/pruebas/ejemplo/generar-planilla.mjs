@@ -66,6 +66,8 @@ H['Config'] = cfg.aFilasConfig({
   margenMinimo: 30, gastosEvento: 'Hielo: 20000; Leña y carbón: 600 pp',
   // La carpeta de los comprobantes: en el ejemplo, Drive es de mentira (`capturas.sh`).
   driveComprobantes: 'unidad-de-ejemplo',
+  // Las cotizaciones del cotizador del sitio llegan a Daniela (2026-11-23).
+  vendedorSitio: 'Daniela',
   empresa: { ...cfg.EMPRESA_VACIA, nombre: 'Brasas de Lo Pirque' }
 });
 
@@ -128,7 +130,10 @@ const CLIENTES = [
   { id: 'C-0005', nombre: 'Marisol Cáceres', empresa: 'Inmobiliaria Cordillera', rut: '', domicilio: '', giro: '',
     telefono: '+56 9 4567 8901', correo: 'marisol@ejemplo.cl', notas: '', creadoPor: 'Daniela', creado: '2026-11-10 09:20' },
   { id: 'C-0006', nombre: 'Felipe Ortúzar', empresa: '', rut: '', domicilio: '', giro: '',
-    telefono: '+56 9 3678 9012', correo: 'felipe.ortuzar@ejemplo.cl', notas: 'Matrimonio civil, almuerzo.', creadoPor: 'Jorge', creado: '2026-11-11 17:40' }
+    telefono: '+56 9 3678 9012', correo: 'felipe.ortuzar@ejemplo.cl', notas: 'Matrimonio civil, almuerzo.', creadoPor: 'Jorge', creado: '2026-11-11 17:40' },
+  // Llegó por el cotizador del sitio (2026-11-23): su ficha es de la cuenta que recibe las del sitio.
+  { id: 'C-0007', nombre: 'Ignacia Rojas', empresa: 'Constructora Maipo', rut: '', domicilio: '', giro: '',
+    telefono: '+56 9 2789 0123', correo: 'ignacia.rojas@ejemplo.cl', notas: 'Llegó por el cotizador del sitio.', creadoPor: 'Daniela', creado: '2026-11-13 09:40' }
 ];
 const encC = cli.ENCABEZADO_CLIENTES;
 H['Clientes'] = [encC, ...CLIENTES.map((c) => cli.filaCliente(encC, c))];
@@ -179,6 +184,20 @@ COBROS.push({ id: 'COB-mh2a1-a1b2', presupuesto: santaInes, fecha: '2026-10-23',
   nota: '', registradoPor: 'Jorge', cuando: '2026-10-23 16:40', comprobante: '', revisadoPor: 'Verónica Lagos', revisado: '2026-10-24 09:12' });
 COBROS.push({ id: 'COB-mhkq2-c3d4', presupuesto: santaInes, fecha: '2026-11-06', concepto: 'Saldo', monto: 1848000, medio: 'Transferencia',
   nota: '', registradoPor: 'Jorge', cuando: '2026-11-06 12:05', comprobante: '', revisadoPor: 'Verónica Lagos', revisado: '2026-11-06 15:30' });
+
+// Constructora Maipo (2026-11-23): la mandó el cliente desde el cotizador del
+// Gran Premio, con el karting —que cobra otra empresa— aparte. Es de Daniela,
+// que recibe las del sitio, y todavía no ve su aviso: la ventana sale al entrar.
+const maipo = cotizacion(Date.parse('2026-11-13T12:40:11.204Z'), {
+  fecha: '2026-12-12', idCliente: 'C-0007', estado: 'Enviada', validoHasta: '2026-11-28', creadoPor: 'Daniela',
+  creado: '2026-11-13 09:40', invitados: 40, tipoEvento: 'Empresa', anticipo: null, saldoDias: null,
+  cambiosFecha: null, cancelacionDias: null, reembolso: null, seguimientoDias: null, avisoEvento: null, horario: '',
+  enviada: '2026-11-13 09:40', recontactar: '2026-11-13', origen: 'Sitio · Gran Premio de Fin de Año', avisoVisto: '',
+  notas: 'Cotizada por el cliente en el sitio: Gran Premio de Fin de Año · Constructora Maipo.'
+});
+linea(maipo, 'A Brasas abiertas', 40, 75000, 40);
+linea(maipo, 'Show ecuestre', 1, 0, 0);
+linea(maipo, 'Karting', 40, 35000, 0, { ivaIncluido: false, loCobra: 'Karting Pirque' });
 
 // Agrícola El Peumo: ganada con el anticipo; el saldo viene (lo que "viene" de Jorge).
 const peumo = cotizacion(Date.parse('2026-10-28T19:02:33.851Z'), {

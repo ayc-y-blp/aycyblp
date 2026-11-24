@@ -147,12 +147,15 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                   <span className="rounded-full border border-hueso/40 px-2 py-0.5 text-[13px] font-semibold text-hueso/80">apagada</span>
                 )}
                 {p.sitio ? (
-                  <span className={`rounded-full border px-2 py-0.5 text-[13px] font-semibold ${sale
+                  <span className={`rounded-full border px-2 py-0.5 text-[13px] font-semibold ${sale || !p.cotizador
                     ? 'border-rosa/50 text-rosa-texto' : 'border-ambar-fuerte/60 text-ambar-texto'}`}>
-                    {sale ? `en el sitio: ${nombreEnElSitio(p.sitio)}` : `${nombreEnElSitio(p.sitio)}: no sale`}
+                    {sale || !p.cotizador ? `en el sitio: ${nombreEnElSitio(p.sitio)}` : `${nombreEnElSitio(p.sitio)}: no sale`}
                   </span>
                 ) : (
                   <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px] text-hueso/70">sin conectar</span>
+                )}
+                {p.sitio && !p.cotizador && (
+                  <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px] text-hueso/70">sin cotizador</span>
                 )}
                 {p.minimo > 0 && <span className="text-[14px] text-hueso/70">desde {p.minimo} personas</span>}
                 {desde(p) > 0 && <span className="text-[14px] text-hueso/70">· desde {enPesos(desde(p))} + IVA por persona</span>}
@@ -161,7 +164,7 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
 
               {abierta === i && (
                 <fieldset disabled={soloMira} className={`${CUERPO_ABIERTO} space-y-3 p-3 lg:space-y-2`}>
-                  {p.sitio && !sale && p.activa && (
+                  {p.sitio && !sale && p.activa && p.cotizador && (
                     <p className="rounded border border-ambar/50 bg-ambar/5 px-3 py-2 text-[14px] font-semibold text-ambar-texto">
                       Todavía no sale en el sitio: le falta un menú, o un producto no tiene precio de cotización.
                       Su bloque sigue con el botón de WhatsApp.
@@ -189,6 +192,17 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                       })}
                     </div>
                   </Fila>
+                  {p.sitio && (
+                    <Fila rotulo="Cotizador" ayuda="promoCotizador">
+                      <div role="radiogroup" aria-label="Cotizador en el sitio" className="flex flex-wrap gap-2">
+                        {([[true, 'Sí, en su bloque'], [false, 'No, solo WhatsApp']] as const).map(([v, texto]) => (
+                          <button key={String(v)} type="button" role="radio" aria-checked={p.cotizador === v}
+                            onClick={() => cambiar(i, { cotizador: v })}
+                            className={`${BOTON} ${p.cotizador === v ? ELEGIDO : ''}`}>{texto}</button>
+                        ))}
+                      </div>
+                    </Fila>
+                  )}
                   <Fila rotulo="Menú" ayuda="promoMenu">
                     <Elegir etiqueta="Menú" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
                   </Fila>

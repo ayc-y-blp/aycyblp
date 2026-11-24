@@ -42,6 +42,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
+import { avisosDelSitio } from '@/lib/promociones';
 import { hoy, esFecha, sumarDias } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { guardaDelDia } from '@/lib/guardaCierre';
@@ -82,6 +83,10 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
     const clientesVisibles = clientes.map((c) =>
       recortarCliente(c, alcance, clientePropio(c, quien.usuario, presupuestos)));
     return NextResponse.json({
+      // **Las del sitio que esta cuenta no ha visto** (2026-11-23): la ventana
+      // que avisa al entrar. De lo ya leído: ninguna lectura más.
+      delSitio: avisosDelSitio(presupuestos.map((p) => conCliente(p, clientes)), lineas,
+        { usuario: quien.usuario, asigna: puede(quien.rol as Rol, 'asignarVendedor') }),
       presupuestos: presupuestos.map((p) => recortarContactoDeCotizacion(conCliente(p, clientes), alcance, quien.usuario)),
       lineas, menus: puede(quien.rol as Rol, 'costos') ? menus : sinCostos(menus), clientes: clientesVisibles,
       // El simulador de evento (2026-11-23): quién ve los números y quién solo la señal.
