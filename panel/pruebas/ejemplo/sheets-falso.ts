@@ -12,7 +12,8 @@ import fs from 'node:fs';
 const ARCHIVO = process.env.PLANILLA_EJEMPLO ?? '';
 if (!ARCHIVO) throw new Error('Falta PLANILLA_EJEMPLO: la planilla de ejemplo en JSON.');
 
-type Libro = { orden: string[]; hojas: Record<string, string[][]> };
+/** `titulo`: cómo se llama el libro (2026-11-24: la *producción* de ejemplo tiene el suyo). */
+type Libro = { orden: string[]; hojas: Record<string, string[][]>; titulo?: string };
 
 /**
  * **Una planilla por id** (2026-11-23, Fase 5): la de siempre es el archivo
@@ -31,11 +32,11 @@ function leer(): Libro {
   const hojas: Record<string, string[][]> = crudo.hojas ?? crudo;
   const orden: string[] = crudo.orden ?? Object.keys(hojas);
   for (const k of Object.keys(hojas)) if (!orden.includes(k)) orden.push(k);
-  return { orden, hojas };
+  return { orden, hojas, titulo: crudo.titulo };
 }
 function guardar(l: Libro) {
   const tmp = actual + '.tmp' + process.pid + Math.random().toString(36).slice(2);
-  fs.writeFileSync(tmp, JSON.stringify({ orden: l.orden, hojas: l.hojas }, null, 1));
+  fs.writeFileSync(tmp, JSON.stringify({ titulo: l.titulo, orden: l.orden, hojas: l.hojas }, null, 1));
   fs.renameSync(tmp, actual);
 }
 const nombre = (r: string) => {
@@ -67,7 +68,7 @@ const crudo = {
   spreadsheets: {
     get: async () => {
       const l = leer();
-      return { data: { properties: { title: 'Panel de ejemplo' }, sheets: l.orden.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
+      return { data: { properties: { title: l.titulo ?? 'Panel de ejemplo' }, sheets: l.orden.map((t, i) => ({ properties: { title: t, sheetId: i } })) } };
     },
     batchUpdate: async ({ requestBody }: any) => {
       const l = leer();
@@ -124,19 +125,26 @@ const crudo = {
         guardar(l);
         return { data: {} };
       },
-      // Celdas sueltas en varias pestañas (2026-11-24, renombrar).
+      // Celdas sueltas en varias pestañas (2026-11-24, renombrar), o un
+      // bloque entero desde una celda (2026-11-24, traer los datos de
+      // producción, con `RAW`: ahí el `'` de adelante se guarda tal cual).
       batchUpdate: async ({ requestBody }: any) => {
         const l = leer();
+        const crudoRaw = requestBody.valueInputOption === 'RAW';
         for (const { range, values } of requestBody.data ?? []) {
           const t = hoja(l, range);
           const m = String(range).match(/!([A-Z]+)(\d+)$/);
           if (!m) continue;
           const col = [...m[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
           const fila = +m[2];
-          while (t.length < fila) t.push([]);
-          const f = t[fila - 1];
-          while (f.length <= col) f.push('');
-          f[col] = texto(values?.[0]?.[0]);
+          (values ?? []).forEach((v: unknown[], i: number) => {
+            while (t.length < fila + i) t.push([]);
+            const f = t[fila + i - 1];
+            (v ?? []).forEach((c, j) => {
+              while (f.length <= col + j) f.push('');
+              f[col + j] = crudoRaw ? (c == null ? '' : String(c)) : texto(c);
+            });
+          });
         }
         guardar(l);
         return { data: {} };

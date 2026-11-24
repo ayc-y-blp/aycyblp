@@ -83,13 +83,25 @@ PY
 echo "export default { reactStrictMode: false };" > "$W/panel/next.config.mjs"
 # COMENTARIOS_SHEET_ID enciende el botón 💬 Coméntame de la cabecera, que
 # sale en las fotos; ninguna escena manda un comentario.
-printf 'GOOGLE_SHEET_ID=ejemplo\nCOMENTARIOS_SHEET_ID=ejemplo\nPANEL_USUARIO=jefe\nPANEL_CLAVE=clave-de-prueba-1234\n' > "$W/panel/.env.local"
+# GOOGLE_SHEET_ID_PRODUCCION (2026-11-24): la *producción* de ejemplo para
+# *Traer los datos de producción*, que es otra planilla falsa al lado.
+printf 'GOOGLE_SHEET_ID=ejemplo\nGOOGLE_SHEET_ID_PRODUCCION=ejemplo-produccion\nCOMENTARIOS_SHEET_ID=ejemplo\nPANEL_USUARIO=jefe\nPANEL_CLAVE=clave-de-prueba-1234\n' > "$W/panel/.env.local"
 
 # 2. La planilla y una sesión por rol.
 cd "$PANEL"
 node --no-warnings --experimental-strip-types --import ./pruebas/lecturas/registrar.mjs \
   "$E/generar-planilla.mjs" "$W/planilla.json"
 node --no-warnings --experimental-strip-types "$E/sesiones.mjs" "$W/sesiones.json"
+# La *producción* de ejemplo: la misma planilla con su propio nombre, para
+# *Traer los datos de producción* (2026-11-24). Lo que se pruebe en la otra
+# se va de ella; esta queda como se generó.
+python3 - "$W/planilla.json" <<'PY'
+import json, sys
+p = sys.argv[1]; d = json.load(open(p))
+if 'hojas' not in d: d = {'hojas': d}
+d['titulo'] = 'BBDD Produccion (ejemplo)'
+json.dump(d, open(p + '.ejemplo-produccion.json', 'w'))
+PY
 
 # 3. Levantarla con el reloj fijo, y bajarla al terminar pase lo que pase.
 (cd "$W/panel" && PLANILLA_EJEMPLO="$W/planilla.json" RELOJ_EJEMPLO="$RELOJ" \

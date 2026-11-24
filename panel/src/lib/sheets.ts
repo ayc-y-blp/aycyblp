@@ -626,6 +626,149 @@ export async function vaciarHojas(hojas: string[]): Promise<string[]> {
   } finally { hojas.forEach(olvidar); }
 }
 
+/** Una celda leída sin formato: el texto, el número o el sí/no tal cual. */
+type ValorCelda = string | number | boolean;
+
+/** Un título de pestaña dentro de un rango A1, con sus comillas escapadas. */
+const enRango = (titulo: string) => `'${titulo.replace(/'/g, "''")}'`;
+
+/**
+ * **Lee pestañas de otra planilla, y nada más** (2026-11-24, para *Traer los
+ * datos de producción* a la versión de prueba: `lib/sincronizar.ts`).
+ *
+ * Es **lo único que recibe el id de la planilla de producción** en una
+ * versión de prueba, y solo pide `spreadsheets.get` y `values.batchGet`: no
+ * hay cómo escribir desde acá. Dos lecturas del límite de Google —la lista de
+ * pestañas y todas juntas—, de la cuenta de servicio de la empresa.
+ *
+ * Los valores vuelven **con su tipo** (un número es un número), leídos con
+ * las mismas opciones que usa el panel, para copiarlos tal cual: la prueba
+ * lee después lo mismo que lee producción. Una pestaña que no existe allá
+ * vuelve en `null`.
+ */
+export async function leerOtraPlanilla(
+  spreadsheetId: string, hojas: string[]
+): Promise<{ nombre: string; hojas: Map<string, ValorCelda[][] | null> }> {
+  try {
+    const libro = await conReintento(() => sheets().spreadsheets.get({
+      spreadsheetId, fields: 'properties.title,sheets.properties.title'
+    }));
+    const titulos = new Map((libro.data.sheets ?? [])
+      .map((x) => x.properties?.title).filter((t): t is string => !!t).map((t) => [clave(t), t]));
+    const salida = new Map<string, ValorCelda[][] | null>(hojas.map((h) => [h, null]));
+    const pedidas = hojas.map((hoja) => ({ hoja, real: titulos.get(clave(hoja)) }))
+      .filter((x): x is { hoja: string; real: string } => !!x.real);
+    if (pedidas.length) {
+      const res = await conReintento(() => sheets().spreadsheets.values.batchGet({
+        spreadsheetId,
+        ranges: pedidas.map((x) => enRango(x.real)),
+        valueRenderOption: 'UNFORMATTED_VALUE',
+        dateTimeRenderOption: 'FORMATTED_STRING'
+      }));
+      const rangos = res.data.valueRanges ?? [];
+      pedidas.forEach((x, i) => salida.set(x.hoja, ((rangos[i]?.values ?? []) as unknown[][])
+        .map((f) => f.map((c) => (typeof c === 'number' || typeof c === 'boolean' ? c : c == null ? '' : String(c))))));
+    }
+    return { nombre: String(libro.data.properties?.title ?? ''), hojas: salida };
+  } catch (e) {
+    if (esLimiteDeGoogle(e)) throw new Error(MENSAJE_LIMITE);
+    throw e;
+  }
+}
+
+/**
+ * **Reemplaza pestañas enteras de la planilla del panel**, tal cual se le dan
+ * (2026-11-24, para *Traer los datos de producción*: `lib/sincronizar.ts`).
+ *
+ * - `copiar`: se crean si faltan, se agrandan si no les caben las filas o las
+ *   columnas, se vacían enteras y se escriben desde A1. **Con `RAW`**, sin
+ *   `celdas()`: lo que llega ya es lo que la otra planilla tenía, con su tipo
+ *   —un texto que empieza con `=` sigue siendo texto—.
+ * - `vaciar`: quedan con su encabezado y sin datos.
+ *
+ * **Vacía primero y escribe después**, al revés que `escribirBloque()`: acá
+ * se escribe la copia de pruebas, y si se corta entremedio basta apretar de
+ * nuevo. Son tres llamadas que escriben (la estructura, el vaciado y los
+ * datos, más un pedido por cada 4 MB) y una lectura, la de cómo es la
+ * planilla. Lo que esta instancia recordaba de ella se olvida.
+ */
+export async function reemplazarPestanas(
+  copiar: { hoja: string; filas: ValorCelda[][] }[], vaciar: string[],
+  pedidos: (copiar: { hoja: string; filas: ValorCelda[][] }[]) => { hoja: string; desde: number; filas: ValorCelda[][] }[][]
+): Promise<void> {
+  const todas = [...copiar.map((c) => c.hoja), ...vaciar];
+  todas.forEach(olvidar);
+  try {
+    const libro = await conReintento(() => sheets().spreadsheets.get({
+      spreadsheetId: idPlanilla(),
+      fields: 'sheets.properties(title,sheetId,gridProperties(rowCount,columnCount))'
+    }));
+    const hay = new Map((libro.data.sheets ?? []).filter((x) => x.properties?.title)
+      .map((x) => [clave(x.properties!.title!), x.properties!]));
+
+    // 1. Que cada pestaña exista y le quepa lo que se escribe.
+    const estructura: sheets_v4.Schema$Request[] = [];
+    const titulo = new Map<string, string>();
+    for (const c of copiar) {
+      const filas = c.filas.length;
+      const columnas = c.filas.reduce((m, f) => Math.max(m, f.length), 0);
+      const p = hay.get(clave(c.hoja));
+      if (!p) {
+        estructura.push({ addSheet: { properties: {
+          title: c.hoja, gridProperties: { rowCount: Math.max(1000, filas + 50), columnCount: Math.max(26, columnas) }
+        } } });
+        titulo.set(c.hoja, c.hoja);
+        continue;
+      }
+      titulo.set(c.hoja, p.title!);
+      const g = p.gridProperties;
+      // Sin las medidas (no es una grilla), no se toca.
+      if (!g || p.sheetId == null) continue;
+      if ((g.rowCount ?? 0) < filas || (g.columnCount ?? 0) < columnas) {
+        estructura.push({ updateSheetProperties: {
+          properties: { sheetId: p.sheetId, gridProperties: {
+            rowCount: Math.max(g.rowCount ?? 0, filas + 50), columnCount: Math.max(g.columnCount ?? 0, columnas)
+          } },
+          fields: 'gridProperties.rowCount,gridProperties.columnCount'
+        } });
+      }
+    }
+    if (estructura.length) {
+      await conReintento(() => sheets().spreadsheets.batchUpdate({
+        spreadsheetId: idPlanilla(), requestBody: { requests: estructura }
+      }));
+    }
+
+    // 2. Vaciar: las que se copian, enteras; las otras, bajo el encabezado.
+    const rangos = [
+      ...copiar.filter((c) => hay.has(clave(c.hoja))).map((c) => enRango(titulo.get(c.hoja)!)),
+      ...vaciar.map((h) => hay.get(clave(h))?.title).filter((t): t is string => !!t).map((t) => `${enRango(t)}!A2:ZZ`)
+    ];
+    if (rangos.length) {
+      await conReintento(() => sheets().spreadsheets.values.batchClear({
+        spreadsheetId: idPlanilla(), requestBody: { ranges: rangos }
+      }));
+    }
+
+    // 3. Escribir, tal cual.
+    for (const pedido of pedidos(copiar.filter((c) => c.filas.length))) {
+      await conReintento(() => sheets().spreadsheets.values.batchUpdate({
+        spreadsheetId: idPlanilla(),
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: pedido.map((t) => ({ range: `${enRango(titulo.get(t.hoja)!)}!A${t.desde}`, values: t.filas }))
+        }
+      }));
+    }
+  } catch (e) {
+    if (esLimiteDeGoogle(e)) throw new Error(MENSAJE_LIMITE);
+    throw e;
+  } finally {
+    memoria().titulos = null;
+    todas.forEach(olvidar);
+  }
+}
+
 /**
  * Agrega varias filas de una vez.
  *

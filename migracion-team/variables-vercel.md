@@ -1,6 +1,7 @@
 # Las variables del panel en Vercel
 
-Son **18** desde el 2026-11-20: con la tienda real se sumaron
+Son **18** desde el 2026-11-20, más una opcional desde el 2026-11-24
+(`GOOGLE_SHEET_ID_PRODUCCION`, solo en Preview). Con la tienda real se sumaron
 `SHOPIFY_CLIENT_ID` y `SHOPIFY_CLIENT_SECRET`. (El 2026-11-19 se había
 agregado `SESION_SECRETO` y anotado `COMENTARIOS_SHEET_ID`, que existía desde
 el 2026-11-12 y faltaba en esta lista.) Viven en
@@ -31,6 +32,7 @@ los valores a mano antes de borrar.
 | Variable | Production | Preview | Sensitive | Qué es | Si se pierde |
 |---|---|---|---|---|---|
 | `GOOGLE_SHEET_ID` | planilla **real** | copia **"Pruebas"** | No | El id de la planilla | Está en la URL de la planilla, entre `/d/` y `/edit`. La de Preview es otra planilla, compartida con la cuenta de servicio como *Editor*, y no es el respaldo |
+| `GOOGLE_SHEET_ID_PRODUCCION` | — | planilla **real** | No | Opcional (2026-11-24). La planilla de producción, **solo para leerla**: es de dónde trae los datos *Configuración → Mantención → Traer los datos de producción a la prueba*. **No va en Production**: ahí `GOOGLE_SHEET_ID` ya es la real, y el panel no deja apretarlo | El mismo valor de `GOOGLE_SHEET_ID` de Production (está en la URL de la planilla real, entre `/d/` y `/edit`). Sin ella, el botón dice que falta y no hace nada |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✓ | ✓ mismo | No | El correo del robot que entra a la planilla | Google Cloud (proyecto del cliente) → IAM → Cuentas de servicio |
 | `GOOGLE_PRIVATE_KEY` | ✓ | ✓ mismo | **Sí** | La clave del robot | El campo `private_key` del JSON guardado, con sus `\n`. Si no está: Cuentas de servicio → Claves → **Crear clave nueva → JSON**, y borrar la vieja |
 | `GOOGLE_CALENDAR_ID` | ✓ | — | No | Calendario donde se anotan las reservas (opcional) | Google Calendar → configuración del calendario → *Integrar calendario* |
@@ -97,6 +99,7 @@ apagada** y el panel es el de siempre. Detalle en `panel/FASE5.md`.
 |---|---|---|---|
 | `AYC_GOOGLE_SHEET_ID` | la planilla real de Asados y Corderos | una copia de pruebas | La enciende |
 | `AYC_GOOGLE_CALENDAR_ID` | su calendario | — | Opcional |
+| `AYC_GOOGLE_SHEET_ID_PRODUCCION` | — | la planilla real de Asados y Corderos | Opcional: para *Traer los datos de producción a la prueba* estando en Asados y Corderos. Como `GOOGLE_SHEET_ID_PRODUCCION` |
 | `AYC_GOOGLE_SERVICE_ACCOUNT_EMAIL`, `AYC_GOOGLE_PRIVATE_KEY` | una cuenta de servicio propia | igual | Opcionales (*Sensitive* la clave): sin ellas usa la cuenta de Lo Pirque, que entonces necesita acceso a esa planilla |
 | `AYC_PANEL_HOSTS` | — | la dirección de prueba, si se quiere probar ahí | Por defecto `panel.asadosycorderos.cl` |
 | `PANEL_HOSTS` | — | — | A dónde se vuelve al pasar a Lo Pirque. Por defecto `panel.brasasdelopirque.cl` |
