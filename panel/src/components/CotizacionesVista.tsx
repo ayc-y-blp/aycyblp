@@ -34,6 +34,11 @@ import {
 } from '@/lib/presupuestos';
 import { estaCerrado, esPrivada, esExclusiva } from '@/lib/columnas';
 import { semanaDe, sumarDias, rangoEnPalabras, enPalabras, esFecha } from '@/lib/fechas';
+import ElegirPeriodo from './ElegirPeriodo';
+import {
+  MODOS_CALENDARIO, LO_QUE_VIENE, rangoDelPeriodo, cambiarModo, moverPeriodo, tituloDelPeriodo, lunesDelPeriodo,
+  type PeriodoCalendario
+} from '@/lib/periodoCalendario';
 import { enPesos } from '@/lib/ocupacion';
 import { grupoDe, alternativasDe, principalDe, enCarrera } from '@/lib/cotizar';
 import SeCayo from './SeCayo';
@@ -132,6 +137,13 @@ export default function CotizacionesVista() {
     try { localStorage.setItem('blp-cotizaciones-de', v); } catch { /* da igual */ }
   }
   const [semanas, setSemanas] = useState(10);
+  /**
+   * **El periodo del calendario** (2026-11-24, lo pidió el cliente:
+   * *"aplícalo para cotizaciones también"*): el mismo marco del calendario de
+   * Reservas —*Lo que viene · Semana · Mes*, con ◀ ▶—, con la misma cuenta
+   * (`lib/periodoCalendario.ts`).
+   */
+  const [periodo, setPeriodo] = useState<PeriodoCalendario>(LO_QUE_VIENE);
   /** Qué día está abierto en el calendario, para ver sus cotizaciones. */
   const [diaAbierto, setDiaAbierto] = useState<string | null>(null);
   /** La ventana: una cotización existente, o una nueva (con fecha opcional). */
@@ -189,13 +201,14 @@ export default function CotizacionesVista() {
   const huboCambios = useRef(false);
   useEffect(() => {
     if (!datos) return;
-    const desde = semanaDe(datos.hoy);
-    fetch(`/api/ocupacion?desde=${desde}&hasta=${sumarDias(desde, semanas * 7)}`)
+    const rango = rangoDelPeriodo(periodo);
+    const desde = rango?.desde ?? semanaDe(datos.hoy);
+    fetch(`/api/ocupacion?desde=${desde}&hasta=${rango?.hasta ?? sumarDias(desde, semanas * 7)}`)
       .then((r) => r.json())
       .then((d) => Array.isArray(d.ocupacion)
         && setOcupacion(new Map((d.ocupacion as Ocupacion[]).map((o) => [o.fecha, o]))))
       .catch(() => {});
-  }, [datos?.hoy, semanas, versionOcupacion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [datos?.hoy, semanas, versionOcupacion, periodo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { void cargar(); }, []);
 
@@ -412,8 +425,12 @@ export default function CotizacionesVista() {
   const seVeEnLaTarjeta = (p: Presupuesto) => estadoDe(p) === ESTADO_PRESUPUESTO.aceptado || !!p.idReserva
     || cuentaEnElCalendario(p, hoy) || (cuentaComoPosible(p, hoy) && esSuya(datos.usuario, p.creadoPor));
   const inicio = semanaDe(hoy);
-  const cajas = Array.from({ length: semanas }, (_, s) => {
-    const lunes = sumarDias(inicio, s * 7);
+  // *Lo que viene*: desde esta semana, `semanas` hacia adelante. Una semana o
+  // un mes: sus semanas, y del mes solo sus días.
+  const rangoVisto = rangoDelPeriodo(periodo);
+  const lunesVistos = periodo.modo === 'viene'
+    ? Array.from({ length: semanas }, (_, s) => sumarDias(inicio, s * 7)) : lunesDelPeriodo(periodo);
+  const cajas = lunesVistos.map((lunes) => {
     // Un día cerrado sin cotizaciones vivas no se muestra (2026-11-11, lo
     // pidió el cliente): no hay nada que cotizar ahí. Con alguna viva sí,
     // porque es una conversación abierta con un cliente.
@@ -431,10 +448,15 @@ export default function CotizacionesVista() {
     // solo lo suyo, pero seguían saliendo todos los días abiertos, casi todos
     // con *nada cotizado*. Con *De todos* siguen los días abiertos, para
     // cotizar en uno vacío.
+    //
+    // **Un día que ya pasó** (2026-11-24, al mirar una semana o un mes
+    // pasado) se muestra solo si tiene algo que se vea en su tarjeta: ahí ya
+    // no se cotiza.
     const dias = Array.from({ length: 7 }, (_, d) => sumarDias(lunes, d))
-      .filter((f) => f >= hoy && (
+      .filter((f) => (!rangoVisto || (f >= rangoVisto.desde && f <= rangoVisto.hasta))
+        && (periodo.modo !== 'viene' || f >= hoy) && (
         (porDia.get(f) ?? []).some(seVeEnLaTarjeta)
-        || (!soloMias && estadoDelDia.has(f) && !estaCerrado(estadoDelDia.get(f) ?? ''))));
+        || (f >= hoy && !soloMias && estadoDelDia.has(f) && !estaCerrado(estadoDelDia.get(f) ?? ''))));
     return { lunes, dias };
   }).filter((c) => c.dias.length > 0);
 
@@ -508,7 +530,8 @@ export default function CotizacionesVista() {
             )}
           </span>
         </button>
-        {!soloMira && (
+        {/* Un día que ya pasó se mira, no se cotiza (2026-11-24). */}
+        {!soloMira && f >= hoy && (
           <div className="mt-auto border-t border-hueso/10 pt-3 lg:pt-2">
             <button type="button" onClick={() => setAbierta({ p: null, fecha: f })}
               className="boton w-full min-h-[44px]">+ Cotizar este día</button>
@@ -566,6 +589,15 @@ export default function CotizacionesVista() {
         {!soloMira && (
           <button type="button" onClick={() => setAbierta({ p: null })}
             className="boton boton-relleno min-h-[48px] px-5 text-[15px] lg:order-1 lg:min-h-[44px]">+ Cotizar</button>
+        )}
+        {/* **El periodo del calendario** (2026-11-24): en la fila de los
+            botones, donde en la Lista va *← Volver al calendario*. */}
+        {vista === 'calendario' && (
+          <div className="w-full lg:order-2 lg:w-auto">
+            <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo}
+              onModo={(clave) => setPeriodo(cambiarModo(periodo, clave, hoy))}
+              titulo={tituloDelPeriodo(periodo)} onMover={(n) => setPeriodo(moverPeriodo(periodo, n))} />
+          </div>
         )}
         {/* En el computador, *Volver* va en esta fila (2026-11-22, la regla
             del espacio); en el celular sigue justo encima de la lista. */}
@@ -694,7 +726,9 @@ export default function CotizacionesVista() {
         <div className="space-y-4 lg:space-y-3">
           {cajas.length === 0 && (
             <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">
-              {soloMias
+              {periodo.modo !== 'viene' && rangoVisto && rangoVisto.hasta < hoy
+                ? `No hubo cotizaciones ${periodo.modo === 'semana' ? 'esa semana' : 'ese mes'}${soloMias ? ' tuyas' : ''}.`
+                : soloMias
                 ? 'No tienes cotizaciones en estas semanas. Mira “De todos” para ver los días abiertos, o usa “+ Cotizar” para elegir cualquier fecha.'
                 : 'No hay días abiertos ni cotizaciones en estas semanas. Usa “+ Cotizar” para elegir cualquier fecha.'}
             </p>
@@ -714,9 +748,11 @@ export default function CotizacionesVista() {
               {franjaDelDia(c.dias)}
             </div>
           ))}
-          <button type="button" className="boton min-h-[44px]" onClick={() => setSemanas(semanas + 8)}>
-            Ver 8 semanas más
-          </button>
+          {periodo.modo === 'viene' && (
+            <button type="button" className="boton min-h-[44px]" onClick={() => setSemanas(semanas + 8)}>
+              Ver 8 semanas más
+            </button>
+          )}
         </div>
       )}
 

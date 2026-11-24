@@ -28,8 +28,12 @@ import { POR_DEFECTO_MENUS, paraReservar, type Menu } from '@/lib/menus';
 import { resumenEquipo, esPreparacion, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { lineaDeSemana, type Tono } from '@/lib/semana';
 import { puede, puedeVer, type Rol } from '@/lib/auth';
-import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy, sumarDias, sumarMeses, diasDelMes, esFecha } from '@/lib/fechas';
+import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy, esFecha } from '@/lib/fechas';
 import ElegirPeriodo from './ElegirPeriodo';
+import {
+  MODOS_CALENDARIO, LO_QUE_VIENE, rangoDelPeriodo as rangoDe, cambiarModo, moverPeriodo as mover, tituloDelPeriodo,
+  type PeriodoCalendario as Periodo
+} from '@/lib/periodoCalendario';
 import { copiarConAviso } from './AvisoFlotante';
 import AvisoSobrecupo from './AvisoSobrecupo';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
@@ -62,27 +66,16 @@ const TONO: Record<Tono, string> = {
  * (`/?ver=mes&en=2026-10`), así que *← Calendario* de la página del día
  * vuelve al mismo periodo.
  */
-type ModoCalendario = 'viene' | 'semana' | 'mes';
-interface Periodo { modo: ModoCalendario; en: string }
-const MODOS_CALENDARIO = [
-  { clave: 'viene', rotulo: 'Lo que viene' }, { clave: 'semana', rotulo: 'Semana' }, { clave: 'mes', rotulo: 'Mes' }
-];
 /** La clave de la página del día para volver al mismo periodo (`DayView`). */
 export const VOLVER_CALENDARIO = 'blp-calendario';
 
 function periodoDeLaDireccion(): Periodo {
-  if (typeof window === 'undefined') return { modo: 'viene', en: '' };
+  if (typeof window === 'undefined') return LO_QUE_VIENE;
   const q = new URLSearchParams(window.location.search);
   const en = q.get('en') ?? '';
   if (q.get('ver') === 'semana' && esFecha(en)) return { modo: 'semana', en: semanaDe(en) };
   if (q.get('ver') === 'mes' && /^\d{4}-\d{2}$/.test(en)) return { modo: 'mes', en };
-  return { modo: 'viene', en: '' };
-}
-/** Las fechas que pide un periodo; *Lo que viene*, ninguna: la ventana de siempre. */
-function rangoDe(p: Periodo): { desde: string; hasta: string } | null {
-  if (p.modo === 'semana') return { desde: p.en, hasta: sumarDias(p.en, 6) };
-  if (p.modo === 'mes') { const d = diasDelMes(p.en); return { desde: d[0], hasta: d[d.length - 1] }; }
-  return null;
+  return LO_QUE_VIENE;
 }
 const direccionDe = (p: Periodo) => (p.modo === 'viene' ? '/' : `/?ver=${p.modo}&en=${p.en}`);
 
@@ -347,21 +340,9 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
       })
       .catch((e) => { if (pedido === ultimoPedido.current) { setMoviendo(false); setError(String(e)); } });
   };
-  const elegirModo = (clave: string) => {
-    const hoyChile = hoy();
-    if (clave === 'semana') {
-      // Desde un mes que no es el de hoy, su primera semana; si no, esta semana.
-      const en = periodo.modo === 'mes' && periodo.en !== mesDe(hoyChile) ? semanaDe(`${periodo.en}-01`) : semanaDe(hoyChile);
-      verPeriodo({ modo: 'semana', en });
-    } else if (clave === 'mes') {
-      verPeriodo({ modo: 'mes', en: periodo.modo === 'semana' ? mesDe(periodo.en) : mesDe(hoyChile) });
-    } else verPeriodo({ modo: 'viene', en: '' });
-  };
-  const moverPeriodo = (n: -1 | 1) => verPeriodo(periodo.modo === 'semana'
-    ? { modo: 'semana', en: sumarDias(periodo.en, 7 * n) }
-    : { modo: 'mes', en: sumarMeses(periodo.en, n) });
-  const tituloPeriodo = periodo.modo === 'semana' ? rangoEnPalabras([periodo.en, sumarDias(periodo.en, 6)])
-    : periodo.modo === 'mes' ? mesEnPalabras(periodo.en) : undefined;
+  const elegirModo = (clave: string) => verPeriodo(cambiarModo(periodo, clave, hoy()));
+  const moverPeriodo = (n: -1 | 1) => verPeriodo(mover(periodo, n));
+  const tituloPeriodo = tituloDelPeriodo(periodo);
   const alDia = usarAlDia(firma, () => cargar(true));
   // La marca dorada dura un minuto.
   useEffect(() => {
