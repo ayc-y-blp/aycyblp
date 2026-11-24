@@ -481,7 +481,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   karting o el taller de queso no se organizan sin tiempo): *⏳ Anticipación*
   en la ficha; el sitio no ofrece un día antes y el vendedor no la aplica
   dentro del plazo (la gerencia, pagos y el administrador sí). Columna nueva
-  al final de `Promociones`. PR #345, en preview. Ver `CLAUDE.md`, "El
+  al final de `Promociones`. **PR #345, mergeado el 24-11-2026** con el
+  *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después, y en
+  `brasasdelopirque.cl` el Gran Premio ya muestra *¿Cuántos?* al marcar el
+  karting. **Ninguna promoción de producción tiene días de anticipación
+  todavía**: los pone el cliente en *⏳ Anticipación*. Ver `CLAUDE.md`, "El
   cotizador de promociones", y `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
