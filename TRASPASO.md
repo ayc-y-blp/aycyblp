@@ -454,6 +454,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   después. Ver `panel/CLAUDE.md`, "Qué
   incluye cada producto, escrito en su ficha" y "Y en cada cotización, su
   propio texto".
+- **Promociones: solo salen las marcadas, y con el link se ve igual**
+  (24-11-2026, lo pidió el cliente; eligió el modo *estricto*): casilla
+  *☑ Mostrar en el sitio* en cada promoción del panel y *🔗 Copiar link* en la
+  tarjeta cerrada. En el sitio de verdad, `promociones.html` lista solo las
+  marcadas; una sin marcar se abre con su link; un bloque sin promoción o con
+  la suya apagada no sale. **Antes de mergear conviene revisar en el panel de
+  producción qué promociones hay y marcar las que deben salir**: hoy solo
+  Gran Premio tiene el cotizador encendido, y Fin de año saldría solo si tiene
+  su promoción. Columna nueva al final de `Promociones`. En un PR abierto. Ver
+  `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -625,7 +635,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Vendedores` | un vendedor o un socio comercial | `Usuario` (la cuenta; `S-0001` un socio, que no tiene cuenta), `Nombre`, `Tipo`, `Sueldo fijo mensual`, `Comisión %`, `Etapa 1 desde`, `Etapa 2 desde/%`, `Etapa 3 desde/%`, `Bono premium (puntos)`, `Monto por evento`, `Base comisión`, `Con socio cobra %`, `Documento`, `Impuesto`, datos de factura, `Token de acceso` | `Presupuestos.Creado por` y `Socio comercial` |
 | `Usuarios` | una cuenta del panel | `Nombre`, `Usuario`, `Rol`, `Activo`, `Clave (huella)`, `Vista gerencia`, `Avisos leídos` | `Bitácora`, permisos |
 | `Notas` | una nota de un vendedor sobre una cotización (su grupo) | `ID`, `ID Presupuesto`, `ID Cliente`, `Cuándo`, `Quién`, `Medio`, `Nota`. Las leen su vendedor y la gerencia; no se borran | `Presupuestos` por grupo |
-| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento` (el primer tramo), `Arriendo`, `Cotizador`, `Más tramos` (`50:15 \| 80:20`) | `Menús` por nombre |
+| `Promociones` | una promoción del sitio (desde el 23-11-2026) | `ID`, `Nombre`, `En el sitio` (la clave del bloque), `Activa`, `Menús`, `Menú de niños`, `Incluye`, `Se puede sumar`, `Mínimo de personas`, `Descuento` (el primer tramo), `Arriendo`, `Cotizador`, `Más tramos` (`50:15 \| 80:20`), `Mostrar en el sitio` (en blanco, sí) | `Menús` por nombre |
 | `Otras empresas` | una empresa que cobra directo algo del evento (desde el 24-11-2026) | `Nombre` (la identidad: lo usan `Menús.Lo cobra` y `Presupuesto Líneas.Lo cobra`), `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa` | `Menús` y `Presupuesto Líneas` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |

@@ -1334,6 +1334,35 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   `data-promo`), y al elegir otra el link de la barra cambia. Lo copia el
   panel, en los tres idiomas. Las claves son las de `EN_EL_SITIO` del panel:
   **un bloque nuevo lleva su clave en los dos lados**.
+- **Qué promociones salen en la lista: el modo estricto** (2026-11-24, lo
+  pidió el cliente: *"en producción solo se muestran si yo doy un chequeo
+  mostrar en el sitio en la configuración de la promoción. Con la idea que si
+  tengo el link con el hashtag, lo puedo ver igual"*; eligió *estricto*):
+  - **En las direcciones reales** (`CONFIG.direccionesReales`), las
+    pastillas y las flechas traen solo los bloques cuya promoción está
+    marcada con *Mostrar en el sitio* en el panel. **Con su link** se ve
+    también una sin marcar: se abre, con su pastilla y su cotizador. **Un
+    bloque sin promoción en el panel, o con la suya apagada, no sale** ni con
+    el link: el link abre la primera que se muestra.
+  - **Lo decide `cotizador.js`** con `bloques` de `/api/publico/promociones`
+    (`lista` o `link`): marca los botones de opción que no salen como
+    `disabled`, esconde sus pastillas y rehace las flechas entre las que se
+    ven. **Mientras decide, la fila no se ve** (`.promo-nav` sin
+    `.promo-lista`), para que no aparezcan y desaparezcan; con una sola, no hay
+    fila.
+  - **Si el panel no responde** (o tarda más de 5 segundos), sale solo la del
+    link, o Fin de año, sin fila: nunca una oculta. **Sin JavaScript**, lo
+    mismo: Fin de año, sin fila. Un panel de antes que no manda `bloques`
+    deja la página como era, con las seis.
+  - **En una versión de prueba se ven las seis**, y las que en el sitio no
+    salen llevan borde punteado y un ícono: 🔗 *solo con el link*, ⊘ *no sale
+    en el sitio* (el texto, al pasar el mouse). Con palabras, la fila de seis
+    se doblaba sobre el título.
+  - **Oculta no es secreta**: el texto de las seis sigue en la página, porque
+    el link lo necesita.
+  - Marcar o desmarcar tarda hasta 5 minutos en verse (la respuesta se guarda
+    en la red de Vercel). El panel, en `panel/CLAUDE.md`, "Mostrar en el
+    sitio".
 - Los textos están en `TEXTOS` del script, en los tres idiomas; los nombres
   de los productos llegan del panel en español.
 - **Los precios de ejemplo de `precios.json` (`paquetes`) siguen** para quien

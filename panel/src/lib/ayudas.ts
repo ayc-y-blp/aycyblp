@@ -421,7 +421,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'es una receta de estos productos —el menú, lo que incluye, lo que se '
       + 'puede sumar, desde cuántas personas y su descuento— y se conecta a su '
       + 'bloque. Ahí el cliente la cotiza solo, con las reglas de siempre: el '
-      + 'show incluido en un día público y el arriendo mínimo en uno que no.'
+      + 'show incluido en un día público y el arriendo mínimo en uno que no.',
+      'En la página salen solo las marcadas con *Mostrar en el sitio*; las '
+      + 'demás se ven con su link (*🔗 Copiar link*, en cada una). Un bloque sin '
+      + 'promoción, o con la suya apagada, no sale.'
     ],
     ojo: 'Si acá aparece un menú en amarillo es que alguna reserva usa un '
        + 'nombre que no está en esta lista, y conviene revisarlo.'
@@ -1360,14 +1363,27 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Cada bloque tiene una sola promoción. Con *Ninguna* queda guardada sin salir.'
     ]
   },
+  promoMostrar: {
+    titulo: 'Mostrar en el sitio',
+    texto: [
+      'Marcada, la promoción sale en la página de promociones, con su pastilla y en las flechas, para todos.',
+      'Sin marcar, no sale en la lista: solo la ve quien llega con su link (*🔗 Copiar link*), que la abre '
+      + 'con su cotizador. Sirve para mandársela a una empresa sin ofrecérsela a todos. No es secreta: su '
+      + 'texto sigue en la página.',
+      'Un bloque sin promoción, o con la suya apagada, no sale ni con el link. Una promoción nueva nace sin '
+      + 'marcar. Marcar o desmarcar tarda hasta 5 minutos en verse en el sitio.',
+      'Vale en el sitio de verdad. En una versión de prueba se ven todas, con una marca en las que no salen.'
+    ]
+  },
   promoCotizador: {
     titulo: 'El cotizador',
     texto: [
       'Con *Sí*, el bloque de la promoción en el sitio muestra el cotizador: el cliente elige cuántos son, el día '
       + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.',
       'El link abre la página de promociones con esta ya elegida: es el que va en una publicación de Instagram o '
-      + 'en un anuncio. *Copiar* da el del español; *EN* y *PT*, el de la página en inglés y en portugués. Para '
-      + 'medir de qué campaña llega cada visita, se le pueden sumar parámetros UTM antes del #.'
+      + 'en un anuncio, y el que abre una que no se muestra en el sitio. *Copiar* da el del español (también '
+      + 'está en la tarjeta cerrada, *🔗 Copiar link*); *EN* y *PT*, el de la página en inglés y en portugués. '
+      + 'Para medir de qué campaña llega cada visita, se le pueden sumar parámetros UTM antes del #.'
     ]
   },
   promoMenu: {

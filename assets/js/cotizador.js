@@ -20,6 +20,9 @@
  *   vendedora de turno, y le ofrece al cliente el WhatsApp de Eventos.
  * - **Abre la promoción del link** (`promociones.html#gran-premio`): el link
  *   de campaña que se copia en el panel.
+ * - **Decide qué promociones salen en la lista** (2026-11-24): en las
+ *   direcciones reales, solo las marcadas con *Mostrar en el sitio* en el
+ *   panel; las otras, con su link.
  * - **Fuera de las direcciones reales** (una versión de prueba, GitHub Pages,
  *   un computador) manda `prueba: true`: el panel calcula y no escribe. Es la
  *   misma regla de la tienda en `reserva.js`.
@@ -65,7 +68,8 @@
       listo: 'Listo. Tu cotización N°', ver: 'Ver la cotización', whatsapp: 'Escríbenos por WhatsApp',
       prueba: 'Versión de prueba: se calculó, pero no se mandó.',
       mensaje: 'Hola, cotizé {promo} en el sitio. N° {n}.',
-      desde: 'desde', porPersonaIva: '+ IVA por persona', enAdelante: 'personas en adelante'
+      desde: 'desde', porPersonaIva: '+ IVA por persona', enAdelante: 'personas en adelante',
+      soloLink: 'solo con el link', noSale: 'no sale en el sitio'
     },
     en: {
       locale: 'en-US', moneda: ' CLP',
@@ -95,7 +99,8 @@
       listo: 'Done. Your quote No.', ver: 'See the quote', whatsapp: 'Write to us on WhatsApp',
       prueba: 'Test version: calculated, but not sent.',
       mensaje: 'Hi, I quoted {promo} on the website. No. {n}.',
-      desde: 'from', porPersonaIva: '+ VAT per person', enAdelante: 'people and up'
+      desde: 'from', porPersonaIva: '+ VAT per person', enAdelante: 'people and up',
+      soloLink: 'link only', noSale: 'hidden on the site'
     },
     pt: {
       locale: 'pt-BR', moneda: ' CLP',
@@ -125,32 +130,14 @@
       listo: 'Pronto. Seu orçamento nº', ver: 'Ver o orçamento', whatsapp: 'Fale conosco pelo WhatsApp',
       prueba: 'Versão de teste: calculado, mas não enviado.',
       mensaje: 'Olá, fiz um orçamento de {promo} no site. Nº {n}.',
-      desde: 'a partir de', porPersonaIva: '+ IVA por pessoa', enAdelante: 'pessoas ou mais'
+      desde: 'a partir de', porPersonaIva: '+ IVA por pessoa', enAdelante: 'pessoas ou mais',
+      soloLink: 'só com o link', noSale: 'oculta no site'
     }
   };
 
   var idioma = (document.documentElement.lang || 'es').slice(0, 2);
   var T = TEXTOS[idioma] || TEXTOS.es;
   var CLAVES = ['fin-de-ano', 'combate', 'gran-premio', 'dia-de-campo', 'ia', 'directorio'];
-
-  /* ---------- el link de campaña: abrir la promoción del # ---------- */
-
-  function radioDe(clave) { return document.querySelector('.promo-radio[data-promo="' + clave + '"]'); }
-
-  function abrirDelLink() {
-    var clave = decodeURIComponent((location.hash || '').slice(1));
-    if (CLAVES.indexOf(clave) === -1) return;
-    var r = radioDe(clave);
-    if (r) r.checked = true;
-  }
-  abrirDelLink();
-  window.addEventListener('hashchange', abrirDelLink);
-  // Al elegir otra, el link de la barra la nombra: así se puede compartir.
-  Array.prototype.forEach.call(document.querySelectorAll('.promo-radio[data-promo]'), function (r) {
-    r.addEventListener('change', function () {
-      if (r.checked && history.replaceState) history.replaceState(null, '', '#' + r.getAttribute('data-promo'));
-    });
-  });
 
   /* ---------- con quién habla ---------- */
 
@@ -160,18 +147,126 @@
   var pedido = new URLSearchParams(location.search).get('panel');
   if (pedido && /^http:\/\/localhost:\d+$/.test(pedido) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) panel = pedido;
 
+  /* ---------- qué promociones salen, y el link de campaña (2026-11-24) ----------
+     **El modo estricto**, que eligió el cliente: "en producción solo se
+     muestran si yo doy un chequeo mostrar en el sitio… si tengo el link con
+     el hashtag, lo puedo ver igual". En las direcciones reales, las pastillas
+     y las flechas traen solo los bloques que el panel marca `lista`; los que
+     marca `link` se ven solo con su link (`promociones.html#combate`), y uno
+     que no está —sin promoción, o con la suya apagada— no sale. Mientras se
+     decide, la fila de pastillas no se ve (`.promo-nav` sin `.promo-lista`).
+     Si el panel no responde, sale solo la del link, o la primera: nunca una
+     oculta. En una versión de prueba se ven las seis, con una marca en las que
+     no salen en el sitio. */
+
+  var nav = document.querySelector('.promo-nav');
+  var ultimo = null, decidido = false;
+
+  function radioDe(clave) { return document.querySelector('.promo-radio[data-promo="' + clave + '"]'); }
+  function claveDelLink() {
+    var clave = decodeURIComponent((location.hash || '').slice(1));
+    return CLAVES.indexOf(clave) === -1 ? '' : clave;
+  }
+  function abrirDelLink() {
+    var r = radioDe(claveDelLink());
+    if (r) r.checked = true;
+  }
+  /** Deja en la lista solo `ver` (y `abierta`), con las flechas entre ellas. */
+  function mostrarSolo(ver, abierta) {
+    var lista = CLAVES.filter(function (c) { return ver.indexOf(c) !== -1 || c === abierta; });
+    CLAVES.forEach(function (c, i) {
+      var se = lista.indexOf(c) !== -1;
+      var r = radioDe(c);
+      if (r) r.disabled = !se;
+      var pastilla = document.querySelector('.promo-pill.pp' + i);
+      if (pastilla) pastilla.hidden = !se;
+    });
+    if (abierta && radioDe(abierta)) radioDe(abierta).checked = true;
+    var n = lista.length;
+    lista.forEach(function (c, k) {
+      var i = CLAVES.indexOf(c);
+      var ant = document.querySelector('.promo-flecha.fa' + i), sig = document.querySelector('.promo-flecha.fs' + i);
+      if (ant) ant.htmlFor = 'promo-' + CLAVES.indexOf(lista[(k - 1 + n) % n]);
+      if (sig) sig.htmlFor = 'promo-' + CLAVES.indexOf(lista[(k + 1) % n]);
+    });
+    if (nav) nav.classList.toggle('promo-sola', n < 2);
+  }
+  /**
+   * En una versión de prueba: la marca de las que en el sitio no salen en la
+   * lista. Un ícono y el borde punteado, no una palabra: con seis pastillas
+   * la fila se doblaba. El texto entero va al pasar el mouse y para un
+   * lector de pantalla.
+   */
+  function marcar(bloques) {
+    CLAVES.forEach(function (c, i) {
+      var pastilla = document.querySelector('.promo-pill.pp' + i);
+      if (!pastilla) return;
+      var marca = pastilla.querySelector('.promo-oculta');
+      var como = bloques[c] === 'lista' ? '' : bloques[c] === 'link' ? 'link' : 'no';
+      pastilla.classList.toggle('promo-solo-link', como === 'link');
+      pastilla.classList.toggle('promo-no-sale', como === 'no');
+      if (!como) { if (marca) marca.remove(); pastilla.removeAttribute('title'); return; }
+      var texto = como === 'link' ? T.soloLink : T.noSale;
+      if (!marca) { marca = document.createElement('span'); marca.className = 'promo-oculta'; pastilla.appendChild(marca); }
+      marca.innerHTML = '';
+      var icono = document.createElement('span');
+      icono.setAttribute('aria-hidden', 'true');
+      icono.textContent = como === 'link' ? '🔗' : '⊘';
+      var dicho = document.createElement('span');
+      dicho.className = 'promo-oculta-texto';
+      dicho.textContent = ' (' + texto + ')';
+      marca.append(icono, dicho);
+      pastilla.title = texto;
+    });
+  }
+  /**
+   * `b`: los bloques que manda el panel; `'todo'`, las seis (una versión de
+   * prueba, o un panel de antes que no los manda); `null`, el panel no respondió.
+   */
+  function aplicar(b) {
+    ultimo = b; decidido = true;
+    var link = claveDelLink();
+    if (!esReal || b === 'todo') {
+      mostrarSolo(CLAVES, link);
+      if (!esReal && b && typeof b === 'object') marcar(b);
+    } else if (b) {
+      var lista = CLAVES.filter(function (c) { return b[c] === 'lista'; });
+      mostrarSolo(lista, link && b[link] ? link : (lista[0] || CLAVES[0]));
+    } else {
+      mostrarSolo([], link || CLAVES[0]);
+    }
+    if (nav) nav.classList.add('promo-lista');
+  }
+
+  abrirDelLink();
+  window.addEventListener('hashchange', function () { if (decidido) aplicar(ultimo); else abrirDelLink(); });
+  // Al elegir otra, el link de la barra la nombra: así se puede compartir.
+  Array.prototype.forEach.call(document.querySelectorAll('.promo-radio[data-promo]'), function (r) {
+    r.addEventListener('change', function () {
+      if (r.checked && history.replaceState) history.replaceState(null, '', '#' + r.getAttribute('data-promo'));
+    });
+  });
+
+  /* ---------- las promociones del panel ---------- */
+
+  if (!esReal) aplicar('todo');
+  if (!window.fetch) { if (esReal) aplicar(null); return; }
+  // Un panel que tarda más de 5 segundos cuenta como que no respondió.
+  var espera = esReal ? setTimeout(function () { if (!decidido) aplicar(null); }, 5000) : 0;
   var cajas = document.querySelectorAll('.cotizador[data-promo]');
-  if (!cajas.length || !window.fetch) return;
 
   fetch(panel + '/api/publico/promociones')
     .then(function (r) { return r.json(); })
     .then(function (d) {
+      clearTimeout(espera);
+      aplicar(d && d.bloques && typeof d.bloques === 'object' ? d.bloques : (d && !d.error ? 'todo' : null));
+      if (!cajas.length) return;
       (d.promociones || []).forEach(function (p) {
         var caja = document.querySelector('.cotizador[data-promo="' + p.sitio + '"]');
         if (caja) montar(caja, p);
       });
     })
-    .catch(function () { /* sin panel, cada promoción sigue con su WhatsApp */ });
+    .catch(function () { clearTimeout(espera); if (esReal) aplicar(null); });
 
   /* ---------- utilidades ---------- */
 

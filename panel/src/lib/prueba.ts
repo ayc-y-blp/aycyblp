@@ -7411,7 +7411,7 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'al cotizar, 30 personas llevan el 15%');
   const fila = PR.aFilasPromociones([conTramos])[1];
   ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES, fila])[0].tramos.length === 2
-     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), fila.slice(0, -1)])[0].tramos.length === 0,
+     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -2), fila.slice(0, -2)])[0].tramos.length === 0,
      'los tramos se guardan y se leen; una fila de antes, sin la columna, queda con uno solo');
   ok(PR.esMenuDeNinos('Niños') && PR.esMenuDeNinos('Menú Pequeños') && !PR.esMenuDeNinos('Lo Pirque')
      && PR.menusAdultoParaPromo(cat).every((m) => !PR.esMenuDeNinos(m.nombre))
@@ -7472,6 +7472,20 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'un menú que sí es de la promoción se queda como está');
   const vuelta = PR.leerPromocionesDe(PR.aFilasPromociones([gran, combate, campo]));
   ok(JSON.stringify(vuelta) === JSON.stringify([gran, combate, campo]), 'una promoción se escribe y se vuelve a leer igual');
+  // Mostrar en el sitio (2026-11-24): el modo estricto.
+  ok(gran.mostrar === false && PR.leerPromocionesDe(PR.aFilasPromociones([{ ...gran, mostrar: true }]))[0].mostrar === true
+     && PR.leerPromocionesDe(PR.aFilasPromociones([gran]))[0].mostrar === false,
+     'una promoción nueva nace sin mostrar, y la casilla se guarda y se lee');
+  const filaMostrar = PR.aFilasPromociones([gran])[1];
+  ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), filaMostrar.slice(0, -1)])[0].mostrar === true
+     && PR.limpiarPromocion({ id: 'x' }, cat).mostrar === true && PR.limpiarPromocion({ id: 'x', mostrar: false }, cat).mostrar === false,
+     'una fila de antes de la columna, o una pantalla de antes que no la manda, sigue saliendo');
+  const bloques = PR.bloquesDelSitio([
+    { ...gran, mostrar: true }, { ...combate, mostrar: false }, { ...campo, mostrar: true, activa: false },
+    PR.nuevaPromocion({ id: 'PR-07', sitio: '', mostrar: true })
+  ]);
+  ok(JSON.stringify(bloques) === JSON.stringify({ 'gran-premio': 'lista', combate: 'link' }),
+     'en la página: la marcada en la lista, la sin marcar solo con su link, y una apagada o sin bloque no sale');
   const limpia = PR.limpiarPromocion({ id: 'PR-09', nombre: ' X ', sitio: 'no-existe', menus: ['brasas', 'Inventado'],
     incluye: 'show ecuestre | Show ecuestre', descuento: 150 }, cat);
   ok(limpia.sitio === '' && limpia.menus.join() === 'Brasas' && limpia.incluye.join() === 'Show ecuestre'

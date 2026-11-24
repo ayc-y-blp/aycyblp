@@ -271,9 +271,14 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
           const ocupados = new Map(promos.filter((x, k) => k !== i && x.sitio).map((x) => [x.sitio, x.nombre]));
           return (
             <li key={p.id || `nueva-${i}`} className={marcoTarjeta(abierta === i)}>
+              {/* **🔗 Copiar link, a la vista en cada una** (2026-11-24, lo pidió el
+                  cliente: *"que puedo copiar el link del sitio público"*): al lado
+                  de la línea que abre la tarjeta, sin abrirla. Una apagada o sin
+                  conectar no tiene link que sirva. */}
+              <div className="flex items-center hover:bg-hueso/5">
               <button type="button" aria-expanded={abierta === i} onClick={() => setAbierta(abierta === i ? null : i)}
-                className={`flex min-h-[52px] w-full flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-left
-                            hover:bg-hueso/5 ${p.activa ? '' : 'opacity-60'}`}>
+                className={`flex min-h-[52px] min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5 text-left
+                            ${p.activa ? '' : 'opacity-60'}`}>
                 <SignoAbrir abierta={abierta === i} tamano="h-6 w-6 text-[14px]" />
                 <span className="text-[16px] font-semibold">
                   🎁 {p.nombre.trim() || <span className="text-hueso/50">Sin nombre</span>}
@@ -281,16 +286,21 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                 {!p.activa && (
                   <span className="rounded-full border border-hueso/40 px-2 py-0.5 text-[13px] font-semibold text-hueso/80">apagada</span>
                 )}
+                {/* Cómo sale en la página (2026-11-24): en la lista, o solo con su link. */}
                 {p.sitio ? (
-                  <span className={`rounded-full border px-2 py-0.5 text-[13px] font-semibold ${sale || !p.cotizador
-                    ? 'border-rosa/50 text-rosa-texto' : 'border-ambar-fuerte/60 text-ambar-texto'}`}>
-                    {sale || !p.cotizador ? `en el sitio: ${nombreEnElSitio(p.sitio)}` : `${nombreEnElSitio(p.sitio)}: no sale`}
+                  <span className={`rounded-full border px-2 py-0.5 text-[13px] font-semibold ${p.mostrar
+                    ? 'border-rosa/50 text-rosa-texto' : 'border-hueso/40 text-hueso/80'}`}>
+                    {p.mostrar ? `👁 en el sitio: ${nombreEnElSitio(p.sitio)}` : `🔗 solo con el link: ${nombreEnElSitio(p.sitio)}`}
                   </span>
                 ) : (
                   <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px] text-hueso/70">sin conectar</span>
                 )}
                 {p.sitio && !p.cotizador && (
                   <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px] text-hueso/70">sin cotizador</span>
+                )}
+                {p.sitio && p.activa && p.cotizador && !sale && (
+                  <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px] font-semibold
+                                   text-ambar-texto">cotizador: falta un precio</span>
                 )}
                 {p.minimo > 0 && <span className="text-[14px] text-hueso/70">desde {p.minimo} personas</span>}
                 {desde(p) > 0 && <span className="text-[14px] text-hueso/70">· desde {enPesos(desde(p))} + IVA por persona</span>}
@@ -300,12 +310,21 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                   </span>
                 )}
               </button>
+              {p.sitio && p.activa && (
+                <button type="button" className={`${BOTON} mr-3 shrink-0`}
+                  aria-label={`Copiar el link de ${p.nombre || nombreEnElSitio(p.sitio)} en el sitio`}
+                  title={linkDeCampana(p.sitio)}
+                  onClick={() => copiarConAviso(linkDeCampana(p.sitio), 'Link copiado', 'Copia el link:')}>
+                  🔗 Copiar link
+                </button>
+              )}
+              </div>
 
               {abierta === i && (
                 <fieldset disabled={soloMira} className={`${CUERPO_ABIERTO} space-y-3 p-3 lg:space-y-2`}>
                   {p.sitio && !sale && p.activa && p.cotizador && (
                     <p className="rounded border border-ambar/50 bg-ambar/5 px-3 py-2 text-[14px] font-semibold text-ambar-texto">
-                      Todavía no sale en el sitio: le falta un menú, o un producto no tiene precio de cotización.
+                      El cotizador todavía no sale: le falta un menú, o un producto no tiene precio de cotización.
                       Su bloque sigue con el botón de WhatsApp.
                     </p>
                   )}
@@ -329,6 +348,7 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                     </div>
                   </Fila>
                   <Fila rotulo="En el sitio" ayuda="promoEnElSitio">
+                    <div className="flex flex-wrap items-center gap-2">
                     <div role="radiogroup" aria-label="En el sitio" className="flex flex-wrap gap-2">
                       {[{ clave: '', nombre: 'Ninguna', corto: 'Ninguna' }, ...EN_EL_SITIO].map((s) => {
                         // Un bloque que ya tiene otra promoción se ve con 🔒 y
@@ -344,6 +364,19 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                           </button>
                         );
                       })}
+                    </div>
+                    {/* **Mostrar en el sitio** (2026-11-24, el modo estricto): marcada,
+                        sale en la lista de la página; sin marcar, solo con su link. */}
+                    {p.sitio && (
+                      <span className="flex items-center gap-1 lg:ml-auto">
+                        <button type="button" role="checkbox" aria-checked={p.mostrar}
+                          onClick={() => cambiar(i, { mostrar: !p.mostrar })}
+                          className={`${BOTON} ${p.mostrar ? ELEGIDO : ''}`}>
+                          {p.mostrar ? '☑' : '☐'} Mostrar en el sitio
+                        </button>
+                        <AyudaCorta tema="promoMostrar" />
+                      </span>
+                    )}
                     </div>
                   </Fila>
                   {p.sitio && (

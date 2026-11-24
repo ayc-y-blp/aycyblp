@@ -73,7 +73,18 @@ export const COL_PROMOCIONES = {
    * personas y 20% desde 80. El primer tramo sigue en `Mínimo de personas` y
    * `Descuento`, así una fila de antes se lee igual.
    */
-  tramos: 'Más tramos'
+  tramos: 'Más tramos',
+  /**
+   * **Si sale en la lista de la página** (2026-11-24, lo pidió el cliente:
+   * *"en producción solo se muestran si yo doy un chequeo mostrar en el sitio
+   * en la configuración de la promoción. Con la idea que si tengo el link con
+   * el hashtag, lo puedo ver igual"*, y eligió el modo estricto). Marcada, su
+   * bloque sale en las pastillas y las flechas de `promociones.html`; sin
+   * marcar, solo se ve con su link (`linkDeCampana()`). **En blanco es sí**:
+   * las promociones de antes de esta columna no desaparecen solas. Una nueva
+   * nace sin marcar (`nuevaPromocion()`).
+   */
+  mostrar: 'Mostrar en el sitio'
 } as const;
 
 export const ENCABEZADO_PROMOCIONES: string[] = Object.values(COL_PROMOCIONES);
@@ -104,6 +115,24 @@ export const SITIO_PUBLICO = 'https://brasasdelopirque.cl';
  */
 export function linkDeCampana(clave: string, idioma: 'es' | 'en' | 'pt' = 'es'): string {
   return `${SITIO_PUBLICO}/${idioma === 'es' ? '' : idioma + '/'}promociones.html#${clave}`;
+}
+
+/**
+ * **Cómo sale cada bloque de `promociones.html`** (2026-11-24, el modo
+ * estricto que eligió el cliente): `lista`, en las pastillas y las flechas;
+ * `link`, solo con su link. **Un bloque que no está, no sale**: no tiene
+ * promoción en el panel, o la suya está apagada. Lo lee `cotizador.js` en
+ * las direcciones reales; en una versión de prueba se ven los seis, con una
+ * marca en los que no salen.
+ */
+export type ComoSale = 'lista' | 'link';
+export function bloquesDelSitio(promos: Pick<Promocion, 'sitio' | 'activa' | 'mostrar'>[]): Record<string, ComoSale> {
+  const salida: Record<string, ComoSale> = {};
+  for (const p of promos) {
+    if (!p.activa || !sitioDe(p.sitio)) continue;
+    salida[p.sitio] = p.mostrar ? 'lista' : 'link';
+  }
+  return salida;
 }
 
 export const nombreEnElSitio = (clave: string) =>
@@ -145,6 +174,8 @@ export interface Promocion {
   cotizador: boolean;
   /** Los tramos después del primero (`minimo` y `descuento`), de menos a más gente. */
   tramos: Tramo[];
+  /** Si sale en la lista de la página. Ver `COL_PROMOCIONES.mostrar`. */
+  mostrar: boolean;
 }
 
 export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocion {
@@ -152,7 +183,9 @@ export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocio
   const { id, ...resto } = p;
   return {
     id, nombre: '', sitio: '', activa: true, menus: [], ninos: [], incluye: [], suma: [],
-    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, tramos: [], ...resto
+    minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, tramos: [],
+    // Una nueva no sale en la lista hasta que se marque (el modo estricto).
+    mostrar: false, ...resto
   };
 }
 
@@ -228,7 +261,9 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
       descuento: entero(en(f, i.descuento), 100),
       arriendo: arriendoDe(en(f, i.arriendo)),
       cotizador: en(f, i.cotizador).trim() === '' ? true : esSi(en(f, i.cotizador)),
-      tramos: tramosDe(en(f, i.tramos), entero(en(f, i.minimo), 10000))
+      tramos: tramosDe(en(f, i.tramos), entero(en(f, i.minimo), 10000)),
+      // En blanco es sí: una promoción de antes de la columna sigue saliendo.
+      mostrar: en(f, i.mostrar).trim() === '' ? true : esSi(en(f, i.mostrar))
     });
   }
   return salida;
@@ -239,7 +274,8 @@ export function aFilasPromociones(promos: Promocion[]): string[][] {
     p.id, p.nombre, p.sitio, p.activa ? 'sí' : 'no', p.menus.join(' | '), p.ninos.join(' | '),
     p.incluye.join(' | '), p.suma.join(' | '), p.minimo ? String(p.minimo) : '',
     p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no',
-    (p.tramos ?? []).map((t) => `${t.desde}:${t.descuento}`).join(' | ')
+    (p.tramos ?? []).map((t) => `${t.desde}:${t.descuento}`).join(' | '),
+    p.mostrar ? 'sí' : 'no'
   ])];
 }
 
@@ -287,7 +323,9 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     descuento: entero(x?.descuento, 100),
     arriendo: arriendoDe(x?.arriendo),
     cotizador: typeof x?.cotizador === 'boolean' ? x.cotizador : true,
-    tramos: tramosDe(x?.tramos, minimo)
+    tramos: tramosDe(x?.tramos, minimo),
+    // Sin el dato (una pantalla de antes), sí: guardar no la saca de la lista.
+    mostrar: typeof x?.mostrar === 'boolean' ? x.mostrar : true
   };
 }
 

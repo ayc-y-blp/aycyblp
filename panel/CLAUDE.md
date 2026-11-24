@@ -885,6 +885,24 @@ doblaba y la ventana medía 654px; ahora 612.
   como antes, solo WhatsApp) y **el link de campaña**
   (`promociones.html#gran-premio`, `linkDeCampana()`), con *Copiar*, *EN* y
   *PT*: abre la página con esa promoción elegida, para Instagram.
+- ***☑ Mostrar en el sitio*** (2026-11-24, lo pidió el cliente: *"en
+  producción solo se muestran si yo doy un chequeo… si tengo el link con el
+  hashtag, lo puedo ver igual"*, en modo estricto), en la fila *En el sitio*,
+  a la derecha, con su `?` (`promoMostrar`). Marcada, la promoción sale en la
+  lista de `promociones.html`; sin marcar, solo con su link. **Un bloque sin
+  promoción, o con la suya apagada, no sale.** Columna nueva al final de
+  `Promociones`: **`Mostrar en el sitio`**; **en blanco es sí** (las de antes
+  siguen saliendo) y una promoción nueva nace sin marcar. Una pantalla de
+  antes que no manda el dato, al guardar la deja marcada.
+  `bloquesDelSitio()` arma lo que lee el sitio, y va en
+  `/api/publico/promociones` como `bloques` (ninguna lectura más). La
+  cabecera de la tarjeta dice ***👁 en el sitio*** o ***🔗 solo con el
+  link***; *cotizador: falta un precio* ya no dice *no sale*, que ahora es
+  otra cosa. La ficha sigue en 620px.
+- ***🔗 Copiar link* en la tarjeta cerrada** (lo pidió el cliente el mismo
+  día: *"que puedo copiar el link del sitio público en promociones"*): al lado
+  de la línea que abre la tarjeta, en cada promoción conectada y encendida.
+  Copia el del español; *EN* y *PT* siguen adentro.
 - Cerrada dice a qué bloque va, desde cuántas personas y **desde cuánto por
   persona** (+ IVA, con el menú más barato y el descuento: lo mismo que dirá el
   sitio). Una conectada que no puede cotizar —un producto sin precio de
