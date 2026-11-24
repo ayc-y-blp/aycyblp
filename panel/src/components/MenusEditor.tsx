@@ -33,6 +33,7 @@ import MostrarDesactivados from './MostrarDesactivados';
 import PromocionesEditor from './PromocionesEditor';
 import OtrasEmpresasEditor from './OtrasEmpresasEditor';
 import BuscarEnLista from './BuscarEnLista';
+import EmpresaNueva from './EmpresaNueva';
 import { datosEnFrase, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
@@ -114,6 +115,8 @@ type Vista = 'catalogo' | 'promociones' | 'empresas';
 
 export default function MenusEditor() {
   const [menus, setMenus] = useState<Editable[] | null>(null);
+  /** La lista como está guardada: para saber si queda algo sin guardar al descartar un producto nuevo. */
+  const [guardados, setGuardados] = useState<Editable[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
@@ -155,6 +158,8 @@ export default function MenusEditor() {
    */
   const [otrasEmpresas, setOtrasEmpresas] = useState<OtraEmpresa[]>([]);
   const [eligiendoEmpresa, setEligiendoEmpresa] = useState<number | null>(null);
+  /** El producto desde donde se crea otra empresa nueva, en su ventanita (2026-11-24). */
+  const [empresaNuevaPara, setEmpresaNuevaPara] = useState<number | null>(null);
   useEffect(() => {
     fetch('/api/otras-empresas').then((r) => r.json())
       .then((d) => { if (Array.isArray(d.empresas)) setOtrasEmpresas(d.empresas); })
@@ -165,7 +170,7 @@ export default function MenusEditor() {
     fetch('/api/menus').then((r) => r.json())
       .then((d) => {
         if (d.error) { setSinPermiso(!!d.permiso); return setError(d.error); }
-        setMenus(d.menus);
+        setMenus(d.menus); setGuardados(d.menus);
         setVeCostos(d.veCostos === true);
         setUsados(new Set((d.usados ?? []).map((n: string) => normalizar(n))));
       })
@@ -185,6 +190,14 @@ export default function MenusEditor() {
   }, [menus, reservas]);
 
   async function guardar(lista: Editable[]) {
+    // Un producto nuevo sin nombre no se guarda (el servidor lo descartaría
+    // sin decir nada): se abre para escribírselo, o cancelarlo.
+    const sinNombre = lista.findIndex((m) => m.nuevo && !m.nombre.trim());
+    if (sinNombre !== -1) {
+      setAbierta(sinNombre);
+      avisar('Hay un producto nuevo sin nombre: escríbele uno, o Cancelar.', 'atencion');
+      return;
+    }
     // El servidor descarta el segundo de dos nombres iguales sin decir nada:
     // se avisa acá, antes de mandar, para que no desaparezca un producto.
     const repetido = lista.find((m, i) => m.nuevo && nombreRepetido(lista, i));
@@ -201,7 +214,7 @@ export default function MenusEditor() {
       const d = await r.json();
       if (d.error) { setError(d.error); setSinPermiso(!!d.permiso); }
       else {
-        setMenus(d.menus); setError(''); setSucio(false);
+        setMenus(d.menus); setGuardados(d.menus); setError(''); setSucio(false);
         setUsados(new Set((d.usados ?? []).map((n: string) => normalizar(n))));
       }
     } finally { setGuardando(false); }
@@ -214,6 +227,42 @@ export default function MenusEditor() {
     setMenus(menus.map((m, k) => (k === i ? { ...m, ...cambio } : m)));
     setSucio(true);
   };
+
+  /**
+   * **Un producto nuevo se guarda con su botón** (2026-11-24, lo pidió el
+   * cliente: *"al crear un producto, sí tienes que aplicar la regla de que
+   * tiene que guardarse con un botón, porque se me quedó abierto un producto
+   * sin nombre… pero queda ahí dando vuelta"*). Hasta guardarlo es un
+   * borrador: dice *nuevo · sin guardar*, trae *Guardar producto* y
+   * *Cancelar*, y **si se cierra sin nombre, se descarta** —también al abrir
+   * otro—. Lo demás de Productos sigue igual: los cambios esperan *Guardar
+   * cambios*.
+   */
+  const descartar = (i: number) => {
+    const resto = menus.filter((_, k) => k !== i);
+    setMenus(resto); setAbierta(null);
+    setSucio(JSON.stringify(resto) !== JSON.stringify(guardados));
+  };
+  const borradorSinNombre = (i: number | null) => i !== null && !!menus[i]?.nuevo && !menus[i].nombre.trim();
+  /** Abre otra tarjeta, o cierra la abierta. Un producto nuevo sin nombre que se deja, se descarta. */
+  const abrir = (i: number | null) => {
+    if (abierta !== null && abierta !== i && borradorSinNombre(abierta)) {
+      const resto = menus.filter((_, k) => k !== abierta);
+      setMenus(resto);
+      setSucio(JSON.stringify(resto) !== JSON.stringify(guardados));
+      setAbierta(i === null ? null : i > abierta ? i - 1 : i);
+      return;
+    }
+    if (i === null && borradorSinNombre(abierta)) return descartar(abierta!);
+    setAbierta(i);
+  };
+  /**
+   * **Un solo botón de guardar a la vista** (2026-11-24, lo marcó el cliente:
+   * *"se ve un botón guardar en el pop-up y el botón abajo de guardar"*): con
+   * una tarjeta abierta, el suyo —*Guardar cambios*, o *Guardar producto* en
+   * uno nuevo—; el de abajo, solo con todas cerradas.
+   */
+  const tarjetaAbierta = abierta !== null;
 
   const botonGuardar = (
     <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => guardar(menus)}
@@ -269,7 +318,7 @@ export default function MenusEditor() {
           <li key={i} className={`overflow-hidden ${marcoTarjeta(abierta === i, m.activo ? 'normal' : 'apagada')}`}>
             <div className="flex items-center gap-2 pr-2">
               <button type="button" aria-expanded={abierta === i}
-                onClick={() => setAbierta(abierta === i ? null : i)}
+                onClick={() => abrir(abierta === i ? null : i)}
                 className={`flex min-h-[52px] min-w-0 flex-1 flex-wrap items-center gap-x-3
                            gap-y-1 px-3 py-2.5 text-left hover:bg-hueso/5 ${m.activo ? '' : 'opacity-60'}`}>
                 <SignoAbrir abierta={abierta === i} tamano="h-6 w-6 text-[14px]" />
@@ -278,6 +327,10 @@ export default function MenusEditor() {
                 </span>
                 <span className="rounded-full border border-hueso/25 px-2 py-0.5 text-[13px]
                                  font-semibold text-hueso/70">{m.tipo}</span>
+                {m.nuevo && (
+                  <span className="rounded-full border border-ambar-fuerte/60 px-2 py-0.5 text-[13px]
+                                   font-semibold text-ambar-texto">nuevo · sin guardar</span>
+                )}
                 {!m.activo && (
                   <span className="rounded-full border border-hueso/40 px-2 py-0.5 text-[13px]
                                    font-semibold text-hueso/80">desactivado</span>
@@ -312,6 +365,7 @@ export default function MenusEditor() {
                 <button onClick={() => {
                   if (m.nombre.trim() && !confirm(`¿Quitar ${m.nombre} del catálogo? `
                     + 'Nunca se vendió ni se cotizó, así que se borra.')) return;
+                  if (m.nuevo) return descartar(i);
                   setMenus(menus.filter((_, k) => k !== i)); setSucio(true); setAbierta(null);
                 }} className="boton shrink-0 hover:border-rojo-fuerte hover:text-rojo-texto">
                   Quitar
@@ -490,14 +544,14 @@ export default function MenusEditor() {
                           </div>
                           {eligiendoEmpresa === i && (
                             <div className="mt-2">
-                              <BuscarEnLista etiqueta="La cobra" vacia="Todavía no hay otras empresas en la lista."
+                              <BuscarEnLista etiqueta="La cobra" vacia="Todavía no hay otras empresas: agrega la primera abajo."
                                 elegido={m.loCobra}
                                 opciones={otrasEmpresas.filter((e) => e.activa || e.nombre === m.loCobra)
                                   .map((e) => ({ id: e.nombre, nombre: e.nombre, detalle: e.que || datosEnFrase(e) }))}
                                 onElegir={(nombre) => { cambiar(i, { loCobra: nombre }); setEligiendoEmpresa(null); }}
                                 onCerrar={() => setEligiendoEmpresa(null)}
-                                pie={<button type="button" className="boton min-h-[40px]" onClick={() => verVista('empresas')}>
-                                  + Agregar en 🤝 Otras empresas
+                                pie={<button type="button" className="boton min-h-[40px]" onClick={() => setEmpresaNuevaPara(i)}>
+                                  + Empresa nueva…
                                 </button>} />
                             </div>
                           )}
@@ -510,10 +564,21 @@ export default function MenusEditor() {
                 </div>
                 )}
 
-                {sucio && <div className="flex justify-end">{botonGuardar}</div>}
+                {m.nuevo ? (!soloMira && (
+                  <div className="flex flex-wrap items-center justify-end gap-2 border-t border-hueso/15 pt-3 lg:pt-2">
+                    <span className="mr-auto text-[14px] text-hueso/75">
+                      {m.nombre.trim() ? 'Se agrega al catálogo al guardarlo.' : 'Escríbele un nombre para poder guardarlo.'}
+                    </span>
+                    <button type="button" className="boton min-h-[44px]" onClick={() => descartar(i)}>Cancelar</button>
+                    <button type="button" disabled={!m.nombre.trim() || guardando} onClick={() => guardar(menus)}
+                      className="boton boton-relleno min-h-[44px] disabled:opacity-50">
+                      {guardando ? 'Guardando…' : 'Guardar producto'}
+                    </button>
+                  </div>
+                )) : sucio && <div className="flex justify-end">{botonGuardar}</div>}
               </fieldset>
             )}
-            {abierta === i && <PieCerrar nombre={m.nombre.trim()} onCerrar={() => setAbierta(null)} />}
+            {abierta === i && <PieCerrar nombre={m.nombre.trim()} onCerrar={() => abrir(null)} />}
           </li>
         ))}
       </ul>
@@ -522,6 +587,9 @@ export default function MenusEditor() {
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button
           onClick={() => {
+            // Si ya hay uno nuevo sin nombre, se abre ese: no se apilan borradores vacíos.
+            const vacio = menus.findIndex((m) => m.nuevo && !m.nombre.trim());
+            if (vacio !== -1) return setAbierta(vacio);
             setMenus([...menus, { ...nuevoProducto({ nombre: '' }), nuevo: true }]);
             setAbierta(menus.length);
             setSucio(true);
@@ -530,9 +598,18 @@ export default function MenusEditor() {
           + Agregar producto
         </button>
         <span className="flex-1" />
-        {sucio && <span className="text-[14px] text-hueso/70">Hay cambios sin guardar.</span>}
-        {botonGuardar}
+        {sucio && !tarjetaAbierta && <span className="text-[14px] text-hueso/70">Hay cambios sin guardar.</span>}
+        {!tarjetaAbierta && botonGuardar}
       </div>
+      )}
+
+      {empresaNuevaPara !== null && menus[empresaNuevaPara] && (
+        <EmpresaNueva producto={menus[empresaNuevaPara].nombre.trim()} onCerrar={() => setEmpresaNuevaPara(null)}
+          onGuardada={(empresas, nombre) => {
+            setOtrasEmpresas(empresas);
+            cambiar(empresaNuevaPara, { loCobra: nombre });
+            setEligiendoEmpresa(null); setEmpresaNuevaPara(null);
+          }} />
       )}
 
       <AvisoFijo clave="menus-desactivar" className="mt-6 max-w-2xl">

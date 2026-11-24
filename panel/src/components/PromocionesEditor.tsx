@@ -375,8 +375,8 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                           <Elegir etiqueta="Menú de adultos" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
                         </FilaSeccion>
                         <FilaSeccion rotulo="Niños">
-                          <Elegir etiqueta="Menú de niños" uno opciones={menusNinos} elegidos={p.ninos ? [p.ninos] : []}
-                            onCambio={(v) => cambiar(i, { ninos: v[0] ?? '' })} />
+                          <Elegir etiqueta="Menú de niños" opciones={menusNinos} elegidos={p.ninos}
+                            onCambio={(v) => cambiar(i, { ninos: v })} />
                         </FilaSeccion>
                       </Seccion>
                       <Seccion titulo="🏷 Condición" ayuda="promoCondicion" accion={p.tramos.length < 5 && (

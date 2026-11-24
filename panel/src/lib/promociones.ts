@@ -131,7 +131,12 @@ export interface Promocion {
   sitio: string;
   activa: boolean;
   menus: string[];
-  ninos: string;
+  /**
+   * **Los menús de niños** (desde el 2026-11-24, varios: lo pidió el cliente,
+   * *"menú niños y menú pequeños a la vez, como en los otros menús de
+   * adultos"*). Una fila de antes, con uno solo, se lee como lista de uno.
+   */
+  ninos: string[];
   incluye: string[];
   suma: string[];
   minimo: number;
@@ -146,7 +151,7 @@ export function nuevaPromocion(p: Partial<Promocion> & { id: string }): Promocio
   // El ID primero, para que se lea —y se compare— igual que una leída de la planilla.
   const { id, ...resto } = p;
   return {
-    id, nombre: '', sitio: '', activa: true, menus: [], ninos: '', incluye: [], suma: [],
+    id, nombre: '', sitio: '', activa: true, menus: [], ninos: [], incluye: [], suma: [],
     minimo: 0, descuento: 0, arriendo: ARRIENDO_PROMO.siempre, cotizador: true, tramos: [], ...resto
   };
 }
@@ -216,7 +221,7 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
       // En blanco es sí: una fila escrita a mano sin esa columna sigue viva.
       activa: en(f, i.activa).trim() === '' ? true : esSi(en(f, i.activa)),
       menus: lista(en(f, i.menus)),
-      ninos: en(f, i.ninos).trim(),
+      ninos: lista(en(f, i.ninos)),
       incluye: lista(en(f, i.incluye)),
       suma: lista(en(f, i.suma)),
       minimo: entero(en(f, i.minimo), 10000),
@@ -231,7 +236,7 @@ export function leerPromocionesDe(filas: string[][]): Promocion[] {
 
 export function aFilasPromociones(promos: Promocion[]): string[][] {
   return [ENCABEZADO_PROMOCIONES, ...promos.map((p) => [
-    p.id, p.nombre, p.sitio, p.activa ? 'sí' : 'no', p.menus.join(' | '), p.ninos,
+    p.id, p.nombre, p.sitio, p.activa ? 'sí' : 'no', p.menus.join(' | '), p.ninos.join(' | '),
     p.incluye.join(' | '), p.suma.join(' | '), p.minimo ? String(p.minimo) : '',
     p.descuento ? String(p.descuento) : '', p.arriendo, p.cotizador ? 'sí' : 'no',
     (p.tramos ?? []).map((t) => `${t.desde}:${t.descuento}`).join(' | ')
@@ -266,7 +271,6 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
   const enCatalogo = (nombres: unknown) => (Array.isArray(nombres) ? nombres : lista(nombres))
     .map((n) => productoDe(String(n), catalogo)?.nombre ?? '')
     .filter((n, i, a) => n && a.indexOf(n) === i);
-  const ninos = productoDe(String(x?.ninos ?? ''), catalogo);
   const minimo = entero(x?.minimo, 10000);
   // Lo incluido no se puede además sumar: cada extra va una vez.
   const incluye = enCatalogo(x?.incluye);
@@ -276,7 +280,7 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
     sitio: sitioDe(x?.sitio),
     activa: typeof x?.activa === 'boolean' ? x.activa : true,
     menus: enCatalogo(x?.menus),
-    ninos: ninos ? canonizar(ninos.nombre, catalogo) : '',
+    ninos: enCatalogo(x?.ninos).map((n) => canonizar(n, catalogo)),
     incluye,
     suma: enCatalogo(x?.suma).filter((n) => !incluye.includes(n)),
     minimo,
@@ -349,7 +353,7 @@ export function lineasDeLaPromocion(
     nuevas.push(l);
   };
   sumar(promo.menus.length === 1 ? promo.menus[0] : menu);
-  sumar(promo.ninos);
+  for (const n of promo.ninos) sumar(n);
   for (const n of promo.incluye) sumar(n);
   return nuevas;
 }
@@ -392,7 +396,11 @@ export function aplicarALineas<L extends { concepto: string; personas: number }>
 export interface Eleccion {
   /** Los adultos, o todos si la promoción no tiene menú de niños. */
   adultos: number;
-  ninos: number;
+  /**
+   * Los niños de cada menú de niños, en el orden de la promoción (2026-11-24:
+   * *Niños* y *Pequeños* a la vez). Un número solo es el primero, como antes.
+   */
+  ninos: number | number[];
   /** El menú elegido; con uno solo, se ignora. */
   menu: string;
   /** Lo que sumó, de `suma`. */
@@ -463,8 +471,9 @@ const neto = (m: Menu) => {
 export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx: ContextoCotizar): Cotizada | NoSeCotiza {
   if (!promo || !promo.activa || !promo.cotizador) return { ok: false, codigo: 'promocion' };
   const adultos = entero(e.adultos, 2000);
-  const ninos = promo.ninos ? entero(e.ninos, 2000) : 0;
-  const invitados = adultos + ninos;
+  // Uno por cada menú de niños de la promoción; lo que sobra se ignora.
+  const porMenuNinos = promo.ninos.map((_, k) => entero((Array.isArray(e.ninos) ? e.ninos : [e.ninos])[k], 2000));
+  const invitados = adultos + porMenuNinos.reduce((n, x) => n + x, 0);
   if (invitados < Math.max(1, promo.minimo)) return { ok: false, codigo: 'minimo', minimo: Math.max(1, promo.minimo) };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fecha) || e.fecha <= ctx.hoy || e.fecha > sumarDias(ctx.hoy, 730)) {
     return { ok: false, codigo: 'fecha' };
@@ -478,7 +487,7 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   if (!menu) return { ok: false, codigo: 'menu' };
 
   const productos: [Menu | undefined, number][] = [[menu, adultos]];
-  if (ninos > 0) productos.push([productoDe(promo.ninos, ctx.catalogo), ninos]);
+  promo.ninos.forEach((n, k) => { if (porMenuNinos[k] > 0) productos.push([productoDe(n, ctx.catalogo), porMenuNinos[k]]); });
   for (const n of promo.incluye) productos.push([productoDe(n, ctx.catalogo), invitados]);
   const sumados = promo.suma.filter((n) => (e.suma ?? []).some((s) => normalizar(s) === normalizar(n)));
   for (const n of sumados) productos.push([productoDe(n, ctx.catalogo), invitados]);
@@ -527,7 +536,8 @@ export interface PromocionSitio {
   minimo: number;
   descuento: number;
   menus: ProductoSitio[];
-  ninos: ProductoSitio | null;
+  /** Los menús de niños, uno o varios (2026-11-24): el sitio dibuja un contador por cada uno. */
+  ninos: ProductoSitio[];
   incluye: string[];
   suma: ProductoSitio[];
   /** Desde cuánto por persona, neto (+ IVA), con el menú más barato y el descuento. */
@@ -551,17 +561,17 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
     if (!p.activa || !p.sitio || !p.cotizador) continue;
     const buscar = (n: string) => productoDe(n, catalogo);
     const menus = p.menus.map(buscar);
-    const ninos = p.ninos ? buscar(p.ninos) : undefined;
+    const ninos = p.ninos.map(buscar);
     const incluye = p.incluye.map(buscar);
     const suma = p.suma.map(buscar);
-    const todos = [...menus, ...incluye, ...suma, ...(p.ninos ? [ninos] : [])];
+    const todos = [...menus, ...incluye, ...suma, ...ninos];
     if (!menus.length || todos.some((m) => !m || !m.activo || m.moneda === MONEDA.uf || !(precioParaCotizar(m) > 0))) continue;
     const porPersona = (incluye as Menu[]).filter((m) => m.cobro !== COBRO.fijo).reduce((n, m) => n + neto(m), 0);
     const masBarato = Math.min(...(menus as Menu[]).map(neto));
     salida.push({
       sitio: p.sitio, nombre: p.nombre, minimo: Math.max(1, p.minimo), descuento: p.descuento,
       menus: (menus as Menu[]).map(paraSitio),
-      ninos: ninos ? paraSitio(ninos) : null,
+      ninos: (ninos as Menu[]).map(paraSitio),
       incluye: (incluye as Menu[]).map((m) => m.nombre),
       suma: (suma as Menu[]).map(paraSitio),
       desde: Math.round((masBarato + porPersona) * (1 - p.descuento / 100))

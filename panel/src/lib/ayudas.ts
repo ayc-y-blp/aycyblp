@@ -394,6 +394,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ahí se puede cambiar.',
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
       + 'esto: el total viene con el pedido.',
+      'Los cambios esperan *Guardar cambios*. Un producto nuevo se guarda con '
+      + 'su *Guardar producto*; *Cancelar* lo descarta, y si se cierra sin nombre '
+      + 'no queda.',
       'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
       + 'en una cotización va aparte del total y no paga comisión.',
       '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '
@@ -1352,7 +1355,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Los menús',
     texto: [
       'Adultos: con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
-      'Niños: el menú de los niños, si la promoción lo lleva. Los menús de niños van solo en esa fila.',
+      'Niños: los menús de niños que lleva la promoción, uno o varios (Niños y Pequeños a la vez). En el sitio, cada uno tiene su contador. Los menús de niños van solo en esa fila.',
       'Los precios son los de cotización del catálogo.'
     ]
   },
@@ -1391,7 +1394,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Lo cobra otra empresa',
     texto: [
       'Para un extra que no cobramos nosotros, como el karting: "Otra empresa…" la elige de la '
-      + 'lista de *🤝 Otras empresas*. En una cotización va aparte del total, con “lo cobra …”: '
+      + 'lista de *🤝 Otras empresas*; si no está, "+ Empresa nueva…" la crea ahí mismo, con un solo '
+      + 'botón, y queda elegida. En una cotización va aparte del total, con “lo cobra …”: '
       + 'no entra en nuestra boleta o factura, el anticipo ni la comisión. Debajo se dice cuánto '
       + 'queda el día completo.',
       'Sus datos salen en la cotización y en una cláusula del contrato. "Nosotros": lo cobramos nosotros.'

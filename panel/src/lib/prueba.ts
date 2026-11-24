@@ -7278,7 +7278,7 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   const combate = PR.nuevaPromocion({ id: 'PR-02', nombre: 'Combate', sitio: 'combate', menus: ['Brasas'],
     minimo: 10, descuento: 10, arriendo: PR.ARRIENDO_PROMO.semana });
   const campo = PR.nuevaPromocion({ id: 'PR-03', nombre: 'Día de campo', sitio: 'dia-de-campo', menus: ['Lo Pirque'],
-    ninos: 'Niños', minimo: 10 });
+    ninos: ['Niños'], minimo: 10 });
   const ctx = {
     catalogo: cat, diasAbiertos: [0, 6], hoy: '2026-11-24',
     fechas: [{ fecha: '2026-11-28', estado: 'Abierta' }, { fecha: '2026-12-05', estado: 'Privada exclusiva' }],
@@ -7324,6 +7324,21 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   const campoC = PR.cotizarPromocion(campo, { adultos: 10, ninos: 5, menu: '', suma: [], fecha: '2026-11-28' }, ctx);
   ok(campoC.ok && campoC.invitados === 15 && campoC.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 5),
      'con menú de niños: los niños van en su línea y cuentan para el total de personas');
+  // Niños y Pequeños a la vez (2026-11-24): un contador por cada uno.
+  const catNP = [...cat, prod('Pequeños', { precioCotizacion: 9000, iva: 'Incluido' })];
+  const campoNP = { ...campo, ninos: ['Niños', 'Pequeños'] };
+  const ctxNP = { ...ctx, catalogo: catNP };
+  const np = PR.cotizarPromocion(campoNP, { adultos: 10, ninos: [3, 2], menu: '', suma: [], fecha: '2026-11-28' }, ctxNP);
+  ok(np.ok && np.invitados === 15 && np.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 3)
+     && np.lineas.some((l) => l.concepto === 'Pequeños' && l.cantidad === 2),
+     'con dos menús de niños, cada uno con su cuenta y todos suman a las personas');
+  const npViejo = PR.cotizarPromocion(campoNP, { adultos: 10, ninos: 4, menu: '', suma: [], fecha: '2026-11-28' }, ctxNP);
+  ok(npViejo.ok && npViejo.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 4)
+     && !npViejo.lineas.some((l) => l.concepto === 'Pequeños'),
+     'un número solo, como lo manda el sitio de antes, va al primer menú de niños');
+  ok(PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catNP)[0]?.ninos.map((n) => n.nombre).join() === 'Niños,Pequeños'
+     && PR.limpiarPromocion({ id: 'x', nombre: 'x', ninos: 'niños | Pequeños | Inventado' }, catNP).ninos.join() === 'Niños,Pequeños',
+     'el sitio recibe los dos menús de niños, y se guardan solo los que están en el catálogo');
   const no = (r: ReturnType<typeof PR.cotizarPromocion>) => (r.ok ? '' : r.codigo);
   ok(no(PR.cotizarPromocion(gran, { adultos: 5, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'minimo'
      && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-24' }, ctx)) === 'fecha'

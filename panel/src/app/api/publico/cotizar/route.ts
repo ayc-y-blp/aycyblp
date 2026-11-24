@@ -60,7 +60,10 @@ function eleccionDe(x: Record<string, unknown>): Eleccion & { promo: string } {
   const suma = Array.isArray(x.suma) ? x.suma.map(String) : String(x.suma ?? '').split('|');
   return {
     promo: String(x.promo ?? '').trim(),
-    adultos: Number(x.adultos) || 0, ninos: Number(x.ninos) || 0,
+    adultos: Number(x.adultos) || 0,
+    // Los niños de cada menú de niños (2026-11-24): `3,1` en la dirección, una
+    // lista en el cuerpo; un número solo, como antes, es el primero.
+    ninos: (Array.isArray(x.ninos) ? x.ninos : String(x.ninos ?? '').split(',')).slice(0, 5).map((n) => Number(n) || 0),
     menu: String(x.menu ?? '').trim().slice(0, 80),
     suma: suma.map((s) => s.trim()).filter(Boolean).slice(0, 20),
     fecha: String(x.fecha ?? '').trim().slice(0, 10)
