@@ -229,6 +229,27 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El bloque *Equipo* de la página del día, reorganizado (2026-11-24)
+
+Lo pidió el cliente con una foto de un día con once puestos: *"en esa vista
+puedes aprovechar un montón de espacio reorganizando"*. Los puestos iban en una
+columna angosta —nueve renglones—, apretados por los botones de la derecha, y
+la fila de lo que costó el día quedaba con media pantalla vacía.
+
+- **Arriba, *Equipo* y los puestos en tres columnas a todo el ancho** (en el
+  computador; `columns-3`, un puesto no se parte entre dos columnas y sus
+  nombres se doblan adentro).
+- **Al pie, en una fila**: lo que costó el día (cuando ya se pasó lista), lo que
+  falta (*Falta 1: Garzón*), ***Equipo y cuentas del día*** y la propina con
+  su botón.
+- **Medidas a 1280px**: un día con once puestos, de unos 9 renglones a **173px**;
+  el sábado 7 del ejemplo (cuatro puestos y su costo), de 132 a **125px**. **Un
+  día con pocos puestos y sin costo todavía crece** (de 90 a 125px): los
+  botones van siempre al pie, en el mismo lugar. En el celular, el mismo orden
+  apilado y 4px más.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe dónde van los botones del bloque.
+
 ## Quién vino, también desde la página del día (2026-11-24)
 
 Lo pidió el cliente con una foto de una reserva abierta en la página del día:
