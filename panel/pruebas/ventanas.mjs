@@ -169,6 +169,8 @@ export const ESCENAS = {
   'ficha-colaborador': async () => { await ir('/extras'); await clic(boton(/Paz Ortiz/)); },
   'ficha-cliente': async () => { await ir('/clientes'); await abrirPrimera(); },
   'ficha-producto': async () => { await ir('/menus'); await abrirPrimera(); },
+  // Un producto nuevo (2026-11-24): un borrador con *Guardar producto* y *Cancelar*.
+  'ficha-producto-nuevo': async () => { await ir('/menus'); await clic(boton('+ Agregar producto')); },
   'ficha-vendedor': vendedor,
   'ficha-recepcion': async () => { await ir('/recepcion'); await clic(p.locator('li > button[aria-expanded]')); },
   'ficha-reserva-del-dia': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); },

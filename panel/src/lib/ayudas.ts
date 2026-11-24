@@ -394,6 +394,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ahí se puede cambiar.',
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
       + 'esto: el total viene con el pedido.',
+      'Los cambios esperan *Guardar cambios*. Un producto nuevo se guarda con '
+      + 'su *Guardar producto*; *Cancelar* lo descarta, y si se cierra sin nombre '
+      + 'no queda.',
       'Un extra que cobra otra empresa, como el karting, la elige en *Lo cobra*: '
       + 'en una cotización va aparte del total y no paga comisión.',
       '*🤝 Otras empresas* son las que prestan y cobran directamente algo que se '

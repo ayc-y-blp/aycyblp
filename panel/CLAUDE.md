@@ -228,6 +228,31 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Un producto nuevo se guarda con su botón (2026-11-24)
+
+Lo pidió el cliente: *"al crear un producto, sí tienes que aplicar la regla de
+que tiene que guardarse con un botón, porque se me quedó abierto un producto
+sin nombre, porque en verdad no lo he terminado de utilizar, pero queda ahí
+dando vuelta"*. En *Productos* nada se guardaba solo —los cambios esperan
+*Guardar cambios*, que guarda toda la lista—, pero un producto agregado no
+tenía un guardado propio: sin nombre quedaba en la lista como *Sin nombre*
+hasta recargar, y el servidor lo descartaba sin decir nada.
+
+- **Un producto nuevo es un borrador** (`MenusEditor`): en su línea dice
+  ***nuevo · sin guardar***, y al pie de la tarjeta trae ***Guardar
+  producto*** —apagado hasta que tenga nombre— y ***Cancelar***, con la frase
+  de lo que pasa (*Se agrega al catálogo al guardarlo*).
+- **Sin nombre no se queda**: cerrarlo, o abrir otra tarjeta, lo descarta;
+  *+ Agregar producto* abre el que ya está vacío en vez de apilar otro; y
+  *Guardar cambios* no guarda una lista con uno sin nombre: lo abre y lo
+  dice.
+- **Con un producto nuevo abierto**, el *Guardar cambios* de abajo no se
+  muestra: el botón relleno es *Guardar producto*.
+- Lo demás de Productos no cambia: activar *Se puede cotizar* en uno que ya
+  existe sigue esperando *Guardar cambios*.
+- **Ningún permiso, columna ni lectura nueva.** **Ayuda**: el `?` de
+  Productos. **Ventanas**: `ficha-producto-nuevo` (417px).
+
 ## *🤝 Otras empresas*: el karting, el taller de queso, un transfer (2026-11-24)
 
 Lo pidió el cliente: *"tal vez hasta se puede tener que ingresar la otra
