@@ -3817,7 +3817,7 @@ export default function CotizacionDialogo({
       })()}
       {aplicandoPromo && (
         <AplicarPromocion promociones={datos.promociones ?? []} catalogo={datos.menus} invitados={invitados}
-          fecha={fechaReal} yaEstan={vistas} onCerrar={() => setAplicandoPromo(false)} onAplicar={aplicarPromocion} />
+          fecha={fechaReal} pasaPorEncima={pasaPorEncima} yaEstan={vistas} onCerrar={() => setAplicandoPromo(false)} onAplicar={aplicarPromocion} />
       )}
       {cayendo && p && (
         <SeCayo id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''}

@@ -44,7 +44,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
-import { avisosDelSitio, HOJA_PROMOCIONES, promocionDe, beneficioDePromocion, type Promocion } from '@/lib/promociones';
+import { avisosDelSitio, HOJA_PROMOCIONES, promocionDe, beneficioDePromocion, faltaAnticipacion, type Promocion } from '@/lib/promociones';
 import { hoy, esFecha, sumarDias } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { guardaDelDia } from '@/lib/guardaCierre';
@@ -716,6 +716,22 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
         return NextResponse.json({ error: 'Esa promoción ya no está o está apagada.' }, { status: 404 });
       }
       p.promocion = pedida;
+    }
+    // **La anticipación de la promoción** (2026-11-24, lo pidió el cliente:
+    // *"eso cuenta también si cotiza un vendedor una promoción"*): al
+    // aplicarla, o al moverle el día, el evento tiene que estar a los días que
+    // pide. Se mira solo entonces: una bien aplicada no deja de valer porque
+    // pasen los días. Pasa por encima quien aprueba, como los otros plazos.
+    if (p.promocion && (p.promocion !== (previo.promocion ?? '') || p.fecha !== previo.fecha)) {
+      const promo = promocionDe(promos, p.promocion);
+      const falta = faltaAnticipacion(promo, p.fecha, hoy());
+      if (falta && !puede(quien.rol as Rol, 'showBajoMinimo')) {
+        return NextResponse.json({
+          error: `${promo?.nombre ?? 'Esta promoción'} se cotiza con al menos ${falta} días de anticipación. `
+            + 'Elige un día más adelante o quita la promoción. Si de verdad conviene, la aplica la gerencia, '
+            + 'el encargado de pagos o el administrador.'
+        }, { status: 409 });
+      }
     }
     const beneficio = beneficioDePromocion(promocionDe(promos, p.promocion), invitados, p.fecha);
     // Las líneas se vuelven a preparar también cuando solo cambian los

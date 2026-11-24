@@ -430,6 +430,18 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                             ))}
                           </div>
                         </FilaSeccion>
+                        {/* **Con cuántos días de anticipación** (2026-11-24, lo pidió el
+                            cliente: el karting o el taller de queso no se organizan sin
+                            tiempo). Vale en el sitio y cuando un vendedor la aplica. */}
+                        <FilaSeccion rotulo="Anticipación" ayuda="promoAnticipacion">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px]">
+                            <input type="number" min={0} max={365} value={p.anticipacion || ''} placeholder="0"
+                              aria-label="Días de anticipación"
+                              onChange={(e) => cambiar(i, { anticipacion: Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
+                              className={`${ENTRADA} !w-[4.5rem] text-center lg:py-1`} />
+                            <span>{p.anticipacion > 0 ? 'días antes del evento, como mínimo' : 'días: sin plazo, desde mañana'}</span>
+                          </div>
+                        </FilaSeccion>
                       </Seccion>
                     </div>
                     {/* **Lo nuestro y lo de fuera del local, separados** (2026-11-24, lo

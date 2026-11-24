@@ -840,7 +840,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       '"🎁 Promoción…", al lado del descuento sobre el total, la aplica: su menú reemplaza al de adulto que haya, suma lo que incluye y pone su descuento. Después se edita todo como siempre.',
       'Su descuento vale aunque pase el tope del vendedor: es el del tramo que alcanza el grupo. Si cambian los invitados, "Usar −N%" pone el que corresponde.',
       'Si la promoción no cobra arriendo ese día (de lunes a viernes, o nunca), el arriendo mínimo no se agrega.',
-      'Bajo su mínimo de personas no rige: ni su descuento ni su arriendo. "Quitar" la saca; los productos quedan.'
+      'Bajo su mínimo de personas no rige: ni su descuento ni su arriendo. "Quitar" la saca; los productos quedan.',
+      'Si pide días de anticipación y el evento es antes, no se aplica, ni se le puede mover el día ahí; la gerencia, el encargado de pagos y el administrador sí.'
     ]
   },
   vistaGerencia: {
@@ -1392,6 +1393,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Adultos: con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
       'Niños: los menús de niños que lleva la promoción, uno o varios (Niños y Pequeños a la vez). En el sitio, cada uno tiene su contador. Los menús de niños van solo en esa fila.',
       'Los precios son los de cotización del catálogo.'
+    ]
+  },
+  promoAnticipacion: {
+    titulo: 'La anticipación',
+    texto: [
+      'Con cuántos días de anticipación como mínimo se cotiza esta promoción: el karting o el taller de queso no se organizan de un día para otro.',
+      'En el sitio, el calendario no deja elegir un día antes. Un vendedor no la puede aplicar, ni mover el día, si el evento queda antes; la gerencia, el encargado de pagos y el administrador sí, con un aviso.',
+      'Se mira al aplicarla: una promoción bien aplicada sigue valiendo aunque pasen los días. En blanco o 0, sin plazo.'
     ]
   },
   promoSuma: {

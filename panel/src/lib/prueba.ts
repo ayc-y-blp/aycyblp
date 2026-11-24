@@ -7421,7 +7421,7 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'al cotizar, 30 personas llevan el 15%');
   const fila = PR.aFilasPromociones([conTramos])[1];
   ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES, fila])[0].tramos.length === 2
-     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -2), fila.slice(0, -2)])[0].tramos.length === 0,
+     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -3), fila.slice(0, -3)])[0].tramos.length === 0,
      'los tramos se guardan y se leen; una fila de antes, sin la columna, queda con uno solo');
   ok(PR.esMenuDeNinos('Niños') && PR.esMenuDeNinos('Menú Pequeños') && !PR.esMenuDeNinos('Lo Pirque')
      && PR.menusAdultoParaPromo(cat).every((m) => !PR.esMenuDeNinos(m.nombre))
@@ -7487,9 +7487,24 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      && PR.leerPromocionesDe(PR.aFilasPromociones([gran]))[0].mostrar === false,
      'una promoción nueva nace sin mostrar, y la casilla se guarda y se lee');
   const filaMostrar = PR.aFilasPromociones([gran])[1];
-  ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), filaMostrar.slice(0, -1)])[0].mostrar === true
+  ok(PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -2), filaMostrar.slice(0, -2)])[0].mostrar === true
      && PR.limpiarPromocion({ id: 'x' }, cat).mostrar === true && PR.limpiarPromocion({ id: 'x', mostrar: false }, cat).mostrar === false,
      'una fila de antes de la columna, o una pantalla de antes que no la manda, sigue saliendo');
+  // Los días de anticipación (2026-11-24): el karting no se organiza de un día para otro.
+  const conPlazo = { ...gran, anticipacion: 14 };
+  ok(PR.leerPromocionesDe(PR.aFilasPromociones([conPlazo]))[0].anticipacion === 14
+     && PR.leerPromocionesDe([PR.ENCABEZADO_PROMOCIONES.slice(0, -1), PR.aFilasPromociones([conPlazo])[1].slice(0, -1)])[0].anticipacion === 0
+     && gran.anticipacion === 0 && PR.limpiarPromocion({ id: 'x', anticipacion: '20' }, cat).anticipacion === 20,
+     'los días de anticipación se guardan y se leen; una fila de antes, sin la columna, no pide plazo');
+  ok(PR.faltaAnticipacion(conPlazo, '2026-12-07', '2026-11-24') === 14 && PR.faltaAnticipacion(conPlazo, '2026-12-08', '2026-11-24') === 0
+     && PR.faltaAnticipacion(gran, '2026-11-25', '2026-11-24') === 0 && PR.faltaAnticipacion(conPlazo, '', '2026-11-24') === 0,
+     'faltan días si el evento es antes de hoy + los que pide; sin plazo o sin día exacto, nada');
+  const apurada = PR.cotizarPromocion(conPlazo, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx);
+  const aTiempo = PR.cotizarPromocion(conPlazo, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-12-12' }, ctx);
+  ok(!apurada.ok && apurada.codigo === 'anticipacion' && 'dias' in apurada && apurada.dias === 14 && aTiempo.ok,
+     'el sitio no cotiza una promoción dentro de su plazo de anticipación, y dice cuántos días pide');
+  ok(PR.promocionesParaElSitio([{ ...conPlazo, sitio: 'gran-premio' }], cat)[0]?.anticipacion === 14,
+     'el sitio recibe los días de anticipación, para no ofrecer un día antes');
   const bloques = PR.bloquesDelSitio([
     { ...gran, mostrar: true }, { ...combate, mostrar: false }, { ...campo, mostrar: true, activa: false },
     PR.nuevaPromocion({ id: 'PR-07', sitio: '', mostrar: true })

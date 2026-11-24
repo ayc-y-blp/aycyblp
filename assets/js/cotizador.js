@@ -55,6 +55,8 @@
       faltaDia: 'Elige el día para ver el total.',
       calculando: 'Calculando…',
       minimo: 'Esta promoción es desde {n} personas.',
+      anticipacion: 'Esta promoción se cotiza con al menos {n} días de anticipación: elige un día más adelante.',
+      conAnticipacion: 'Con al menos {n} días de anticipación.',
       fecha: 'Elige un día desde mañana.',
       tomado: 'Ese día ya está tomado. Prueba con otro.',
       menu: 'Elige un menú.',
@@ -86,6 +88,8 @@
       faltaDia: 'Choose the date to see the total.',
       calculando: 'Calculating…',
       minimo: 'This offer starts at {n} people.',
+      anticipacion: 'This offer needs at least {n} days\u2019 notice: choose a later date.',
+      conAnticipacion: 'At least {n} days in advance.',
       fecha: 'Choose a date from tomorrow on.',
       tomado: 'That day is already booked. Try another one.',
       menu: 'Choose a menu.',
@@ -117,6 +121,8 @@
       faltaDia: 'Escolha o dia para ver o total.',
       calculando: 'Calculando…',
       minimo: 'Esta promoção é a partir de {n} pessoas.',
+      anticipacion: 'Esta promoção precisa de pelo menos {n} dias de antecedência: escolha uma data mais adiante.',
+      conAnticipacion: 'Com pelo menos {n} dias de antecedência.',
       fecha: 'Escolha um dia a partir de amanhã.',
       tomado: 'Esse dia já está reservado. Tente outro.',
       menu: 'Escolha um cardápio.',
@@ -277,8 +283,9 @@
     if (texto != null) e.textContent = texto;
     return e;
   }
-  function manana() {
-    var d = new Date(); d.setDate(d.getDate() + 1);
+  /** `AAAA-MM-DD` de dentro de `n` días, en la hora del navegador. */
+  function diaEn(n) {
+    var d = new Date(); d.setDate(d.getDate() + n);
     var m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
     return d.getFullYear() + '-' + m + '-' + dd;
   }
@@ -376,9 +383,15 @@
     });
     var dia = el('label', 'cot-dia');
     dia.appendChild(el('span', 'cot-rotulo', T.dia));
-    var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = manana();
+    // **Desde mañana, o desde el plazo de la promoción** (2026-11-24, lo pidió
+    // el cliente: el karting o el taller de queso no se organizan sin tiempo).
+    // El calendario no deja elegir antes, y bajo el campo se dice.
+    var plazo = Math.max(1, Number(promo.anticipacion) || 0);
+    var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = diaEn(plazo);
     fecha.addEventListener('change', function () { estado.fecha = fecha.value; calcular(); });
-    dia.appendChild(fecha); p1.appendChild(dia);
+    dia.appendChild(fecha);
+    if (plazo > 1) dia.appendChild(el('span', 'cot-plazo', T.conAnticipacion.replace('{n}', plazo)));
+    p1.appendChild(dia);
 
     // 2. Qué menú y qué se suma.
     var p2 = paso(2, T.paso2);
@@ -492,8 +505,9 @@
     // El botón de WhatsApp del bloque pasa a ser la segunda opción.
     if (bloque) Array.prototype.forEach.call(bloque.querySelectorAll('.btn-whatsapp'), function (w) { w.classList.add('cot-secundario'); });
 
-    function textoError(codigo, minimo) {
+    function textoError(codigo, minimo, dias) {
       if (codigo === 'minimo') return T.minimo.replace('{n}', minimo);
+      if (codigo === 'anticipacion') return T.anticipacion.replace('{n}', dias || plazo);
       return T[codigo] || (codigo === 'sinPrecio' || codigo === 'promocion' ? T.sinCotizar : T.error);
     }
 
@@ -503,7 +517,7 @@
       boton.disabled = !ultima; quiero.disabled = !ultima;
       if (!ultima) verDatos(false);
       if (!r) { boleta.appendChild(el('p', 'cot-aviso', T.faltaDia)); return; }
-      if (!r.ok) { boleta.appendChild(el('p', 'cot-aviso cot-aviso-alerta', textoError(r.codigo, r.minimo))); return; }
+      if (!r.ok) { boleta.appendChild(el('p', 'cot-aviso cot-aviso-alerta', textoError(r.codigo, r.minimo, r.dias))); return; }
       var lista = el('ul', 'cot-lineas');
       r.lineas.forEach(function (l) {
         var li = el('li');
@@ -540,6 +554,8 @@
     function calcular() {
       clearTimeout(reloj);
       if (!estado.fecha) { dibujar(null); return; }
+      // Un día escrito a mano antes del plazo: se dice sin preguntarle al panel.
+      if (estado.fecha < fecha.min) { dibujar({ ok: false, codigo: plazo > 1 ? 'anticipacion' : 'fecha', dias: plazo }); return; }
       if (!estado.menu) { dibujar({ ok: false, codigo: 'menu' }); return; }
       var ninos = estado.ninos.reduce(function (a, n) { return a + n; }, 0);
       if (estado.adultos + ninos < promo.minimo) { dibujar({ ok: false, codigo: 'minimo', minimo: promo.minimo }); return; }
@@ -575,7 +591,7 @@
       }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) {
           var t = d.codigo === 'nombre' ? T.faltaNombre : d.codigo === 'telefono' ? T.faltaTelefono
-            : d.codigo === 'correo' ? T.faltaCorreo : d.codigo === 'tope' ? T.tope : textoError(d.codigo, d.minimo);
+            : d.codigo === 'correo' ? T.faltaCorreo : d.codigo === 'tope' ? T.tope : textoError(d.codigo, d.minimo, d.dias);
           mensaje.textContent = t; mensaje.className = 'cot-mensaje cot-aviso-alerta';
           boton.disabled = false; boton.textContent = T.enviar;
           return;
