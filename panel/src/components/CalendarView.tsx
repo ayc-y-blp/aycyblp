@@ -28,7 +28,8 @@ import { POR_DEFECTO_MENUS, paraReservar, type Menu } from '@/lib/menus';
 import { resumenEquipo, esPreparacion, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { lineaDeSemana, type Tono } from '@/lib/semana';
 import { puede, puedeVer, type Rol } from '@/lib/auth';
-import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy } from '@/lib/fechas';
+import { enPalabras, mesDe, mesEnPalabras, semanaDe, rangoEnPalabras, hoy, sumarDias, sumarMeses, diasDelMes, esFecha } from '@/lib/fechas';
+import ElegirPeriodo from './ElegirPeriodo';
 import { copiarConAviso } from './AvisoFlotante';
 import AvisoSobrecupo from './AvisoSobrecupo';
 import { diasConSobrecupo } from '@/lib/sobrecupo';
@@ -51,6 +52,40 @@ const TONO: Record<Tono, string> = {
   rosa: 'border-rosa/50 bg-rosa/10 text-rosa-texto'
 };
 
+/**
+ * **Lo que muestra el calendario** (2026-11-24, lo pidió el cliente: *"igual
+ * se tiene que poder revisar las reservas del pasado… flechas para moverse a
+ * semanas anteriores, o una buena forma de hacerlo bajo nuestras reglas"*):
+ * *Lo que viene* —desde hoy, los días de Configuración, como siempre—, una
+ * *Semana* o un *Mes*, con ◀ ▶ hacia atrás y hacia adelante. Es la pieza del
+ * periodo de las otras pantallas (`ElegirPeriodo`). Va en la dirección
+ * (`/?ver=mes&en=2026-10`), así que *← Calendario* de la página del día
+ * vuelve al mismo periodo.
+ */
+type ModoCalendario = 'viene' | 'semana' | 'mes';
+interface Periodo { modo: ModoCalendario; en: string }
+const MODOS_CALENDARIO = [
+  { clave: 'viene', rotulo: 'Lo que viene' }, { clave: 'semana', rotulo: 'Semana' }, { clave: 'mes', rotulo: 'Mes' }
+];
+/** La clave de la página del día para volver al mismo periodo (`DayView`). */
+export const VOLVER_CALENDARIO = 'blp-calendario';
+
+function periodoDeLaDireccion(): Periodo {
+  if (typeof window === 'undefined') return { modo: 'viene', en: '' };
+  const q = new URLSearchParams(window.location.search);
+  const en = q.get('en') ?? '';
+  if (q.get('ver') === 'semana' && esFecha(en)) return { modo: 'semana', en: semanaDe(en) };
+  if (q.get('ver') === 'mes' && /^\d{4}-\d{2}$/.test(en)) return { modo: 'mes', en };
+  return { modo: 'viene', en: '' };
+}
+/** Las fechas que pide un periodo; *Lo que viene*, ninguna: la ventana de siempre. */
+function rangoDe(p: Periodo): { desde: string; hasta: string } | null {
+  if (p.modo === 'semana') return { desde: p.en, hasta: sumarDias(p.en, 6) };
+  if (p.modo === 'mes') { const d = diasDelMes(p.en); return { desde: d[0], hasta: d[d.length - 1] }; }
+  return null;
+}
+const direccionDe = (p: Periodo) => (p.modo === 'viene' ? '/' : `/?ver=${p.modo}&en=${p.en}`);
+
 export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   rol: string; usuario?: string; gerencia?: boolean;
 }) {
@@ -69,6 +104,12 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   // Apagada la conexión (`CRM_APAGADO`), ni se pide.
   const conCRM = !CRM_APAGADO && puedeVer(rol as Rol, 'presupuestos', gerencia);
   const [dias, setDias] = useState<Ocupacion[] | null>(null);
+  // El periodo que se ve, y el último pedido: con dos flechas seguidas, solo
+  // vale la respuesta del último.
+  const [periodo, setPeriodo] = useState<Periodo>(periodoDeLaDireccion);
+  const periodoActual = useRef(periodo);
+  const ultimoPedido = useRef(0);
+  const [moviendo, setMoviendo] = useState(false);
   /**
    * **De dónde viene la reserva** (2026-11-24, lo pidió el cliente: *"en
    * reservas, en la vista de calendario, poder filtrar por Shopify, a mano y
@@ -198,10 +239,15 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
    * anotó. La base para comparar se actualiza igual.
    */
   const cargar = (marcar = false) => {
-    // Sin parámetro: la ventana la decide dias_a_futuro de la planilla.
-    const ocupacion = fetch('/api/ocupacion')
+    // *Lo que viene*, sin parámetro: la ventana la decide dias_a_futuro de la
+    // planilla. Una semana o un mes, con sus fechas.
+    const rango = rangoDe(periodoActual.current);
+    const pedido = ++ultimoPedido.current;
+    const ocupacion = fetch(rango ? `/api/ocupacion?desde=${rango.desde}&hasta=${rango.hasta}` : '/api/ocupacion')
       .then((r) => r.json())
       .then((d) => {
+        if (pedido !== ultimoPedido.current) return;
+        setMoviendo(false);
         if (d.error) return setError(d.error);
         // Si había una carga antes, se compara: qué días ganaron o perdieron gente.
         const antes = anteriores.current;
@@ -222,7 +268,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         setDelSitio(d.delSitio ?? []);
         setCuentas(d.cuentas ?? []);
       })
-      .catch((e) => setError(String(e)));
+      .catch((e) => { if (pedido === ultimoPedido.current) { setMoviendo(false); setError(String(e)); } });
     // Solo para los nombres de menú del formulario manual; si falla, el
     // calendario se dibuja igual y el formulario deja escribirlos a mano.
     // Solo para avisar si una fecha nueva ya estaba en la hoja.
@@ -262,7 +308,60 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     }
     return ocupacion;
   };
-  useEffect(() => { void cargar(); }, []);
+  useEffect(() => {
+    void cargar();
+    // Lo que se abrió es lo que *← Calendario* tiene que devolver: entrar por
+    // el menú a *Lo que viene* olvida el mes que se miró antes.
+    try {
+      if (periodo.modo === 'viene') sessionStorage.removeItem(VOLVER_CALENDARIO);
+      else sessionStorage.setItem(VOLVER_CALENDARIO, direccionDe(periodo));
+    } catch { /* sin sessionStorage, no pasa nada */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * **Cambiar el periodo**: se pide solo la ocupación —las reservas, las
+   * fechas y el equipo ya vienen enteros— y se anota en la dirección, para
+   * que *← Calendario* de la página del día vuelva acá.
+   */
+  const verPeriodo = (p: Periodo) => {
+    periodoActual.current = p;
+    setPeriodo(p);
+    setMoviendo(true);
+    const direccion = direccionDe(p);
+    window.history.replaceState(null, '', direccion);
+    try {
+      if (p.modo === 'viene') sessionStorage.removeItem(VOLVER_CALENDARIO);
+      else sessionStorage.setItem(VOLVER_CALENDARIO, direccion);
+    } catch { /* sin sessionStorage, *← Calendario* vuelve a lo que viene */ }
+    ++ultimoPedido.current;
+    const rango = rangoDe(p);
+    const pedido = ultimoPedido.current;
+    fetch(rango ? `/api/ocupacion?desde=${rango.desde}&hasta=${rango.hasta}` : '/api/ocupacion')
+      .then((r) => r.json())
+      .then((d) => {
+        if (pedido !== ultimoPedido.current) return;
+        setMoviendo(false);
+        if (d.error) return setError(d.error);
+        anteriores.current = { dias: d.ocupacion ?? [], cuando: Date.now() };
+        setDias(d.ocupacion);
+      })
+      .catch((e) => { if (pedido === ultimoPedido.current) { setMoviendo(false); setError(String(e)); } });
+  };
+  const elegirModo = (clave: string) => {
+    const hoyChile = hoy();
+    if (clave === 'semana') {
+      // Desde un mes que no es el de hoy, su primera semana; si no, esta semana.
+      const en = periodo.modo === 'mes' && periodo.en !== mesDe(hoyChile) ? semanaDe(`${periodo.en}-01`) : semanaDe(hoyChile);
+      verPeriodo({ modo: 'semana', en });
+    } else if (clave === 'mes') {
+      verPeriodo({ modo: 'mes', en: periodo.modo === 'semana' ? mesDe(periodo.en) : mesDe(hoyChile) });
+    } else verPeriodo({ modo: 'viene', en: '' });
+  };
+  const moverPeriodo = (n: -1 | 1) => verPeriodo(periodo.modo === 'semana'
+    ? { modo: 'semana', en: sumarDias(periodo.en, 7 * n) }
+    : { modo: 'mes', en: sumarMeses(periodo.en, n) });
+  const tituloPeriodo = periodo.modo === 'semana' ? rangoEnPalabras([periodo.en, sumarDias(periodo.en, 6)])
+    : periodo.modo === 'mes' ? mesEnPalabras(periodo.en) : undefined;
   const alDia = usarAlDia(firma, () => cargar(true));
   // La marca dorada dura un minuto.
   useEffect(() => {
@@ -325,16 +424,25 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
    * justo lo contrario de lo que el cliente pidió. El mes sigue marcado,
    * como una línea antes de la primera semana que lo estrena.
    */
+  /**
+   * **En el pasado, solo lo que pasó** (2026-11-24): un día que se abrió o
+   * que tuvo reservas o algo cotizado. Uno de la regla que nunca se abrió es
+   * ruido. Lo que viene se ve como siempre.
+   */
+  const diasVisibles = useMemo(() => {
+    const hoyChile = hoy();
+    return (dias ?? []).filter((d) => d.fecha >= hoyChile || d.tomadas > 0 || d.presupuestos > 0 || d.capacidad > 0);
+  }, [dias]);
   const semanas = useMemo(() => {
     const grupos: { semana: string; dias: Ocupacion[] }[] = [];
-    for (const d of dias ?? []) {
+    for (const d of diasVisibles) {
       const semana = semanaDe(d.fecha);
       const ultima = grupos[grupos.length - 1];
       if (ultima && ultima.semana === semana) ultima.dias.push(d);
       else grupos.push({ semana, dias: [d] });
     }
     return grupos;
-  }, [dias]);
+  }, [diasVisibles]);
 
   /** De dónde viene una reserva: de una cotización, de Shopify o a mano. */
   const dondeViene = (r: Reserva) => origenDeReserva(r, !!deCotizacion[r.id]);
@@ -381,12 +489,14 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
           rango con su enlace pasa a la fila de los botones. */}
       <p className="text-hueso/60 text-sm mb-6 lg:hidden">
         Toca un día para ver quiénes vienen.{' '}
-        {dias.length > 0 && (
-          <span className="text-hueso/40">
-            {dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}
-          </span>
-        )}
-        <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
+        {periodo.modo === 'viene' && <>
+          {dias.length > 0 && (
+            <span className="text-hueso/40">
+              {dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}
+            </span>
+          )}
+          <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
+        </>}
       </p>
 
       {/* También está en la vista de cada día, pero ahí hay que entrar
@@ -421,6 +531,11 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         {puedeVer(rol as Rol, 'estadisticas', gerencia) && (
           <a href="/estadisticas" className="tecla boton inline-flex items-center">📊 Estadísticas</a>
         )}
+        {/* **En el computador, *Al día* a la derecha de los botones**
+            (2026-11-24): con el marco del periodo, en la fila de los filtros
+            ya no cabía y bajaba solo a otra fila. */}
+        <span className="hidden flex-1 lg:block" />
+        <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
       </div>
         {/* **De dónde viene** (2026-11-24): los mismos botones de la página
             del día, con cuántas reservas hay de cada uno en lo que se ve. **En
@@ -428,6 +543,10 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
             el rango y *Al día* a la derecha en el computador: en la fila de
             los botones no cabían todos. */}
         <div className="mt-3 flex flex-wrap items-center gap-2 lg:mt-2">
+          {/* **El periodo** (2026-11-24): *Lo que viene* como siempre, o una
+              semana o un mes, pasados o por venir, con ◀ ▶. */}
+          <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo} onModo={elegirModo}
+            titulo={tituloPeriodo} onMover={moverPeriodo} />
           <span role="group" aria-label="De dónde viene" className="flex flex-wrap items-center gap-2">
             {QUE_RESERVAS.filter(([k]) => k !== 'todo').map(([k, t]) => {
               const n = porOrigen[k] ?? 0;
@@ -443,11 +562,12 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
           </span>
           <span className="hidden flex-1 lg:block" />
           {/* Solo en el computador: el rango y *Al día*, a la derecha de los filtros. */}
-          <p className="hidden text-[14px] text-hueso/60 lg:block">
-            {dias.length > 0 && <>{dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}</>}
-            <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
-          </p>
-          <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
+          {periodo.modo === 'viene' && (
+            <p className="hidden text-[14px] text-hueso/60 lg:block">
+              {dias.length > 0 && <>{dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}</>}
+              <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
+            </p>
+          )}
         </div>
       </div>
 
@@ -516,7 +636,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
 
       {creando && (
         <ReservaForm
-          fecha={dias[0]?.fecha ?? hoy()}
+          fecha={dias.find((d) => d.fecha >= hoy())?.fecha ?? hoy()}
           menusConocidos={[...new Set([
             // Solo los menús que se venden en reservas: el catálogo también
             // trae la once, el show o el arriendo, que se cotizan y no se
@@ -531,6 +651,13 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         />
       )}
 
+      {semanas.length === 0 && (
+        <p className="rounded-lg border border-hueso/15 bg-panel px-4 py-3 text-[15px] text-hueso/75">
+          {periodo.modo === 'viene' ? 'No hay días abiertos por delante.'
+            : `No hubo días abiertos ni reservas ${periodo.modo === 'semana' ? 'esa semana' : 'ese mes'}.`}
+        </p>
+      )}
+      <div className={moviendo ? 'opacity-50 transition-opacity' : undefined} aria-busy={moviendo}>
       {semanas.map(({ semana, dias: deLaSemana }, i) => {
         const resumen = lineaDeSemana({
           dias: deLaSemana, reservas, grupoGrande: cfg.grupoGrande, crm: delSocio,
@@ -550,7 +677,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         // curso, así que son la de ahora y la que viene. Más adelante se
         // mira poco y a 90 días las tarjetas completas hacían perder la
         // orientación a fuerza de scroll.
-        const lejana = i >= 2;
+        // Una semana o un mes se ven completos: son pocas semanas, y es lo que se vino a mirar.
+        const lejana = periodo.modo === 'viene' && i >= 2;
         const chica = lejana && !abiertas.has(semana);
         const alternar = () => setAbiertas((antes) => {
           const otra = new Set(antes);
@@ -568,7 +696,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
               </h2>
               <span className="h-px flex-1 bg-hueso/10" />
               <span className="text-[13px] text-hueso/55">
-                {(dias ?? []).filter((d) => mesDe(d.fecha) === mes).length} días
+                {((n) => `${n} ${n === 1 ? 'día' : 'días'}`)(diasVisibles.filter((d) => mesDe(d.fecha) === mes).length)}
               </span>
             </div>
           )}
@@ -641,6 +769,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         </div>
         );
       })}
+      </div>
     </>
   );
 }

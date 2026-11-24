@@ -51,6 +51,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Apreta Equipo al pie de la tarjeta para planificar quién trabaja: la '
       + 'tarjeta se da vuelta y muestra el resumen.',
       'Agregar reserva anota a alguien que llamó o escribió por WhatsApp.',
+      'Lo que viene · Semana · Mes, en el marco dorado: Lo que viene muestra '
+      + 'desde hoy, como siempre; Semana y Mes, con ◀ ▶, van a las semanas y '
+      + 'los meses que pasaron para revisar sus reservas. Del pasado salen los '
+      + 'días que se abrieron o que tuvieron reservas. ← Calendario, en un día, '
+      + 'vuelve al mismo periodo.',
       '🛒 Shopify · ✍ A mano · 🤝 Cotización dejan ver solo las reservas que '
       + 'vienen de ahí: la gente, la barra y lo que falta cobrar de cada día '
       + 'cuentan solo esas, y el cupo y el color siguen siendo los del día '
@@ -96,7 +101,15 @@ export const AYUDAS: Record<string, Ayuda> = {
       + '(🛒 Shopify · ✍ A mano · 🤝 Cotización), que se aprieta otra vez para '
       + 'soltar; si lo elegiste en el calendario, el día abre con él puesto. '
       + 'Exportar CSV baja lo que se ve.',
-      'La columna Asistencia dice quién vino; se marca en Turnos.',
+      '✓ Vino y ✕ No vino, en la línea de cada reserva —cerrada o abierta—, '
+      + 'marcan quién vino desde la apertura del día. Los usan el encargado de '
+      + 'turno, operaciones, pagos, la gerencia y el administrador; apretar el '
+      + 'marcado lo deja sin marcar. En un día cerrado es corregirlo: se '
+      + 'confirma con la casilla. La anfitriona marca en la Recepción.',
+      'Al abrir una reserva, en el computador va a la izquierda cómo '
+      + 'ingresarla en Fudo —lo acordado— y a la derecha la mesa: lo que se '
+      + 'sumó, el valor final de Fudo y cómo pagó lo que faltaba (efectivo, '
+      + 'transferencia o tarjeta).',
       'Editar abre la reserva para corregir un teléfono, un menú o el estado '
       + 'del pago. Marcarla Pagada o Abonada le avisa al encargado de pagos, '
       + 'que la revisa.',

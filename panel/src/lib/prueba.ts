@@ -6702,6 +6702,11 @@ console.log('\nLas estadísticas del equipo');
   ok(C.cambioDeBorrarReserva({ ...r0, nombre: ' ', monto: null, personas: 1, menu: '1 × Niños' })
        === 'Se borra la reserva de sin nombre: 1 persona · 1 × Niños · Por pagar',
      'corrección: borrar una reserva dice lo que era, también sin nombre ni monto');
+  // Marcar quién vino en un día cerrado, desde la página del día (2026-11-24).
+  ok(C.cambioDeAsistencia({ nombre: 'Tomás Gutiérrez' }, '', 'Sí') === 'Reserva de Tomás Gutiérrez: asistencia de sin marcar a vino'
+     && C.cambioDeAsistencia({ nombre: ' ' }, 'Sí', 'No') === 'Reserva de sin nombre: asistencia de vino a no vino'
+     && C.cambioDeAsistencia({ nombre: 'Ana' }, 'No', '').endsWith('de no vino a sin marcar'),
+     'la asistencia de un día cerrado se nombra de lo que estaba a lo que queda');
   ok(!/1111|ejemplo\.cl/.test([...C.cambiosDeLaReserva(r0, { ...r0, telefono: '', email: '' }), C.cambioDeBorrarReserva(r0)].join()),
      'corrección de una reserva: el teléfono y el correo nunca van escritos en la lista');
 

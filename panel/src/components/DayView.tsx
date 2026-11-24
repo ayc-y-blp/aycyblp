@@ -24,11 +24,11 @@ import { cuentaEnElCalendario, estadoVisible, lineasDe, totalDe, personasDe,
          folioDe, gentePosible, type Presupuesto, type LineaPresupuesto } from '@/lib/presupuestos';
 import { aCSV } from '@/lib/csv';
 import { ocupaLugar, faltaCobrar, estaAbonada, enPesos } from '@/lib/ocupacion';
-import { Aviso } from './CalendarView';
+import { Aviso, VOLVER_CALENDARIO } from './CalendarView';
 import ReservaForm from './ReservaForm';
 import Dialogo from './Dialogo';
 import { PieCorreccion } from './Correccion';
-import { cambioDeBorrarReserva, textoDeCambios } from '@/lib/correccion';
+import { cambioDeBorrarReserva, cambioDeAsistencia, textoDeCambios } from '@/lib/correccion';
 import PastillaPago from './PastillaPago';
 import Azulejo from './Azulejo';
 import RectificarReserva from './RectificarReserva';
@@ -155,6 +155,34 @@ function PartesSinCortar({ texto, separador }: { texto: string; separador: strin
  */
 type Filtro = 'todas' | 'pagadas' | 'abonadas' | 'sinPagar';
 
+/**
+ * **✓ Vino / ✕ No vino** de una reserva (2026-11-24): el marcado va relleno,
+ * en verde o en rojo, como en la Recepción; apretarlo otra vez lo deja sin
+ * marcar. Va en la línea de la reserva, cerrada o abierta.
+ */
+function BotonesAsistencia({ nombre, asistencia, ocupado, onMarcar }: {
+  nombre: string; asistencia: string; ocupado: boolean; onMarcar: (a: string) => void;
+}) {
+  return (
+    <span role="group" aria-label={`Asistencia de ${nombre || 'la reserva'}`} className="flex w-full gap-1.5 lg:w-auto">
+      <button type="button" aria-pressed={asistencia === ASISTENCIA.vino} disabled={ocupado}
+        onClick={() => onMarcar(ASISTENCIA.vino)}
+        className={`tecla min-h-[40px] flex-1 whitespace-nowrap rounded-xl border-2 px-3 text-[15px] font-bold lg:flex-none ${
+          asistencia === ASISTENCIA.vino ? 'border-verde-fuerte bg-verde-fuerte text-tinta'
+          : 'border-verde-fuerte/70 text-verde-texto hover:bg-verde/10'}`}>
+        ✓ Vino
+      </button>
+      <button type="button" aria-pressed={asistencia === ASISTENCIA.noVino} disabled={ocupado}
+        onClick={() => onMarcar(ASISTENCIA.noVino)}
+        className={`tecla min-h-[40px] flex-1 whitespace-nowrap rounded-xl border-2 px-3 text-[15px] font-bold lg:flex-none ${
+          asistencia === ASISTENCIA.noVino ? 'border-rojo-fuerte bg-rojo-fuerte text-white'
+          : 'border-rojo-fuerte/70 text-rojo-texto hover:bg-rojo/10'}`}>
+        ✕ No vino
+      </button>
+    </span>
+  );
+}
+
 export default function DayView(
   { fecha, rol, usuario, gerencia = false }: { fecha: string; rol: string; usuario: string; gerencia?: boolean }
 ) {
@@ -178,6 +206,20 @@ export default function DayView(
   // Llevar el día —pedir cupo, soltar, avisar—, no editar la fecha (2026-11-12).
   const conDias = puede(rol as Rol, 'operarDia');
   const [todas, setTodas] = useState<Reserva[] | null>(null);
+  // Marcar quién vino en un día cerrado: la reserva, lo que queda y su casilla.
+  const [marcando, setMarcando] = useState<{ r: Reserva; a: string } | null>(null);
+  const [asisConfirmada, setAsisConfirmada] = useState(false);
+  const [asisGuardando, setAsisGuardando] = useState(false);
+  const [asisError, setAsisError] = useState('');
+  // *← Calendario* vuelve a la semana o al mes que se estaba mirando
+  // (2026-11-24): lo anota el calendario al cambiar de periodo.
+  const [volverA, setVolverA] = useState('/');
+  useEffect(() => {
+    try {
+      const a = sessionStorage.getItem(VOLVER_CALENDARIO);
+      if (a && a.startsWith('/?ver=')) setVolverA(a);
+    } catch { /* sin sessionStorage, vuelve a lo que viene */ }
+  }, []);
   /** El cupo de este día, para el bloque de sobrecupo (2026-11-12). */
   const [cupoDia, setCupoDia] = useState<CupoDelDia | null>(null);
   const [capacidadMaxima, setCapacidadMaxima] = useState(900);
@@ -488,6 +530,45 @@ export default function DayView(
    * ventana con lo que se borra, la casilla que lo confirma y *Borrar la
    * reserva*. Esa línea es lo que queda en la bitácora.
    */
+  /**
+   * **Quién vino, desde la página del día** (2026-11-24, lo pidió el
+   * cliente: *"necesito poder marcar la asistencia en esta vista también,
+   * como encargado de turno para arriba"*). La misma llamada de la Recepción,
+   * con el permiso `asistencia`. Apretar el que ya está la deja sin marcar.
+   * **En un día cerrado es corregirlo**: se abre la lista con su casilla.
+   */
+  function marcarAsistencia(r: Reserva, a: string) {
+    const nueva = r.asistencia === a ? '' : a;
+    if (diaCerrado) {
+      setAsisConfirmada(false); setAsisError(''); setMarcando({ r, a: nueva });
+      return;
+    }
+    void mandarAsistencia(r, nueva);
+  }
+  async function mandarAsistencia(r: Reserva, a: string, cambios?: string[]) {
+    setAsisGuardando(true);
+    // Se pinta antes de que vuelva el servidor, como en la Recepción.
+    setTodas((x) => x && x.map((y) => (y.fila === r.fila ? { ...y, asistencia: a } : y)));
+    const res = await fetch(`/api/reservas/${r.fila}`, {
+      method: 'PATCH', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        asistencia: a, ...(a === ASISTENCIA.vino ? {} : { llegaron: null }),
+        ...(cambios ? { correccion: { motivo: textoDeCambios(cambios) } } : {})
+      })
+    });
+    const d = await res.json().catch(() => ({ error: 'No se pudo guardar.' }));
+    setAsisGuardando(false);
+    if (!res.ok || d.error) {
+      if (cambios) { setAsisError(d.error || 'No se pudo guardar.'); return; }
+      avisar(d.error || 'No se pudo guardar.', 'atencion');
+      void cargar();
+      return;
+    }
+    setMarcando(null);
+    avisar(`${r.nombre || 'La reserva'}: ${a === ASISTENCIA.vino ? 'vino' : a === ASISTENCIA.noVino ? 'no vino' : 'sin marcar'}`);
+    void cargar();
+  }
+
   function borrar(r: Reserva) {
     if (diaCerrado) { setBorrarConfirmado(false); setErrorBorrar(''); setBorrando(r); return; }
     if (!confirm(`¿Borrar la reserva de ${r.nombre || r.id}? No se puede deshacer.`)) return;
@@ -525,6 +606,8 @@ export default function DayView(
    * registro de las mesas lo leen quienes ven la plata del día.
    */
   const puedeMesa = puede(rol as Rol, 'asistencia') && infoDia.abierto && !diaCerrado;
+  // Quién vino: desde la apertura, y en un día cerrado solo quien corrige.
+  const puedeAsistencia = puede(rol as Rol, 'asistencia') && infoDia.abierto && (!diaCerrado || puedeCorregir);
   const verMesas = puede(rol as Rol, 'rectificar') || puede(rol as Rol, 'informe');
   const opcionesDe = (r: Reserva) => opcionesParaAgregar(r.menu, paraReservar(catalogo).map((m) => m.nombre));
   const vinieron = turnosDelDia.filter((t) => t.asistencia === VINO.si).length;
@@ -595,7 +678,7 @@ export default function DayView(
                 se aprieta en esta página, así que va en 44px, con borde de 2px
                 y letra de 15px en negrita. Sigue sin relleno: el único dorado
                 de la pantalla es *Agregar reserva*. */}
-            <a href="/" className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
+            <a href={volverA} className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
               ← Calendario
             </a>
             <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0 lg:text-lg">
@@ -1212,11 +1295,16 @@ export default function DayView(
                     el ícono) y cuánta gente. Lo que no puede quedar escondido
                     —un aviso de la recepción, un pedido repetido— lleva su
                     marca también acá. */}
+                {/* **Quién vino, en la línea** (2026-11-24, lo pidió el cliente:
+                    *"también colapsado… vino o no vino, a partir de las 13
+                    horas"*): al lado de la línea en el computador, debajo en
+                    el celular; se ve cerrada y abierta. */}
+                <div className={`flex flex-wrap items-center lg:flex-nowrap ${abierta ? 'bg-oro/10' : ''}`}>
                 <button type="button" aria-expanded={abierta}
                   onClick={() => setReservaAbierta(abierta ? '' : r.id)}
-                  className={`tecla flex min-h-[56px] w-full items-center gap-3 px-3 py-2 text-left
+                  className={`tecla flex min-h-[56px] w-full min-w-0 items-center gap-3 px-3 py-2 text-left lg:w-auto lg:flex-1
                               focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oro
-                              ${abierta ? 'bg-oro/10' : 'hover:bg-hueso/5'}`}>
+                              ${abierta ? '' : 'hover:bg-hueso/5'}`}>
                   <SignoAbrir abierta={abierta} />
                   <span className="min-w-0 flex-1">
                     <span className={`block break-words text-[16px] font-bold leading-tight ${libera ? 'line-through' : ''}`}>
@@ -1248,6 +1336,13 @@ export default function DayView(
                     <span className="ml-1 text-[13px] font-normal text-hueso/65">pers.</span>
                   </span>
                 </button>
+                {puedeAsistencia && !libera && (
+                  <div className="w-full px-3 pb-2 lg:w-auto lg:py-2 lg:pl-0">
+                    <BotonesAsistencia nombre={r.nombre} asistencia={r.asistencia ?? ''} ocupado={asisGuardando}
+                      onMarcar={(a) => marcarAsistencia(r, a)} />
+                  </div>
+                )}
+                </div>
 
                 {/* **El aviso de la recepción, a la vista sin abrirla**
                     (2026-11-11; desde el 2026-11-13 fuera del detalle y en
@@ -1303,6 +1398,7 @@ export default function DayView(
                         <span className={ROTULO_AZULEJO}>pago</span>
                       </div>
                       <div className={`${AZULEJO} order-4 col-span-2 sm:col-span-1`}>
+                        {/* Se lee: se marca en la línea de arriba (2026-11-24). */}
                         <span className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full
                                           border-2 px-2.5 py-0.5 text-[14px] font-bold ${
                           r.asistencia === VINO.si ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
@@ -1311,22 +1407,33 @@ export default function DayView(
                           {r.asistencia === VINO.si ? '✓ Vino'
                             : r.asistencia === VINO.no ? '✕ No vino' : '○ Sin marcar'}
                         </span>
-                        {/* Se lee, no se marca: *Vino / No vino* vive en /turnos. */}
                         <span className={ROTULO_AZULEJO}>asistencia</span>
                       </div>
                     </div>
 
-                    {/* **Cómo ingresarla en Fudo, a todo el ancho**: es lo que
-                        se viene a mirar al abrir la mesa. */}
-                    {ocupaLugar(r) && <IngresoFudo ingreso={r.ingreso} />}
-
-                    {/* **La mesa** (2026-11-17): lo que se sumó y el valor
-                        final. La misma pieza de la recepción. */}
-                    {ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
-                      && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0) && (
-                      <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
-                        cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
-                    )}
+                    {/* **Lo acordado y lo que pasó, lado a lado** (2026-11-24,
+                        lo pidió el cliente: *"al lado de la información que
+                        viene desde la cotización, agregar el mismo campo, pero
+                        para ingresar la realidad… el total de Fudo, pagó
+                        diferencia por transferencia, efectivo o tarjeta"*): en
+                        el computador, cómo ingresarla en Fudo a la izquierda y
+                        la mesa —el valor final y cómo pagó lo que faltaba— a la
+                        derecha. En el celular, una debajo de la otra. Son las
+                        mismas piezas de la Recepción. */}
+                    {(() => {
+                      const conMesa = ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
+                        && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0);
+                      if (!ocupaLugar(r)) return null;
+                      return (
+                        <div className={conMesa ? 'space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3 lg:space-y-0' : ''}>
+                          <IngresoFudo ingreso={r.ingreso} />
+                          {conMesa && (
+                            <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
+                              cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* **La rectificación del día** (2026-11-12): qué cambió,
                         quién, cuándo y por qué; el descuento por aprobar con
@@ -1479,6 +1586,21 @@ export default function DayView(
           onCerrar={() => setRectificando(null)}
           onListo={() => { setRectificando(null); void cargar(); }} />
       )}
+
+      {marcando && (() => {
+        const cambios = [cambioDeAsistencia(marcando.r, marcando.r.asistencia ?? '', marcando.a)];
+        return (
+          <Dialogo titulo={`Asistencia · ${marcando.r.nombre || 'sin nombre'}`} ancho="max-w-lg"
+            onCerrar={() => { if (!asisGuardando) setMarcando(null); }}>
+            <p className="mt-2 text-[15px] text-hueso/80">El día está cerrado: marcarla es corregirlo.</p>
+            {asisError && <p className="mt-2 text-[14px] font-semibold text-rojo-texto">{asisError}</p>}
+            <PieCorreccion modo="apilado" cambios={cambios} confirmado={asisConfirmada} onConfirmado={setAsisConfirmada}
+              guardarDice="Guardar corrección" guardandoDice="Guardando…" guardando={asisGuardando}
+              onCancelar={() => setMarcando(null)}
+              onGuardar={() => void mandarAsistencia(marcando.r, marcando.a, cambios)} />
+          </Dialogo>
+        );
+      })()}
 
       {borrando && (() => {
         const cambios = [cambioDeBorrarReserva({ ...borrando, menu: menuEfectivo(borrando), personas: personasEfectivas(borrando) })];
