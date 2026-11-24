@@ -217,6 +217,12 @@ export default function DayView(
    * una cotización. Se suma al filtro del pago y a *Mías*; vacío, todas.
    */
   const [deDonde, setDeDonde] = useState<Exclude<Tipo, 'todo'> | ''>('');
+  // **Abre con el filtro del calendario** (2026-11-24): `?de=shopify` al
+  // tocar un día con el filtro de origen puesto. Una vez, al llegar.
+  useEffect(() => {
+    const de = new URLSearchParams(window.location.search).get('de');
+    if (de && QUE_RESERVAS.some(([k]) => k === de && k !== 'todo')) setDeDonde(de as Exclude<Tipo, 'todo'>);
+  }, []);
   const [editando, setEditando] = useState<Reserva | null>(null);
   /** La reserva de un día cerrado que se está por borrar, con su casilla. */
   const [borrando, setBorrando] = useState<Reserva | null>(null);

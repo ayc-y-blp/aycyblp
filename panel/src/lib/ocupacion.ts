@@ -112,6 +112,64 @@ export function deEseDia(reservas: Reserva[], fecha: Fecha): Reserva[] {
  * todavía dice "pending" se contaba como pagada, y esa plata no aparecía en
  * ninguna parte. El rótulo tenía razón; el cálculo se había quedado atrás.
  */
+/** La gente y la plata de un día: lo que la tarjeta del calendario cuenta de sus reservas. */
+export interface GenteDelDia {
+  pagadas: number; porPagar: number; abonadas: number; tomadas: number; porCobrar: number; sinMonto: number;
+}
+
+/**
+ * **Cuánta gente y cuánta plata tiene un día**, de las reservas que se le
+ * den (2026-11-24: salió de `ocupacionDe()` para poder contar solo las de un
+ * origen, `soloDeEsas()`). Solo las que ocupan lugar.
+ */
+export function genteDelDia(reservas: Reserva[], fecha: string): GenteDelDia {
+  const delDia = deEseDia(reservas, fecha).filter(ocupaLugar);
+
+  let pagadas = 0;
+  let porPagar = 0;
+  let abonadas = 0;
+  for (const r of delDia) {
+    // **Lo rectificado cambia los números del día** (2026-11-12, lo decidió
+    // el cliente): si llegaron 4 y no 6, el día cuenta 4. **Y la gente que
+    // se sumó a la mesa** (2026-11-17, `mesa.ts`) también cuenta.
+    const n = personasEnLaMesa(r);
+    if (faltaCobrar(r)) porPagar += n;
+    else pagadas += n;
+    if (estaAbonada(r)) abonadas += n;
+  }
+
+  // La plata que hay que cobrar el mismo día, y cuántas reservas no tienen
+  // monto. Las segundas se cuentan aparte a propósito: un total que omite
+  // filas en silencio es peor que uno que dice cuántas le faltan.
+  let porCobrar = 0;
+  let sinMonto = 0;
+  for (const r of delDia) {
+    if (!faltaCobrar(r)) continue;
+    if (r.monto == null) sinMonto++;
+    else porCobrar += Number(r.monto) || 0;
+  }
+  return { pagadas, porPagar, abonadas, tomadas: pagadas + porPagar, porCobrar, sinMonto };
+}
+
+/**
+ * **El día, contando solo algunas reservas** (2026-11-24, lo pidió el
+ * cliente: *"en reservas, en la vista de calendario, poder filtrar por
+ * Shopify, a mano y cotizados"*). Para la tarjeta del calendario con el
+ * filtro de origen puesto: la gente, la barra y lo que falta cobrar salen de
+ * `reservas` (las de ese origen); **lo del día se queda como es** —el cupo,
+ * lo que queda, el sobrecupo, el estado y su color—, porque el día lo
+ * comparten todas. Lo cotizado y sin ganar (rosado) se ve solo con
+ * `conCotizado`: es del mundo de las cotizaciones.
+ */
+export function soloDeEsas(d: Ocupacion, reservas: Reserva[], conCotizado: boolean): Ocupacion {
+  return {
+    ...d,
+    ...genteDelDia(reservas, d.fecha),
+    presupuestos: conCotizado ? d.presupuestos : 0,
+    presupuestadas: conCotizado ? d.presupuestadas : 0
+  };
+}
+
 /**
  * **Lo cotizado y sin confirmar NO entra en ninguna cuenta de este archivo.**
  *
@@ -130,32 +188,7 @@ export function ocupacionDe(
   cortes = CORTES,
   posibles?: Map<string, Posibles>
 ): Ocupacion {
-  const delDia = deEseDia(reservas, dia.fecha).filter(ocupaLugar);
-
-  let pagadas = 0;
-  let porPagar = 0;
-  let abonadas = 0;
-  for (const r of delDia) {
-    // **Lo rectificado cambia los números del día** (2026-11-12, lo decidió
-    // el cliente): si llegaron 4 y no 6, el día cuenta 4. **Y la gente que
-    // se sumó a la mesa** (2026-11-17, `mesa.ts`) también cuenta.
-    const n = personasEnLaMesa(r);
-    if (faltaCobrar(r)) porPagar += n;
-    else pagadas += n;
-    if (estaAbonada(r)) abonadas += n;
-  }
-  const tomadas = pagadas + porPagar;
-
-  // La plata que hay que cobrar el mismo día, y cuántas reservas no tienen
-  // monto. Las segundas se cuentan aparte a propósito: un total que omite
-  // filas en silencio es peor que uno que dice cuántas le faltan.
-  let porCobrar = 0;
-  let sinMonto = 0;
-  for (const r of delDia) {
-    if (!faltaCobrar(r)) continue;
-    if (r.monto == null) sinMonto++;
-    else porCobrar += Number(r.monto) || 0;
-  }
+  const { pagadas, porPagar, abonadas, tomadas, porCobrar, sinMonto } = genteDelDia(reservas, dia.fecha);
   // Una sola definición de "cerrado", compartida con la pantalla de fechas.
   // Ver estaCerrado(): falla cerrando a propósito.
   const bloqueada = estaCerrado(dia.estado);

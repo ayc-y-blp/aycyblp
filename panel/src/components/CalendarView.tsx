@@ -39,6 +39,8 @@ import { MarcaAhora } from './FechaDia';
 import BandejaAprobaciones from './BandejaAprobaciones';
 import { usarAlDia, BarraAlDia, horaDe } from './AlDia';
 import { diferencias, MARCA_DURA } from '@/lib/cambios';
+import { QUE_RESERVAS, origenDeReserva, type Tipo } from '@/lib/estadisticas';
+import { ocupaLugar, soloDeEsas } from '@/lib/ocupacion';
 
 /** El color de cada aviso de la línea de la semana: el mismo significado que en el resto del panel. */
 const TONO: Record<Tono, string> = {
@@ -67,6 +69,13 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   // Apagada la conexión (`CRM_APAGADO`), ni se pide.
   const conCRM = !CRM_APAGADO && puedeVer(rol as Rol, 'presupuestos', gerencia);
   const [dias, setDias] = useState<Ocupacion[] | null>(null);
+  /**
+   * **De dónde viene la reserva** (2026-11-24, lo pidió el cliente: *"en
+   * reservas, en la vista de calendario, poder filtrar por Shopify, a mano y
+   * cotizados"*). La misma pieza de la página del día y de Estadísticas
+   * (`QUE_RESERVAS`): se aprieta para filtrar y otra vez para soltar.
+   */
+  const [deDonde, setDeDonde] = useState<Exclude<Tipo, 'todo'> | ''>('');
   const pronostico = usePronostico();
   const [error, setError] = useState('');
   const [creando, setCreando] = useState(false);
@@ -327,6 +336,23 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
     return grupos;
   }, [dias]);
 
+  /** De dónde viene una reserva: de una cotización, de Shopify o a mano. */
+  const dondeViene = (r: Reserva) => origenDeReserva(r, !!deCotizacion[r.id]);
+  /** Cuántas reservas de cada origen hay en los días que se ven, para el botón. */
+  const porOrigen = useMemo(() => {
+    const fechas = new Set((dias ?? []).map((d) => d.fecha));
+    const n: Record<string, number> = { shopify: 0, mano: 0, cotizacion: 0 };
+    for (const r of reservas) if (fechas.has(r.fecha) && ocupaLugar(r)) n[dondeViene(r)]++;
+    return n;
+  }, [dias, reservas, deCotizacion]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * **El día que se dibuja**: con el filtro puesto, la gente, la barra y el
+   * pago salen solo de las reservas de ese origen (`soloDeEsas()`); el cupo,
+   * el estado y el color siguen siendo los del día. Sin filtro, el de siempre.
+   */
+  const verDia = (d: Ocupacion): Ocupacion => !deDonde ? d
+    : soloDeEsas(d, reservas.filter((r) => r.fecha === d.fecha && dondeViene(r) === deDonde), deDonde === 'cotizacion');
+
   if (error) return <Aviso error={error} />;
   if (!dias) return <p className="text-hueso/50">Cargando…</p>;
 
@@ -366,7 +392,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
       {/* También está en la vista de cada día, pero ahí hay que entrar
           primero. Una reserva que llega por teléfono se anota sin saber
           todavía de qué día es: la fecha se elige en el formulario. */}
-      <div className="mb-6 flex flex-wrap gap-3 lg:mb-3">
+      <div className="mb-6 lg:mb-3">
+      <div className="flex flex-wrap gap-3">
         {puede(rol as Rol, 'anotar') ? (
           <button onClick={() => setCreando(true)}
             className="boton boton-relleno min-h-[48px] text-[15px] lg:min-h-[44px]">
@@ -394,13 +421,34 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         {puedeVer(rol as Rol, 'estadisticas', gerencia) && (
           <a href="/estadisticas" className="tecla boton inline-flex items-center">📊 Estadísticas</a>
         )}
-        {/* Solo en el computador: el rango y *Al día*, en esta misma fila. */}
-        <p className="hidden self-center text-[14px] text-hueso/60 lg:block">
-          {dias.length > 0 && <>{dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}</>}
-          <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
-        </p>
-        <span className="hidden flex-1 lg:block" />
-        <div className="hidden self-center lg:block"><BarraAlDia {...alDia} className="" /></div>
+      </div>
+        {/* **De dónde viene** (2026-11-24): los mismos botones de la página
+            del día, con cuántas reservas hay de cada uno en lo que se ve. **En
+            su propio renglón**, justo encima de las semanas que filtran, con
+            el rango y *Al día* a la derecha en el computador: en la fila de
+            los botones no cabían todos. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 lg:mt-2">
+          <span role="group" aria-label="De dónde viene" className="flex flex-wrap items-center gap-2">
+            {QUE_RESERVAS.filter(([k]) => k !== 'todo').map(([k, t]) => {
+              const n = porOrigen[k] ?? 0;
+              const elegido = deDonde === k;
+              return (
+                <button key={k} type="button" aria-pressed={elegido} disabled={!n && !elegido}
+                  onClick={() => setDeDonde(elegido ? '' : k as Exclude<Tipo, 'todo'>)}
+                  className={`boton rounded-full disabled:opacity-40 ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
+                  {t} <span className="tabular-nums text-hueso/65">{n}</span>
+                </button>
+              );
+            })}
+          </span>
+          <span className="hidden flex-1 lg:block" />
+          {/* Solo en el computador: el rango y *Al día*, a la derecha de los filtros. */}
+          <p className="hidden text-[14px] text-hueso/60 lg:block">
+            {dias.length > 0 && <>{dias.length} días, hasta {enPalabras(dias[dias.length - 1].fecha)}.{' '}</>}
+            <a href="/config" className="text-oro hover:underline">Cambiar el rango</a>.
+          </p>
+          <div className="hidden lg:block"><BarraAlDia {...alDia} className="" /></div>
+        </div>
       </div>
 
       {avisoPlanilla && (
@@ -569,14 +617,14 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
             {chica ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                 {deLaSemana.map((d) => (
-                  <DiaCompacto key={d.fecha} d={d} onAbrir={alternar}
+                  <DiaCompacto key={d.fecha} d={verDia(d)} onAbrir={alternar}
                     cambio={marcas.delta[d.fecha] ? { delta: marcas.delta[d.fecha], desde: marcas.desde } : undefined} />
                 ))}
               </div>
             ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-2 xl:grid-cols-5">
             {deLaSemana.map((d) => (
-              <TarjetaDia key={d.fecha} d={d} clima={pronostico.get(d.fecha)}
+              <TarjetaDia key={d.fecha} d={verDia(d)} clima={pronostico.get(d.fecha)} de={deDonde}
                 delSocio={delSocio[d.fecha]}
                 conEquipo={conEquipo} conDias={conDias}
                 cambio={marcas.delta[d.fecha] ? { delta: marcas.delta[d.fecha], desde: marcas.desde } : undefined}
