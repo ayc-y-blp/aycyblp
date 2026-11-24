@@ -28,7 +28,7 @@ estilo.
 
 Menú, tarjetas que giran, carruseles, desplegables y el selector de idiomas son
 CSS o `<details>`. Las excepciones están decididas una por una (el calendario
-de reserva con la tienda, la sugerencia de idioma y recordar día/noche) y **no
+de reserva con la tienda, la sugerencia de idioma, recordar día/noche y el cotizador de promociones) y **no
 sientan precedente**. Un widget de terceros rompe la identidad visual y esta
 regla.
 

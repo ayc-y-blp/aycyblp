@@ -2245,7 +2245,10 @@ export default function CotizacionDialogo({
                   // adentro, con su borde fino de siempre.
                   <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-2 lg:flex lg:items-start
                                                   lg:gap-2 lg:px-3 lg:py-2`}>
-                    <p className={`mb-2 ${TITULO_GRUPO} lg:mb-0 lg:flex lg:min-h-[44px] lg:w-[9.5rem] lg:shrink-0
+                    {/* Los botones de agregar van a 40px en el computador (2026-11-23): con
+                        el karting y las actividades de otras empresas, el catálogo crece
+                        y las dos filas se doblan; así el paso 3 sigue cabiendo. */}
+                    <p className={`mb-2 ${TITULO_GRUPO} lg:mb-0 lg:flex lg:min-h-[40px] lg:w-[9.5rem] lg:shrink-0
                                   lg:items-center`}>
                       {g.titulo}
                       {n === 0 && <span className="hidden lg:inline"><AyudaCorta tema="agregarProducto" /></span>}
@@ -2258,7 +2261,7 @@ export default function CotizacionDialogo({
                         return (
                           <button key={m.nombre} type="button" onClick={() => agregar(m)} disabled={ya}
                             title={ya ? 'Ya está en la cotización: cambia la cantidad en su línea' : undefined}
-                            className={`boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2 ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
+                            className={`boton min-h-[48px] text-[14px] lg:min-h-[40px] lg:px-2 lg:text-[13px] ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
                             {ya ? '✓' : '+'} {m.nombre}
                             <span className={`ml-1 text-hueso/60 ${ya ? 'lg:hidden' : ''}`}>
                               {ya ? '· ya está'
@@ -2269,7 +2272,7 @@ export default function CotizacionDialogo({
                         );
                       })}
                       {g.otra && (
-                        <button type="button" className="boton min-h-[48px] text-[14px] lg:min-h-[44px] lg:px-2"
+                        <button type="button" className="boton min-h-[48px] text-[14px] lg:hidden"
                           onClick={() => setLineas([...vistas, {
                             presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
                             personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
@@ -2301,8 +2304,14 @@ export default function CotizacionDialogo({
             <div className={`${marcoGrupo()} p-3 lg:px-3 lg:py-2`}>
             <p className={`mb-2 ${TITULO_GRUPO} lg:hidden`}>En la cotización</p>
             {vistas.length === 0 ? (
-              <p className="rounded border border-dashed border-hueso/20 p-4 text-[14px] text-hueso/60">
+              <p className="flex flex-wrap items-center gap-3 rounded border border-dashed border-hueso/20 p-4 text-[14px] text-hueso/60">
                 Todavía no hay nada cotizado.
+                <button type="button" className="boton hidden min-h-[36px] !px-2 text-[13px] lg:inline-flex"
+                  onClick={() => setLineas([...vistas, {
+                    presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
+                    personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
+                  + Otra línea
+                </button>
               </p>
             ) : (
               // **En el computador, una tabla** (2026-11-21): el nombre de cada
@@ -2312,10 +2321,20 @@ export default function CotizacionDialogo({
               // Los nombres de cada campo siguen ahí para un lector de pantalla.
               <ul className="space-y-2 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto] lg:gap-x-4
                              lg:gap-y-1.5 lg:space-y-0">
-                <li aria-hidden className="hidden border-2 border-transparent px-3 text-[13px] font-medium uppercase
+                <li className="hidden border-2 border-transparent px-3 text-[13px] font-medium uppercase
                                            tracking-wide text-hueso/60 lg:col-span-full lg:grid lg:grid-cols-subgrid
                                            lg:items-center">
-                  <span className={`${TITULO_GRUPO} normal-case tracking-normal text-hueso`}>En la cotización</span>
+                  {/* En el computador, *+ Otra línea* va acá, junto a lo cotizado, y no
+                      en la fila de los extras: con más extras esa fila se doblaba. */}
+                  <span className={`${TITULO_GRUPO} flex items-center gap-3 normal-case tracking-normal text-hueso`}>
+                    En la cotización
+                    <button type="button" className="boton min-h-[36px] !px-2 text-[13px] font-normal"
+                      onClick={() => setLineas([...vistas, {
+                        presupuesto: p?.id ?? '', concepto: 'Otro', cantidad: 1, precio: 0,
+                        personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 }])}>
+                      + Otra línea
+                    </button>
+                  </span>
                   <span>Cantidad</span>
                   <span className="flex items-center">Precio c/u <AyudaCorta tema="precioLinea" /></span>
                   <span className="flex items-center">Descuento <AyudaCorta tema="descuentoLinea" /></span>

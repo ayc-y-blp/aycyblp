@@ -320,16 +320,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *Visitas · Eventos*, y va en la fila de *Volver* para que el marco del
   periodo quepa en una) y en la página del día, al lado de *Mías*. Ver
   `panel/CLAUDE.md`, "Filtrar por de dónde viene la reserva".
-- **Las promociones del sitio, la mitad del panel** (23 y 24-11-2026, PR
+- **Las promociones del sitio y su cotizador** (23 y 24-11-2026, PR #338
   abierto, espera el *"mergea"*): *Productos → 🎁 Promociones* (una promoción es
   una receta de productos, con su descuento, y se conecta a un bloque de
   `promociones.html`), *Lo cobra otra empresa* en el catálogo (el karting va
   aparte del total, con su detalle, y la vendedora lo ve *🤝 por coordinar*),
   *Las del sitio van a* en Configuración, las rutas públicas del cotizador, la
-  ventana que avisa al vendedor y el link de campaña por promoción. **El
-  cotizador en `promociones.html` va en el PR siguiente**, después del merge:
-  será la cuarta excepción de JavaScript del sitio (decidido por el cliente:
-  *total en vivo*). Ver `panel/CLAUDE.md`, "Las promociones del sitio".
+  ventana que avisa al vendedor y el link de campaña por promoción, **y el
+  cotizador en `promociones.html`** (`assets/js/cotizador.js`, la cuarta
+  excepción de JavaScript del sitio, decidida por el cliente: *total en
+  vivo*). En el mismo PR: mientras no haya promociones conectadas en el panel
+  de producción, la página queda igual que hoy. Ver `panel/CLAUDE.md`, "Las
+  promociones del sitio", y `CLAUDE.md`, "El cotizador de promociones".
   **Por decidir**: si una promoción nueva (*Karting*) puede crear su propio
   bloque desde el panel, o cada bloque nuevo sigue siendo un PR del sitio.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
@@ -1025,8 +1027,9 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 
 **Del sitio**
 
-- **Cero JavaScript para interfaz**, con tres excepciones decididas que no
-  sientan precedente: `reserva.js`, `idioma.js` y `tema.js`. Menú,
+- **Cero JavaScript para interfaz**, con cuatro excepciones decididas que no
+  sientan precedente: `reserva.js`, `idioma.js`, `tema.js` y `cotizador.js`
+  (el cotizador de promociones, 2026-11-23). Menú,
   tarjetas que giran, carruseles y selector de idiomas son CSS o
   `<details>`.
 - **Tres idiomas generados por `traducir.py`** en vez de duplicar a mano
@@ -1508,7 +1511,7 @@ misma pasada.
 - Fotografía real como protagonista (solo fotos del negocio, sin stock),
   **Fraunces** y **Work Sans**, dorado sobre papel tibio de día y sobre negro
   de noche, **sin signos de exclamación ni superlativos**.
-- **Cero JavaScript para interfaz** (las tres excepciones no sientan
+- **Cero JavaScript para interfaz** (las cuatro excepciones no sientan
   precedente).
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
   `precios.json`, los textos en el español de la raíz.

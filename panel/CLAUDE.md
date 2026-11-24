@@ -235,9 +235,14 @@ Y yo en el sistema necesito en productos una subcategoría promociones"*.
 Decidió tres cosas (*Total en vivo*, *Aparte del total*, *Enviada de
 inmediato*) y sumó tres más mientras se armaba: el aviso al vendedor al entrar,
 elegir si una promoción muestra el cotizador, y un link por promoción para las
-campañas. **Este PR es la mitad del panel**; el cotizador en
-`promociones.html` va en un PR aparte, después de mergear éste (el sitio de
-una versión de prueba llama al panel de producción).
+campañas. **El cotizador en `promociones.html` va en el mismo PR** (ver
+`CLAUDE.md` de la raíz, "El cotizador de promociones"): una versión de prueba
+del sitio llama al panel de producción con `prueba: true`, y mientras no haya
+promociones conectadas en producción la página queda como antes.
+**De paso, en el paso 3 de cotizar** los botones para agregar productos van a
+40px y 13px en el computador, y *+ Otra línea* va en la cabecera de *En la
+cotización*: con el karting y la clase de parrilla, la fila de los extras se
+doblaba y la ventana medía 654px; ahora 612.
 
 ### *Productos → 🎁 Promociones* (`lib/promociones.ts`, `PromocionesEditor`)
 
