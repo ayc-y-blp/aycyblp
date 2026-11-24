@@ -18,7 +18,7 @@ import { exigir, exigirVer, quienEs } from '@/lib/permisos';
 import {
   leerPresupuestos, leerLineasPresupuesto, guardarPresupuesto, guardarLineas,
   borrarPresupuesto, leerMenus, leerConfig, leerClientes, leerFechas, anotar, leerCobros,
-  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres, leerNotasOCrear
+  sincronizarReserva, leerReservas, leerVendedores, leerUsuarios, leerCierres, leerNotasOCrear, leerPromociones
 } from '@/lib/datos';
 import { HOJA_CIERRES } from '@/lib/cierres';
 import { HOJA_NOTAS, notasVisibles } from '@/lib/notas';
@@ -31,7 +31,7 @@ import {
 import {
   topesDe, aprobadasDe, aplicarTopes, sobreElTope, escribirPedido, leerPedido, marcaCondiciones,
   condicionesEspecialesDe, frasePedido, vigenciaHasta, diasAlEvento, NOMBRE_CONDICION, valorCondicion, minimosAprobados,
-  type CondicionesCotizacion, type Recorte
+  type CondicionesCotizacion, type Recorte, type Topes
 } from '@/lib/condiciones';
 import {
   prepararLineas, esDiaPublico, conCliente, ESTADOS_A_MANO, grupoDe, otrasAlternativas, reglaShowDe,
@@ -42,7 +42,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
-import { avisosDelSitio } from '@/lib/promociones';
+import { avisosDelSitio, HOJA_PROMOCIONES, promocionDe, beneficioDePromocion, type Promocion } from '@/lib/promociones';
 import { hoy, esFecha, sumarDias } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { guardaDelDia } from '@/lib/guardaCierre';
@@ -57,15 +57,16 @@ export const dynamic = 'force-dynamic';
  * nombre y el contacto ya puestos. Las de antes de las fichas siguen
  * mostrando lo que tenían escrito.
  */
-export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES, HOJA_NOTAS], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_FECHAS, HOJA_COBROS, HOJA_RESERVAS, HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_CIERRES, HOJA_NOTAS, HOJA_PROMOCIONES], async function GET(req: Request) {
   const no = await exigirVer(req, 'presupuestos');
   if (no) return no;
   try {
     const quien = await quienEs(req);
-    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres, notas] = await Promise.all([
+    const [presupuestos, lineas, menus, cfg, clientes, fechas, cobros, reservas, fichas, cuentas, cierres, notas, promos] = await Promise.all([
       leerPresupuestos(), leerLineasPresupuesto(), leerMenus(), leerConfig(),
       leerClientes(), leerFechas(), leerCobros().catch(() => []), leerReservas().catch(() => []),
-      leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => []), leerNotasOCrear().catch(() => [])
+      leerVendedores().catch(() => []), leerUsuarios(), leerCierres().catch(() => []), leerNotasOCrear().catch(() => []),
+      leerPromociones().catch(() => [] as Promocion[])
     ]);
     // **Los días que se pasaron del cupo** (2026-11-12): un pago entró sobre
     // reservas sin pagar. Va en la misma lectura —la tanda ya trae
@@ -165,7 +166,11 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // **Las notas del vendedor** (2026-11-23, `lib/notas.ts`): solo las que
       // esta cuenta puede leer —las de sus cotizaciones, o todas si es la
       // gerencia o el administrador—. `Notas` va en la misma tanda.
-      notas: notasVisibles(notas, presupuestos, quien.rol, quien.usuario).map(({ fila: _f, ...n }) => n)
+      notas: notasVisibles(notas, presupuestos, quien.rol, quien.usuario).map(({ fila: _f, ...n }) => n),
+      // **Las promociones, para aplicarlas en una cotización** (2026-11-24):
+      // las activas, y las que ya están aplicadas en alguna aunque se hayan
+      // apagado (para decir su nombre). `Promociones` va en la misma tanda.
+      promociones: promos.filter((x) => x.activa || presupuestos.some((p) => p.promocion === x.id))
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
@@ -241,16 +246,22 @@ const fraseRecorte = (r: Recorte) =>
  */
 function conTopes(
   p: Omit<Presupuesto, 'fila'>, lineas: LineaEntrante[], cfg: Awaited<ReturnType<typeof leerConfig>>,
-  rol: Rol, usuario: string, antes?: { p: Presupuesto; lineas: LineaEntrante[] }
+  rol: Rol, usuario: string, antes?: { p: Presupuesto; lineas: LineaEntrante[] }, promo: Partial<Topes> = {}
 ): { lineas: LineaEntrante[]; recortes: string[]; aprobo: string } {
   const total = cuentasDe(lineas, p.descuento).total;
+  // **El descuento de la promoción vale aunque pase el tope** (2026-11-24, lo
+  // decidió el cliente): sube el tope de esa cotización como lo sube una
+  // condición aprobada, y no cuenta como condición especial.
+  const aprobadas = aprobadasDe(p);
+  const conPromo: Partial<Topes> = promo.descuento
+    ? { ...aprobadas, descuento: Math.max(aprobadas.descuento ?? 0, promo.descuento) } : aprobadas;
   if (!puede(rol, 'showBajoMinimo')) {
-    const r = aplicarTopes(condicionesDe(p), lineas, total, topesDe(cfg, aprobadasDe(p)),
+    const r = aplicarTopes(condicionesDe(p), lineas, total, topesDe(cfg, conPromo),
       antes ? { p: condicionesDe(antes.p), lineas: antes.lineas } : undefined);
     Object.assign(p, r.p);
     return { lineas: r.lineas, recortes: r.recortes.map(fraseRecorte), aprobo: '' };
   }
-  const base = topesDe(cfg);
+  const base = topesDe(cfg, promo);
   const sobre = sobreElTope(condicionesDe(p), lineas, base);
   if (!Object.keys(sobre).length) return { lineas, recortes: [], aprobo: '' };
   const aprobado = condicionesEspecialesDe(p.condicionesEspeciales).estado === 'aprobada';
@@ -282,6 +293,8 @@ interface ParaMinimos {
   arriendoAutorizado: boolean;
   /** Los mínimos aprobados como condición especial (2026-11-23, `minimosAprobados()`). */
   aprobados?: { show?: number; arriendo?: number };
+  /** **La promoción aplicada perdona el arriendo ese día** (2026-11-24, `perdonaArriendo()`). */
+  sinArriendo?: boolean;
 }
 
 /** El mínimo del arriendo de esta cotización en su día (`arriendoDelDia()`), con las reservas ya leídas. */
@@ -307,7 +320,7 @@ async function lineasListas(crudo: unknown, id: string, invitados: number, fecha
   const deConfig = reglaShowDe(cfg);
   const regla = pasaPorEncima || para.showAutorizado ? null : conMinimoShow(deConfig, para.aprobados?.show);
   const publico = esFecha(fecha) && esDiaPublico(fecha, fechas);
-  const arriendo = arriendoParaElDia(fecha, para, cfg, fechas, reservas);
+  const arriendo = para.sinArriendo ? null : arriendoParaElDia(fecha, para, cfg, fechas, reservas);
   const lineas = prepararLineas(lineasDelCuerpo(crudo, id), menus, invitados, publico, uf, regla,
     pasaPorEncima || para.arriendoAutorizado ? null : conMinimoArriendo(arriendo, para.aprobados?.arriendo));
   const personas = personasParaMinimos(lineas, invitados);
@@ -490,7 +503,7 @@ export const POST = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJ
  *   reescribe sola** (`sincronizarReserva()`). Si el día de la reserva ya
  *   está cerrado, eso es corregirlo: con la lista de cambios confirmada.
  */
-export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_FECHAS, HOJA_RESERVAS], async function PATCH(req: Request) {
+export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA_CONFIG, HOJA_FECHAS, HOJA_RESERVAS, HOJA_PROMOCIONES], async function PATCH(req: Request) {
   const no = await exigir(req, 'presupuestos');
   if (no) return no;
   try {
@@ -685,6 +698,19 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
       validoHasta,
       renovaciones: (previo.renovaciones ?? 0) + (renovar ? 1 : 0)
     };
+    // **La promoción** (2026-11-24, lo pidió el cliente: *"el vendedor
+    // manualmente también tiene que poder elegir las promociones"*): una
+    // activa, o la que ya tenía aunque se haya apagado —lo acordado no cambia
+    // solo—. En blanco, se quita. `Promociones` va en la tanda.
+    const promos = await leerPromociones().catch(() => [] as Promocion[]);
+    if (cuerpo.promocion !== undefined) {
+      const pedida = String(cuerpo.promocion ?? '').trim();
+      if (pedida && pedida !== (previo.promocion ?? '') && !promos.some((x) => x.id === pedida && x.activa)) {
+        return NextResponse.json({ error: 'Esa promoción ya no está o está apagada.' }, { status: 404 });
+      }
+      p.promocion = pedida;
+    }
+    const beneficio = beneficioDePromocion(promocionDe(promos, p.promocion), invitados, p.fecha);
     // Las líneas se vuelven a preparar también cuando solo cambian los
     // invitados o la fecha: las que siguen a los invitados toman el número
     // nuevo, y la regla del show depende del día. Se preparan antes de
@@ -705,14 +731,15 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     // Las líneas se vuelven a preparar también cuando cambia *¿exclusivo?*:
     // de eso depende el mínimo del arriendo en un día público (2026-11-23).
     let nuevas: Awaited<ReturnType<typeof lineasListas>> | null = null;
-    if (cuerpo.lineas !== undefined || cuerpo.invitados !== undefined
-        || cuerpo.fecha !== undefined || cuerpo.uf !== undefined || cuerpo.exclusivo !== undefined) {
+    if (cuerpo.lineas !== undefined || cuerpo.invitados !== undefined || cuerpo.fecha !== undefined
+        || cuerpo.uf !== undefined || cuerpo.exclusivo !== undefined || cuerpo.promocion !== undefined) {
       const crudo = cuerpo.lineas !== undefined
         ? cuerpo.lineas : lineasDe(await leerLineasPresupuesto(), id);
       nuevas = await lineasListas(crudo, id, invitados, p.fecha, p.uf, quien.rol as Rol, {
         exclusivo: p.exclusivo ?? '', idReserva: previo.idReserva,
         showAutorizado: !!previo.showBajoMinimo, arriendoAutorizado: !!previo.arriendoBajoMinimo,
-        aprobados: minimosAprobados(previo)
+        aprobados: minimosAprobados(previo),
+        sinArriendo: beneficio.sinArriendo
       });
       p.showBajoMinimo = showBajoMinimoDe(previo.showBajoMinimo ?? '', puede(quien.rol as Rol, 'showBajoMinimo'),
         nuevas.bajoMinimo, quien.usuario, ahoraEnChile());
@@ -721,8 +748,12 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     }
     // **Los topes** (regla A, 2026-11-23): solo a lo que cambió.
     const lineasAntes = lineasDe(await leerLineasPresupuesto(), id);
+    // Si la promoción se quitó o dejó de regir, su descuento ya no tiene por
+    // qué seguir: se mira como si se hubiera cambiado.
+    const antesDescuento = beneficioDePromocion(promocionDe(promos, previo.promocion), previo.invitados, previo.fecha).descuento;
+    const perdioPromo = antesDescuento > beneficio.descuento;
     const topados = conTopes(p, nuevas ? nuevas.lineas : lineasAntes, cfgSeg, quien.rol as Rol, quien.usuario,
-      { p: previo, lineas: lineasAntes });
+      { p: perdioPromo ? { ...previo, descuento: -1 } : previo, lineas: lineasAntes }, { descuento: beneficio.descuento });
     await guardarPresupuesto(p);
     if (nuevas || topados.recortes.length) await guardarLineas(id, topados.lineas);
     // **Sin documento** (2026-11-23, lo decidió el cliente: un aviso, sin
@@ -733,6 +764,11 @@ export const PATCH = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HO
     }
     if (topados.aprobo) {
       await anotar({ ...quien, accion: 'Dejó condiciones especiales', detalle: `${folioDe(p)} · ${topados.aprobo}` });
+    }
+    if ((p.promocion ?? '') !== (previo.promocion ?? '')) {
+      const nombre = (id: string | undefined) => promocionDe(promos, id)?.nombre ?? id ?? '';
+      await anotar({ ...quien, accion: p.promocion ? 'Aplicó una promoción' : 'Quitó la promoción',
+        detalle: `${folioDe(p)} · ${nombre(p.promocion || previo.promocion)}` });
     }
     if (p.showBajoMinimo && !previo.showBajoMinimo) {
       await anotar({ ...quien, accion: 'Dejó el show bajo el mínimo',

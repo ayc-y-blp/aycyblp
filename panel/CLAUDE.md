@@ -176,6 +176,7 @@ revisan antes de cada cambio en esta carpeta.
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
   | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` |
+  | La promoción aplicada a una cotización y cómo elegirla | `AplicarPromocion` (*🎁 Promoción…*) y la pastilla *🎁 nombre −N%* al lado del descuento sobre el total (paso Productos) |
 | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
   | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
@@ -225,6 +226,87 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## *🎁 Promoción…*: el vendedor aplica una promoción en su cotización (2026-11-24)
+
+Lo pidió el cliente: *"el vendedor manualmente también tiene que poder elegir
+las promociones. Y con toda la posibilidad de editarlo dentro de la
+cotización según las reglas que permite la configuración. Pero sí
+configurable"*, y decidió: *"sí, que valga el descuento de la promoción"*.
+
+- **Dónde**: en el paso Productos, al lado de *Descuento sobre el total*,
+  ***🎁 Promoción…*** (*🎁 Aplicar promoción…* en el celular). Abre
+  `AplicarPromocion`: las promociones activas de *Productos → 🎁 Promociones*
+  como botones (son pocas y fijas), con desde cuántas personas, su descuento
+  con sus tramos y su arriendo; si ofrece varios menús, *¿Qué menú?*. Antes
+  de aplicar dice qué pasa: *Tradiciones (70) pasa a A Brasas abiertas. Lo
+  demás se queda. Con 80 personas, −20% sobre el total.* Mide 510px a
+  1280×650 (escena `v-aplicar-promocion`).
+- **Qué hace** (`aplicarALineas()` en `lib/promociones.ts`, puro y con
+  pruebas): **el menú elegido reemplaza a los otros menús de adulto**, en su
+  lugar y con su gente —una promoción es un paquete con su menú—; el de niños
+  entra en 0 si no estaba; se suma lo que incluye siempre; **lo demás se
+  queda** (los niños, los extras, el arriendo), y nada se repite. Lo que *se
+  puede sumar* no entra solo. Pone su descuento sobre el total. Después todo
+  se edita como siempre.
+- **Aplicada, una pastilla** al lado de los botones de descuento: *🎁 Gran
+  Premio de Fin de Año −20%*, con su `?` (`promoEnCotizacion`), *Usar −N%* si
+  el descuento ya no es el de la promoción (cambiaron los invitados) y
+  *Quitar*. Quitarla deja los productos; si el descuento pasa el tope de
+  siempre, vuelve a cero.
+- **Su descuento vale aunque pase el tope del vendedor** (`conTopes()` en
+  `/api/presupuestos`, con `beneficioDePromocion()`): sube el tope de esa
+  cotización como una condición aprobada, y no cuenta como condición
+  especial. Es el del tramo que alcanza el grupo (los invitados). Su botón
+  aparece entre los de descuento aunque no sea uno de Configuración (el 11%
+  de fin de año). **Si se quita o deja de regir, el descuento vuelve a
+  pasar por el tope** —también por la API—.
+- **Su arriendo**: si la promoción dice *Sin arriendo de lunes a viernes* o
+  *Sin arriendo* (`perdonaArriendo()`), el arriendo mínimo no se agrega ni se
+  exige: en la ventana, al guardar y al ganar (`/convertir`), con la misma
+  función.
+- **Bajo su mínimo de personas no rige** (`rigePromocion()`): ni su
+  descuento ni su arriendo. Se puede aplicar igual —el grupo puede crecer—, y
+  la pastilla dice *pide desde 22: no rige*.
+- **Columna nueva al final de `Presupuestos`: `Promoción`** (su ID). La
+  escribe el `PATCH` de `/api/presupuestos`: una activa, o la que ya tenía
+  aunque se haya apagado (lo acordado no cambia solo). Una alternativa nueva
+  la hereda. **Las cotizaciones que llegan del sitio** nacen con su promoción
+  puesta (`cotizacionDelSitio()`), así que el vendedor las sigue editando con
+  su descuento. Bitácora: *Aplicó una promoción* / *Quitó la promoción*.
+- **Lecturas de Google**: `Promociones` se suma a la tanda del `GET` y del
+  `PATCH` de `/api/presupuestos` (ninguna lectura más); `/convertir` la lee
+  solo si la cotización tiene una. **Ningún permiso cambió.**
+- **El panel de ejemplo**: el Gran Premio con un tramo del 20% desde 60
+  personas, sobre el tope de 15%: Andrés Pino, con 80, lo lleva.
+- **Probado en el panel de ejemplo**, como vendedor: en Andrés Pino, el Gran
+  Premio con A Brasas abiertas deja *A Brasas abiertas 70, Niños 10, Show* y
+  el 20%; pedir 25% por la API queda en 20; quitarla dejando el 20% queda en
+  15; una promoción apagada responde 404. En el celular, *Fin de año* deja el
+  11% marcado.
+
+### *Fuera del local* y la cabecera de cotizar en dos filas (2026-11-24)
+
+Lo pidió el cliente al ver la ficha de promociones ordenada: *"así tal cual
+deberías agregar actividades fuera del local, y cuando se crea un producto que
+cobra otra empresa, aparece en este fuera del local. Puede ser también un
+transfer… Y lo mismo para la cotización de un vendedor"*. Y de la cabecera:
+*"tal vez los pasos tienen que llegar en una fila y ahí comprometer un poco la
+eficiencia del espacio y poner las alternativas en una segunda fila abajo… y
+quizás un botón grande de las notas"*.
+
+- **🚐 Fuera del local**: en la ficha de una promoción, los extras que cobra
+  otra empresa (`Lo cobra`) van en su sección, aparte de *➕ Extras*. En el
+  paso Productos de cotizar, en su grupo a la derecha de *Extras y arriendo*,
+  cada botón con la empresa debajo. Un producto nuevo con *Lo cobra* cae ahí
+  solo.
+- **La cabecera de cotizar**: los cinco pasos en una fila; debajo, las
+  alternativas y **🗒 Notas** como un botón grande a la derecha. En el
+  celular, como antes.
+- **Los pasos 3, 4 y 5 ya no caben en 1280×650**: miden 698, 665 y 681px
+  (anotados en `NO_CABEN` con este porqué). El cliente lo aceptó al pedirlo.
+- Fotos de la ayuda rehechas: `ven-cotizar`, `ven-envio`, `pag-cobros` y
+  `ger-cobros`.
 
 ## Vende quien cotiza, tenga el rol que tenga (2026-11-24)
 
@@ -585,7 +667,8 @@ de la configuración"*.
 - **Apagar, Quitar y Guardar van en la fila del nombre**, a la derecha: solos
   al pie dejaban una fila casi vacía.
 - **Medidas** (`ficha-promocion`, 1280×650): 578px (era 641); con dos tramos,
-  627.
+  627. Desde que el Gran Premio del ejemplo trae un tramo (para *🎁
+  Promoción…*), la escena mide 620.
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
   `promoMenu`, `promoSuma`, `promoCondicion` y uno nuevo, `promoShow`.
 

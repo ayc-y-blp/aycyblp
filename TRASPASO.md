@@ -389,6 +389,20 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   menú una vez), *Extras* (cada uno con *No · Incluido · Se suma*; el show con
   la regla de Configuración) y *Condición* en tramos con *+ Otro tramo*
   (columna nueva `Más tramos`). Ver `panel/CLAUDE.md`, "La ficha, ordenada".
+- **🚐 Fuera del local y la cabecera de cotizar en dos filas** (24-11-2026,
+  en el mismo PR #338, lo pidió el cliente): lo que cobra otra empresa va en
+  su grupo, en la promoción y en el paso Productos; los pasos en una fila y
+  las alternativas con *🗒 Notas* grande debajo. **Los pasos 3, 4 y 5 ya no
+  caben en 1280×650** (698, 665 y 681px), anotados en `NO_CABEN`: el cliente
+  aceptó perder espacio. Ver `panel/CLAUDE.md`, "*Fuera del local* y la
+  cabecera…".
+- **🎁 Promoción… en la cotización del vendedor** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente): aplica una promoción activa —su menú reemplaza
+  al de adulto, suma lo que incluye y pone su descuento—, y todo queda
+  editable. **Su descuento vale aunque pase el tope del vendedor** (lo decidió
+  el cliente) y su arriendo se perdona como diga, también al ganar. Columna
+  nueva `Promoción` en `Presupuestos`; las del sitio nacen con la suya. Ver
+  `panel/CLAUDE.md`, "*🎁 Promoción…*".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -545,7 +559,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Config` | un parámetro | `Clave` · `Valor` (días que se abre, cupo, vigencia, descuentos, anticipo, mínimo del show, datos de la empresa, carpeta de Drive…) | todo |
 | `Menús` (pantalla *Productos*) | un producto del catálogo | `Menú` (nombre, **igual que en Shopify**), `Precio en línea`, `Precio en el local`, `Tipo` (*Menú / Extra / Arriendo / Show*), `Sitio público`, `Cotización`, `Cobro`, `Precio cotización`, `IVA`, `Moneda`, `Activo`, `Bono vendedor`, `Costo`, `Lo cobra` | Reservas (por nombre), líneas de cotización |
 | `Clientes` | una ficha | `ID` (`C-0001`), `Nombre`, `Empresa del cliente`, `RUT`, `Domicilio`, `Teléfono`, `Correo`, `Giro`, `Creado por` | `Presupuestos.ID Cliente` |
-| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Origen` (*Sitio · …*), `Aviso del sitio visto`, `Otras empresas coordinadas`, `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
+| `Presupuestos` | una cotización (o una alternativa) | `ID`, `Fecha`, `Estado`, `Válido hasta`, `Token`, `ID Reserva`, `ID Cliente`, `Invitados`, `Grupo` (las alternativas comparten grupo), `Descuento total`, `Documento`, `Anticipo %`, `Anticipo monto`, `Saldo días antes`, `UF`, `Exclusivo`, `Exclusividad`, `Contrato firmado`, `Enviada`, `Comisión vendedor`, `Socio comercial`, `Comisión socio`, `Show bajo el mínimo`, `Recontactar el`, `Redactar antes del`, `Origen` (*Sitio · …*), `Aviso del sitio visto`, `Otras empresas coordinadas`, `Promoción` (la aplicada, su ID), `Creado por`… | `Presupuesto Líneas`, `Cobros`, `Clientes`, `Reservas`, `Notas` |
 | `Presupuesto Líneas` | una línea de una cotización | `ID Presupuesto`, `Concepto`, `Cantidad`, `Precio unitario`, `Personas`, `Descuento`, `IVA`, `Precio UF`, `Lo cobra` (otra empresa: va aparte del total) | `Presupuestos` |
 | `Cobros` | un pago del cliente de una cotización | `ID`, `ID Presupuesto`, `Fecha de pago`, `Concepto` (*Anticipo / Saldo / Otro*), `Monto`, `Medio`, `Comprobante` (id en Drive), `Revisado por`, `Revisado` | `Presupuestos` |
 | `Puestos` | un puesto | `Puesto`, `Uno cada N personas` | `Turnos`, `Trabajadores` |

@@ -7292,6 +7292,32 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Sommelier', suma: [], fecha: '2026-11-28' }, ctx)) === 'menu'
      && no(PR.cotizarPromocion({ ...gran, activa: false }, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'promocion',
      'no se cotiza bajo el mínimo, hoy, un día tomado en exclusiva, un menú ajeno ni una promoción apagada');
+  // Aplicarla en la cotización de un vendedor (2026-11-24).
+  ok(PR.perdonaArriendo(combate, '2026-12-01') && !PR.perdonaArriendo(combate, '2026-11-28')
+     && !PR.perdonaArriendo(gran, '2026-12-01') && !PR.perdonaArriendo(undefined, '2026-12-01')
+     && PR.perdonaArriendo({ arriendo: PR.ARRIENDO_PROMO.nunca }, '2026-11-28'),
+     'la promoción perdona el arriendo de lunes a viernes, o siempre, según diga');
+  const b12 = PR.beneficioDePromocion(conTramos, 12, '2026-12-01');
+  const b30 = PR.beneficioDePromocion(conTramos, 30, '2026-11-28');
+  const b5 = PR.beneficioDePromocion(conTramos, 5, '2026-12-01');
+  ok(b12.descuento === 10 && b12.sinArriendo && b30.descuento === 15 && !b30.sinArriendo
+     && b5.descuento === 0 && !b5.sinArriendo && !PR.rigePromocion(conTramos, 5),
+     'lo que da la promoción: el descuento del tramo y el arriendo; bajo su mínimo, nada');
+  const lp = PR.lineasDeLaPromocion(campo, '', 40, 'P1', cat);
+  ok(lp.map((l) => `${l.concepto}:${l.cantidad}`).join() === 'Lo Pirque:40,Niños:0',
+     'aplicarla suma el menú con los invitados y el de niños en 0');
+  const lg = PR.lineasDeLaPromocion(gran, 'Brasas', 40, 'P1', cat, [{ concepto: 'Lo Pirque', personas: 30 }]);
+  ok(lg.map((l) => `${l.concepto}:${l.cantidad}`).join() === 'Brasas:10,Show ecuestre:1',
+     'lo que ya está se queda: el menú elegido toma los invitados que faltan, y lo que incluye se suma');
+  ok(PR.lineasDeLaPromocion(gran, 'Brasas', 40, 'P1', cat, [{ concepto: 'brasas', personas: 40 }, { concepto: 'Show ecuestre', personas: 0 }]).length === 0,
+     'lo que ya está en la cotización no se repite');
+  const ap = PR.aplicarALineas(gran, 'Brasas', 40, 'P1', cat,
+    [{ concepto: 'Lo Pirque', personas: 30 }, { concepto: 'Niños', personas: 10 }, { concepto: 'Karting', personas: 0 }]);
+  ok(ap.lineas.map((l) => `${l.concepto}:${l.personas}`).join() === 'Brasas:30,Niños:10,Karting:0,Show ecuestre:0'
+     && ap.reemplazadas.map((l) => l.concepto).join() === 'Lo Pirque',
+     'aplicarla reemplaza el menú de adulto que no es suyo, en su lugar; los niños y los extras se quedan');
+  ok(PR.aplicarALineas(gran, 'Lo Pirque', 40, 'P1', cat, [{ concepto: 'Lo Pirque', personas: 40 }]).reemplazadas.length === 0,
+     'un menú que sí es de la promoción se queda como está');
   const vuelta = PR.leerPromocionesDe(PR.aFilasPromociones([gran, combate, campo]));
   ok(JSON.stringify(vuelta) === JSON.stringify([gran, combate, campo]), 'una promoción se escribe y se vuelve a leer igual');
   const limpia = PR.limpiarPromocion({ id: 'PR-09', nombre: ' X ', sitio: 'no-existe', menus: ['brasas', 'Inventado'],

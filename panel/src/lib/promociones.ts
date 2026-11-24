@@ -26,7 +26,7 @@
 import { normalizar, indices, ESTADO_DIA } from './columnas.ts';
 import { TIPO_PRODUCTO, COBRO, IVA_PRECIO, MONEDA, precioParaCotizar, canonizar, type Menu } from './menus.ts';
 import {
-  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, personasParaMinimos,
+  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, personasParaMinimos, lineaDeProducto,
   type ReglaShow, type ReglaArriendo
 } from './cotizar.ts';
 import {
@@ -287,6 +287,105 @@ export function limpiarPromocion(x: Partial<Record<keyof Promocion, unknown>>, c
   };
 }
 
+/* ---------- aplicarla en la cotización de un vendedor (2026-11-24) ---------- */
+
+/**
+ * **Si la promoción perdona el arriendo ese día**: *Sin arriendo* siempre, y
+ * *Sin arriendo de lunes a viernes* en un día de semana. Lo usan el sitio, la
+ * ventana de cotizar, el servidor al guardar y al ganar: la misma respuesta en
+ * los cuatro.
+ */
+export function perdonaArriendo(promo: Pick<Promocion, 'arriendo'> | undefined, fecha: string): boolean {
+  if (!promo) return false;
+  if (promo.arriendo === ARRIENDO_PROMO.nunca) return true;
+  return promo.arriendo === ARRIENDO_PROMO.semana && /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+    && [1, 2, 3, 4, 5].includes(diaSemana(fecha));
+}
+
+/** Si la promoción rige para ese grupo: desde su mínimo de personas. */
+export const rigePromocion = (promo: Pick<Promocion, 'minimo'> | undefined, invitados: number) =>
+  !!promo && invitados >= Math.max(1, promo.minimo);
+
+/**
+ * **Lo que la promoción le da a una cotización de un vendedor** (2026-11-24):
+ * su descuento —el del tramo que alcanza el grupo, que vale aunque pase el
+ * tope del vendedor (lo decidió el cliente: *"que valga el descuento de la
+ * promoción"*)— y si perdona el arriendo ese día. Bajo su mínimo de personas
+ * no da nada: la promoción no rige.
+ */
+export function beneficioDePromocion(
+  promo: Pick<Promocion, 'minimo' | 'descuento' | 'tramos' | 'arriendo'> | undefined, invitados: number, fecha: string
+): { descuento: number; sinArriendo: boolean } {
+  if (!promo || !rigePromocion(promo, invitados)) return { descuento: 0, sinArriendo: false };
+  return { descuento: descuentoPara(promo, invitados), sinArriendo: perdonaArriendo(promo, fecha) };
+}
+
+/** La promoción aplicada a una cotización (`Promoción`), si sigue existiendo. */
+export const promocionDe = (promos: Promocion[], id: string | undefined) =>
+  id ? promos.find((p) => p.id === id) : undefined;
+
+/**
+ * **Las líneas de una promoción, para la cotización de un vendedor**: el menú
+ * elegido con los invitados que todavía no están en un menú, el de niños en 0
+ * —como un segundo menú: se le escribe cuántos y baja al primero—, y lo que
+ * incluye siempre. **Lo que ya está en la cotización se queda** y no se
+ * repite. Lo que *se suma* no entra: el vendedor lo agrega si el cliente lo
+ * quiere. Los precios son los de cotización del catálogo; después se editan
+ * como cualquier línea.
+ */
+export function lineasDeLaPromocion(
+  promo: Promocion, menu: string, invitados: number, presupuesto: string, catalogo: Menu[],
+  yaEstan: { concepto: string; personas: number }[] = []
+) {
+  const nuevas: ReturnType<typeof lineaDeProducto>[] = [];
+  const clave = (n: string) => normalizar(canonizar(n));
+  const esta = (n: string) => [...yaEstan, ...nuevas].some((l) => clave(l.concepto) === clave(n));
+  let enMenus = yaEstan.reduce((n, l) => n + (Number(l.personas) || 0), 0);
+  const sumar = (nombre: string) => {
+    const m = nombre ? productoDe(nombre, catalogo) : undefined;
+    if (!m || esta(m.nombre)) return;
+    const l = lineaDeProducto(m, presupuesto, invitados, m.moneda === MONEDA.uf ? 0 : Math.round(precioParaCotizar(m)), enMenus);
+    enMenus += l.personas;
+    nuevas.push(l);
+  };
+  sumar(promo.menus.length === 1 ? promo.menus[0] : menu);
+  sumar(promo.ninos);
+  for (const n of promo.incluye) sumar(n);
+  return nuevas;
+}
+
+/**
+ * **Aplicar la promoción a las líneas de una cotización** (2026-11-24): un
+ * menú de adulto que no es el elegido de la promoción **se reemplaza** —su
+ * gente pasa a ese menú—, porque una promoción es un paquete con su menú;
+ * lo demás (los niños, los extras, el arriendo) se queda. Después se suman
+ * los productos de la promoción que faltan (`lineasDeLaPromocion()`).
+ */
+export function aplicarALineas<L extends { concepto: string; personas: number }>(
+  promo: Promocion, menu: string, invitados: number, presupuesto: string, catalogo: Menu[], lineas: L[]
+) {
+  // El menú elegido de la promoción: los demás de adulto, aunque la promoción
+  // también los ofrezca, son otro menú (la promoción lleva uno).
+  const elegido = normalizar(canonizar(promo.menus.length === 1 ? promo.menus[0] : menu));
+  const sale = (l: L) => {
+    const m = productoDe(l.concepto, catalogo);
+    return !!m && m.tipo === TIPO_PRODUCTO.menu && !esMenuDeNinos(m.nombre)
+      && normalizar(canonizar(m.nombre)) !== elegido;
+  };
+  const reemplazadas = lineas.filter(sale);
+  const quedan = lineas.filter((l) => !sale(l));
+  const agregadas = lineasDeLaPromocion(promo, menu, invitados, presupuesto, catalogo, quedan);
+  // El menú de la promoción toma el lugar del primero que reemplaza; lo demás va al final.
+  const suMenu = reemplazadas.length ? agregadas.find((l) => normalizar(canonizar(l.concepto)) === elegido) : undefined;
+  const resto = agregadas.filter((l) => l !== suMenu);
+  const enOrden: (L | (typeof agregadas)[number])[] = [];
+  for (const l of lineas) {
+    if (!sale(l)) enOrden.push(l);
+    else if (suMenu && l === reemplazadas[0]) enOrden.push(suMenu);
+  }
+  return { lineas: [...enOrden, ...resto], agregadas, reemplazadas };
+}
+
 /* ---------- cotizar ---------- */
 
 /** Lo que eligió el cliente en el sitio. */
@@ -392,8 +491,7 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   }));
 
   const publico = esDiaPublico(e.fecha, ctx.fechas);
-  const sinArriendo = promo.arriendo === ARRIENDO_PROMO.nunca
-    || (promo.arriendo === ARRIENDO_PROMO.semana && [1, 2, 3, 4, 5].includes(diaSemana(e.fecha)));
+  const sinArriendo = perdonaArriendo(promo, e.fecha);
   const arriendo = sinArriendo ? null : arriendoDelDia(ctx.reglaArriendo, e.fecha, ctx.fechas,
     ctx.diasAbiertos, false, ctx.reservasDelDia(e.fecha));
   const lineas = prepararLineas(entrantes, ctx.catalogo, invitados, publico, 0, ctx.reglaShow, arriendo);
@@ -545,6 +643,9 @@ export function cotizacionDelSitio(a: {
     devolucion: 0, canceladaPor: '', cancelada: '', diaAbierto: '',
     enviada: a.ahora, ultimoSeguimiento: '', contratoEnviado: '', seguimientoDias: null, avisoEvento: null,
     recontactar: a.hoy, origen: `${ORIGEN_SITIO} · ${a.promo.nombre}`, avisoVisto: '',
+    // La promoción queda aplicada (2026-11-24): el vendedor la sigue editando
+    // con su descuento y su arriendo, como si la hubiera elegido él.
+    promocion: a.promo.id,
     creadoPor: a.vendedor, creado: a.ahora
   };
 }

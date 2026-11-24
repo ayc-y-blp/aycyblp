@@ -800,7 +800,17 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Rebaja la cotización completa, encima de los descuentos de cada línea.',
       'Sale en la hoja del cliente, en el contrato y en el monto de la reserva al ganarla.',
-      'El botón más alto es el tope de Configuración; uno mayor se pide como condición especial.'
+      'El botón más alto es el tope de Configuración; uno mayor se pide como condición especial.',
+      'Con una promoción aplicada, su descuento también vale, aunque pase ese tope.'
+    ]
+  },
+  promoEnCotizacion: {
+    titulo: 'La promoción de esta cotización',
+    texto: [
+      '"🎁 Promoción…", al lado del descuento sobre el total, la aplica: su menú reemplaza al de adulto que haya, suma lo que incluye y pone su descuento. Después se edita todo como siempre.',
+      'Su descuento vale aunque pase el tope del vendedor: es el del tramo que alcanza el grupo. Si cambian los invitados, "Usar −N%" pone el que corresponde.',
+      'Si la promoción no cobra arriendo ese día (de lunes a viernes, o nunca), el arriendo mínimo no se agrega.',
+      'Bajo su mínimo de personas no rige: ni su descuento ni su arriendo. "Quitar" la saca; los productos quedan.'
     ]
   },
   vistaGerencia: {

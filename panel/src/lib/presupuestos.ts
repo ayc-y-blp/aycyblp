@@ -281,7 +281,17 @@ export const COL_PRESUPUESTOS = {
    * Mientras una empresa de sus líneas no esté acá, la vendedora lo ve como
    * pendiente. La escribe solo `/api/presupuestos/coordinada`.
    */
-  coordinadas: 'Otras empresas coordinadas'
+  coordinadas: 'Otras empresas coordinadas',
+  /**
+   * **La promoción que el vendedor aplicó** (2026-11-24, lo pidió el cliente:
+   * *"el vendedor manualmente también tiene que poder elegir las promociones…
+   * con toda la posibilidad de editarlo dentro de la cotización según las
+   * reglas que permite la configuración"*): su ID (`PR-03`). Mientras esté, su
+   * descuento vale aunque pase el tope del vendedor (lo decidió el cliente:
+   * *"que valga el descuento de la promoción"*) y su arriendo se perdona como
+   * dice la promoción.
+   */
+  promocion: 'Promoción'
 } as const;
 
 /** Una fila por línea cotizada. También por nombre de columna. */
@@ -463,6 +473,8 @@ export interface Presupuesto {
   avisoVisto?: string;
   /** Ver `COL_PRESUPUESTOS.coordinadas`. */
   coordinadas?: string;
+  /** La promoción aplicada, su ID. Ver `COL_PRESUPUESTOS.promocion`. */
+  promocion?: string;
   exclusividad?: string;
   diaPausado?: string;
   /** La comisión congelada del vendedor: *"285000 · cómo se calculó"*. */
@@ -1139,6 +1151,7 @@ export function leerPresupuestosDe(filas: string[][]): Presupuesto[] {
       origen: en(f, i.origen).trim(),
       avisoVisto: en(f, i.avisoVisto).trim(),
       coordinadas: en(f, i.coordinadas).trim(),
+      promocion: en(f, i.promocion).trim(),
       comisionSocio: en(f, i.comisionSocio).trim(),
       saldoDias: numeroONulo(en(f, i.saldoDias), 365),
       uf: aPrecio(en(f, i.uf)),
@@ -1224,6 +1237,7 @@ export function filaPresupuesto(
   poner(i.origen, p.origen ?? '');
   poner(i.avisoVisto, p.avisoVisto ?? '');
   poner(i.coordinadas, p.coordinadas ?? '');
+  poner(i.promocion, p.promocion ?? '');
   poner(i.comisionSocio, p.comisionSocio ?? '');
   poner(i.saldoDias, p.saldoDias === null ? '' : String(p.saldoDias));
   poner(i.uf, p.uf ? String(p.uf) : '');

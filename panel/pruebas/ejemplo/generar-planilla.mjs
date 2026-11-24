@@ -97,7 +97,9 @@ H['Promociones'] = prm.aFilasPromociones([
   PR({ id: 'PR-02', nombre: 'Combate de Parrillas', sitio: 'combate', menus: ['A Brasas abiertas'],
     incluye: ['Clase de parrilla'], minimo: 22 }),
   PR({ id: 'PR-03', nombre: 'Gran Premio de Fin de Año', sitio: 'gran-premio', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
-    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 22 }),
+    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 22, descuento: 10,
+    // Un tramo sobre el tope del vendedor (15%): Andrés Pino, con 80, lleva el 20%.
+    tramos: [{ desde: 60, descuento: 20 }] }),
   PR({ id: 'PR-04', nombre: 'Día de Campo en Familia', sitio: 'dia-de-campo', menus: ['Lo Pirque'], ninos: 'Niños',
     incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30 }),
   PR({ id: 'PR-05', nombre: 'Mesa de Directorio', menus: ['Sommelier'], minimo: 8, activa: false })

@@ -79,6 +79,10 @@ import ElegirFecha from './ElegirFecha';
 import NotasCotizacion from './NotasCotizacion';
 import { puedeVerNotas, iconoDeMedio, type Nota } from '@/lib/notas';
 import { agendaDe, fraseDe } from '@/lib/agenda';
+import AplicarPromocion from './AplicarPromocion';
+import {
+  promocionDe, beneficioDePromocion, rigePromocion, aplicarALineas, type Promocion
+} from '@/lib/promociones';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -126,6 +130,8 @@ export interface DatosCotizar {
   cambiosFechaDias?: number;
   /** Los días de vigencia de Configuración: los de una renovación. */
   vigencia?: number;
+  /** Las promociones (2026-11-24): las activas, para aplicarlas, y las ya aplicadas en alguna. */
+  promociones?: Promocion[];
   hoy: string;
   usuario: string;
   rol: string;
@@ -318,6 +324,9 @@ export default function CotizacionDialogo({
   /** El pedido de liberar el día y su decisión: lo escribe el servidor. */
   const [marcaExcl, setMarcaExcl] = useState(p?.exclusividad ?? '');
   const [descuento, setDescuento] = useState(p?.descuento ?? 0);
+  /** **La promoción aplicada** (2026-11-24): su ID, o vacío. */
+  const [promocion, setPromocion] = useState(p?.promocion ?? '');
+  const [aplicandoPromo, setAplicandoPromo] = useState(false);
   /** `''` es por definir. Ver `DOCUMENTO`. */
   const [documento, setDocumento] = useState<Documento>(p?.documento ?? '');
   /**
@@ -534,12 +543,20 @@ export default function CotizacionDialogo({
    * día sin contar la de esta cotización, si está ganada.
    */
   const arriendoAutorizado = (p?.arriendoBajoMinimo ?? '').split(' · ')[0];
+  /**
+   * **Lo que da la promoción aplicada** (2026-11-24, `beneficioDePromocion()`,
+   * la misma cuenta del servidor): su descuento, que sube el tope, y si
+   * perdona el arriendo ese día. Bajo su mínimo de personas, nada.
+   */
+  const promoAplicada = promocionDe(datos.promociones ?? [], promocion);
+  const beneficio = beneficioDePromocion(promoAplicada, invitados, fechaReal);
   const otrasDelDia = Math.max(0, (datos.reservasPorDia?.[fechaReal] ?? 0)
     - (ganada && p?.fecha === fechaReal ? 1 : 0));
   const arriendoDelDiaFn = useMemo(
-    () => conMinimoArriendo(arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
+    () => beneficio.sinArriendo ? null : conMinimoArriendo(arriendoDelDia(datos.reglaArriendo ?? null, fechaReal, datos.fechas, datos.diasAbiertos ?? [6, 0],
       esExclusivo(exclusivo), otrasDelDia), minAprobados.arriendo),
-    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia, minAprobados.arriendo]);
+    [datos.reglaArriendo, fechaReal, datos.fechas, datos.diasAbiertos, exclusivo, otrasDelDia, minAprobados.arriendo,
+      beneficio.sinArriendo]);
   /** Si la regla del arriendo corre para esta cuenta: no para quien pasa por encima, ni si ya se autorizó. */
   const arriendoForzado = !pasaPorEncima && !arriendoAutorizado;
   // **Lo que se ve es lo que se guarda**: la misma función del servidor.
@@ -587,11 +604,18 @@ export default function CotizacionDialogo({
     cambiosFecha: datos.contrato?.tranquilidad?.cambiosFecha ?? 2,
     cancelacionDias: datos.contrato?.tranquilidad?.cancelacionDias ?? 60,
     reembolsoPct: datos.contrato?.tranquilidad?.reembolsoPct ?? 20, descuentos: datos.descuentos });
-  const topes = topesConAprobadas(topesBase, aprobadasDe({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas }));
+  const aprobadasCond = aprobadasDe({ condicionesEspeciales: condMarca, condicionesPedidas: condPedidas });
+  /** Los topes sin la promoción: al quitarla, un descuento por encima de esto vuelve a cero. */
+  const topesSinPromo = topesConAprobadas(topesBase, aprobadasCond);
+  // **El descuento de la promoción vale aunque pase el tope** (2026-11-24): lo sube, como lo aprobado.
+  const topes = beneficio.descuento > topesSinPromo.descuento
+    ? { ...topesSinPromo, descuento: beneficio.descuento } : topesSinPromo;
   const marcaCond = condicionesEspecialesDe(condMarca);
-  /** Los botones de descuento: los de Configuración, y el aprobado si es más. */
-  const botonesDescuento = topes.descuento > Math.max(0, ...datos.descuentos)
-    ? [0, ...datos.descuentos, topes.descuento] : [0, ...datos.descuentos];
+  /** Los botones de descuento: los de Configuración, el aprobado si es más y el de la promoción. */
+  const botonesDescuento = [...new Set([0, ...datos.descuentos,
+    ...(topes.descuento > Math.max(0, ...datos.descuentos) ? [topes.descuento] : []),
+    // El de la promoción aplicada, aunque no sea uno de Configuración (el 11% de fin de año).
+    ...(beneficio.descuento ? [beneficio.descuento] : [])])].sort((a, b) => a - b);
   /** Al salir de un campo: si se pasa del tope, queda en él y se dice. El servidor hace lo mismo. */
   const toparCampo = (campo: CampoCondicion, txt: string, poner: (t: string) => void) => {
     if (pasaPorEncima || !txt.trim()) return;
@@ -720,7 +744,7 @@ export default function CotizacionDialogo({
     idCliente, fechaReal, periodo: sinFecha ? periodo : '', invitados, tipoEvento, notas,
     descuento, motivo, documento, anticipoTxt, anticipoMontoTxt, saldoTxt, uf, fechaUF, estado, lineas: vistas,
     horario, ley20393, acuerdos, fact: facturacion, cambiosTxt, cancelTxt, reembolsoTxt,
-    segTxt, avisoTxt, exclusivo, socio, redactarAntes
+    segTxt, avisoTxt, exclusivo, socio, redactarAntes, promocion
   });
   const [guardada, setGuardada] = useState<string | null>(null);
   useEffect(() => { if (p) setGuardada(firma); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -856,6 +880,26 @@ export default function CotizacionDialogo({
   };
   const hayUF = vistas.some((l) => l.precioUF > 0);
 
+  /**
+   * **Aplicar una promoción** (2026-11-24): su menú reemplaza a los otros de
+   * adulto, suma lo que incluye y pone su descuento sobre el total
+   * (`aplicarALineas()`). Todo queda editable.
+   */
+  const aplicarPromocion = (promo: Promocion, menu: string) => {
+    setLineas(aplicarALineas(promo, menu, invitados, p?.id ?? '', datos.menus, vistas).lineas);
+    setPromocion(promo.id);
+    const b = beneficioDePromocion(promo, invitados, fechaReal);
+    if (b.descuento) setDescuento(b.descuento);
+    setAplicandoPromo(false);
+    avisar(`Promoción aplicada: ${promo.nombre}`);
+  };
+  /** Quitarla deja los productos; su descuento, si pasa el tope de siempre, vuelve a cero. */
+  const quitarPromocion = () => {
+    setPromocion('');
+    if (!pasaPorEncima && descuento > topesSinPromo.descuento) setDescuento(0);
+    avisar('Se quitó la promoción: los productos quedan en la cotización');
+  };
+
   async function crearCliente(forzar = false) {
     if (!nuevoCliente) return;
     setError('');
@@ -906,6 +950,8 @@ export default function CotizacionDialogo({
         horario, ley20393, acuerdos,
         cambiosFecha: cambiosTxt, cancelacionDias: cancelTxt, reembolso: reembolsoTxt,
         seguimientoDias: segTxt, avisoEvento: avisoTxt, exclusivo, socio, redactarAntes,
+        // La promoción solo se edita en una cotización ya creada (el paso Productos).
+        ...(p ? { promocion } : {}),
         ...(uf ? { uf, fechaUF } : {}),
         estado: estadoForzado ?? estado,
         lineas: vistas,
@@ -2587,6 +2633,34 @@ export default function CotizacionDialogo({
                     {d ? `${d}%` : 'Sin'}
                   </button>
                 ))}
+                {/* **La promoción** (2026-11-24): al lado del descuento, que es
+                    lo que más cambia. Aplicada, una pastilla con su nombre,
+                    lo que da y *Quitar*. */}
+                {p && promoAplicada ? (
+                  <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border-2 border-oro/60
+                                   bg-oro/10 py-0.5 pl-2.5 pr-1 text-[13px]">
+                    <b className="text-[14px]">🎁 {promoAplicada.nombre}</b>
+                    {rigePromocion(promoAplicada, invitados)
+                      ? <span>−{beneficio.descuento}%{beneficio.sinArriendo ? ' · sin arriendo' : ''}</span>
+                      : <span className="font-semibold text-ambar-texto">pide desde {Math.max(1, promoAplicada.minimo)}: no rige</span>}
+                    <AyudaCorta tema="promoEnCotizacion" />
+                    {rigePromocion(promoAplicada, invitados) && descuento !== beneficio.descuento && (
+                      <button type="button" className="boton boton-angosto min-h-[36px]"
+                        onClick={() => setDescuento(beneficio.descuento)}>
+                        Usar −{beneficio.descuento}%
+                      </button>
+                    )}
+                    <button type="button" className="boton boton-angosto min-h-[36px]" onClick={quitarPromocion}>
+                      Quitar
+                    </button>
+                  </span>
+                ) : p && (datos.promociones ?? []).some((x) => x.activa) ? (
+                  <button type="button" className="boton min-h-[40px] !border-2 !border-oro/60" aria-label="Aplicar promoción"
+                    onClick={() => setAplicandoPromo(true)}>
+                    {/* En el computador, corto: con el largo, el neto y el total bajaban de fila. */}
+                    🎁 <span className="lg:hidden">Aplicar promoción…</span><span className="hidden lg:inline">Promoción…</span>
+                  </button>
+                ) : null}
               </div>
               <dl className="ml-auto max-w-xs space-y-1 text-[15px] tabular-nums lg:flex lg:max-w-none lg:items-baseline
                              lg:gap-x-5 lg:space-y-0">
@@ -3681,6 +3755,10 @@ export default function CotizacionDialogo({
           onCerrar={() => setCorrigiendo(false)}
           onCancelarEvento={() => { setCorrigiendo(false); setCancelando(true); }}
           onListo={(hacia) => { setCorrigiendo(false); onCambio(); if (onAbrir) onAbrir(hacia || p.id, 4); else onCerrar(); }} />
+      )}
+      {aplicandoPromo && (
+        <AplicarPromocion promociones={datos.promociones ?? []} catalogo={datos.menus} invitados={invitados}
+          fecha={fechaReal} yaEstan={vistas} onCerrar={() => setAplicandoPromo(false)} onAplicar={aplicarPromocion} />
       )}
       {cayendo && p && (
         <SeCayo id={p.id} cliente={cliente?.nombre ?? p.cliente ?? ''}
