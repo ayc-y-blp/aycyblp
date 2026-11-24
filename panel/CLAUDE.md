@@ -162,7 +162,7 @@ revisan antes de cada cambio en esta carpeta.
   | El nombre de un campo, al lado de su valor y en columna | `CampoAlLado` y `COLUMNA_ROTULO` de `LineaDelDia` |
   | Varios campos de una ficha, en columnas que calzan | `rejilla-campos` dentro de una `caja-campos`, y `fila-ficha` con su `rotulo-ficha` (`globals.css`); los datos de la transferencia, `DatosBancarios` |
   | Una ventana | `Dialogo`: en el computador parte arriba y admite algo en la línea del título (`alLado`) |
-  | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero* e *Importar del CRM*) |
+  | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores e Informe) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
   | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
@@ -227,6 +227,91 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Traer los datos de producción a la prueba (2026-11-24)
+
+Lo pidió el cliente: *"necesito una función para sincronizar la base de datos
+de prueba con la base de datos de producción, que de vez en cuando tiene
+sentido que la base de prueba se resincroniza con la base de datos de
+producción para poder seguir probando a base de lo que hay hoy en día en la
+realidad. Puede ser un botón más en configuración"*.
+
+- **Dónde**: Configuración → Mantención → ***🔄 Traer los datos de
+  producción a la prueba***, entre *Importar del CRM* y *Dejar la base en
+  cero*. Solo el administrador (`mantencion`). **Se aprieta en una versión
+  de prueba**: lee la planilla de producción y reemplaza con ella la de esa
+  versión (*BBDD Prueba*). En producción la ventana dice que va en una
+  versión de prueba y no lee nada.
+- **La ventana** (`TraerProduccion`): *Desde* la planilla de producción
+  (*solo se lee*) y *A* la de la prueba (*se reemplaza*), con su nombre en la
+  pastilla `CualBase`; y ***Lo que se trae***, cada pestaña con sus filas en
+  producción y las que la prueba tiene hoy —las que cambian, en ámbar—. Se
+  confirma con ***Entiendo: lo de la prueba se reemplaza*** y ***🔄 Traer N
+  filas de producción***. Al terminar, *↻ Recargar el panel*. Mide 567px a
+  1280×650 (escena `v-traer-produccion`).
+- **Qué se copia** (`lib/sincronizar.ts`, puro y con pruebas): las pestañas
+  del panel, las mismas de *Dejar la base en cero* (`SE_VACIAN` y
+  `SE_CONSERVAN`), **tal cual**: se leen sin formato y se escriben con `RAW`,
+  así que un número sigue siendo número y una fecha escrita como texto sigue
+  siendo texto. La prueba lee después lo mismo que lee producción.
+  - **Las cuentas también**, en Lo Pirque: las cotizaciones y los vendedores
+    se cruzan con ellas por nombre. **En la prueba se entra con la clave de
+    producción**; una cuenta que solo existía en la prueba se pierde (el
+    administrador de emergencia de Vercel sigue entrando). En otra empresa no
+    se copian: la lista vive en la planilla de Lo Pirque.
+  - **Se conserva la carpeta de comprobantes de la prueba**
+    (`CONSERVA_DE_LA_PRUEBA`, la clave `drive_comprobantes` de `Config`):
+    sin eso, una foto subida probando iría a la carpeta real. Si la prueba no
+    tenía, queda la de producción.
+  - **No se tocan** las pestañas de paso del importador, los comentarios ni
+    una pestaña que el panel no conoce. Una que producción no tiene queda en
+    la prueba con su encabezado y sin datos.
+  - **La bitácora llega de producción** y la última línea es *Trajo los datos
+    de producción*, con desde qué planilla y cuántas filas de cada pestaña.
+- **Las tres guardas**, porque un error acá borraría lo real:
+  1. **No en producción** (`bloqueoDe()`, con `VERCEL_ENV`), ni sin la
+     variable, ni de una planilla a sí misma.
+  2. **La planilla real solo se lee.** Su id llega por
+     **`GOOGLE_SHEET_ID_PRODUCCION`**, una variable **solo de Preview**
+     (`AYC_GOOGLE_SHEET_ID_PRODUCCION` para Asados y Corderos), que lee
+     `empresa.ts` como `planillaProduccion`. Lo único que la recibe es
+     `leerOtraPlanilla()` (`sheets.ts`), que solo pide `spreadsheets.get` y
+     `values.batchGet`. Lo que se escribe va a `idPlanilla()`, como todo.
+  3. **No se escribe en una planilla que se llama como la de producción**
+     (`pareceProduccion()`: *produc* en el nombre, sin tildes): si alguien
+     cruzara las variables en Vercel, se frena. Se mira en la vista previa y
+     otra vez justo antes de escribir.
+- **Cómo escribe** (`reemplazarPestanas()` en `sheets.ts`): crea las
+  pestañas que faltan y agranda las que no tienen filas o columnas
+  suficientes (una llamada), las vacía enteras (una) y escribe (una por cada
+  4 MB, en pedazos de 2.000 filas: `enPedidos()`). **Vacía primero y escribe
+  después**, al revés que `escribirBloque()`: es la copia de pruebas, y si se
+  corta basta apretar de nuevo.
+- **Lecturas de Google**: abrir la ventana, tres (la lista de pestañas de
+  producción, sus pestañas juntas y las de la prueba juntas); traer, cinco y
+  tres o cuatro escrituras. **Las dos planillas comparten la cuenta de
+  servicio, y con ella el límite de 60 por minuto**: es un botón de vez en
+  cuando, no de todos los días. En producción, ninguna.
+- **Para encenderlo**: en Vercel → `landing-pirque` → Settings →
+  Environment Variables, `GOOGLE_SHEET_ID_PRODUCCION` **solo en Preview**,
+  con el id de la planilla real, y *Redeploy* de la versión de prueba. Ver
+  `migracion-team/variables-vercel.md`.
+- **Ningún permiso nuevo**: `mantencion`. **Ninguna columna ni pestaña
+  nueva.** **Ayuda**: el `?` de Configuración, la caja *Lo que se trae*, la
+  misión *La configuración* (su foto no cambia: muestra la parte de arriba) y
+  lo que puede el administrador (`roles.ts`).
+- **El panel de ejemplo** trae su *producción*: otra planilla falsa al lado
+  (`BBDD Produccion (ejemplo)`), copia de la de ejemplo al arrancar
+  (`capturas.sh`), con `GOOGLE_SHEET_ID_PRODUCCION=ejemplo-produccion`. La
+  planilla falsa ahora escribe un bloque entero con `values.batchUpdate` y
+  respeta `RAW`.
+- **Probado en el panel de ejemplo**: con la prueba ensuciada —reservas
+  borradas, el cupo en 999, otra carpeta de comprobantes, una fila de más en
+  la caja y una pestaña propia—, la ventana muestra *Reservas 35 · 4* y *Caja
+  chica 5 · 6* en ámbar; al traer, las pestañas del panel quedan iguales a
+  producción, el cupo vuelve a 120, la carpeta de la prueba se conserva, la
+  pestaña propia y las de importar no se tocan, y la bitácora termina con la
+  línea nueva. Pagos recibe 403, y sin confirmar, 400.
 
 ## Un producto nuevo se guarda con su botón (2026-11-24)
 

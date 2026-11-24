@@ -12,6 +12,9 @@
  *   npm run lecturas
  */
 const API = new URL('../../src/app/api/', import.meta.url);
+// La planilla de producción de *Traer los datos de producción*: otra, para que
+// la ruta no se frene antes de leer (en el Google falso es la misma memoria).
+process.env.GOOGLE_SHEET_ID_PRODUCCION ||= 'produccion-de-la-prueba';
 const lecturas = (globalThis.__glecturas ??= []);
 
 /** Lecturas que puede gastar cada ruta. Hoy todas caben en una tanda. */
@@ -41,6 +44,9 @@ const TOPE = {
   // tanda con las pestañas subidas; antes de subirlas, una más para mirar
   // la lista de pestañas, que es lo que se mide acá.
   'mantencion/importar': 2,
+  // Traer los datos de producción a la prueba (2026-11-24): la lista de
+  // pestañas de producción, sus pestañas juntas y las de la prueba juntas.
+  'mantencion/traer-produccion': 3,
   'estadisticas': 1                // las estadísticas de reservas (2026-11-19)
 };
 

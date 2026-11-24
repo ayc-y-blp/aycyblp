@@ -481,7 +481,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'preguntó entra como candidato, lo cotizado como borrador y lo ganado como ganada, con su reserva—; '
       + 'y los pedidos del sitio viejo, como reservas pagadas o por pagar. Antes de escribir nada muestra '
       + 'cuánto entra, a nombre de qué cuenta queda, qué filas no entran y cómo queda el cupo de cada día. '
-      + 'Se puede apretar dos veces: lo que ya entró no se duplica.'
+      + 'Se puede apretar dos veces: lo que ya entró no se duplica.',
+      'En una versión de prueba, «Traer los datos de producción a la prueba» deja la planilla de esa '
+      + 'versión igual a la de producción, para probar con lo que hay hoy: las reservas, las cotizaciones, '
+      + 'el equipo, la configuración, la bitácora y las cuentas (en la prueba se entra con la clave de '
+      + 'producción). Producción solo se lee. Antes muestra de qué planilla a cuál y cuántas filas trae de '
+      + 'cada pestaña; se conserva la carpeta de comprobantes de la prueba. En producción no se aprieta.'
     ],
     ojo: 'Esto cambia lo que ve el público. Un día suelto se abre o se cierra '
        + 'desde el calendario, sin tocar esta pantalla.'

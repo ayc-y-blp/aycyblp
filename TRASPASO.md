@@ -418,7 +418,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   PR: **un solo botón de guardar a la vista**; **otra empresa nueva se crea
   desde el producto** en una ventanita con un solo botón y queda elegida; y
   **las promociones llevan varios menús de niños a la vez** (*Niños* y
-  *Pequeños*), con un contador por cada uno en el cotizador del sitio.
+  *Pequeños*), con un contador por cada uno en el cotizador del sitio. **PR
+  #340, mergeado el 24-11-2026** con el *"mergea"* del cliente; `verificar.sh`
+  dio 15 de 15 después.
+- **Traer los datos de producción a la prueba** (24-11-2026, lo pidió el
+  cliente: *"sincronizar la base de datos de prueba con la base de datos de
+  producción… para poder seguir probando a base de lo que hay hoy"*): en
+  Configuración → Mantención de una **versión de prueba**, deja *BBDD Prueba*
+  igual a *BBDD Produccion* —las pestañas del panel, las cuentas incluidas—,
+  conservando la carpeta de comprobantes de la prueba. Producción solo se
+  lee, con la variable nueva **`GOOGLE_SHEET_ID_PRODUCCION`, solo en
+  Preview**, que pone el cliente (pendiente 17). En un PR abierto. Ver
+  `panel/CLAUDE.md`, "Traer los datos de producción a la prueba".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -646,6 +657,7 @@ detalle de cada una (qué es, en qué entorno, cómo recuperarla) está en
 | Variable | Production / Preview |
 |---|---|
 | `GOOGLE_SHEET_ID` | planilla real / copia "Pruebas" |
+| `GOOGLE_SHEET_ID_PRODUCCION` | — / la planilla real, **solo para leerla** (opcional, desde el 24-11-2026: *Traer los datos de producción a la prueba*) |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PRIVATE_KEY` | iguales |
 | `GOOGLE_CALENDAR_ID` | solo Production (opcional) |
 | `PANEL_USUARIO`, `PANEL_CLAVE` | iguales (administrador de emergencia; cambiar la clave cierra todas las sesiones) |
@@ -1382,6 +1394,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
 | 15 | ~~Ganar en un sábado que todavía no está en el calendario~~ | **Hecho el 23-11-2026** (el cliente: *"sí, cambia lo del sábado"*): nace público si la cotización no es exclusiva (`diaParaGanar()`). Las reservas a mano y lo importado siguen creándolo privado | — |
 | 16 | **Cuándo pasar a una base de datos de verdad** (23-11-2026, lo preguntó el cliente) | **Hoy no hace falta.** Se cambia cuando pase **cualquiera** de estas: (a) errores del límite de lecturas de Google con uso normal, aun después de pedir más cupo (es gratis); (b) más o menos 10 a 15 personas usando el panel a la vez; (c) cambios que se pisan: algo guardado que se pierde, una reserva duplicada o un día sobrevendido; (d) algo que la planilla no puede hacer: apartar un cupo mientras alguien paga en Shopify, informes de varios años o que crucen las dos empresas. **Antes, lo barato**: pedir más cupo en Google Cloud y pasar la bitácora de cada año a otra planilla. **Se revisa con un número cuando Asados y Corderos esté en uso real**: las dos empresas usan la misma cuenta del panel y comparten el límite. **Cuando toque**: Postgres desde la pestaña *Storage* de Vercel (hoy es Neon, por el Marketplace): se cobra en la misma cuenta, conecta sus variables al panel solo y cada versión de prueba puede tener su copia de la base, como hoy la planilla "Pruebas". No Blob ni Edge Config: guardan archivos y configuración, no datos. Los precios se revisan ese día. Lo que se pierde es abrir la planilla: conviene dejar una copia diaria de solo lectura en Google Sheets. Es un proyecto propio, en un mes tranquilo; lo facilita que todo pasa por `lib/sheets.ts` | Cliente decide; Claude mide |
+| 17 | **Encender *Traer los datos de producción a la prueba*** (24-11-2026) | En Vercel → `landing-pirque` → Settings → Environment Variables: agregar `GOOGLE_SHEET_ID_PRODUCCION` **solo en Preview**, con el id de *BBDD Produccion* (el mismo `GOOGLE_SHEET_ID` de Production: lo que va entre `/d/` y `/edit` en su link). Después, *Redeploy* de la versión de prueba y apretarlo en Configuración → Mantención. El valor no se pega en el chat | Cliente |
 
 ---
 

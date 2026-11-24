@@ -369,6 +369,11 @@ export const ESCENAS = {
     // Cuenta las filas de la planilla antes de mostrar la lista: se espera a que llegue.
     await ventana().getByText('Se borra').waitFor({ timeout: 15000 });
   },
+  // Traer los datos de producción a la prueba (2026-11-24): lee las dos planillas antes de mostrar la lista.
+  'v-traer-produccion': async () => {
+    await ir('/config'); await clic(boton(/Ver qué se trae/));
+    await ventana().getByText('Lo que se trae').waitFor({ timeout: 15000 });
+  },
   'v-importar-crm': async () => {
     await ir('/config'); await clic(boton(/Ver qué entra/));
     // Lee las pestañas de la planilla antes de mostrar la vista previa: se espera a que llegue.

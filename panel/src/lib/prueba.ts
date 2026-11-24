@@ -5894,6 +5894,75 @@ console.log('\nDejar la base en cero para producción');
      'la bitácora dice qué se borró');
 }
 
+console.log('\nTraer los datos de producción a la prueba');
+{
+  const S = await import('./sincronizar.ts');
+  const P = await import('./produccion.ts');
+  const casa = S.pestanasACopiar(true).map((p) => p.hoja);
+  const otra = S.pestanasACopiar(false).map((p) => p.hoja);
+  ok(casa.length === P.SE_VACIAN.length + P.SE_CONSERVAN.length
+     && [...P.SE_VACIAN, ...P.SE_CONSERVAN].every((p) => casa.includes(p.hoja)),
+     'se traen todas las pestañas del panel: las que vacía y las que conserva la base en cero');
+  ok(!P.DE_PASO.some((h) => casa.includes(h)) && !P.FUERA_DE_LA_PLANILLA.some((h) => casa.includes(h)),
+     'no se tocan las pestañas de paso del importador ni los comentarios');
+  ok(casa.includes('Usuarios') && !otra.includes('Usuarios') && otra.length === casa.length - 1,
+     'las cuentas se traen en Lo Pirque; en otra empresa no, porque viven en la planilla de la casa');
+  ok(S.bloqueoDe({ entorno: 'produccion', origen: 'real', destino: 'pruebas' }) === 'produccion'
+     && S.bloqueoDe({ entorno: 'prueba', origen: ' ', destino: 'pruebas' }) === 'sinVariable'
+     && S.bloqueoDe({ entorno: 'prueba', origen: 'real', destino: 'real' }) === 'misma'
+     && S.bloqueoDe({ entorno: 'prueba', origen: 'real', destino: 'pruebas' }) === ''
+     && S.bloqueoDe({ entorno: '', origen: 'real', destino: 'pruebas' }) === '',
+     'no se trae en producción, sin la variable, ni de una planilla a sí misma');
+  ok(S.pareceProduccion('BBDD Produccion') && S.pareceProduccion('AyC BBDD Producción') && S.pareceProduccion('PRODUCCIÓN')
+     && !S.pareceProduccion('BBDD Prueba') && !S.pareceProduccion('Pruebas') && !S.pareceProduccion(''),
+     'no se escribe en una planilla que se llama como la de producción');
+  ok(S.textoDelBloqueo('destinoProduccion', 'BBDD Produccion').includes('«BBDD Produccion»')
+     && S.textoDelBloqueo('sinVariable').includes('GOOGLE_SHEET_ID_PRODUCCION') && S.textoDelBloqueo('') === '',
+     'cada bloqueo se dice en palabras');
+  // La configuración: la carpeta de comprobantes de la prueba se queda.
+  const prod = [['Clave', 'Valor'], ['cupo_normal', 120], ['drive_comprobantes', 'carpeta-real']];
+  const conPrueba = S.conConfigDeLaPrueba(prod, [['Clave', 'Valor'], ['cupo_normal', '80'], ['drive_comprobantes', 'carpeta-prueba']]);
+  ok(JSON.stringify(conPrueba) === JSON.stringify([['Clave', 'Valor'], ['cupo_normal', 120], ['drive_comprobantes', 'carpeta-prueba']])
+     && prod[2][1] === 'carpeta-real',
+     'se trae la configuración de producción, menos la carpeta de comprobantes de la prueba (sin tocar lo leído)');
+  ok(JSON.stringify(S.conConfigDeLaPrueba(prod, [['Clave', 'Valor'], ['drive_comprobantes', ' ']])) === JSON.stringify(prod)
+     && JSON.stringify(S.conConfigDeLaPrueba(prod, null)) === JSON.stringify(prod),
+     'si la prueba no tenía carpeta, queda la de producción');
+  ok(JSON.stringify(S.conConfigDeLaPrueba([['Clave', 'Valor'], ['cupo_normal', 120]], [['Valor', 'Clave'], ['carpeta-prueba', 'Drive_Comprobantes']]))
+       === JSON.stringify([['Clave', 'Valor'], ['cupo_normal', 120], ['drive_comprobantes', 'carpeta-prueba']]),
+     'la clave se agrega si producción no la tiene, y las columnas se leen por nombre');
+  const leidas = new Map<string, (string | number | boolean)[][] | null>([
+    ['Reservas', [['ID Orden', 'Personas'], ['1007', 4], ['MANUAL-1', 2]]],
+    ['Config', prod],
+    ['Caja chica', null],
+    ['Notas', null]
+  ]);
+  const plan = S.planDeCopia(['Reservas', 'Config', 'Caja chica', 'Notas'], leidas, new Set(['Reservas', 'Caja chica']),
+    [['Clave', 'Valor'], ['drive_comprobantes', 'carpeta-prueba']]);
+  ok(plan.copiar.map((c) => c.hoja).join() === 'Reservas,Config' && plan.vaciar.join() === 'Caja chica'
+     && plan.copiar[1].filas[2][1] === 'carpeta-prueba' && plan.copiar[0].filas[1][1] === 4,
+     'se copia lo que producción tiene, con su tipo; lo que no tiene, en la prueba queda vacío; lo que ninguna tiene, nada');
+  ok(S.filasConAlgo([['A'], ['x'], [''], [0]]) === 2 && S.filasConAlgo(null) === null && S.filasConAlgo([]) === 0,
+     'cuenta las filas con algo, sin el encabezado; un cero es algo');
+  ok(JSON.stringify(S.tamanoDe([['a', 'b'], ['c', 'd', 'e']])) === JSON.stringify({ filas: 2, columnas: 3 }),
+     'mide cuántas filas y columnas ocupa una pestaña');
+  {
+    const larga = { hoja: 'Bitácora', filas: Array.from({ length: 4500 }, (_, i) => [`fila ${i}`]) };
+    const corta = { hoja: 'Puestos', filas: [['Puesto'], ['Garzón']] };
+    const juntos = S.enPedidos([larga, corta]);
+    const trozos = juntos.flat();
+    ok(juntos.length === 1 && trozos.map((t) => `${t.hoja}@${t.desde}:${t.filas.length}`).join()
+         === 'Bitácora@1:2000,Bitácora@2001:2000,Bitácora@4001:500,Puestos@1:2',
+       'una pestaña larga va en pedazos de 2.000 filas que siguen donde quedó el anterior');
+    const chicos = S.enPedidos([larga, corta], 30_000);
+    ok(chicos.length > 1 && chicos.flat().length === trozos.length && chicos.every((p) => p.length >= 1),
+       'los pedazos se reparten en varios pedidos si no caben en uno, sin perder ninguno');
+    ok(S.enPedidos([]).length === 0, 'sin nada que escribir, ningún pedido');
+  }
+  ok(S.detalleDeLaCopia('BBDD Produccion', plan) === 'desde «BBDD Produccion» · Reservas 2 · Config 2 · vacías: Caja chica',
+     'la bitácora dice desde qué planilla y cuántas filas de cada pestaña');
+}
+
 console.log('\nImportar del CRM');
 {
   const I = await import('./importar.ts');

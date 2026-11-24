@@ -37,6 +37,13 @@ export interface Empresa {
   nombre: string;
   /** El id de su planilla de Google. */
   planilla: string;
+  /**
+   * **El id de su planilla de producción, solo para leerla** (2026-11-24):
+   * va en la versión de prueba, para *Traer los datos de producción*
+   * (`lib/sincronizar.ts`). En producción no va: ahí `planilla` ya es ésa.
+   * Nada escribe en ella: solo la lee `leerOtraPlanilla()`.
+   */
+  planillaProduccion: string;
   /** La cuenta de servicio que lee y escribe esa planilla. */
   cuenta: { correo: string; clave: string };
   /** El calendario de Google donde se anotan sus reservas. Opcional. */
@@ -54,7 +61,7 @@ const v = (nombre: string) => process.env[nombre] ?? '';
 
 /** Las variables que son de una empresa: solo este archivo las lee. */
 export const VARIABLES_DE_LA_EMPRESA = [
-  'GOOGLE_SHEET_ID', 'GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_CALENDAR_ID',
+  'GOOGLE_SHEET_ID', 'GOOGLE_SHEET_ID_PRODUCCION', 'GOOGLE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_PRIVATE_KEY', 'GOOGLE_CALENDAR_ID',
   'SHOPIFY_DOMINIO', 'SHOPIFY_ADMIN_TOKEN', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET',
   'SHOPIFY_VERSION', 'SHOPIFY_WEBHOOK_SECRET', 'CRM_API_KEY'
 ] as const;
@@ -71,6 +78,7 @@ function delEntorno(): Empresa {
     id: CASA,
     nombre: fichaDe(CASA, process.env).nombre,
     planilla: v('GOOGLE_SHEET_ID'),
+    planillaProduccion: v('GOOGLE_SHEET_ID_PRODUCCION'),
     cuenta: { correo: v('GOOGLE_SERVICE_ACCOUNT_EMAIL'), clave: v('GOOGLE_PRIVATE_KEY') },
     calendario: v('GOOGLE_CALENDAR_ID'),
     tienda: {
@@ -98,6 +106,7 @@ function asadosYCorderos(): Empresa {
     id: AYC,
     nombre: fichaDe(AYC, process.env).nombre,
     planilla: v('AYC_GOOGLE_SHEET_ID'),
+    planillaProduccion: v('AYC_GOOGLE_SHEET_ID_PRODUCCION'),
     cuenta: {
       correo: v('AYC_GOOGLE_SERVICE_ACCOUNT_EMAIL') || casa.cuenta.correo,
       clave: v('AYC_GOOGLE_PRIVATE_KEY') || casa.cuenta.clave

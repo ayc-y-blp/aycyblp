@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import Ayuda from './Ayuda';
 import PasoAProduccion from './PasoAProduccion';
 import ImportarCRM from './ImportarCRM';
+import TraerProduccion from './TraerProduccion';
 import BuscarEnLista from './BuscarEnLista';
 import { NOMBRE_ROL } from '@/lib/roles';
 import { usarSoloMira } from './SesionCliente';
@@ -451,6 +452,7 @@ export default function ConfigEditor() {
             {resumen && <span className="text-[14px] text-hueso/70">{resumen}</span>}
           </div>
           <ImportarCRM />
+          <TraerProduccion />
           <PasoAProduccion />
         </div>
       )
