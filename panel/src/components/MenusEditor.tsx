@@ -30,6 +30,7 @@ import {
 } from '@/lib/menus';
 import Campo from './Campo';
 import MostrarDesactivados from './MostrarDesactivados';
+import PromocionesEditor from './PromocionesEditor';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
 import { enPesos } from '@/lib/ocupacion';
@@ -126,6 +127,21 @@ export default function MenusEditor() {
   const [verInactivos, setVerInactivos] = useState(false);
   /** Vista gerencia sin `configurar`: el catálogo se mira y no se toca. */
   const soloMira = usarSoloMira('configurar');
+  /**
+   * **El catálogo o las promociones** (2026-11-23): dos pestañas en la misma
+   * pantalla, para que las promociones no se mezclen con los productos. Se
+   * llega directo con `?ver=promociones`.
+   */
+  const [vista, setVista] = useState<'catalogo' | 'promociones'>('catalogo');
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('ver') === 'promociones') setVista('promociones');
+  }, []);
+  const verVista = (v: 'catalogo' | 'promociones') => {
+    setVista(v); setAbierta(null);
+    const url = new URL(window.location.href);
+    if (v === 'promociones') url.searchParams.set('ver', 'promociones'); else url.searchParams.delete('ver');
+    window.history.replaceState(null, '', url);
+  };
 
   useEffect(() => {
     fetch('/api/menus').then((r) => r.json())
@@ -188,9 +204,20 @@ export default function MenusEditor() {
 
   return (
     <section>
-      <h1 className="text-xl font-bold uppercase tracking-wide mb-1">
-        Productos<Ayuda tema="menus" />
-      </h1>
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 lg:mb-2">
+        <h1 className="text-xl font-bold uppercase tracking-wide">
+          Productos<Ayuda tema="menus" />
+        </h1>
+        <div role="tablist" aria-label="Qué mirar" className="flex flex-wrap gap-2">
+          {([['catalogo', '📦 Catálogo'], ['promociones', '🎁 Promociones']] as const).map(([v, texto]) => (
+            <button key={v} type="button" role="tab" aria-selected={vista === v} onClick={() => verVista(v)}
+              className={`boton min-h-[44px] ${vista === v ? 'border-oro bg-oro/15 font-semibold text-hueso' : ''}`}>
+              {texto}
+            </button>
+          ))}
+        </div>
+      </div>
+      {vista === 'promociones' ? <PromocionesEditor catalogo={menus} soloMira={soloMira} /> : <>
       <AvisoFijo clave="menus-intro" className="mb-6 max-w-2xl lg:mb-4">
         Todo lo que se vende y se cotiza. <strong>El nombre de un menú tiene que
         ser exactamente el mismo acá y en Shopify</strong>: solo se perdonan
@@ -472,6 +499,7 @@ export default function MenusEditor() {
         guardan el nombre que tenían, así que sus reservas van a contarse
         aparte hasta que se corrijan esas filas en la planilla.
       </AvisoFijo>
+      </>}
     </section>
   );
 }

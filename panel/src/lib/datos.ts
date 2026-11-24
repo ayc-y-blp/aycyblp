@@ -29,6 +29,9 @@ import { estadoConCobroLocal } from './cobroLocal.ts';
 import { HOJA_CAJA, ENCABEZADO_CAJA, leerCajaDe, filaCaja, nuevoIdCaja, type Movimiento } from './caja.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
          type Menu } from './menus.ts';
+import {
+  HOJA_PROMOCIONES, ENCABEZADO_PROMOCIONES, leerPromocionesDe, aFilasPromociones, type Promocion
+} from './promociones.ts';
 import { esFecha, hoy, fechaDePlanilla, horaDePlanilla, type Fecha } from './fechas.ts';
 import { normalizar } from './columnas.ts';
 import { HOJA_USUARIOS, leerUsuariosDe, aFilasUsuarios, vistaDeEmpresa, type Usuario } from './usuarios.ts';
@@ -384,6 +387,26 @@ export async function leerMenus(): Promise<Menu[]> {
 /** Reescribe la pestaña entera, creándola si hace falta. */
 export async function guardarMenus(menus: Menu[]): Promise<void> {
   await escribirBloque(HOJA_MENUS, aFilasMenus(menus));
+}
+
+/**
+ * **Las promociones del sitio** (2026-11-23, `lib/promociones.ts`). Si la
+ * pestaña no está, se crea con su encabezado —como `Caja chica`—: así una
+ * tanda que la pregunta no gasta una lectura de más mirando el libro.
+ */
+export async function leerPromociones(): Promise<Promocion[]> {
+  try {
+    return leerPromocionesDe(await leerHoja(HOJA_PROMOCIONES));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_PROMOCIONES, ENCABEZADO_PROMOCIONES); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** Reescribe la pestaña entera. */
+export async function guardarPromociones(promos: Promocion[]): Promise<void> {
+  await escribirBloque(HOJA_PROMOCIONES, aFilasPromociones(promos));
 }
 
 /* ---------- El equipo ---------- */

@@ -25,6 +25,7 @@ const usu = await import(L + 'usuarios.ts');
 const fil = await import(L + 'filas.ts');
 const not = await import(L + 'notas.ts');
 const caj = await import(L + 'caja.ts');
+const prm = await import(L + 'promociones.ts');
 const pla = await import(L + 'plata.ts');
 
 const SALIDA = process.argv[2];
@@ -79,7 +80,25 @@ H['Menús'] = men.aFilasMenus([
   P({ nombre: 'Pequeños', precioEnLinea: 6000, precioEnLocal: 9000, cotizacion: true, precioCotizacion: 9000, costo: 3000 }),
   P({ nombre: 'Show ecuestre', tipo: 'Show', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 450000, costo: 250000 }),
   P({ nombre: 'Arriendo del recinto', tipo: 'Arriendo', sitioPublico: false, cotizacion: true, cobro: 'Monto fijo', precioCotizacion: 2500000 }),
-  P({ nombre: 'Desayuno de campo', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 8000, iva: '+ IVA' })
+  P({ nombre: 'Desayuno de campo', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 8000, iva: '+ IVA' }),
+  // Las promociones del sitio (2026-11-23): la clase del Combate y el karting,
+  // que lo cobra otra empresa y va aparte del total.
+  P({ nombre: 'Clase de parrilla', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 15000, iva: '+ IVA', costo: 6000 }),
+  P({ nombre: 'Karting', tipo: 'Extra', sitioPublico: false, cotizacion: true, precioCotizacion: 35000, iva: '+ IVA', loCobra: 'Karting Pirque' })
+]);
+
+/* ---------- Promociones del sitio (2026-11-23) ---------- */
+const PR = prm.nuevaPromocion;
+H['Promociones'] = prm.aFilasPromociones([
+  PR({ id: 'PR-01', nombre: 'Fin de año', sitio: 'fin-de-ano', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
+    minimo: 22, descuento: 11, arriendo: prm.ARRIENDO_PROMO.semana }),
+  PR({ id: 'PR-02', nombre: 'Combate de Parrillas', sitio: 'combate', menus: ['A Brasas abiertas'],
+    incluye: ['Clase de parrilla'], minimo: 22 }),
+  PR({ id: 'PR-03', nombre: 'Gran Premio de Fin de Año', sitio: 'gran-premio', menus: ['Lo Pirque', 'A Brasas abiertas', 'Sommelier'],
+    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 22 }),
+  PR({ id: 'PR-04', nombre: 'Día de Campo en Familia', sitio: 'dia-de-campo', menus: ['Lo Pirque'], ninos: 'Niños',
+    incluye: ['Show ecuestre'], suma: ['Desayuno de campo'], minimo: 30 }),
+  PR({ id: 'PR-05', nombre: 'Mesa de Directorio', menus: ['Sommelier'], minimo: 8, activa: false })
 ]);
 
 /* ---------- Fechas Hábiles ---------- */
@@ -494,7 +513,7 @@ H['Importar reservas'] = [
 
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

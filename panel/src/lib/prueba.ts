@@ -7185,5 +7185,72 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'lo que cobra otra empresa no va a la caja de Fudo');
 }
 
+{
+  console.log('\nLas promociones del sitio (2026-11-23)');
+  const M = await import('./menus.ts');
+  const PR = await import('./promociones.ts');
+  const prod = (nombre: string, x: Partial<import('./menus.ts').Menu>) =>
+    M.nuevoProducto({ nombre, sitioPublico: false, cotizacion: true, iva: '+ IVA', ...x });
+  const cat = [
+    prod('Lo Pirque', { precioCotizacion: 50000 }), prod('Brasas', { precioCotizacion: 70000 }),
+    prod('Niños', { precioCotizacion: 19000, iva: 'Incluido' }),
+    prod('Show ecuestre', { tipo: 'Show', cobro: 'Monto fijo', precioCotizacion: 300000 }),
+    prod('Arriendo del recinto', { tipo: 'Arriendo', cobro: 'Monto fijo', precioCotizacion: 2500000 }),
+    prod('Karting', { tipo: 'Extra', precioCotizacion: 35000, loCobra: 'Karting Pirque' }),
+    prod('Sin precio', { tipo: 'Extra' })
+  ];
+  const gran = PR.nuevaPromocion({ id: 'PR-01', nombre: 'Gran Premio', sitio: 'gran-premio', menus: ['Lo Pirque', 'Brasas'],
+    incluye: ['Show ecuestre'], suma: ['Karting'], minimo: 10 });
+  const combate = PR.nuevaPromocion({ id: 'PR-02', nombre: 'Combate', sitio: 'combate', menus: ['Brasas'],
+    minimo: 10, descuento: 10, arriendo: PR.ARRIENDO_PROMO.semana });
+  const campo = PR.nuevaPromocion({ id: 'PR-03', nombre: 'Día de campo', sitio: 'dia-de-campo', menus: ['Lo Pirque'],
+    ninos: 'Niños', minimo: 10 });
+  const ctx = {
+    catalogo: cat, diasAbiertos: [0, 6], hoy: '2026-11-24',
+    fechas: [{ fecha: '2026-11-28', estado: 'Abierta' }, { fecha: '2026-12-05', estado: 'Privada exclusiva' }],
+    reglaShow: { desde: 25, minimo: 100000 },
+    reglaArriendo: { privado: [{ hasta: 10, minimo: 400000 }, { hasta: 15, minimo: 200000 }], exclusivo: [] },
+    reservasDelDia: () => 0
+  };
+  const sab = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'brasas', suma: ['Karting'], fecha: '2026-11-28' }, ctx);
+  ok(sab.ok && sab.publico && sab.arriendo === 0 && sab.cuentas.total === 999600
+     && sab.lineas.some((l) => l.concepto === 'Show ecuestre' && l.precio === 0),
+     'un sábado abierto al público: el menú elegido, el show incluido y sin arriendo');
+  ok(sab.ok && sab.otras.length === 1 && sab.otras[0].total === 499800 && sab.porPersona === 83300,
+     'el karting va aparte del total, con quien lo cobra');
+  const mar = PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(mar.ok && !mar.publico && mar.arriendo === 200000
+     && mar.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 200000)
+     && mar.lineas.some((l) => l.concepto === 'Show ecuestre' && l.precio === 300000),
+     'un martes con 12: el arriendo mínimo del tramo y el show con su precio, como en una cotización de vendedor');
+  ok(!mar.ok || mar.otras.length === 0, 'sin sumar el karting no hay nada aparte');
+  const comb = PR.cotizarPromocion(combate, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], fecha: '2026-12-01' }, ctx);
+  ok(comb.ok && comb.arriendo === 0 && comb.lineas.length === 1 && comb.lineas[0].concepto === 'Brasas'
+     && comb.cuentas.total === Math.round(12 * 70000 * 1.19 * 0.9),
+     'menú fijo, sin arriendo de lunes a viernes y el descuento de la promoción');
+  const campoC = PR.cotizarPromocion(campo, { adultos: 10, ninos: 5, menu: '', suma: [], fecha: '2026-11-28' }, ctx);
+  ok(campoC.ok && campoC.invitados === 15 && campoC.lineas.some((l) => l.concepto === 'Niños' && l.cantidad === 5),
+     'con menú de niños: los niños van en su línea y cuentan para el total de personas');
+  const no = (r: ReturnType<typeof PR.cotizarPromocion>) => (r.ok ? '' : r.codigo);
+  ok(no(PR.cotizarPromocion(gran, { adultos: 5, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'minimo'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-24' }, ctx)) === 'fecha'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-12-05' }, ctx)) === 'tomado'
+     && no(PR.cotizarPromocion(gran, { adultos: 12, ninos: 0, menu: 'Sommelier', suma: [], fecha: '2026-11-28' }, ctx)) === 'menu'
+     && no(PR.cotizarPromocion({ ...gran, activa: false }, { adultos: 12, ninos: 0, menu: 'Brasas', suma: [], fecha: '2026-11-28' }, ctx)) === 'promocion',
+     'no se cotiza bajo el mínimo, hoy, un día tomado en exclusiva, un menú ajeno ni una promoción apagada');
+  const vuelta = PR.leerPromocionesDe(PR.aFilasPromociones([gran, combate, campo]));
+  ok(JSON.stringify(vuelta) === JSON.stringify([gran, combate, campo]), 'una promoción se escribe y se vuelve a leer igual');
+  const limpia = PR.limpiarPromocion({ id: 'PR-09', nombre: ' X ', sitio: 'no-existe', menus: ['brasas', 'Inventado'],
+    incluye: 'show ecuestre | Show ecuestre', descuento: 150 }, cat);
+  ok(limpia.sitio === '' && limpia.menus.join() === 'Brasas' && limpia.incluye.join() === 'Show ecuestre'
+     && limpia.descuento === 100 && limpia.nombre === 'X',
+     'lo que llega se limpia: productos del catálogo, sin repetidos, y una clave del sitio que existe');
+  ok(PR.nuevoIdPromocion([gran, combate, campo]) === 'PR-04', 'el próximo ID de promoción');
+  const sitio = PR.promocionesParaElSitio([gran, combate, PR.nuevaPromocion({ id: 'PR-05', sitio: 'ia', menus: ['Brasas'], incluye: ['Sin precio'] })], cat);
+  ok(sitio.length === 2 && sitio[0].desde === 50000 && sitio[1].desde === 63000
+     && sitio[0].suma[0].loCobra === 'Karting Pirque' && !('costo' in sitio[0].menus[0]),
+     'el sitio recibe las conectadas, desde cuánto por persona y sin costos; una con un producto sin precio no sale');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

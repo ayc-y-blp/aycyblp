@@ -41,6 +41,7 @@ import { HOJA_BITACORA } from './bitacora.ts';
 import { HOJA_USUARIOS } from './usuarios.ts';
 import { HOJA_CONFIG } from './config.ts';
 import { HOJA_MENUS } from './menus.ts';
+import { HOJA_PROMOCIONES } from './promociones.ts';
 import { HOJA_VENDEDORES } from './vendedores.ts';
 import { HOJA_CAJA } from './caja.ts';
 
@@ -74,6 +75,7 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
   { hoja: HOJA_USUARIOS, que: 'Cuentas' },
   { hoja: HOJA_CONFIG, que: 'Configuración' },
   { hoja: HOJA_MENUS, que: 'Productos y precios' },
+  { hoja: HOJA_PROMOCIONES, que: 'Promociones' },
   { hoja: HOJA_COLABORADORES, que: 'Fichas de los extras' },
   { hoja: HOJA_VENDEDORES, que: 'Fichas de vendedores y socios' }
 ];

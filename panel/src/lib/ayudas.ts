@@ -378,7 +378,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       'En una reserva comprada por el sitio manda lo que cobró la tienda, no '
       + 'esto: el total viene con el pedido.',
       'Un extra que cobra otra empresa, como el karting, lleva su nombre en '
-      + '*Lo cobra otra empresa*: en una cotización va aparte del total.'
+      + '*Lo cobra otra empresa*: en una cotización va aparte del total.',
+      '*🎁 Promociones* son las de la página de promociones del sitio: cada una '
+      + 'es una receta de estos productos —el menú, lo que incluye, lo que se '
+      + 'puede sumar, desde cuántas personas y su descuento— y se conecta a su '
+      + 'bloque. Ahí el cliente la cotiza solo, con las reglas de siempre: el '
+      + 'show incluido en un día público y el arriendo mínimo en uno que no.'
     ],
     ojo: 'Si acá aparece un menú en amarillo es que alguna reserva usa un '
        + 'nombre que no está en esta lista, y conviene revisarlo.'
@@ -1275,6 +1280,43 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Se usan para el monto sugerido al anotar una reserva a mano.',
       'No cambian el precio del sitio público ni el de Shopify: esos se cambian aparte.'
+    ]
+  },
+  promoEnElSitio: {
+    titulo: 'En el sitio',
+    texto: [
+      'A qué promoción de la página de promociones se conecta: ahí aparece su cotizador. Los textos y la foto '
+      + 'de cada bloque están en la página; de acá salen los productos y los precios.',
+      'Cada bloque tiene una sola promoción. Con *Ninguna* queda guardada sin salir.'
+    ]
+  },
+  promoMenu: {
+    titulo: 'El menú',
+    texto: [
+      'Con un menú, va fijo. Con varios, el cliente elige uno en el sitio, para todos los adultos.',
+      'Los precios son los de cotización del catálogo.'
+    ]
+  },
+  promoSuma: {
+    titulo: 'Se puede sumar',
+    texto: [
+      'Lo que el cliente puede agregar en el sitio. Va por persona, o una vez si es un monto fijo. '
+      + 'Lo que cobra otra empresa, como el karting, va aparte del total.'
+    ]
+  },
+  promoCondicion: {
+    titulo: 'Personas y descuento',
+    texto: [
+      'Desde cuántas personas se cotiza en el sitio, y el descuento de la promoción sobre el total. '
+      + 'Es la condición especial: la pone quien arma la promoción.'
+    ]
+  },
+  promoArriendo: {
+    titulo: 'El arriendo',
+    texto: [
+      '*Como siempre*: un día que no abrimos al público, con poca gente, lleva el arriendo mínimo de Configuración. '
+      + 'Las otras dos lo perdonan: siempre, o solo de lunes a viernes.',
+      'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.'
     ]
   },
   loCobra: {
