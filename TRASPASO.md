@@ -462,8 +462,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   la suya apagada no sale. **Antes de mergear conviene revisar en el panel de
   producción qué promociones hay y marcar las que deben salir**: hoy solo
   Gran Premio tiene el cotizador encendido, y Fin de año saldría solo si tiene
-  su promoción. Columna nueva al final de `Promociones`. En un PR abierto. Ver
-  `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`.
+  su promoción. Columna nueva al final de `Promociones`. **PR #344, mergeado
+  el 24-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15 de 15
+  después. **Así quedó producción**: el panel manda solo Gran Premio (en la
+  lista), así que `promociones.html` abre en Gran Premio, sin fila de
+  pastillas, y Fin de año no sale ni con su link. Para que salgan las otras,
+  hay que crearlas en *Productos → 🎁 Promociones* de producción, conectarlas
+  a su bloque y marcarlas. Ver `CLAUDE.md`, "El cotizador de promociones", y
+  `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
