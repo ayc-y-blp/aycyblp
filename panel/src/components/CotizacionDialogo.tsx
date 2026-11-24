@@ -1780,11 +1780,17 @@ export default function CotizacionDialogo({
           queden dentro de una pantalla"*). Desde 1024px la ventana es ancha:
           los pasos y las alternativas van en una fila, y cada paso reparte lo
           suyo en columnas. En el celular, lo de siempre. */}
-      <div className="lg:mb-2 lg:mt-1.5 lg:flex lg:items-stretch lg:gap-2">
+      {/* **Dos filas en el computador** (2026-11-24, lo pidió el cliente: *"los
+          pasos tienen que llegar en una fila y ahí comprometer un poco la
+          eficiencia del espacio y poner las alternativas en una segunda fila
+          abajo. Son igual cosas importantes… en otra fila veo las alternativas
+          y quizás un botón grande de las notas"*): arriba los cinco pasos, a lo
+          ancho; abajo las alternativas y *🗒 Notas*, grande, a la derecha. */}
+      <div className="lg:mb-2 lg:mt-1.5 lg:space-y-1.5">
       {/* Los cinco pasos, como botones: se ve dónde se está y se puede saltar.
           Desde el 2026-11-11 son cinco: el envío y el contrato son dos
           conversaciones con el cliente, cada una con su hito al final. */}
-      <nav ref={arriba} aria-label="Pasos" className="mb-4 grid grid-cols-5 gap-1 lg:mb-0 lg:min-w-0 lg:flex-1">
+      <nav ref={arriba} aria-label="Pasos" className="mb-4 grid grid-cols-5 gap-1 lg:mb-0 lg:gap-1.5">
         {PASOS.map((nombre, i) => (
           <button key={nombre} type="button" onClick={() => void irA(i + 1)}
             aria-current={paso === i + 1 ? 'step' : undefined}
@@ -1801,9 +1807,11 @@ export default function CotizacionDialogo({
       {/* ***🗒 Notas*** (2026-11-23, la agenda del vendedor): lo conversado
           con el cliente y cuándo volver a contactarlo, a la vista en los cinco
           pasos. Solo para su vendedor y la gerencia (`puedeVerNotas()`). */}
+      <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-2">
       {p && veNotas && (
         <button type="button" onClick={() => setNotasAbiertas(true)}
-          className="boton mb-4 min-h-[48px] w-full justify-center font-semibold sm:w-auto lg:mb-0 lg:min-h-[44px] lg:shrink-0">
+          className="boton mb-4 min-h-[48px] w-full justify-center text-[15px] font-semibold sm:w-auto lg:order-last lg:mb-0
+                     lg:min-h-[44px] lg:min-w-[15rem] lg:shrink-0">
           🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}
           {esFecha(recontactar) && <span className="ml-1 font-normal text-hueso/70">· 📞 {enCorto(recontactar)}</span>}
         </button>
@@ -1813,7 +1821,7 @@ export default function CotizacionDialogo({
           pestaña por alternativa y *+ Otra alternativa*, en vez de dos
           cotizaciones sueltas con dos números. */}
       {p && paso >= 2 && (
-        <div className="mb-4 rounded-xl border border-hueso/15 bg-panel p-2 lg:mb-0 lg:max-w-[58%] lg:shrink-0
+        <div className="mb-4 rounded-xl border border-hueso/15 bg-panel p-2 lg:mb-0 lg:min-w-0 lg:flex-1
                         lg:px-1.5 lg:py-[3px]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="flex items-center text-[13px] font-medium uppercase tracking-wide text-hueso/60">
@@ -1862,6 +1870,7 @@ export default function CotizacionDialogo({
           )}
         </div>
       )}
+      </div>
 
       {/* Para quién es, a la vista en los cuatro pasos. */}
       </div>
@@ -2223,7 +2232,7 @@ export default function CotizacionDialogo({
                   className="font-semibold text-oro underline">Productos</a>.
               </p>
             ) : (
-              <div>
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_12rem] lg:gap-x-2 lg:gap-y-1.5">
                 <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-hueso/60 lg:hidden">
                   Agregar <AyudaCorta tema="agregarProducto" />
                 </p>
@@ -2234,8 +2243,13 @@ export default function CotizacionDialogo({
                     de cada producto en Productos. */}
                 {[
                   { titulo: 'Menús', lista: cotizables.filter((m) => m.tipo === TIPO_PRODUCTO.menu), otra: false },
-                  { titulo: 'Extras y arriendo', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu), otra: true }
-                ].filter((g) => g.lista.length > 0 || g.otra).map((g, n) => (
+                  { titulo: 'Extras y arriendo', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu && !m.loCobra), otra: true },
+                  // **Fuera del local** (2026-11-24, lo pidió el cliente: *"segmentar
+                  // esto… y lo mismo para la cotización de un vendedor"*): lo que
+                  // cobra otra empresa —el karting, un transfer— en su grupo. Va
+                  // aparte del total, y cada botón dice quién lo cobra.
+                  { titulo: 'Fuera del local', lista: cotizables.filter((m) => m.tipo !== TIPO_PRODUCTO.menu && !!m.loCobra), otra: false }
+                ].filter((g) => g.lista.length > 0 || g.otra).map((g, n, grupos) => (
                   // En el computador, el nombre del grupo va a la izquierda, en
                   // su columna, y los botones a su derecha: dos filas en vez de
                   // seis. El `?` de *Agregar* va con el primer grupo.
@@ -2243,13 +2257,21 @@ export default function CotizacionDialogo({
                   // cliente: *"para distinguir mejor entre sección menú, sección
                   // extras"*): 3px y el nombre en negrita; los botones de
                   // adentro, con su borde fino de siempre.
-                  <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-2 lg:flex lg:items-start
-                                                  lg:gap-2 lg:px-3 lg:py-2`}>
+                  // **Fuera del local va al lado de los extras** en el computador
+                  // (2026-11-24): en su propia fila, el paso 3 pasaba de 612 a 682px
+                  // y no cabía; la fila de los extras tenía espacio a la derecha.
+                  // En ese grupo el título va arriba y la empresa bajo el nombre:
+                  // así ocupa poco ancho y los extras siguen en una fila.
+                  <div key={g.titulo} className={`mb-3 last:mb-0 ${marcoGrupo()} p-3 lg:mb-0 lg:items-start
+                                                  lg:gap-2 lg:px-3 lg:py-1.5 ${g.titulo === 'Fuera del local' ? 'lg:block'
+                                                    : 'lg:flex'} ${g.titulo === 'Fuera del local' ? ''
+                                                    : g.titulo === 'Extras y arriendo' && grupos.some((x) => x.titulo === 'Fuera del local') ? ''
+                                                    : 'lg:col-span-2'}`}>
                     {/* Los botones de agregar van a 40px en el computador (2026-11-23): con
                         el karting y las actividades de otras empresas, el catálogo crece
                         y las dos filas se doblan; así el paso 3 sigue cabiendo. */}
-                    <p className={`mb-2 ${TITULO_GRUPO} lg:mb-0 lg:flex lg:min-h-[40px] lg:w-[9.5rem] lg:shrink-0
-                                  lg:items-center`}>
+                    <p className={`mb-2 ${TITULO_GRUPO} ${g.titulo === 'Fuera del local' ? 'lg:mb-1'
+                      : 'lg:mb-0 lg:flex lg:min-h-[40px] lg:w-[9.5rem] lg:shrink-0 lg:items-center'}`}>
                       {g.titulo}
                       {n === 0 && <span className="hidden lg:inline"><AyudaCorta tema="agregarProducto" /></span>}
                     </p>
@@ -2261,13 +2283,14 @@ export default function CotizacionDialogo({
                         return (
                           <button key={m.nombre} type="button" onClick={() => agregar(m)} disabled={ya}
                             title={ya ? 'Ya está en la cotización: cambia la cantidad en su línea' : undefined}
-                            className={`boton min-h-[48px] text-[14px] lg:min-h-[40px] lg:px-2 lg:text-[13px] ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
+                            className={`boton min-h-[48px] text-[14px] lg:min-h-[40px] lg:px-2 lg:text-[13px] ${m.loCobra ? 'flex-wrap !justify-start !gap-x-0 text-left lg:py-1' : ''} ${ya ? 'border-verde-fuerte/50 text-verde-texto' : ''}`}>
                             {ya ? '✓' : '+'} {m.nombre}
                             <span className={`ml-1 text-hueso/60 ${ya ? 'lg:hidden' : ''}`}>
                               {ya ? '· ya está'
                                 : m.moneda === MONEDA.uf ? `${String(m.precioCotizacion).replace('.', ',')} UF`
                                 : precioParaCotizar(m) ? enPesos(precioParaCotizar(m)) : ''}
                             </span>
+                            {m.loCobra && <span className="basis-full text-left text-[13px] font-semibold leading-tight text-ambar-texto">{m.loCobra}</span>}
                           </button>
                         );
                       })}

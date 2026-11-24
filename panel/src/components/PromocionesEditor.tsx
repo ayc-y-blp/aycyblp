@@ -399,10 +399,24 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                         </FilaSeccion>
                       </Seccion>
                     </div>
-                    <Seccion titulo="➕ Extras" ayuda="promoSuma">
-                      <Extras extras={extras} incluye={p.incluye} suma={p.suma}
-                        onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
-                    </Seccion>
+                    {/* **Lo nuestro y lo de fuera del local, separados** (2026-11-24, lo
+                        pidió el cliente: *"así tal cual deberías agregar actividades fuera
+                        del local, y cuando se crea un producto que cobra otra empresa,
+                        aparece en este fuera del local. Puede ser también un transfer…
+                        segmentar esto"*). Es el mismo control; lo de fuera del local va
+                        aparte del total, con quién lo cobra. */}
+                    <div className="space-y-3 lg:space-y-2.5">
+                      <Seccion titulo="➕ Extras" ayuda="promoSuma">
+                        <Extras extras={extras.filter((m) => !m.loCobra)} incluye={p.incluye} suma={p.suma}
+                          onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
+                      </Seccion>
+                      {extras.some((m) => m.loCobra) && (
+                        <Seccion titulo="🚐 Fuera del local" ayuda="loCobra">
+                          <Extras extras={extras.filter((m) => m.loCobra)} incluye={p.incluye} suma={p.suma}
+                            onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
+                        </Seccion>
+                      )}
+                    </div>
                   </div>
                 </fieldset>
               )}
