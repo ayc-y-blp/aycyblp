@@ -419,9 +419,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'coordinar. Cambiarle el nombre arrastra sus productos y cotizaciones.',
       '*🎁 Promociones* son las de la página de promociones del sitio: cada una '
       + 'es una receta de estos productos —el menú, lo que incluye, lo que se '
-      + 'puede sumar, desde cuántas personas y su descuento— y se conecta a su '
-      + 'bloque. Ahí el cliente la cotiza solo, con las reglas de siempre: el '
-      + 'show incluido en un día público y el arriendo mínimo en uno que no.',
+      + 'puede sumar (y para cuántos), desde cuántas personas, su descuento y '
+      + 'con cuántos días de anticipación— y se conecta a su bloque. Ahí el '
+      + 'cliente la cotiza solo, con las reglas de siempre: el show incluido en '
+      + 'un día público y el arriendo mínimo en uno que no.',
       'En la página salen solo las marcadas con *Mostrar en el sitio*; las '
       + 'demás se ven con su link (*🔗 Copiar link*, en cada una). Un bloque sin '
       + 'promoción, o con la suya apagada, no sale.'

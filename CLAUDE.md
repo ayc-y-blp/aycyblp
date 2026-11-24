@@ -1341,6 +1341,16 @@ solo en `promociones.html`). La mitad del panel —las promociones en
     *+ IVA*, que dobla un renglón), y a 1024×600, 534, porque ahí *¿Cuántos?*
     no cabe al lado de sus teclas y bajan a otro renglón. En el celular las
     teclas bajan igual, a la derecha.
+- **Con cuántos días de anticipación** (2026-11-24, lo pidió el cliente:
+  *"para ciertas actividades extras como taller de queso, karting… no se
+  pueden gestionar y organizar sin tiempo… cuántos días de anticipación
+  tiene que tener la cotización con esta promoción"*). Cada promoción lo dice
+  en el panel (*⏳ Anticipación*). **En el sitio**, el calendario del
+  cotizador no deja elegir un día antes (`min`), bajo el campo dice *Con al
+  menos N días de anticipación*, y si igual llega uno antes, el panel
+  responde `anticipacion` y la boleta dice que se elija un día más adelante,
+  en los tres idiomas. Sin plazo, desde mañana, como siempre. El vendedor,
+  en `panel/CLAUDE.md`.
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde
