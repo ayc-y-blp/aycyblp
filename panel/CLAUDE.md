@@ -246,8 +246,21 @@ hasta recargar, y el servidor lo descartaba sin decir nada.
   *+ Agregar producto* abre el que ya está vacío en vez de apilar otro; y
   *Guardar cambios* no guarda una lista con uno sin nombre: lo abre y lo
   dice.
-- **Con un producto nuevo abierto**, el *Guardar cambios* de abajo no se
-  muestra: el botón relleno es *Guardar producto*.
+- **Un solo botón de guardar a la vista** (lo marcó el cliente el mismo día:
+  *"se ve un botón guardar en el pop-up y el botón abajo de guardar"*): con
+  una tarjeta abierta, solo el suyo —*Guardar cambios*, o *Guardar producto*
+  en uno nuevo—; el de abajo, con todas cerradas.
+- **Otra empresa nueva, sin salir del producto** (lo pidió el cliente el mismo
+  día: *"se agrega una empresa nueva, pero termina en otra página… que el
+  usuario pueda entrar en una nueva empresa que cobra y al final termina en
+  su pop correcto"*): en *Lo cobra → Otra empresa…*, ***+ Empresa nueva…***
+  abre una ventanita (`EmpresaNueva`) con sus datos y **un solo botón**,
+  *Guardar empresa*. Al guardar, la empresa queda en *🤝 Otras empresas*
+  (`POST /api/otras-empresas`: agrega una, y si ya había una con ese nombre la
+  elige sin duplicarla) y **elegida en ese producto**; se sigue en el mismo
+  producto, que se guarda con su botón. Antes, *+ Agregar en 🤝 Otras
+  empresas* mandaba a la otra pestaña y se perdía el producto. Mide 427px
+  (escena `v-empresa-nueva`).
 - Lo demás de Productos no cambia: activar *Se puede cotizar* en uno que ya
   existe sigue esperando *Guardar cambios*.
 - **Ningún permiso, columna ni lectura nueva.** **Ayuda**: el `?` de
@@ -731,6 +744,17 @@ de la configuración"*.
 - **Cada menú sale una vez**: *Adultos* trae solo los de adulto y *Niños* solo
   los de niños (`esMenuDeNinos()`: *Niños*, *Pequeños*…). Antes las dos filas
   tenían la misma lista.
+- **Varios menús de niños a la vez** (lo pidió el cliente el mismo día:
+  *"menú niños y menú pequeños a la vez, como en los otros menús de
+  adultos"*): `Promocion.ninos` pasó a ser una lista, en la misma columna
+  `Menú de niños` separada con `|` (una fila de antes se lee como lista de
+  uno). **En el sitio**, el cotizador dibuja un contador por cada menú de
+  niños —con su nombre si son varios, *Niños* si es uno— y manda la cuenta de
+  cada uno (`ninos=2,1`); `cotizarPromocion()` pone cada menú con su gente y
+  todos suman a las personas. **Un número solo, como lo manda el sitio de
+  antes, va al primero**: un `cotizador.js` viejo en caché sigue
+  funcionando. En la cotización del vendedor, *🎁 Promoción…* suma cada uno
+  en 0.
 - **Cada extra sale una vez**, con su estado: ***No · Incluido · Se suma***.
   Antes *Incluye siempre* y *Se puede sumar* eran dos filas con los mismos
   productos. El servidor también lo cuida: lo incluido no queda además para

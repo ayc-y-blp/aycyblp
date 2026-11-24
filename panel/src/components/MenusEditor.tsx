@@ -33,6 +33,7 @@ import MostrarDesactivados from './MostrarDesactivados';
 import PromocionesEditor from './PromocionesEditor';
 import OtrasEmpresasEditor from './OtrasEmpresasEditor';
 import BuscarEnLista from './BuscarEnLista';
+import EmpresaNueva from './EmpresaNueva';
 import { datosEnFrase, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
@@ -157,6 +158,8 @@ export default function MenusEditor() {
    */
   const [otrasEmpresas, setOtrasEmpresas] = useState<OtraEmpresa[]>([]);
   const [eligiendoEmpresa, setEligiendoEmpresa] = useState<number | null>(null);
+  /** El producto desde donde se crea otra empresa nueva, en su ventanita (2026-11-24). */
+  const [empresaNuevaPara, setEmpresaNuevaPara] = useState<number | null>(null);
   useEffect(() => {
     fetch('/api/otras-empresas').then((r) => r.json())
       .then((d) => { if (Array.isArray(d.empresas)) setOtrasEmpresas(d.empresas); })
@@ -253,8 +256,13 @@ export default function MenusEditor() {
     if (i === null && borradorSinNombre(abierta)) return descartar(abierta!);
     setAbierta(i);
   };
-  /** Con un producto nuevo abierto, su *Guardar producto* es el botón relleno: el de abajo no se muestra. */
-  const nuevoAbierto = abierta !== null && !!menus[abierta]?.nuevo;
+  /**
+   * **Un solo botón de guardar a la vista** (2026-11-24, lo marcó el cliente:
+   * *"se ve un botón guardar en el pop-up y el botón abajo de guardar"*): con
+   * una tarjeta abierta, el suyo —*Guardar cambios*, o *Guardar producto* en
+   * uno nuevo—; el de abajo, solo con todas cerradas.
+   */
+  const tarjetaAbierta = abierta !== null;
 
   const botonGuardar = (
     <BotonGuardar sucio={sucio} guardando={guardando} onClick={() => guardar(menus)}
@@ -536,14 +544,14 @@ export default function MenusEditor() {
                           </div>
                           {eligiendoEmpresa === i && (
                             <div className="mt-2">
-                              <BuscarEnLista etiqueta="La cobra" vacia="Todavía no hay otras empresas en la lista."
+                              <BuscarEnLista etiqueta="La cobra" vacia="Todavía no hay otras empresas: agrega la primera abajo."
                                 elegido={m.loCobra}
                                 opciones={otrasEmpresas.filter((e) => e.activa || e.nombre === m.loCobra)
                                   .map((e) => ({ id: e.nombre, nombre: e.nombre, detalle: e.que || datosEnFrase(e) }))}
                                 onElegir={(nombre) => { cambiar(i, { loCobra: nombre }); setEligiendoEmpresa(null); }}
                                 onCerrar={() => setEligiendoEmpresa(null)}
-                                pie={<button type="button" className="boton min-h-[40px]" onClick={() => verVista('empresas')}>
-                                  + Agregar en 🤝 Otras empresas
+                                pie={<button type="button" className="boton min-h-[40px]" onClick={() => setEmpresaNuevaPara(i)}>
+                                  + Empresa nueva…
                                 </button>} />
                             </div>
                           )}
@@ -590,9 +598,18 @@ export default function MenusEditor() {
           + Agregar producto
         </button>
         <span className="flex-1" />
-        {sucio && !nuevoAbierto && <span className="text-[14px] text-hueso/70">Hay cambios sin guardar.</span>}
-        {!nuevoAbierto && botonGuardar}
+        {sucio && !tarjetaAbierta && <span className="text-[14px] text-hueso/70">Hay cambios sin guardar.</span>}
+        {!tarjetaAbierta && botonGuardar}
       </div>
+      )}
+
+      {empresaNuevaPara !== null && menus[empresaNuevaPara] && (
+        <EmpresaNueva producto={menus[empresaNuevaPara].nombre.trim()} onCerrar={() => setEmpresaNuevaPara(null)}
+          onGuardada={(empresas, nombre) => {
+            setOtrasEmpresas(empresas);
+            cambiar(empresaNuevaPara, { loCobra: nombre });
+            setEligiendoEmpresa(null); setEmpresaNuevaPara(null);
+          }} />
       )}
 
       <AvisoFijo clave="menus-desactivar" className="mt-6 max-w-2xl">

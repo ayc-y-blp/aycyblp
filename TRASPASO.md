@@ -414,7 +414,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **Un producto nuevo se guarda con su botón** (24-11-2026, lo pidió el
   cliente: un producto sin nombre *"queda ahí dando vuelta"*): borrador con
   *Guardar producto* y *Cancelar*; sin nombre, se descarta al cerrarlo. Ver
-  `panel/CLAUDE.md`, "Un producto nuevo se guarda con su botón".
+  `panel/CLAUDE.md`, "Un producto nuevo se guarda con su botón". En el mismo
+  PR: **un solo botón de guardar a la vista**; **otra empresa nueva se crea
+  desde el producto** en una ventanita con un solo botón y queda elegida; y
+  **las promociones llevan varios menús de niños a la vez** (*Niños* y
+  *Pequeños*), con un contador por cada uno en el cotizador del sitio.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

@@ -169,6 +169,11 @@ export const ESCENAS = {
   'ficha-colaborador': async () => { await ir('/extras'); await clic(boton(/Paz Ortiz/)); },
   'ficha-cliente': async () => { await ir('/clientes'); await abrirPrimera(); },
   'ficha-producto': async () => { await ir('/menus'); await abrirPrimera(); },
+  // Otra empresa nueva desde el producto (2026-11-24): la ventanita con un solo botón.
+  'v-empresa-nueva': async () => {
+    await ir('/menus'); await clic(boton(/Karting/));
+    await clic(boton(/🤝 Karting Pirque/)); await clic(boton('+ Empresa nueva…'));
+  },
   // Un producto nuevo (2026-11-24): un borrador con *Guardar producto* y *Cancelar*.
   'ficha-producto-nuevo': async () => { await ir('/menus'); await clic(boton('+ Agregar producto')); },
   'ficha-vendedor': vendedor,

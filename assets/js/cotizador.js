@@ -211,8 +211,11 @@
   /* ---------- el cotizador de una promoción ---------- */
 
   function montar(caja, promo) {
+    // **Los menús de niños, uno o varios** (2026-11-24: Niños y Pequeños a la
+    // vez). El panel de antes mandaba uno solo, o nada.
+    var menusNinos = Array.isArray(promo.ninos) ? promo.ninos : (promo.ninos ? [promo.ninos] : []);
     var estado = {
-      adultos: promo.minimo, ninos: 0, fecha: '',
+      adultos: promo.minimo, ninos: menusNinos.map(function () { return 0; }), fecha: '',
       menu: promo.menus.length === 1 ? promo.menus[0].nombre : '', suma: []
     };
     var reloj = null, ultima = null;
@@ -249,8 +252,11 @@
 
     // 1. Cuántos y qué día.
     var p1 = paso(1, T.paso1);
-    p1.appendChild(contador(promo.ninos ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; calcular(); }));
-    if (promo.ninos) p1.appendChild(contador(T.ninos, 0, 0, function (n) { estado.ninos = n; calcular(); }));
+    p1.appendChild(contador(menusNinos.length ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; calcular(); }));
+    // Con un solo menú de niños, el contador dice "Niños"; con varios, el nombre de cada menú.
+    menusNinos.forEach(function (m, k) {
+      p1.appendChild(contador(menusNinos.length === 1 ? T.ninos : m.nombre, 0, 0, function (n) { estado.ninos[k] = n; calcular(); }));
+    });
     var dia = el('label', 'cot-dia');
     dia.appendChild(el('span', 'cot-rotulo', T.dia));
     var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = manana();
@@ -386,13 +392,14 @@
       clearTimeout(reloj);
       if (!estado.fecha) { dibujar(null); return; }
       if (!estado.menu) { dibujar({ ok: false, codigo: 'menu' }); return; }
-      if (estado.adultos + estado.ninos < promo.minimo) { dibujar({ ok: false, codigo: 'minimo', minimo: promo.minimo }); return; }
+      var ninos = estado.ninos.reduce(function (a, n) { return a + n; }, 0);
+      if (estado.adultos + ninos < promo.minimo) { dibujar({ ok: false, codigo: 'minimo', minimo: promo.minimo }); return; }
       boton.disabled = true; quiero.disabled = true;
       boleta.innerHTML = ''; boleta.appendChild(el('p', 'cot-aviso', T.calculando));
       // Se pregunta cuando se deja de mover los números: cada pregunta lee la planilla.
       reloj = setTimeout(function () {
         var q = new URLSearchParams({
-          promo: promo.sitio, adultos: String(estado.adultos), ninos: String(estado.ninos),
+          promo: promo.sitio, adultos: String(estado.adultos), ninos: estado.ninos.join(','),
           menu: estado.menu, suma: estado.suma.join('|'), fecha: estado.fecha
         });
         fetch(panel + '/api/publico/cotizar?' + q.toString())

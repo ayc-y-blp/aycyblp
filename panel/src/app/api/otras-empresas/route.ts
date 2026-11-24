@@ -67,3 +67,26 @@ export const PUT = conLecturas([HOJA_OTRAS_EMPRESAS, HOJA_MENUS], async function
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 });
+
+/**
+ * **Agrega una sola empresa** (2026-11-24, lo pidió el cliente: crearla desde
+ * el producto, sin irse a otra pestaña y con un solo botón). Si ya hay una
+ * con ese nombre, no la duplica: devuelve la lista y ese nombre, para elegirla.
+ */
+export const POST = conLecturas([HOJA_OTRAS_EMPRESAS], async function POST(req: Request) {
+  const no = await exigir(req, 'configurar');
+  if (no) return no;
+  try {
+    const e = limpiarOtraEmpresa((await req.json())?.empresa ?? {});
+    if (!e.nombre) return NextResponse.json({ error: 'Escríbele un nombre a la empresa.' }, { status: 400 });
+    const lista = await leerOtrasEmpresas();
+    const ya = lista.find((x) => normalizar(x.nombre) === normalizar(e.nombre));
+    if (ya) return NextResponse.json({ empresas: lista, nombre: ya.nombre, yaEstaba: true });
+    const nueva = [...lista, e];
+    await guardarOtrasEmpresas(nueva);
+    await anotar({ ...(await quienEs(req)), accion: 'Agregó otra empresa', detalle: e.nombre });
+    return NextResponse.json({ empresas: nueva, nombre: e.nombre });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+});

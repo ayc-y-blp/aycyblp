@@ -1307,7 +1307,8 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   promoción), y dibuja lo que vuelve. Pregunta cuando se deja de mover los
   números (600 ms) y el panel guarda cada respuesta 5 minutos.
 - **Es la pieza de la reserva en pasos** (regla *coherencia*): ① *¿Cuántos y
-  qué día?* —con lo que incluye—, ② *¿Qué menú?* y lo que se puede sumar, ③ la
+  qué día?* —con lo que incluye, y un contador por cada menú de niños de la
+  promoción (*Niños* y *Pequeños* a la vez, desde el 2026-11-24)—, ② *¿Qué menú?* y lo que se puede sumar, ③ la
   boleta con el total y *por persona*, y lo que cobra otra empresa aparte.
   ***Quiero esta cotización*** cambia la boleta por los datos (nombre,
   empresa, WhatsApp, correo opcional) y *Recibir la cotización*. En el
