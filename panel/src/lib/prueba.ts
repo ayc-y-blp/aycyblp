@@ -215,6 +215,32 @@ ok(oAbono.pagadas === 36 && oAbono.porPagar === 92 && oAbono.abonadas === 80,
 ok(oAbono.tomadas === oAbono.pagadas + oAbono.porPagar,
    'las abonadas no se suman dos veces a lo tomado');
 
+/* ---------- el calendario con el filtro de origen (2026-11-24) ---------- */
+{
+  const O = await import('./ocupacion.ts');
+  const todas = [
+    r({ id: '1007', personas: 4, estadoPago: 'paid', monto: 176000 }),
+    r({ id: '1008', personas: 2, estadoPago: 'pending', monto: 88000 }),
+    r({ id: 'MANUAL-1', personas: 50, estadoPago: 'pending', monto: null }),
+    r({ id: 'MANUAL-2', personas: 6, estadoPago: 'cancelled' })
+  ];
+  const real = { ...ocupacionDe(todas, dia({ capacidad: 50 })), presupuestos: 2, presupuestadas: 40 };
+  const deShopify = O.soloDeEsas(real, todas.filter((x) => /^\d+$/.test(x.id)), false);
+  ok(deShopify.tomadas === 6 && deShopify.pagadas === 4 && deShopify.porPagar === 2 && deShopify.porCobrar === 88000,
+     'con el filtro, la gente, el pago y lo que falta cobrar salen solo de esas reservas');
+  ok(deShopify.capacidad === 50 && deShopify.quedan === real.quedan && deShopify.sobrecupo === real.sobrecupo
+     && deShopify.semaforo === real.semaforo && deShopify.quedanPagando === real.quedanPagando,
+     'el cupo, lo que queda, el sobrecupo y el color siguen siendo los del día entero');
+  ok(deShopify.presupuestos === 0 && deShopify.presupuestadas === 0
+     && O.soloDeEsas(real, [], true).presupuestadas === 40,
+     'lo cotizado sin ganar se ve solo con el filtro de cotización');
+  const aMano = O.soloDeEsas(real, todas.filter((x) => x.id.startsWith('MANUAL')), false);
+  ok(aMano.tomadas === 50 && aMano.sinMonto === 1, 'una cancelada no cuenta; una sin monto se cuenta aparte');
+  const g = O.genteDelDia(todas, '2026-11-14');
+  ok(g.tomadas === real.tomadas && g.porCobrar === real.porCobrar && g.sinMonto === real.sinMonto,
+     'genteDelDia() cuenta lo mismo que ocupacionDe(): es la misma cuenta');
+}
+
 /* ---------- un día bloqueado ---------- */
 o = ocupacionDe([], dia({ estado: 'Bloqueada', notas: 'Evento privado' }));
 ok(o.bloqueada === true && o.semaforo === 'rojo',

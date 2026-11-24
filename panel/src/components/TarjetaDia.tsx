@@ -173,9 +173,14 @@ const BOTON = 'tecla boton boton-angosto';
 
 export default function TarjetaDia({
   d, resumen, clima, delSocio, conEquipo = true, conDias = true,
-  onEditar, onPlanificar, cambio
+  onEditar, onPlanificar, cambio, de = ''
 }: {
   d: Ocupacion;
+  /**
+   * El filtro de origen del calendario (2026-11-24): el día se abre con el
+   * mismo filtro puesto (`?de=`), para seguir viendo lo mismo.
+   */
+  de?: string;
   /** Si este día cambió de gente en la última actualización (ver `AlDia`). */
   cambio?: { delta: number; desde: string };
   /**
@@ -246,7 +251,7 @@ export default function TarjetaDia({
                 número, que es lo que se mira. Ver el bloque de abajo. */}
             {/* **La fecha como en Cotizaciones** (2026-11-13): *MIÉ 11*, el
                 número grande. El mes lo dice la caja de la semana. */}
-            <a href={`/dia/${d.fecha}`} {...alFrente} className="text-hueso hover:text-oro">
+            <a href={`/dia/${d.fecha}${de ? `?de=${de}` : ''}`} {...alFrente} className="text-hueso hover:text-oro">
               <FechaDia fecha={d.fecha} />
             </a>
             {/* El punto y, debajo, la palabra: público, privado, cerrado.
@@ -423,7 +428,7 @@ export default function TarjetaDia({
                 en el pie, el texto largo se partía en dos líneas en una
                 tarjeta de cuatro columnas. La fecha de arriba lleva al mismo
                 lugar, así que el detalle no se pierde. */}
-            <a href={`/dia/${d.fecha}`} {...alFrente}
+            <a href={`/dia/${d.fecha}${de ? `?de=${de}` : ''}`} {...alFrente}
                className={`${BOTON} whitespace-nowrap`}>
               {/* **Un ícono por botón** (2026-11-12, lo pidió el cliente: los
                   tres se veían iguales). Se reconocen por forma sin leerlos. */}

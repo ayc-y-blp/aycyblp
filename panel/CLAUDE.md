@@ -148,6 +148,7 @@ revisan antes de cada cambio en esta carpeta.
   | Lo que le falta a una ficha para poder pagarle: *falta su cuenta*, *falta su factura* | `Pastilla` tipo `falta`: un aviso fino, nunca con forma de botón (Informe, Vendedores, Equipo y Extras) |
   | Cómo va el pago de una reserva | `PastillaPago`; la pastilla sola, para ponerla en una línea de texto, `EstadoDelPago` (la bandeja de lo que revisa pagos) |
   | Lo de la cuenta y lo de todos | `BotonMias` / `BotonTodos` |
+  | De dónde viene una reserva: *🛒 Shopify · ✍ A mano · 🤝 Cotización*, se aprieta para filtrar y otra vez para soltar | `QUE_RESERVAS` y `origenDeReserva()` de `lib/estadisticas.ts` (el calendario de Reservas, la página del día y Estadísticas) |
   | Un texto fijo que explica la pantalla | `AvisoFijo` (con su ✕) |
   | Guardar | `BotonGuardar` / `AvisoGuardado` |
   | Elegir de una lista que crece | `BuscarEnLista` |
@@ -979,6 +980,33 @@ cotización, Shopify o manual"*. Eligió las dos pantallas.
   se ve. Ir a una reserva desde un aviso suelta también este filtro.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?`
   de Estadísticas y el de la página del día.
+
+### También en el calendario de Reservas (2026-11-24)
+
+Lo pidió el cliente: *"en reservas, en la vista de calendario, poder filtrar
+por Shopify, a mano y cotizados"*.
+
+- **Los mismos tres botones**, en la fila de *Agregar reserva* (el computador)
+  o debajo (el celular), con cuántas reservas hay de cada origen en los días
+  que se ven. Se aprietan para filtrar y otra vez para soltar.
+- **Con el filtro, cada tarjeta cuenta solo esas reservas** (`soloDeEsas()` en
+  `lib/ocupacion.ts`): la gente, la barra, *pagadas / abonadas / sin pagar* y
+  lo que falta cobrar. **Lo del día se queda como es** —el cupo, lo que queda,
+  el sobrecupo, el estado y su color—, porque el día lo comparten todas: un
+  día lleno sigue en rojo aunque con *A mano* muestre 2 personas. **Lo
+  cotizado sin ganar** (la pastilla rosada) se ve solo con *🤝 Cotización*.
+- **La cuenta es la misma de siempre**: salió de `ocupacionDe()` a
+  `genteDelDia()`, que usan las dos; una prueba fija que cuentan lo mismo.
+- **Al abrir un día con el filtro puesto, el día abre con él** (`?de=mano`,
+  que lee la página del día al llegar).
+- **En el computador, el rango (*19 días, hasta…*) y *Al día* van juntos** en
+  el renglón de abajo, el rango a la izquierda y *Al día* a la derecha: con los
+  filtros ya no cabían en la fila de los botones, y *Al día* quedaba solo.
+- **Se calcula en la pantalla**, con las reservas que el calendario ya cargaba:
+  **ninguna lectura de Google más**. La línea de cada semana (sus avisos) sigue
+  mirando el día entero. **Ningún permiso cambió.**
+- **Ayuda**: el `?` del calendario y el de la página del día; la foto
+  `ven-calendario` se rehízo (en el celular, los botones salen arriba).
 
 ## El cobro en la mesa y la caja chica (2026-11-23)
 

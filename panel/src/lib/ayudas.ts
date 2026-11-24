@@ -51,6 +51,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Apreta Equipo al pie de la tarjeta para planificar quién trabaja: la '
       + 'tarjeta se da vuelta y muestra el resumen.',
       'Agregar reserva anota a alguien que llamó o escribió por WhatsApp.',
+      '🛒 Shopify · ✍ A mano · 🤝 Cotización dejan ver solo las reservas que '
+      + 'vienen de ahí: la gente, la barra y lo que falta cobrar de cada día '
+      + 'cuentan solo esas, y el cupo y el color siguen siendo los del día '
+      + 'entero. Con 🤝 Cotización se ve además lo cotizado sin ganar. Se '
+      + 'aprieta otra vez para soltarlo, y al abrir un día sigue puesto.',
       'Enviar planilla semanal copia un link que se manda al grupo. Ese link '
       + 'no muestra plata ni nombres de clientes.',
       'Estadísticas (operaciones, pagos, gerencia y administración) abre los '
@@ -89,7 +94,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Arriba de la lista, los filtros se suman: cómo va el pago (Todas · '
       + 'Pagadas · Abonadas · Sin pagar), Mías, y de dónde viene la reserva '
       + '(🛒 Shopify · ✍ A mano · 🤝 Cotización), que se aprieta otra vez para '
-      + 'soltar. Exportar CSV baja lo que se ve.',
+      + 'soltar; si lo elegiste en el calendario, el día abre con él puesto. '
+      + 'Exportar CSV baja lo que se ve.',
       'La columna Asistencia dice quién vino; se marca en Turnos.',
       'Editar abre la reserva para corregir un teléfono, un menú o el estado '
       + 'del pago. Marcarla Pagada o Abonada le avisa al encargado de pagos, '

@@ -428,8 +428,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   igual a *BBDD Produccion* —las pestañas del panel, las cuentas incluidas—,
   conservando la carpeta de comprobantes de la prueba. Producción solo se
   lee, con la variable nueva **`GOOGLE_SHEET_ID_PRODUCCION`, solo en
-  Preview**, que pone el cliente (pendiente 17). En un PR abierto. Ver
-  `panel/CLAUDE.md`, "Traer los datos de producción a la prueba".
+  Preview**, que pone el cliente (pendiente 17). Ver
+  `panel/CLAUDE.md`, "Traer los datos de producción a la prueba". **PR #341,
+  mergeado el 24-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15
+  de 15 después.
+- **El calendario de Reservas se filtra por origen** (24-11-2026, lo pidió el
+  cliente: *"poder filtrar por Shopify, a mano y cotizados"*): los mismos
+  botones de la página del día; cada tarjeta cuenta solo esas reservas y el
+  día abre con el filtro puesto. Ninguna lectura más. En un PR abierto. Ver
+  `panel/CLAUDE.md`, "También en el calendario de Reservas".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
