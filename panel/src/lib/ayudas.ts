@@ -580,7 +580,11 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Ábrela con el +: los azulejos dicen cuánto toca, cuánto se pagó y '
       + 'cuánto falta, con Pagarle, el detalle de cada venta y su trato.',
       'En Documento: boleta o factura, y si lo que gana trae la retención o el '
-      + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.'
+      + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.',
+      '🔗 Copiar link (vendedores y socios) le copia su link personal: sin '
+      + 'clave, ve su trato, lo que ganó cada mes, lo que viene, lo que se le '
+      + 'pagó y cuánto poner en la boleta o la factura. Renovar crea uno nuevo; '
+      + 'Quitar lo apaga.'
     ],
     ojo: 'Un socio que agrega un vendedor desde la cotización nace con el trato '
        + 'de partida y queda por confirmar: lo confirma el encargado de pagos.'

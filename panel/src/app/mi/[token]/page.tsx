@@ -64,11 +64,12 @@
 import { enEmpresaDeLaPagina } from '@/lib/empresaPagina';
 import { leerTrabajadores, leerTurnos, leerAjustesSueltos, leerFechas, leerConfig, leerReservas,
          leerMenus, leerPagosEquipo, leerColaboradores, leerExtras, leerVendedores, leerBoletas,
-         leerPresupuestos, leerLineasPresupuesto, leerCobros, leerClientes } from '@/lib/datos';
+         leerPresupuestos, leerLineasPresupuesto, leerCobros, leerClientes, leerUsuarios } from '@/lib/datos';
 import { colaboradorPorToken } from '@/lib/extras';
 import VistaColaborador from './Colaborador';
 import VistaSocio from './Socio';
-import { HOJA_VENDEDORES, socioPorToken, ventasDe } from '@/lib/vendedores';
+import { HOJA_VENDEDORES, fichaPorToken, ventasDe } from '@/lib/vendedores';
+import { HOJA_USUARIOS } from '@/lib/usuarios';
 import { HOJA_PRESUPUESTOS, HOJA_LINEAS, folioDe } from '@/lib/presupuestos';
 import { HOJA_COBROS } from '@/lib/cobros';
 import { HOJA_CLIENTES } from '@/lib/clientes';
@@ -433,17 +434,26 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
     );
   }
 
-  const socio = quien || colaborador ? undefined : socioPorToken(fichasV, decodeURIComponent(params.token));
+  // **Un socio comercial o un vendedor** (el vendedor, desde el 2026-11-24).
+  const socio = quien || colaborador ? undefined : fichaPorToken(fichasV, decodeURIComponent(params.token));
   if (socio) {
-    // Una tanda más, solo para un socio: las cotizaciones que lo nombran.
-    const [presupuestos, lineas, cobros, clientes] = await conLecturas(
-      [HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_COBROS, HOJA_CLIENTES],
-      async () => Promise.all([leerPresupuestos(), leerLineasPresupuesto(), leerCobros(), leerClientes().catch(() => [])])
+    // Una tanda más, solo para ellos: las cotizaciones que lo nombran (el
+    // socio) o que hizo (el vendedor, por su usuario o su nombre).
+    const [presupuestos, lineas, cobros, clientes, cuentas] = await conLecturas(
+      [HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_COBROS, HOJA_CLIENTES, HOJA_USUARIOS],
+      async () => Promise.all([leerPresupuestos(), leerLineasPresupuesto(), leerCobros(), leerClientes().catch(() => []),
+        socio.tipo === 'vendedor' ? leerUsuarios() : Promise.resolve([])])
     )();
-    const ventas = ventasDe(socio.usuario, presupuestos.map((x) => conCliente(x, clientes)), lineas, cobros, socio, catalogo)
-      .map((x) => ({ ...x, folio: folioDe({ id: x.grupo }) }));
-    return <VistaSocio socio={socio} ventas={ventas} pagos={pagos} boletas={boletas} token={params.token}
-      p={searchParams?.p} v={searchParams?.v} />;
+    // **Un vendedor se desactiva en su cuenta, no en la ficha**: si su cuenta
+    // ya no está activa, su link deja de servir, con el mismo mensaje.
+    const vale = socio.tipo !== 'vendedor'
+      || cuentas.some((u) => u.activo && normalizar(u.usuario) === normalizar(socio.usuario));
+    if (vale) {
+      const ventas = ventasDe(socio.usuario, presupuestos.map((x) => conCliente(x, clientes)), lineas, cobros, socio, catalogo, socio.nombre)
+        .map((x) => ({ ...x, folio: folioDe({ id: x.grupo }) }));
+      return <VistaSocio socio={socio} ventas={ventas} pagos={pagos} boletas={boletas} token={params.token}
+        p={searchParams?.p} v={searchParams?.v} />;
+    }
   }
 
   // **El mismo mensaje para un link inventado y para uno revocado.** Decir

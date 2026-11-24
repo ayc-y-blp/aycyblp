@@ -224,6 +224,46 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El link personal del vendedor (2026-11-24)
+
+Lo pidió el cliente: *"necesito también que tengan copiar link personal con
+su resumen, muy parecido al de los trabajadores, pero enfocado a los datos de
+venta y condiciones personales en el trato de comisiones… y que también
+después ya me muestra qué valor tengo que poner a la boleta para cobrar mi
+comisión"*. Hasta ese día el link (`/mi/<token>`) era solo de los socios
+comerciales: el vendedor veía lo suyo entrando al panel.
+
+- **🔗 Copiar link también en la tarjeta de un vendedor** (`ResumenVendedor`),
+  con *Renovar* y *Quitar*, igual que el socio. Permiso `links` (el
+  administrador, pagos y la gerencia): muestra plata y trato. **Ninguno
+  nuevo.** Un vendedor sin fila en `Vendedores` la gana con su trato de
+  partida al darle el link (`/api/vendedores/link`).
+- **La página es la del socio** (`mi/[token]/Socio.tsx`), con lo del
+  vendedor:
+  - ***Tu trato***, renglón por renglón (`tratoEnLineas()`): la comisión por
+    etapas y sobre qué base, el bono, el monto por evento, **el sueldo fijo**,
+    **cuánto cobra con un socio** y **con qué documento se le paga** (boleta
+    con la retención incluida o encima; factura con o sin IVA).
+  - *Lo que ganaste* suma el sueldo fijo a fin de mes, como el informe.
+  - **La caja de la boleta** (`CajaBoleta`) dice el **bruto que se escribe en
+    la boleta del SII**, la retención y el neto que recibe, con el sueldo fijo
+    adentro (`montosDeVendedor()` con `finesDeMesEntre()`). Las mismas cuentas
+    del informe y de `/vendedores`: en el ejemplo, Jorge en noviembre,
+    $538.739 bruto y $456.581 neto.
+  - *Lo que viene*, *Evento por evento* y *Lo que te pagamos*, como el socio.
+- **El token del vendedor se guarda**: `filaVendedor()` lo escribía en blanco
+  para un vendedor. `fichaPorToken()` encuentra a los dos tipos.
+- **Un vendedor se desactiva en su cuenta** (*Cuentas*), no en la ficha: el
+  link pide que la cuenta siga activa, y si no, dice lo mismo que un link
+  inventado.
+- **Lecturas de Google**: la página del link lee `Usuarios` en la misma tanda
+  de las cotizaciones (solo para un vendedor). Ninguna más en las pantallas.
+- **Ayuda**: el `?` de Vendedores.
+- **Probado en el panel de ejemplo**: pagos crea el link de Jorge (el
+  encargado recibe 403), la página muestra su trato, $538.739 con el sueldo
+  fijo y la boleta, en el celular y el computador; `revisarPlayStation()` sin
+  hallazgos. La tarjeta del vendedor con la fila del link mide 570px.
+
 ## Cambiar un nombre arrastra lo guardado: personas, puestos y colaboradores (2026-11-24)
 
 Lo encontró el cliente dos veces el mismo día: *"cambié jefe de turno a

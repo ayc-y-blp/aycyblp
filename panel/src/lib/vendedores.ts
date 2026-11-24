@@ -58,7 +58,7 @@ export const COL_VENDEDORES = {
   conSocio: 'Con socio cobra %',
   /** `no` es desactivado. Solo los socios: un vendedor se desactiva en *Cuentas*. */
   activo: 'Activo',
-  /** El link personal del socio (`/mi/<token>`). Vacío: sin link. */
+  /** El link personal del socio o del vendedor (`/mi/<token>`). Vacío: sin link. */
   token: 'Token de acceso',
   ...COL_BANCO,
   nota: 'Nota de pago',
@@ -261,7 +261,9 @@ export function filaVendedor(v: FichaVendedor, enc: string[]): string[] {
   poner(i.usuario, v.usuario); poner(i.nombre, v.nombre);
   poner(i.tipoFicha, TIPO_FICHA[v.tipo]); poner(i.activo, v.activo ? '' : 'no');
   poner(i.etapa1Desde, Math.max(1, v.etapa1Desde || ETAPA1_DESDE));
-  poner(i.token, v.tipo === 'socio' ? v.token : '');
+  // El link personal: del socio desde el 2026-11-12, también del vendedor
+  // desde el 2026-11-24 (antes se escribía en blanco para un vendedor).
+  poner(i.token, v.token);
   poner(i.conSocio, v.tipo === 'vendedor' ? String(v.conSocio).replace('.', ',') : '');
   poner(i.sueldoFijo, v.sueldoFijo || ''); poner(i.comisionPct, v.comisionPct ? String(v.comisionPct).replace('.', ',') : '');
   poner(i.montoEvento, v.montoEvento || ''); poner(i.base, BASE_COMISION[v.base]);
@@ -293,6 +295,20 @@ export function socioPorToken(fichas: FichaVendedor[], token: string): FichaVend
   const t = String(token ?? '').trim();
   if (!t) return undefined;
   return fichas.find((f) => f.tipo === 'socio' && f.activo && f.token === t);
+}
+
+/**
+ * **El vendedor o el socio de un link personal** (2026-11-24, lo pidió el
+ * cliente: *"necesito también que tengan copiar link personal con su resumen,
+ * muy parecido al de los trabajadores, pero enfocado a los datos de venta y
+ * condiciones personales en el trato de comisiones… y qué valor tengo que
+ * poner a la boleta para cobrar mi comisión"*). Hasta ese día solo los socios
+ * tenían link: el vendedor veía lo suyo entrando al panel.
+ */
+export function fichaPorToken(fichas: FichaVendedor[], token: string): FichaVendedor | undefined {
+  const t = String(token ?? '').trim();
+  if (!t) return undefined;
+  return fichas.find((f) => f.activo && f.token === t);
 }
 
 /** Si la ficha dice cómo se le paga: sin nada, el resumen no puede calcular plata. */

@@ -568,12 +568,12 @@ export default function EquipoEditor() {
           ahí mismo. Cambiar un nombre desde el panel ya lleva lo guardado:
           esto queda para lo que se corrigió en la planilla. */}
       {(sueltos.personas.length > 0 || sueltos.puestos.length > 0) && (
-        <div className={`mb-6 ${marcoGrupo('ambar')} p-3 lg:mb-4`}>
-          <p className={`flex items-center ${TITULO_GRUPO}`}>
+        <div className={`mb-6 ${marcoGrupo('ambar')} p-3 lg:mb-4 lg:flex lg:items-start lg:gap-4`}>
+          <p className={`flex items-center ${TITULO_GRUPO} lg:max-w-[22rem] lg:shrink-0`}>
             Hay turnos con un nombre que no está en la lista
             <AyudaCorta tema="nombreSuelto" />
           </p>
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-2 space-y-2 lg:mt-0 lg:flex-1">
             {sueltos.personas.map((x) => (
               <li key={'p' + x.nombre} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-[15px] font-semibold">👤 {x.nombre}</span>

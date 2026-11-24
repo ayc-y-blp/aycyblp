@@ -470,12 +470,12 @@ export default function CalendarioExtras({ dia }: { dia?: string } = {}) {
       {/* **Lo suelto, con su botón** (2026-11-24): la misma pieza de Equipo
           (`ReengancharSuelto`). */}
       {huerfanos.length > 0 && (
-        <div className={`mt-6 ${marcoGrupo('ambar')} p-3`}>
-          <p className={`flex items-center ${TITULO_GRUPO}`}>
+        <div className={`mt-6 ${marcoGrupo('ambar')} p-3 lg:flex lg:items-start lg:gap-4`}>
+          <p className={`flex items-center ${TITULO_GRUPO} lg:max-w-[22rem] lg:shrink-0`}>
             Hay actividades a nombre de alguien que no está en la lista
             <AyudaCorta tema="nombreSuelto" />
           </p>
-          <ul className="mt-2 space-y-2">
+          <ul className="mt-2 space-y-2 lg:mt-0 lg:flex-1">
             {huerfanos.map((x) => (
               <li key={x.nombre} className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-[15px] font-semibold">🎠 {x.nombre}</span>

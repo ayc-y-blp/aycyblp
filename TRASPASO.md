@@ -344,6 +344,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   quedó suelto se reengancha con *Es…* / *Pasar a…* en Equipo y Extras. **Lo
   que se corrige directo en la planilla no se entera**: para eso es *Es…*.
   Ver `panel/CLAUDE.md`, "Cambiar un nombre arrastra lo guardado".
+- **El link personal del vendedor** (24-11-2026, en el mismo PR #338, lo
+  pidió el cliente): *🔗 Copiar link* también en la tarjeta de un vendedor;
+  su página muestra su trato renglón por renglón, lo que ganó con el sueldo
+  fijo, lo que viene, lo que se le pagó y el bruto que escribe en la boleta.
+  Ver `panel/CLAUDE.md`, "El link personal del vendedor".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

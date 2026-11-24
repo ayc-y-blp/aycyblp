@@ -293,7 +293,7 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
     if (!res.ok || d.error) { avisar(d.error || 'No se pudo guardar.', 'atencion'); return; }
     cargar(datos.usuario, periodo);
   };
-  /** El link personal del socio: copiar lo crea; renovar y quitar preguntan (regla 7). */
+  /** El link personal del socio o del vendedor: copiar lo crea; renovar y quitar preguntan (regla 7). */
   const link = async (accion: 'crear' | 'renovar' | 'quitar') => {
     if (accion === 'renovar' && !confirm(`¿Crear un link nuevo para ${datos.nombre}? El que tiene deja de servir al instante.`)) return;
     if (accion === 'quitar' && !confirm(`¿Quitarle el acceso a ${datos.nombre}? Su link deja de servir al instante.`)) return;
@@ -527,7 +527,9 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                 )}
               </div>
             )}
-            {esSocio && datos.puedeLinks && (
+            {/* **El link personal, también del vendedor** (2026-11-24, lo
+                pidió el cliente): su resumen, su trato y lo que boletea. */}
+            {datos.puedeLinks && (
               <div className="flex flex-wrap items-center gap-2 border-t border-hueso/10 pt-3">
                 <p className="mr-auto text-[15px]">
                   <span className="text-hueso/70">Link personal: </span>

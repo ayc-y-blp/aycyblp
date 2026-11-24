@@ -5474,7 +5474,15 @@ console.log('\nLos socios comerciales (segunda entrega)');
   const s1 = { ...fichaSocio('S-0001', 'Turismo Maipo'), token: 'tok-1' };
   const ida = leerVendedoresDe([ENCABEZADO_VENDEDORES, filaVendedor(s1, ENCABEZADO_VENDEDORES),
     filaVendedor({ ...fichaVacia('carla'), token: 'no-va' }, ENCABEZADO_VENDEDORES)]);
-  ok(ida[0].token === 'tok-1' && ida[1].token === '', 'el link del socio se guarda y se lee; un vendedor no lleva token');
+  // Desde el 2026-11-24 el vendedor también tiene link personal.
+  ok(ida[0].token === 'tok-1' && ida[1].token === 'no-va', 'el link del socio y el del vendedor se guardan y se leen');
+  {
+    const { fichaPorToken } = await import('./vendedores.ts');
+    const fichas = [{ ...s1 }, { ...fichaVacia('carla', 'Carla'), token: 'tok-2' }, { ...fichaVacia('ana'), token: 'tok-3', activo: false }];
+    ok(fichaPorToken(fichas, 'tok-2')?.usuario === 'carla' && fichaPorToken(fichas, 'tok-1')?.tipo === 'socio'
+       && !fichaPorToken(fichas, 'tok-3') && !fichaPorToken(fichas, '') && !fichaPorToken(fichas, ' '),
+       'el link encuentra al vendedor y al socio; uno desactivado o vacío no encuentra a nadie');
+  }
   ok(socioPorToken(ida, 'tok-1')?.usuario === 'S-0001' && !socioPorToken(ida, '') && !socioPorToken(ida, 'otro')
      && !socioPorToken([{ ...ida[0], activo: false }], 'tok-1'),
      'el link abre al socio; vacío o inventado no abre nada, y desactivarlo apaga su link');

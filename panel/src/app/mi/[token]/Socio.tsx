@@ -1,5 +1,10 @@
 /**
- * **El link personal de un socio comercial** (2026-11-12, segunda entrega).
+ * **El link personal de un socio comercial o de un vendedor** (2026-11-12 el
+ * socio; el vendedor desde el 2026-11-24, lo pidió el cliente: *"muy parecido
+ * al de los trabajadores, pero enfocado a los datos de venta y condiciones
+ * personales en el trato de comisiones… y qué valor tengo que poner a la
+ * boleta para cobrar mi comisión"*). Para el vendedor suma su sueldo fijo y
+ * su trato completo, arriba, en *Tu trato*.
  * Un estado de cuenta como el del vendedor en *Mi resumen*, sin cuenta en
  * el panel: lo que trajo, la comisión que ganó en el mes, lo que viene y lo
  * que se le pagó. Componente de servidor, sin JavaScript: el mes va en la
@@ -10,7 +15,7 @@
  * otras ventas.
  */
 import type { FichaVendedor, Venta } from '@/lib/vendedores';
-import { resumenDelPeriodo, porCobrar, comoDe } from '@/lib/vendedores';
+import { resumenDelPeriodo, porCobrar, comoDe, finesDeMesEntre } from '@/lib/vendedores';
 import { cuentaBoleta, montosDeVendedor } from '@/lib/boletas';
 import CajaBoleta from '@/components/CajaBoleta';
 import type { Boleta } from '@/lib/remuneraciones';
@@ -60,19 +65,33 @@ const moverMes = (mes: string, n: number) => {
   return `${a}-${String(m).padStart(2, '0')}`;
 };
 
-/** Su trato en una frase: *"5% desde 22 personas, 10% desde 55, 15% desde 77, sobre el neto"*. */
-function trato(f: FichaVendedor): string {
+/**
+ * **El trato renglón por renglón** (2026-11-24): la comisión por etapas, el
+ * bono, el monto por evento, el sueldo fijo, cuánto cobra con un socio y con
+ * qué documento se le paga. Solo lo que su ficha tiene.
+ */
+function tratoEnLineas(f: FichaVendedor): [string, string][] {
   const pct = (n: number) => `${String(n).replace('.', ',')}%`;
   const etapas = [
     f.comisionPct > 0 ? `${pct(f.comisionPct)} desde ${f.etapa1Desde || 1} ${f.etapa1Desde === 1 ? 'persona' : 'personas'}` : '',
     f.etapa2Pct > 0 ? `${pct(f.etapa2Pct)} desde ${f.etapa2Desde}` : '',
     f.etapa3Pct > 0 ? `${pct(f.etapa3Pct)} desde ${f.etapa3Desde}` : ''
   ].filter(Boolean);
-  return [
-    etapas.length ? `${etapas.join(', ')}, sobre el ${f.base === 'neto' ? 'neto' : 'total con IVA'}` : '',
-    f.bonoPuntos > 0 ? `${pct(f.bonoPuntos)} más en los menús premium` : '',
-    f.montoEvento > 0 ? `${enPesos(f.montoEvento)} por evento` : ''
-  ].filter(Boolean).join(' + ');
+  const socio = f.tipo === 'socio';
+  const lineas: [string, string][] = [];
+  if (etapas.length) lineas.push(['Comisión', `${etapas.join(', ')}, sobre el ${f.base === 'neto' ? 'neto' : 'total con IVA'} del evento`]);
+  if (f.bonoPuntos > 0) lineas.push(['Bono', `${pct(f.bonoPuntos)} más en los productos con bono`]);
+  if (f.montoEvento > 0) lineas.push(['Por evento', `${enPesos(f.montoEvento)} por cada evento`]);
+  if (!socio && f.sueldoFijo > 0) lineas.push(['Sueldo fijo', `${enPesos(f.sueldoFijo)} al mes`]);
+  if (!socio && f.conSocio < 100) lineas.push(['Con un socio', `cobras el ${pct(f.conSocio)} de tu comisión cuando la venta viene por un socio comercial`]);
+  if (lineas.length) {
+    lineas.push(['Se paga con', f.documento === 'factura'
+      ? (f.incluido ? 'factura: lo que ganas ya incluye el IVA' : 'factura, más IVA')
+      : f.documento === 'boleta'
+        ? (f.incluido ? 'boleta de honorarios: lo que ganas ya incluye la retención' : 'boleta de honorarios: la retención va encima de lo que ganas')
+        : 'sin documento']);
+  }
+  return lineas;
 }
 
 export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v }: {
@@ -90,21 +109,37 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
   const { desde, hasta } = rangoDelPeriodo(periodo);
   const enlace = (q: string) => `/mi/${encodeURIComponent(token)}${q}`;
   const vista = v === 'viene' ? 'viene' : 'gane';
-  const r = resumenDelPeriodo({ sueldoFijo: 0 }, ventas, desde, hasta);
+  const esSocio = socio.tipo === 'socio';
+  // El sueldo fijo entra a fin de mes, como en el informe; un socio no tiene.
+  const fijo = esSocio ? 0 : socio.sueldoFijo;
+  const r = resumenDelPeriodo({ sueldoFijo: fijo }, ventas, desde, hasta);
   const recibidos = pagosEnPeriodo(pagos, socio.nombre, desde, hasta);
   const pagado = recibidos.reduce((s, x) => s + x.monto, 0);
   // **Su documento** (2026-11-20): factura o boleta, con el impuesto incluido
   // o aparte. Lo que falta es contra lo que se le transfiere.
-  const documento = cuentaBoleta(montosDeVendedor(r.cuentan, 0, []), boletas, socio.nombre, desde, hasta, ahora, comoDe(socio));
+  const documento = cuentaBoleta(montosDeVendedor(r.cuentan, fijo, finesDeMesEntre(desde, hasta)), boletas, socio.nombre,
+    desde, hasta, ahora, comoDe(socio));
+  const condiciones = tratoEnLineas(socio);
   const falta = faltaDe(documento.delPeriodo.aTransferir, pagado);
   const vienen = porCobrar(ventas).sort((a, b) => a.fechaEvento.localeCompare(b.fechaEvento));
   const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
   return (
     <section className="mx-auto max-w-md">
-      <p className="text-[13px] font-semibold uppercase tracking-widest text-oro">Tu resumen · socio comercial</p>
+      <p className="text-[13px] font-semibold uppercase tracking-widest text-oro">Tu resumen · {esSocio ? 'socio comercial' : 'vendedor'}</p>
       <h1 className="mt-1 text-xl font-bold uppercase tracking-wide">{socio.nombre}</h1>
-      {trato(socio) && <p className="text-[15px] text-hueso/75">Tu comisión: {trato(socio)}.</p>}
+      {/* **Tu trato** (2026-11-24): lo que dice su ficha, renglón por renglón,
+          para que la cuenta de abajo se entienda sin preguntar. */}
+      {condiciones.length > 0 && (
+        <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-2xl border-2 border-hueso/20 bg-panel p-3 text-[15px]">
+          {condiciones.map(([que, dice]) => (
+            <div key={que} className="contents">
+              <dt className="font-semibold text-hueso/70">{que}</dt>
+              <dd>{dice}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
 
       <nav className="mt-4 flex gap-2">
         <Pestana href={enlace(periodo === ahora.slice(0, 7) ? '' : `?p=${periodo}`)} elegida={vista === 'gane'}>
@@ -152,7 +187,8 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="col-span-2">
               <Azulejo grande que="Lo que ganaste" monto={r.total} tono="border-oro/30 bg-oro/[0.06] text-oro"
-                nota={cuenta(r.cuentan.length, 'evento pagado', 'eventos pagados')} />
+                nota={cuenta(r.cuentan.length, 'evento pagado', 'eventos pagados')
+                  + (r.sueldoFijo > 0 ? ` + sueldo fijo ${enPesos(r.sueldoFijo)}` : '')} />
             </div>
             <Azulejo que="Te pagamos" monto={pagado} tono="border-verde/40 bg-verde/[0.06] text-verde-texto"
               nota={recibidos.length ? cuenta(recibidos.length, 'pago', 'pagos') : undefined} />
