@@ -573,6 +573,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Por cada vendedor: lo que ganó en el periodo —comisiones de las '
       + 'cotizaciones que ganó y su sueldo fijo—, lo que ya se le pagó y lo que '
       + 'falta.',
+      'Aparece todo el que vende: las cuentas con rol Vendedor y cualquiera que tenga '
+      + 'cotizaciones a su nombre con otro rol, como el encargado de operaciones. Su trato '
+      + 'parte en 0%: se lo escribes en su tarjeta, y hasta entonces su comisión no se congela.',
       'La comisión cuenta cuando el cliente terminó de pagar el evento y el '
       + 'encargado de pagos revisó esos cobros. Una cotización cancelada no deja '
       + 'comisión.'

@@ -7394,6 +7394,29 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(EQ.mesDeLaSemana('2026-10-26') === '2026-10', 'de semana a mes: el mes de su lunes');
 }
 
+/* ---------- Quién vende: también quien cotiza con otro rol (2026-11-24) ---------- */
+{
+  const V = await import('./vendedores.ts');
+  const cuentas = [
+    { usuario: 'jorge', nombre: 'Jorge', rol: 'vendedor', activo: true },
+    { usuario: 'ex', nombre: 'Ex Vendedora', rol: 'vendedor', activo: false },
+    { usuario: 'ccm', nombre: 'Cristobal Cornejo', rol: 'gerente', activo: true },
+    { usuario: 'vero', nombre: 'Verónica Lagos', rol: 'pagos', activo: true },
+    { usuario: 'rodrigo', nombre: 'Rodrigo Vera', rol: 'gerencia', activo: true },
+    { usuario: 'brasas', nombre: 'brasas', rol: 'admin', activo: true }
+  ];
+  const cotiz = [{ creadoPor: 'Cristóbal Cornejo' }, { creadoPor: 'brasas' }, { creadoPor: 'Jorge' }];
+  const nombres = (fichas: { usuario: string; tipo: 'vendedor' | 'socio' }[]) =>
+    V.cuentasQueVenden(cuentas, fichas, cotiz).map((c) => c.usuario).join();
+  ok(nombres([]) === 'jorge,ccm',
+     'venden el rol Vendedor activo y quien tiene cotizaciones a su nombre (Cristóbal, operaciones), sin mirar tildes');
+  ok(nombres([{ usuario: 'rodrigo', tipo: 'vendedor' }, { usuario: 'ex', tipo: 'vendedor' }]) === 'jorge,ex,ccm,rodrigo',
+     'con ficha de vendedor también, aunque no haya cotizado o su cuenta esté desactivada');
+  ok(!nombres([]).includes('brasas') && nombres([{ usuario: 'brasas', tipo: 'vendedor' }]).includes('brasas'),
+     'el administrador (la cuenta general) solo con ficha: lo importado a su nombre no lo vuelve vendedor');
+  ok(!nombres([{ usuario: 'vero', tipo: 'socio' }]).includes('vero'), 'una ficha de socio comercial no cuenta');
+}
+
 /* ---------- Qué incluye cada producto, en la cotización (2026-11-24) ---------- */
 {
   const D = await import('./detalle.ts');

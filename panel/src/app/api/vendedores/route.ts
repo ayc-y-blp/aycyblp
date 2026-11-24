@@ -18,7 +18,7 @@ import { desgloseDocumento, retencionDelAno, fechaDeEmision } from '@/lib/boleta
 import { conCliente } from '@/lib/cotizar';
 import { HOJA_VENDEDORES, fichaDe, ventasDe, resumenDelPeriodo, porCobrar, comisionDe, porcentaje, baseDeVenta,
          tieneFormaDePago, esVentaDe, fichaSocio, nuevoIdSocio, BASE_COMISION, fichaVacia, comoDe,
-         faltaParaFacturar, facturaVacia, type FichaVendedor } from '@/lib/vendedores';
+         faltaParaFacturar, facturaVacia, cuentasQueVenden, type FichaVendedor } from '@/lib/vendedores';
 import { bancoVacio, sePuedeTransferir } from '@/lib/banco';
 import { normalizar } from '@/lib/columnas';
 import { esFecha, hoy } from '@/lib/fechas';
@@ -78,10 +78,10 @@ export const GET = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES, HOJA_PRESUPUESTO
       leerPagosEquipo(), leerClientes(), leerMenus()
     ]);
     const esVendedor = quien.rol === ROL.vendedor;
-    // Los vendedores son las cuentas con ese rol; una desactivada sigue si tiene ficha.
-    const lista = usuarios
-      .filter((u) => u.rol === ROL.vendedor && (u.activo || fichas.some((f) => normalizar(f.usuario) === normalizar(u.usuario))))
-      .map((u) => ({ usuario: u.usuario, nombre: u.nombre || u.usuario, activo: u.activo }))
+    // **Los que venden** (`cuentasQueVenden()`): el rol Vendedor y, desde el
+    // 2026-11-24, cualquier cuenta con cotizaciones a su nombre o su ficha.
+    const lista = cuentasQueVenden(usuarios, fichas, presupuestos)
+      .map((u) => ({ usuario: u.usuario, nombre: u.nombre || u.usuario, activo: u.activo, rol: u.rol }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
     // **Los socios comerciales** (2026-11-12): fichas sin cuenta, en la misma
     // pestaña. El vendedor no los ve acá —sí sus nombres al cotizar—.

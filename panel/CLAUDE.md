@@ -175,7 +175,8 @@ revisan antes de cada cambio en esta carpeta.
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
   | El dinero de la caja chica: en la caja, por recibir, en manos de | `Azulejo` en `CajaChica` (y *Efectivo del día* en *Las mesas*) |
-  | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
+  | Qué incluye cada producto: el menú de la casa, lo común y lo que cambia en cada alternativa | `QueIncluye` y `Producto` (la cotización y el contrato), con los textos de `lib/detalle.ts` |
+| Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa* en `TablaCotizacion` (la cotización y el contrato) |
   | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -225,6 +226,38 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Vende quien cotiza, tenga el rol que tenga (2026-11-24)
+
+Lo pidió el cliente: *"en vendedores, Cristóbal Cornejo no aparece aún que él
+tenga cotizaciones. Sé que él tiene el rol de encargado de operaciones, pero él
+vende también. Entonces, si alguien con otro rol, pero igual vende dentro del
+sistema, tiene que aparecer en vendedores también, porque para él también
+corren comisiones… y tiene que hacer su link personal"*.
+
+- **Una sola regla, `cuentasQueVenden()`** (`lib/vendedores.ts`, con
+  pruebas): el rol Vendedor (activo, o desactivado con ficha) y **cualquier
+  otra cuenta con una cotización a su nombre** (`Creado por`, por nombre o
+  usuario, sin tildes) **o con su ficha de vendedor**. **El administrador,
+  solo con ficha**: es la cuenta general, y lo importado del CRM puede haber
+  quedado a su nombre.
+- **Se usa en los cuatro lugares que antes miraban solo el rol**: la lista de
+  *Vendedores*, la sección de vendedores del *Informe*, crear su link
+  personal (`/api/vendedores/link`) y congelar la comisión
+  (`congelarComision()`). Si cada uno filtrara a su manera, saldría en uno y no
+  en el otro.
+- **Su trato parte en 0%** (la ficha de partida): se le escribe en su tarjeta.
+  **Sin ficha, la comisión no se congela**: congelarla dejaría en $0 una venta
+  pagada antes de escribirle el trato. Hasta que tenga ficha, se calcula al
+  leer. Vale para todos, también para un vendedor sin fila.
+- **Su link personal** es el del vendedor (`Socio.tsx`): su trato, lo que ganó
+  y su boleta. Sigue la regla de siempre: vale mientras su cuenta esté activa.
+- **Lecturas de Google**: el link suma `Presupuestos` a su tanda (una sola).
+  Las demás ya lo leían. **Ningún permiso cambió.** **Ayuda**: el `?` de
+  Vendedores.
+- **Probado en el panel de ejemplo**: Marcela Díaz (operaciones) crea una
+  cotización y aparece en *Vendedores* con su rol; pagos le crea el link y su
+  página abre con su trato.
+
 ## Qué incluye cada producto, en la cotización (2026-11-24)
 
 Lo pidió el cliente: *"que se desglose el detalle del producto en la
@@ -260,7 +293,10 @@ cotización de producción: *"la cotización aún se ve igual"*.
   su caja y se leía cortada (*SUBTOTAL NET*, *$2.882.35*). Bajo 640px, *Cant.*,
   la letra a 13px, 6px entre columnas y el total a 16px. Cabe desde 360px. El
   computador y el PDF, igual.
-- **No está en el contrato** (`/contrato/<token>`): el cliente no lo pidió ahí.
+- **También en el contrato** (`/contrato/<token>`, lo pidió el cliente el
+  mismo día: *"que en el contrato también aparece… el desglose"*), bajo la
+  tabla de la cláusula del precio, con lo contratado. Es la misma pieza,
+  **`QueIncluye`** (`components/QueIncluye.tsx`), en los dos documentos.
 - **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
   **Ayuda**: el `?` de Cotizaciones.
 - **Probado en el panel de ejemplo**: Constructora Maipo (una alternativa) con

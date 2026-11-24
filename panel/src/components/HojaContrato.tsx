@@ -16,6 +16,8 @@ import type { Config } from '@/lib/config';
 import type { Cliente } from '@/lib/clientes';
 import BotonImprimir from '@/components/BotonImprimir';
 import TablaCotizacion from '@/components/TablaCotizacion';
+import QueIncluye from '@/components/QueIncluye';
+import { desglose } from '@/lib/detalle';
 
 /** Lo que va entre `**` sale en negrita: los montos y los nombres. */
 function Texto({ t }: { t: Parrafo }) {
@@ -33,6 +35,11 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
 }) {
   const negocio = negocioDe(cfg.empresa);
   const cuentas = cuentasDe(lineas, p.descuento);
+  // **Qué incluye, también en el contrato** (2026-11-24, lo pidió el cliente):
+  // la misma pieza de la cotización, con lo que se contrató. Lo que cobra
+  // otra empresa no entra: ya va aparte, bajo la tabla.
+  const incluye = desglose([{ id: p.id,
+    conceptos: lineas.filter((l) => !String(l.loCobra ?? '').trim()).map((l) => l.concepto) }]);
   const ficha = clientes.find((c) => c.id === p.idCliente);
   const cliente = {
     nombre: ficha?.nombre ?? p.cliente,
@@ -102,6 +109,7 @@ export default function HojaContrato({ p, lista, lineas, clientes, cfg }: {
             <div className="mt-3 text-sm">
               <TablaCotizacion lineas={lineas} cuentas={cuentas} descuento={p.descuento}
                 uf={p.uf} fechaUF={p.fechaUF} />
+              <QueIncluye casa={incluye.casa} comunes={incluye.comunes} varias={false} />
             </div>
           )}
           {c.cuenta && (

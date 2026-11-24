@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { exigir, quienEs } from '@/lib/permisos';
-import { HOJA_VENDEDORES, fichaDe } from '@/lib/vendedores';
+import { HOJA_VENDEDORES, fichaDe, cuentasQueVenden } from '@/lib/vendedores';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
-import { leerVendedores, guardarVendedor, anotar, leerUsuarios } from '@/lib/datos';
-import { ROL } from '@/lib/auth';
+import { leerVendedores, guardarVendedor, anotar, leerUsuarios, leerPresupuestos } from '@/lib/datos';
+import { HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
 import { nuevoToken } from '@/lib/equipo';
 import { normalizar } from '@/lib/columnas';
 
@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
  * Un vendedor puede no tener fila en `Vendedores` todavía (su trato está en
  * blanco): se le crea con la de partida al darle el link.
  */
-export const POST = conLecturas([HOJA_VENDEDORES, HOJA_USUARIOS], async function POST(req: Request) {
+export const POST = conLecturas([HOJA_VENDEDORES, HOJA_USUARIOS, HOJA_PRESUPUESTOS], async function POST(req: Request) {
   const no = await exigir(req, 'links');
   if (no) return no;
   try {
@@ -31,8 +31,10 @@ export const POST = conLecturas([HOJA_VENDEDORES, HOJA_USUARIOS], async function
     const u = normalizar(String(usuario ?? ''));
     let s = fichas.find((f) => normalizar(f.usuario) === u);
     if (!s) {
-      // Un vendedor con cuenta y sin fila: su ficha de partida.
-      const cuenta = (await leerUsuarios()).find((c) => c.activo && c.rol === ROL.vendedor && normalizar(c.usuario) === u);
+      // Un vendedor con cuenta y sin fila: su ficha de partida. **También quien
+      // cotiza con otro rol** (2026-11-24, `cuentasQueVenden()`).
+      const cuenta = cuentasQueVenden((await leerUsuarios()).filter((c) => c.activo), [], await leerPresupuestos())
+        .find((c) => normalizar(c.usuario) === u);
       if (cuenta) s = fichaDe([], cuenta.usuario, cuenta.nombre);
     }
     if (!s) return NextResponse.json({ error: 'Ese vendedor o socio comercial no está.' }, { status: 404 });

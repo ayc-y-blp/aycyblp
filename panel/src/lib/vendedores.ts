@@ -475,6 +475,40 @@ export function confirmadaEl(total: number,
  * `daniela`, quien paga la veía sin ventas y su comisión no se congelaba.
  * Calzaba solo cuando los dos eran iguales, como en los datos de prueba.
  */
+/**
+ * **Quién vende: el rol Vendedor y cualquiera que cotice** (2026-11-24, lo
+ * pidió el cliente: *"Cristóbal Cornejo no aparece aún que él tenga
+ * cotizaciones. Sé que él tiene el rol de encargado de operaciones, pero él
+ * vende también. Entonces, si alguien con otro rol, pero igual vende dentro
+ * del sistema, tiene que aparecer en vendedores también, porque para él
+ * también corren comisiones… y tiene que hacer su link personal"*).
+ *
+ * - **Una cuenta con rol Vendedor**: activa, o desactivada si tiene ficha
+ *   (para pagarle lo que se le debe). Como siempre.
+ * - **Una cuenta con otro rol**: si tiene **una cotización a su nombre**
+ *   (`Creado por`, por nombre o usuario) **o su ficha de vendedor** en
+ *   `Vendedores`. Activa o no: lo vendido se le paga igual.
+ * - **El administrador, solo con ficha**: es la cuenta general del panel, y lo
+ *   que importó del CRM puede haber quedado a su nombre sin que nadie le deba
+ *   una comisión.
+ *
+ * Es **una sola regla** para la lista de Vendedores, el Informe, el link
+ * personal y el congelado de la comisión: si cada uno filtrara a su manera,
+ * Cristóbal saldría en uno y no en el otro.
+ */
+export function cuentasQueVenden<C extends { usuario: string; nombre: string; rol: string; activo: boolean }>(
+  cuentas: C[], fichas: Pick<FichaVendedor, 'usuario' | 'tipo'>[], presupuestos: Pick<Presupuesto, 'creadoPor'>[]
+): C[] {
+  const conFicha = new Set(fichas.filter((f) => f.tipo !== 'socio').map((f) => normalizar(f.usuario)));
+  const cotizaron = new Set(presupuestos.map((p) => normalizar(p.creadoPor)).filter(Boolean));
+  return cuentas.filter((c) => {
+    const ficha = conFicha.has(normalizar(c.usuario));
+    if (c.rol === 'vendedor') return c.activo || ficha;
+    if (c.rol === 'admin') return ficha;
+    return ficha || cotizaron.has(normalizar(c.nombre)) || cotizaron.has(normalizar(c.usuario));
+  });
+}
+
 export const esVentaDe = (usuario: string, tipo: TipoFicha = 'vendedor', nombre = '') => {
   const quien = (tipo === 'socio' ? [usuario] : [usuario, nombre]).map(normalizar).filter(Boolean);
   return (p: Pick<Presupuesto, 'creadoPor' | 'socio'>) =>

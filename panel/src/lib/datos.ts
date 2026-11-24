@@ -63,7 +63,7 @@ import {
 import { conCliente } from './cotizar.ts';
 import { HOJA_NOTAS, ENCABEZADO_NOTAS, leerNotasDe, filaNota, nuevoIdNota, type Nota } from './notas.ts';
 import { HOJA_VENDEDORES, ENCABEZADO_VENDEDORES, leerVendedoresDe, filaVendedor, fichaDe, baseDeVenta,
-         comisionDe, marcaComision, confirmadaEl, type FichaVendedor } from './vendedores.ts';
+         comisionDe, marcaComision, confirmadaEl, cuentasQueVenden, type FichaVendedor } from './vendedores.ts';
 import { HOJA_COBROS, ENCABEZADO_COBROS, leerCobrosDe, filaCobro, cobrosDe, estadoCobros,
          type Cobro } from './cobros.ts';
 import { liberaCupo, pagoPorCobros } from './pagos.ts';
@@ -1001,13 +1001,20 @@ export async function congelarComision(idPresupuesto: string): Promise<void> {
     if (!p || !p.idReserva) return;
     // `Creado por` es el nombre de la persona (lo que trae la sesión); se
     // busca por nombre y, para las viejas, por usuario.
+    // **Cualquiera que venda** (2026-11-24, `cuentasQueVenden()`): también
+    // quien cotiza con otro rol, como el encargado de operaciones.
     const creo = normalizar(p.creadoPor);
-    const u = usuarios.find((x) => x.rol === 'vendedor' && !!creo && normalizar(x.nombre) === creo)
-      ?? usuarios.find((x) => x.rol === 'vendedor' && !!creo && normalizar(x.usuario) === creo);
+    const venden = cuentasQueVenden(usuarios, fichas, presupuestos);
+    const u = venden.find((x) => !!creo && normalizar(x.nombre) === creo)
+      ?? venden.find((x) => !!creo && normalizar(x.usuario) === creo);
     // **El socio también congela la suya** (2026-11-12, segunda entrega), en
     // su propia columna y en la misma escritura.
     const s = p.socio ? fichas.find((f) => f.tipo === 'socio' && normalizar(f.usuario) === normalizar(p.socio ?? '')) : undefined;
-    const faltaVendedor = !!u && !p.comisionVendedor;
+    // **Sin ficha, no se congela** (2026-11-24): su trato de partida es 0%, y
+    // congelarlo dejaría en $0 una venta que se pagó antes de escribirle el
+    // trato. Hasta que tenga ficha, se calcula al leer.
+    const conFicha = !!u && fichas.some((f) => f.tipo !== 'socio' && normalizar(f.usuario) === normalizar(u.usuario));
+    const faltaVendedor = conFicha && !p.comisionVendedor;
     const faltaSocio = !!s && !p.comisionSocio;
     if (!faltaVendedor && !faltaSocio) return;
     const b = baseDeVenta(p, lineas, menus);

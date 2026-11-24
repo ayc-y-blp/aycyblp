@@ -377,7 +377,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   PR #338, lo pidió el cliente): arriba el menú de la casa y lo común, y en
   cada alternativa lo que la distingue, con los textos del sitio
   (`lib/detalle.ts`); y la tabla de precios cabe entera en el teléfono. Ver
-  `panel/CLAUDE.md`, "Qué incluye cada producto, en la cotización".
+  `panel/CLAUDE.md`, "Qué incluye cada producto, en la cotización". **También
+  en el contrato**, bajo la tabla del precio (lo pidió el cliente).
+- **Vende quien cotiza, tenga el rol que tenga** (24-11-2026, en el mismo PR
+  #338, lo pidió el cliente: Cristóbal, operaciones, no salía en Vendedores):
+  `cuentasQueVenden()` en la lista, el Informe, el link personal y el congelado
+  de la comisión. Su trato parte en 0% y sin ficha la comisión no se congela.
+  Ver `panel/CLAUDE.md`, "Vende quien cotiza".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
