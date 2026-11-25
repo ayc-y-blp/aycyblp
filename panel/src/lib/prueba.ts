@@ -8094,5 +8094,12 @@ console.log('\nClientes: filtrar por vendedor (2026-11-25)');
   ok(por.nadie.length === 0, 'un vendedor sin clientes sale vacío');
 }
 
+console.log('\nLas notas internas no salen en la cotización del cliente (2026-11-25)');
+{
+  const fs = await import('node:fs');
+  const hoja = fs.readFileSync(new URL('../app/presupuesto/[token]/page.tsx', import.meta.url), 'utf8');
+  ok(!/\bp\.notas\b/.test(hoja), 'la cotización que ve el cliente no imprime las Notas internas de la cotización');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);
