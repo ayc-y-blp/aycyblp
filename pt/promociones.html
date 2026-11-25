@@ -256,6 +256,8 @@
 
   .promo-hero .hero-full-bg{ animation: promo-acerca var(--promo-ciclo) linear forwards; }
   .promo-foto{ position:absolute; inset:0; }
+  /* La foto del Combate es vertical y la carne va en el tercio de abajo: se encuadra ahí (2026-11-25). */
+  .promo-foto.foco-asado{ object-position: 50% 80%; }
   .promo-f1, .promo-f2{ opacity:0; }
   .promo-f1{ animation: promo-b1 var(--promo-ciclo) ease forwards; }
   .promo-f2{ animation: promo-b2 var(--promo-ciclo) ease forwards; }
@@ -1120,7 +1122,7 @@
     </div>
     <div class="promo-slide ps1">
       <div class="hero-full-bg">
-        <img class="promo-foto" src="../assets/gallery/g20.jpg" alt="Equipe de cozinha trabalhando na parrilla" width="850" height="567" loading="lazy" decoding="async">
+        <img class="promo-foto foco-asado" src="../assets/gallery/asado-estaca.jpg" alt="Carne assando no espeto sobre as brasas" width="1335" height="2000" loading="lazy" decoding="async">
         <div class="scrim"></div>
       </div>
       <div class="hero-full-content">
