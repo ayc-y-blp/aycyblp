@@ -26,7 +26,7 @@
 import { normalizar, indices, ESTADO_DIA } from './columnas.ts';
 import { TIPO_PRODUCTO, COBRO, IVA_PRECIO, MONEDA, precioParaCotizar, canonizar, textosDelProducto, type Menu } from './menus.ts';
 import {
-  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, personasParaMinimos, lineaDeProducto,
+  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, arriendoDe as arriendoDelCatalogo, personasParaMinimos, lineaDeProducto,
   type ReglaShow, type ReglaArriendo
 } from './cotizar.ts';
 import {
@@ -480,6 +480,15 @@ export interface Eleccion {
    * todos, en vez de no reconocer el extra.
    */
   cuantos?: number[];
+  /**
+   * **Quiere el lugar exclusivo** (2026-11-25, lo pidió el cliente: *"en el
+   * cotizador debe haber la posibilidad también de tener el botón quiero el
+   * lugar exclusivo… y desde ahí calcule el precio de arriendo del recinto"*).
+   * Suma el arriendo del recinto **a su precio estándar**, sin el descuento de
+   * la promoción: lo que se negocie después lo hace el vendedor. Un
+   * `cotizador.js` de antes no lo manda y cotiza como siempre.
+   */
+  exclusivo?: boolean;
   /** `AAAA-MM-DD`. */
   fecha: string;
 }
@@ -494,6 +503,8 @@ export interface ContextoCotizar {
   reservasDelDia: (fecha: string) => number;
   /** `AAAA-MM-DD` en Chile. Se cotiza desde mañana. */
   hoy: string;
+  /** Los días que no se arriendan en exclusiva (Configuración): el sitio tampoco los ofrece. */
+  fechasSinExclusivo?: string[];
 }
 
 /**
@@ -501,7 +512,7 @@ export interface ContextoCotizar {
  * en el idioma de la página. `minimo` trae desde cuántas personas.
  */
 export type NoSeCotiza =
-  | { ok: false; codigo: 'promocion' | 'menu' | 'fecha' | 'tomado' | 'sinPrecio'; minimo?: number }
+  | { ok: false; codigo: 'promocion' | 'menu' | 'fecha' | 'tomado' | 'sinPrecio' | 'sinExclusivo'; minimo?: number }
   | { ok: false; codigo: 'minimo'; minimo: number }
   /** El día está dentro del plazo de anticipación: `dias` es lo que pide. */
   | { ok: false; codigo: 'anticipacion'; dias: number };
@@ -520,6 +531,17 @@ export interface Cotizada {
   publico: boolean;
   /** El arriendo mínimo que corrió (neto), o 0. */
   arriendo: number;
+  /** Si el cliente pidió el lugar exclusivo y se sumó su arriendo (a precio estándar). */
+  exclusivo: boolean;
+  /** Si lo pidió y la promoción se lo perdona ese día (*sin arriendo de lunes a viernes*). */
+  exclusivoGratis: boolean;
+  /**
+   * Si el descuento de la promoción va **línea por línea** y no sobre el total
+   * (2026-11-25): con el lugar exclusivo, el arriendo no lleva descuento, y un
+   * descuento sobre el total lo alcanzaría. La cuenta es la misma; lo que
+   * cambia es que el arriendo queda a su precio estándar.
+   */
+  descuentoEnLineas: boolean;
 }
 
 const neto = (m: Menu) => {
@@ -539,6 +561,9 @@ const neto = (m: Menu) => {
  *   con poca gente (`prepararLineas()`);
  * - **el arriendo mínimo** de un día no abierto al público, salvo que la
  *   promoción lo perdone (`ARRIENDO_PROMO`);
+ * - **el lugar exclusivo**, si lo pidió (`exclusivo`): el arriendo del recinto
+ *   a su precio estándar, sin el descuento de la promoción (que entonces va
+ *   línea por línea, dejándolo afuera);
  * - el descuento de la promoción, sobre el total: el del tramo más alto que
  *   alcanza el grupo (`descuentoPara()`).
  *
@@ -560,6 +585,8 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
   if (ctx.fechas.some((d) => d.fecha === e.fecha && normalizar(d.estado) === normalizar(ESTADO_DIA.exclusiva))) {
     return { ok: false, codigo: 'tomado' };
   }
+  // El lugar exclusivo no se ofrece los días que Configuración no arrienda así.
+  if (e.exclusivo && ctx.fechasSinExclusivo?.includes(e.fecha)) return { ok: false, codigo: 'sinExclusivo' };
   const elegido = promo.menus.length === 1 ? promo.menus[0]
     : promo.menus.find((m) => normalizar(m) === normalizar(e.menu));
   const menu = elegido ? productoDe(elegido, ctx.catalogo) : undefined;
@@ -587,18 +614,52 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
 
   const publico = esDiaPublico(e.fecha, ctx.fechas);
   const sinArriendo = perdonaArriendo(promo, e.fecha);
+  // **El lugar exclusivo** (2026-11-25): suma el arriendo del recinto a su
+  // precio estándar, el del catálogo. Si la promoción perdona el arriendo ese
+  // día —la de fin de año, de lunes a viernes—, no se cobra y se dice.
+  const quiereExclusivo = e.exclusivo === true;
+  const exclusivo = quiereExclusivo && !sinArriendo;
+  if (exclusivo) {
+    const a = arriendoDelCatalogo(ctx.catalogo);
+    if (!a || a.moneda === MONEDA.uf || !(precioParaCotizar(a) > 0)) return { ok: false, codigo: 'sinPrecio' };
+    entrantes.push({
+      presupuesto: '', concepto: a.nombre, cantidad: 1, precio: precioParaCotizar(a), personas: 0,
+      ivaIncluido: a.iva !== IVA_PRECIO.mas, ...textosDelProducto(a)
+    });
+  }
   const arriendo = sinArriendo ? null : arriendoDelDia(ctx.reglaArriendo, e.fecha, ctx.fechas,
-    ctx.diasAbiertos, false, ctx.reservasDelDia(e.fecha));
+    ctx.diasAbiertos, quiereExclusivo, ctx.reservasDelDia(e.fecha));
   const lineas = prepararLineas(entrantes, ctx.catalogo, invitados, publico, 0, ctx.reglaShow, arriendo);
   const minimo = arriendo ? arriendo(personasParaMinimos(lineas, invitados)) : null;
   // El descuento del tramo que alcanza el grupo (2026-11-24).
   const descuento = descuentoPara(promo, invitados);
-  const cuentas = cuentasDe(lineas, descuento);
+  // **Con el lugar exclusivo, el descuento va línea por línea** y deja afuera
+  // el arriendo (2026-11-25: *"el arriendo… usa el valor estándar, no con el
+  // descuento aplicado… después se puede negociar el vendedor"*). Tampoco
+  // toca el show ni lo que cobra otra empresa: un descuento sobre el total
+  // no los habría alcanzado distinto. Sin exclusivo, como siempre.
+  const descuentoEnLineas = exclusivo && descuento > 0;
+  const lineasFinales = descuentoEnLineas
+    ? lineas.map((l) => {
+      const t = productoDe(l.concepto, ctx.catalogo)?.tipo;
+      return t === TIPO_PRODUCTO.arriendo || t === TIPO_PRODUCTO.show || l.loCobra ? l : { ...l, descuento };
+    })
+    : lineas;
+  const reales = cuentasDe(lineasFinales, descuentoEnLineas ? 0 : descuento);
+  // Con el descuento en las líneas, el sitio lo sigue viendo como una fila
+  // aparte: el neto de la lista, lo que baja y lo que queda.
+  const cuentas: Cuentas = descuentoEnLineas
+    ? (() => {
+      const lista = cuentasDe(lineas, 0);
+      return { subtotal: lista.subtotal, descuento: lista.subtotal - reales.neto, neto: reales.neto, iva: reales.iva, total: reales.total };
+    })()
+    : reales;
   return {
-    ok: true, lineas, invitados, descuento, cuentas,
-    otras: otrasEmpresas(lineas),
+    ok: true, lineas: lineasFinales, invitados, descuento, cuentas,
+    otras: otrasEmpresas(lineasFinales),
     porPersona: invitados > 0 ? Math.round(cuentas.total / invitados) : 0,
-    publico, arriendo: minimo?.minimo ?? 0
+    publico, arriendo: minimo?.minimo ?? 0,
+    exclusivo, exclusivoGratis: quiereExclusivo && sinArriendo, descuentoEnLineas
   };
 }
 
@@ -630,6 +691,14 @@ export interface PromocionSitio {
   desde: number;
   /** Los días de anticipación que pide; 0 es sin plazo (desde mañana). */
   anticipacion: number;
+  /**
+   * **El arriendo del recinto a su precio estándar** (2026-11-25), para el
+   * botón *Quiero el lugar exclusivo*; `null` si el catálogo no tiene uno con
+   * precio. Es el del catálogo, el mismo con que se cotiza.
+   */
+  arriendo: ProductoSitio | null;
+  /** Si la promoción nunca cobra arriendo (*Sin arriendo*): el lugar exclusivo va incluido. */
+  arriendoIncluido: boolean;
 }
 
 const paraSitio = (m: Menu): ProductoSitio => ({
@@ -653,6 +722,7 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
     const incluye = p.incluye.map(buscar);
     const suma = p.suma.map(buscar);
     const todos = [...menus, ...incluye, ...suma, ...ninos];
+    const arriendoCat = arriendoDelCatalogo(catalogo);
     if (!menus.length || todos.some((m) => !m || !m.activo || m.moneda === MONEDA.uf || !(precioParaCotizar(m) > 0))) continue;
     const porPersona = (incluye as Menu[]).filter((m) => m.cobro !== COBRO.fijo).reduce((n, m) => n + neto(m), 0);
     const masBarato = Math.min(...(menus as Menu[]).map(neto));
@@ -663,7 +733,10 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
       incluye: (incluye as Menu[]).map((m) => m.nombre),
       suma: (suma as Menu[]).map(paraSitio),
       desde: Math.round((masBarato + porPersona) * (1 - p.descuento / 100)),
-      anticipacion: p.anticipacion
+      anticipacion: p.anticipacion,
+      arriendo: arriendoCat && arriendoCat.moneda !== MONEDA.uf && precioParaCotizar(arriendoCat) > 0
+        ? paraSitio(arriendoCat) : null,
+      arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca
     });
   }
   return salida;
@@ -733,9 +806,14 @@ export function cotizacionDelSitio(a: {
     cliente: '', email: '', telefono: '', idCliente: a.idCliente,
     estado: ESTADO_PRESUPUESTO.enviado,
     validoHasta: vigenciaHasta(a.hoy, a.vigenciaDias, a.fecha), token: a.token,
-    notas: `Cotizada por el cliente en el sitio: ${a.promo.nombre}${a.empresa ? ` · ${a.empresa}` : ''}.`,
+    notas: `Cotizada por el cliente en el sitio: ${a.promo.nombre}${a.empresa ? ` · ${a.empresa}` : ''}.`
+      + (a.cotizada.exclusivo ? ' Pidió el lugar exclusivo, con el arriendo a su precio estándar.' : ''),
     idReserva: '', invitados: a.cotizada.invitados, tipoEvento: 'Empresa', grupo: '',
-    descuento: a.cotizada.descuento, motivo: '', documento: '',
+    // Pidió el lugar exclusivo: el vendedor lo ve marcado y lo conversa.
+    exclusivo: a.cotizada.exclusivo ? 'sí' : '',
+    // Con el lugar exclusivo el descuento ya va en cada línea (menos el arriendo):
+    // sobre el total, el arriendo lo habría alcanzado.
+    descuento: a.cotizada.descuentoEnLineas ? 0 : a.cotizada.descuento, motivo: '', documento: '',
     anticipo: null, anticipoMonto: null, saldoDias: null, uf: 0, fechaUF: '',
     horario: '', ley20393: false, acuerdos: '', contrato: '', contratoSubidoPor: '', contratoSubido: '',
     cambiosFecha: null, cancelacionDias: null, reembolso: null,

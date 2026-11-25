@@ -574,6 +574,18 @@ export default function CotizacionDialogo({
   /** El mínimo del arriendo de esta cotización, para decirlo; también a quien puede pasar por encima. */
   const minimoArriendo = arriendoDelDiaFn ? arriendoDelDiaFn(personasParaMinimos(vistas, invitados)) : null;
   const cuentas = cuentasDe(vistas, descuento);
+  /**
+   * **El descuento de la promoción ya va en las líneas** (2026-11-25): con el
+   * lugar exclusivo, una cotización del sitio lo trae línea por línea —menos el
+   * arriendo, que va a su precio estándar—. Con eso, *Usar −N%* no se ofrece:
+   * pondría el descuento dos veces.
+   */
+  const lineaSinPromo = (l: { concepto: string; loCobra?: string }) => {
+    const t = productoDe(l.concepto, datos.menus)?.tipo;
+    return t === TIPO_PRODUCTO.arriendo || t === TIPO_PRODUCTO.show || !!l.loCobra;
+  };
+  const descuentoEnLineas = !!promoAplicada && beneficio.descuento > 0 && descuento === 0
+    && vistas.some((l) => !lineaSinPromo(l) && (Number(l.descuento) || 0) === beneficio.descuento);
   // Lo que cobra otra empresa (el karting): fuera del total, dicho debajo.
   const otras = otrasEmpresas(vistas);
   /**
@@ -927,6 +939,11 @@ export default function CotizacionDialogo({
   const quitarPromocion = () => {
     setPromocion('');
     if (!pasaPorEncima && descuento > topesSinPromo.descuento) setDescuento(0);
+    // Con el descuento en las líneas (lugar exclusivo), se va con la promoción.
+    if (descuentoEnLineas) {
+      setLineas((ls) => ls.map((l) => (!lineaSinPromo(l) && (Number(l.descuento) || 0) === beneficio.descuento
+        ? { ...l, descuento: 0 } : l)));
+    }
     avisar('Se quitó la promoción: los productos quedan en la cotización');
   };
 
@@ -2679,7 +2696,7 @@ export default function CotizacionDialogo({
                       ? <span>−{beneficio.descuento}%{beneficio.sinArriendo ? ' · sin arriendo' : ''}</span>
                       : <span className="font-semibold text-ambar-texto">pide desde {Math.max(1, promoAplicada.minimo)}: no rige</span>}
                     <AyudaCorta tema="promoEnCotizacion" />
-                    {rigePromocion(promoAplicada, invitados) && descuento !== beneficio.descuento && (
+                    {rigePromocion(promoAplicada, invitados) && descuento !== beneficio.descuento && !descuentoEnLineas && (
                       <button type="button" className="boton boton-angosto min-h-[36px]"
                         onClick={() => setDescuento(beneficio.descuento)}>
                         Usar −{beneficio.descuento}%

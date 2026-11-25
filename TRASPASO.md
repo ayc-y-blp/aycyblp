@@ -508,6 +508,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   el cliente): el mismo marco *Lo que viene · Semana · Mes*, con la cuenta
   compartida en `lib/periodoCalendario.ts`. Un día pasado se mira y no se
   cotiza. Ver `panel/CLAUDE.md`.
+- **El lugar exclusivo en el cotizador de promociones** (25-11-2026, lo pidió el
+  cliente: *"debe haber… el botón quiero el lugar exclusivo… el arriendo… usa el
+  valor estándar, no con el descuento aplicado"*): una casilla en el paso ① que
+  suma el arriendo del recinto a su precio estándar, **sin el descuento de la
+  promoción** (que pasa a ir línea por línea, dejando afuera el arriendo), y la
+  cotización llega marcada exclusiva. Toca el sitio (`cotizador.js`, en los tres
+  idiomas) y el panel (`lib/promociones.ts`, la ruta pública y la pastilla de la
+  promoción). **En un PR, en preview hasta el *"mergea"*.** Queda por confirmar
+  con el cliente: el precio estándar de un día de semana (el sitio dice
+  $1.500.000) y a qué se refería con *"la retroencuesta"* en el mismo mensaje
+  (ver `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`, "El lugar
+  exclusivo en el cotizador").
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

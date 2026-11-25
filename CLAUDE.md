@@ -1341,6 +1341,35 @@ solo en `promociones.html`). La mitad del panel —las promociones en
     *+ IVA*, que dobla un renglón), y a 1024×600, 534, porque ahí *¿Cuántos?*
     no cabe al lado de sus teclas y bajan a otro renglón. En el celular las
     teclas bajan igual, a la derecha.
+- **El lugar exclusivo** (2026-11-25, lo pidió el cliente: *"en el cotizador
+  debe haber la posibilidad también de tener el botón quiero el lugar
+  exclusivo. Y desde ahí calcule el precio de arriendo del recinto… el
+  arriendo, que en el cotizador usa el valor estándar, no con el descuento
+  aplicado… si en el cotizador quiere reservar un sábado, tiene que ver el
+  precio arriendo estándar. Y después se puede quizás negociar como el
+  vendedor"*). **Una casilla en el paso ①**, *Quiero el lugar exclusivo*, con
+  el precio estándar debajo, que suma a la boleta **el arriendo del recinto a
+  su precio estándar**: el del producto de tipo Arriendo de *Productos*, no el
+  mínimo de la regla.
+  - **El descuento de la promoción no lo toca**: baja los menús y lo demás,
+    línea por línea, y el arriendo queda entero. La cuenta es la misma de
+    siempre; lo que cambia es que el arriendo no entra en el descuento. Si la
+    promoción perdona el arriendo ese día (la de fin de año, de lunes a
+    viernes), va incluido y la boleta lo dice; un día que Configuración no
+    arrienda en exclusiva responde `sinExclusivo`.
+  - **El panel manda el arriendo en cada promoción** (`arriendo` y
+    `arriendoIncluido`): **un panel de antes no lo manda y la casilla no
+    sale**. Al panel viaja `exclusivo=1` solo si la marcó, así que la pregunta
+    de antes sigue siendo la misma (y se guarda 5 minutos igual).
+  - **La cotización que llega sale marcada exclusiva**, con el descuento en
+    las líneas y una nota que dice que pidió el lugar exclusivo. El panel, en
+    `panel/CLAUDE.md`, "El lugar exclusivo en el cotizador".
+  - **Medidas** a 1262×573: con el lugar exclusivo marcado, 471px en español
+    y en inglés y 497 en portugués; sin marcarlo, 426, 456 y 482 (el paso ①
+    ganó la casilla en dos renglones). **Pasa del margen seguro (473) solo en
+    portugués y por 24px**, mientras está marcado: la boleta suma una línea y
+    una nota, como ya pasaba con un extra marcado. En el celular, 1.258px
+    (1.213 sin marcarlo).
 - **Con cuántos días de anticipación** (2026-11-24, lo pidió el cliente:
   *"para ciertas actividades extras como taller de queso, karting… no se
   pueden gestionar y organizar sin tiempo… cuántos días de anticipación
