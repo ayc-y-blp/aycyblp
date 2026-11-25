@@ -242,7 +242,7 @@ export default function ReservaForm({
     <Dialogo
       titulo={desdeCRM ? 'Anotar el evento del CRM'
                        : reserva ? 'Editar reserva' : 'Agregar reserva'}
-      onCerrar={onCancelar} ancho="max-w-lg lg:max-w-5xl">
+      onCerrar={onCancelar} ancho="max-w-lg lg:max-w-6xl">
       <>
         {/* Lo que el socio sabe, dicho una vez y arriba: el nombre ya está
             puesto abajo, y la gente es el número que hay que repartir en los
@@ -265,7 +265,7 @@ export default function ReservaForm({
             Los nombres de los campos miden lo mismo, así que los valores parten
             en la misma vertical (regla *los formularios van alineados*). En dos
             columnas, la anotada a mano con abono medía 724px y no cabía. */}
-        <div className="mt-3 space-y-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,0.9fr)_minmax(0,1.2fr)]
+        <div className="mt-3 space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.15fr)]
                         lg:items-start lg:gap-3 lg:space-y-0">
           <section className={`${marcoGrupo()} p-3`}>
             <p className={TITULO_GRUPO}>Quién reserva</p>
@@ -353,15 +353,6 @@ export default function ReservaForm({
               se cayó ya no se marca acá: es *✕ Se cayó…*, al pie (`lib/caida.ts`). */}
           <section className={`${marcoGrupo()} p-3`}>
             <p className={TITULO_GRUPO}>El pago</p>
-            {reserva && deShopify && (
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[14px] text-hueso/80">
-                <span>🛒 <strong className="text-hueso">Shopify</strong>{f.tipoPago ? <> · {f.tipoPago}</> : null}</span>
-                <EstadoDelPago r={{ ...reserva, estadoPago: f.estadoPago }} />
-                <AyudaCorta tema="pagoShopify" />
-                {cuando && <span className="basis-full text-[13px] text-hueso/65">Compró el {cuando}</span>}
-              </div>
-            )}
-
             <div className="mt-2">
               <FilaCampo rotulo={<>Monto <AyudaCorta tema="montoDeLaReserva" /></>}>
                 <input type="number" min={0} step={1000} className={ENTRADA}
@@ -384,6 +375,15 @@ export default function ReservaForm({
               </FilaCampo>
             </div>
 
+            {reserva && deShopify && (
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[14px] text-hueso/80">
+                <span>🛒 <strong className="text-hueso">Shopify</strong>{f.tipoPago ? <> · {f.tipoPago}</> : null}</span>
+                <EstadoDelPago r={{ ...reserva, estadoPago: f.estadoPago }} />
+                <AyudaCorta tema="pagoShopify" />
+                {cuando && <span className="basis-full text-[13px] text-hueso/65">Compró el {cuando}</span>}
+              </div>
+            )}
+
             {!deShopify && (<>
               {liberaCupo(f.estadoPago) && (
                 <p className="mt-2 text-[14px] font-semibold text-rojo-texto">
@@ -399,10 +399,10 @@ export default function ReservaForm({
                   return (
                     <button key={o.estado} type="button" aria-pressed={elegido} title={o.glosa}
                       onClick={() => setF({ ...f, estadoPago: o.estado })}
-                      className={`tecla flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border-2
-                                  px-1 py-1 text-center ${tono[0]} ${elegido ? tono[1] : `${tono[2]} hover:bg-hueso/5`}`}>
-                      <span aria-hidden className="text-[17px] font-extrabold leading-none">{o.icono}</span>
-                      <span className="text-[15px] font-bold leading-tight">{o.palabra}</span>
+                      className={`tecla flex min-h-[48px] items-center justify-center gap-1 rounded-xl border-2
+                                  px-1 py-1 text-center sm:gap-1.5 ${tono[0]} ${elegido ? tono[1] : `${tono[2]} hover:bg-hueso/5`}`}>
+                      <span aria-hidden className="text-[16px] font-extrabold leading-none sm:text-[17px]">{o.icono}</span>
+                      <span className="whitespace-nowrap text-[14px] font-bold leading-tight sm:text-[15px]">{o.palabra}</span>
                     </button>
                   );
                 })}

@@ -151,8 +151,11 @@ export function reservaDeLaFila<T extends { fila: number; id: string }>(
  * ninguno. Shopify manda `orders/create` y `orders/paid` casi juntos,
  * reintenta si tardamos más de cinco segundos, y la reconciliación diaria es
  * un tercer escritor: dos que lean la planilla antes de que el otro escriba
- * agregan los dos. **La ventana no se puede cerrar sin un candado que no
- * existe** — lo que sí se puede es dejar de contar dos veces lo mismo.
+ * agregan los dos. **La ventana no se puede cerrar del todo sin un candado
+ * que no existe** — lo que sí se puede es dejar de contar dos veces lo mismo.
+ * Desde el 2026-11-25 se achica mucho: un pedido recién hecho lo agrega solo
+ * el aviso de pedido nuevo (`puedeAnotarPedido()` en `shopify.ts`), y la fila
+ * de más se limpia desde el aviso (`filasDeMas()`).
  *
  * Y eso es correcto por definición: **el mismo `ID Orden` es el mismo
  * pedido**. Sin esto, el día cuenta esa gente dos veces, el cupo se achica

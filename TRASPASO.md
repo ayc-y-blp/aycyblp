@@ -582,6 +582,19 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **Los precios de las cinco promociones, en pausa** (25-11-2026, el cliente:
   *"por ahora olvídate"*): siguen de ejemplo y no se le recuerdan hasta que él
   los traiga (pendiente 13).
+- **Reservas de Shopify: no se repiten, *✕ Se cayó…* se queda y lo cambiado
+  en el panel también** (25-11-2026, lo encontró el cliente con dos fotos: un
+  pedido *"2 veces en la planilla"* —no se cobró doble: es el mismo número de
+  pedido— y una reserva borrada que *"hoy reapareció"*). Un pedido recién hecho
+  lo agrega solo el aviso de *pedido nuevo*; la fila de más se limpia desde el
+  aviso (*🧹 Limpiar la fila de más*). *✕ Se cayó…* va en su columna (`Se
+  cayó`), con motivo, y la reserva pasa a *Se cayeron*, plegado al final;
+  **Borrar, solo el administrador y en una anotada a mano** (lo decidió el
+  cliente). Lo que se cambia en el panel de una de Shopify ya no lo reescribe
+  la tienda (`Cambiado en el panel`). Cada cambio manda el id de la reserva. La
+  ventana *Editar reserva*, con las reglas. **En un PR, en preview hasta el
+  *"mergea"*.** Para la de Ismael Barros, hoy: si se cayó, cancelar el pedido
+  en Shopify. Ver `panel/CLAUDE.md`, "Reservas de Shopify: no se repiten…".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
