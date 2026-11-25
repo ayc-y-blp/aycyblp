@@ -261,7 +261,7 @@ export default function ClientesEditor() {
           </button>
         ) : (
           <button type="button" onClick={() => setEligiendoVendedor(!eligiendoVendedor)}
-            aria-expanded={eligiendoVendedor} className="boton min-h-[44px]">👤 Por vendedor…</button>
+            aria-expanded={eligiendoVendedor} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
         ))}
         {hayFiltro && (
           <button type="button" aria-pressed={porContactar} onClick={() => setPorContactar(!porContactar)}

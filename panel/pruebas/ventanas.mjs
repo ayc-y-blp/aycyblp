@@ -158,7 +158,10 @@ const ir = async (ruta) => { await p.goto(URL_PANEL + ruta, { waitUntil: 'networ
 const clic = async (loc, n = 0) => { await loc.nth(n).click(); await p.waitForTimeout(800); };
 const boton = (name, exact = false) => p.getByRole('button', { name, exact });
 const ventana = () => p.locator('[role=dialog]').last();
-const abrirPrimera = () => clic(p.locator('main button[aria-expanded="false"]'));
+// Una tarjeta que se abre, no un botón que abre un buscador (*👤 Por
+// vendedor…* lleva `aria-haspopup`, 2026-11-25): si no, la escena abría el
+// buscador de Clientes en vez de la primera ficha.
+const abrirPrimera = () => clic(p.locator('main button[aria-expanded="false"]:not([aria-haspopup])'));
 const diaDe = async (ruta, dia) => {
   await ir(ruta);
   await clic(boton(dia), (await boton(dia).count()) - 1);
@@ -189,7 +192,7 @@ const comoVendedor = async (abrir) => {
 const personaDelInforme = async () => {
   // *Mes* va en el marco del periodo desde el 2026-11-22 (antes, *Por mes*).
   await ir('/informe'); await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes', exact: true })); await p.waitForTimeout(1300);
-  await clic(p.locator('main button[aria-expanded="false"]'), 1);
+  await clic(p.locator('main button[aria-expanded="false"]:not([aria-haspopup])'), 1);
 };
 const vendedor = async () => { await ir('/vendedores'); await clic(boton(/^Daniela/)); };
 
