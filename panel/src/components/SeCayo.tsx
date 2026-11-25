@@ -14,14 +14,20 @@
  *   carrera, que se caen con ella.
  * - **Lo comprueba el servidor** (`/api/presupuestos/perdida`): quién puede
  *   tocarla y que no sea una ganada, que se cancela con *Cancelar evento*.
+ *
+ * **La misma ventanita para una reserva** (2026-11-25, `lib/caida.ts`): con
+ * `motivos`, `titulo`, `queDice` y `mandar`, la usa *✕ Se cayó…* de la página
+ * del día. Es la misma pieza para el mismo dato: algo que se cae, con su
+ * motivo y su confirmación.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Dialogo from './Dialogo';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import { avisar } from './AvisoFlotante';
 import { MOTIVOS_PERDIDA } from '@/lib/cotizar';
 
-export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar, onListo }: {
+export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar, onListo,
+  titulo, motivos = MOTIVOS_PERDIDA, queDice, mandar, listoDice }: {
   id: string;
   cliente: string;
   /** Cuántas cotizaciones del grupo siguen en carrera, ella incluida. */
@@ -30,6 +36,13 @@ export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar,
   antes?: () => Promise<void>;
   onCerrar: () => void;
   onListo: () => void;
+  /** Para otra cosa que se cae (una reserva): su título, sus motivos, qué pasa y cómo se manda. */
+  titulo?: string;
+  motivos?: string[];
+  queDice?: ReactNode;
+  /** Manda el motivo; devuelve el error, o `null` si salió bien. */
+  mandar?: (motivo: string) => Promise<string | null>;
+  listoDice?: string;
 }) {
   const [motivo, setMotivo] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -40,6 +53,13 @@ export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar,
     setGuardando(true);
     try {
       if (antes) await antes();
+      if (mandar) {
+        const error = await mandar(motivo.trim());
+        if (error) { avisar(error, 'atencion'); return; }
+        avisar(listoDice || 'Listo');
+        onListo();
+        return;
+      }
       const r = await fetch('/api/presupuestos/perdida', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ id, motivo: motivo.trim() })
@@ -52,11 +72,11 @@ export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar,
   }
 
   return (
-    <Dialogo titulo={`¿Se cayó la cotización de ${cliente || 'este cliente'}?`} onCerrar={onCerrar} ancho="max-w-lg">
+    <Dialogo titulo={titulo || `¿Se cayó la cotización de ${cliente || 'este cliente'}?`} onCerrar={onCerrar} ancho="max-w-lg">
       <div className={`${marcoGrupo('rosa')} p-3`}>
         <p className={TITULO_GRUPO}>Por qué</p>
         <div role="radiogroup" aria-label="Motivo" className="mt-2 flex flex-wrap gap-2">
-          {MOTIVOS_PERDIDA.map((o) => (
+          {motivos.map((o) => (
             <button key={o} type="button" role="radio" aria-checked={o === motivo}
               onClick={() => setMotivo(o === motivo ? '' : o)}
               className={`boton min-h-[40px] !border-2 ${o === motivo ? '!border-oro bg-oro/15 font-semibold' : ''}`}>
@@ -64,14 +84,16 @@ export default function SeCayo({ id, cliente, alternativas = 1, antes, onCerrar,
             </button>
           ))}
         </div>
-        <input value={MOTIVOS_PERDIDA.includes(motivo) ? '' : motivo} onChange={(e) => setMotivo(e.target.value)}
+        <input value={motivos.includes(motivo) ? '' : motivo} onChange={(e) => setMotivo(e.target.value)}
           placeholder="u otro motivo" aria-label="Otro motivo"
           className="mt-2 w-full rounded border-2 border-hueso/20 bg-tinta px-3 py-2 text-[15px] focus:border-oro focus:outline-none" />
       </div>
-      <p className="mt-3 text-[15px]">
-        Pasa a <b>Perdidas</b>{alternativas > 1 ? <>, con sus {alternativas - 1} {alternativas === 2 ? 'alternativa' : 'alternativas'}</> : null}:
-        sale de la lista y del calendario. Se puede volver a abrir.
-      </p>
+      {queDice ?? (
+        <p className="mt-3 text-[15px]">
+          Pasa a <b>Perdidas</b>{alternativas > 1 ? <>, con sus {alternativas - 1} {alternativas === 2 ? 'alternativa' : 'alternativas'}</> : null}:
+          sale de la lista y del calendario. Se puede volver a abrir.
+        </p>
+      )}
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         <button type="button" className="boton min-h-[44px] !border-2" onClick={onCerrar}>No, volver</button>
         <button type="button" disabled={!listo || guardando} onClick={() => void confirmar()}

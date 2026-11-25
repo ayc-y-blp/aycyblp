@@ -137,7 +137,23 @@ export const COL_RESERVAS = {
    */
   cobroLocal: 'Cobrado en el local',
   comprobanteCobro: 'Comprobante del cobro',
-  cobroCerrado: 'Cobro cerrado'
+  cobroCerrado: 'Cobro cerrado',
+  /**
+   * **Se cayó, guardado donde Shopify no lo pisa** (2026-11-25, `lib/caida.ts`).
+   * *"motivo · quién · cuándo"*; vacía es que sigue en pie. Hasta ese día,
+   * *La reserva se cayó…* cambiaba el estado del pago, y en una reserva de
+   * Shopify la revisión de la mañana lo devolvía a *por pagar*: la reserva
+   * volvía sola. Shopify no la toca (`camposDeShopify()`) y `ocupaLugar()` la
+   * respeta. Se agrega sola.
+   */
+  cayo: 'Se cayó',
+  /**
+   * **Lo que se cambió en el panel de una reserva de Shopify** (2026-11-25):
+   * los campos —*"fecha|menu · quién · cuándo"*— que la tienda ya no
+   * reescribe. Sin esto, cambiar la fecha o los menús de una reserva de
+   * Shopify duraba hasta la próxima revisión de la mañana. Se agrega sola.
+   */
+  cambiadoEnPanel: 'Cambiado en el panel'
 } as const;
 
 export const COL_FECHAS = {

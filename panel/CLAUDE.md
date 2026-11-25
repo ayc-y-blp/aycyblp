@@ -229,6 +229,100 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Reservas de Shopify: no se repiten, *✕ Se cayó…* se queda y lo cambiado en el panel también (2026-11-25)
+
+Lo encontró el cliente con dos fotos. Un pedido salía *"2 veces en la
+planilla"* (*"¿por qué pasa esto y cómo lo podemos evitar? ¿se le habrá
+cobrado doble a la clienta?"* — no: es el mismo número de pedido, una sola
+compra). Y *"ayer borré esta reserva (con borrar) y hoy reapareció"*. Decidió:
+*"deja borrar para el administrador, por el caso que se ingresó dos veces por
+error. Sí para el resto"*, y que el resto se arme como se propuso.
+
+**Por qué pasaba**:
+
+- **Repetido**: al comprar, Shopify manda *pedido nuevo* (`orders/create`) y
+  *pedido actualizado* (`orders/updated`) casi juntos; cada aviso lo atiende
+  una copia distinta del panel, las dos miraban la planilla al mismo tiempo,
+  ninguna lo encontraba y las dos lo agregaban. Google Sheets no tiene un
+  candado que lo impida.
+- **Volvía**: *Borrar* sacaba la fila, pero el pedido seguía vivo en Shopify
+  (*por pagar*) y la revisión de cada mañana —los últimos 10 días— lo volvía a
+  anotar. *La reserva se cayó…* tampoco duraba: cambiaba el estado del pago, y
+  esa misma revisión lo devolvía a *por pagar*. **Lo mismo con cualquier
+  cambio en el panel** de una reserva de Shopify —la fecha, los menús, el
+  contacto—: la tienda lo reescribía sin avisar.
+
+**Qué hace ahora**:
+
+- **Un pedido recién hecho lo agrega solo el aviso de pedido nuevo**
+  (`puedeAnotarPedido()` en `lib/shopify.ts`, con pruebas). El actualizado, el
+  cancelado y la revisión de la mañana lo actualizan si ya está, y si no, lo
+  dejan (`guardarPedido(r, { crear })` responde `esperaNuevo`). Pasados 10
+  minutos (`MINUTOS_PEDIDO_RECIENTE`) cualquiera lo agrega: así se recupera un
+  aviso perdido. La revisión cuenta los saltados en `recientes`.
+- **Lo que ya quedó repetido se limpia desde el aviso naranjo**: ***🧹 Limpiar
+  la fila de más*** (`POST /api/reservas/repetidas`, permiso `reservas`) borra
+  todas las filas de ese pedido menos la primera, que es la que el panel lee y
+  edita (`filasDeMas()` en `lib/filas.ts`). Las filas se buscan en el
+  servidor, al momento. **No borra la reserva**: por eso no es solo del
+  administrador.
+- ***✕ Se cayó…*, guardado donde Shopify no lo pisa** (`lib/caida.ts`): una
+  columna propia, **`Se cayó`** (*"cuándo · quién · motivo"*), que
+  `camposDeShopify()` no escribe y `ocupaLugar()` respeta. Se marca con la
+  ventanita de las cotizaciones (`SeCayo`, que ganó `motivos`, `titulo`,
+  `queDice` y `mandar`), con los motivos *El cliente avisó que no viene · No
+  pagó ni confirmó · Anotada por error* o uno escrito. Ruta `POST
+  /api/reservas/cayo` (`reservas`, y un vendedor solo las suyas); `deshacer`
+  la devuelve. Una de cotización se cae desde su cotización (409). En un día
+  cerrado es corregirlo, con la línea en la bitácora. Una de Shopify borra su
+  evento del calendario —y la ventana recuerda que el pedido sigue vivo en la
+  tienda y hay que cancelarlo allá: la app del panel solo lee pedidos—.
+- **Las que se cayeron salen de la lista**: van al final de la página del día,
+  en ***Se cayeron (N)***, plegado (`enPie` y `caidas` en `DayView`, con la
+  misma tarjeta, `tarjetaDeReserva()`). Abierta, dice el motivo y trae ***↺ No,
+  sí viene***. `PastillaPago` dice *Se cayó* (o *Anotada por error*) y su marca.
+- ***Anotada por error* no cuenta en Estadísticas** (`anotadaPorError()`): ni
+  como reserva ni como caída, para no subir el porcentaje de cancelaciones.
+- **Borrar, solo el administrador y solo una anotada a mano** (el servidor
+  responde 403 a los demás y 409 a una de Shopify, que volvería sola). Para el
+  caso de una reserva anotada dos veces por error.
+- **Lo que se cambia en el panel se queda** (`CAMPOS_DEL_PANEL`): al editar una
+  de Shopify, el servidor anota qué campos cambió una persona
+  (`camposQueCambian()`: el teléfono por sus dígitos, el correo sin
+  mayúsculas, el menú sin importar el orden) en la columna nueva **`Cambiado en
+  el panel`** (*"fecha|menu · quién · cuándo"*), y `camposDeShopify(r,
+  delPanel)` deja de escribir esos. **El pago lo sigue poniendo la tienda.**
+  `guardarPedido()` devuelve la fila como quedó (`guardada`): el calendario
+  sigue a lo del panel.
+- **Cada cambio dice qué reserva es** (`reservaDeLaFila()` en `lib/filas.ts`):
+  el panel escribe por número de fila, y al borrar una fila las de abajo suben
+  un lugar; una pantalla abierta desde antes escribía en la de al lado. Ahora
+  la página del día, la ventana, la mesa, la Recepción y el cobro mandan el
+  `id`, y el servidor busca por él si la fila ya no calza (PATCH y DELETE de
+  `/api/reservas/<fila>`, `/cobro`, `/cayo`). Sin `id`, como antes.
+
+**La ventana *Editar reserva*, con las reglas** (lo pidió el cliente: *"el
+popup aún no tiene buen diseño según nuestro estilo y reglas"*): tres grupos
+con su marco —*Quién reserva*, *Menús* y *El pago*— en tres columnas en el
+computador; los nombres de los campos en su columna (`FilaCampo`); en una de
+Shopify, *El pago* dice de dónde viene, la modalidad, cuándo compró y la
+pastilla del pago (`EstadoDelPago`), con el porqué en su `?` (`pagoShopify`);
+en una a mano, *Pagada · Abonada · Por pagar* en una fila de botones de 48px.
+Ya no están los tres botones rojos de *La reserva se cayó…*: ***✕ Se
+cayó…*** va al pie, junto a *Guardar*, como en Cotizaciones. El monto dice
+*Escrito a mano* solo si no es el calculado.
+
+- **Columnas nuevas**, al final de `Reservas` y solas la primera vez: `Se cayó`
+  y `Cambiado en el panel`. **Ningún permiso nuevo.**
+- **Lecturas de Google**: ninguna más en las pantallas. `/api/reservas/cayo`
+  lee una tanda; `/api/reservas/repetidas`, una lectura y una escritura.
+- **Ayuda**: el `?` de la página del día, y cuatro nuevos: `seCayoReserva`,
+  `pagoShopify`, `menusDeLaReserva` y `montoDeLaReserva`.
+- **Ventanas**: `v-reserva-se-cayo` (nueva), `v-reserva-borrar-dia-cerrado`
+  abre ahora una anotada a mano (Familia Toro); la pantalla `dia-con-caidas`
+  (domingo 22) entra en la prueba de espacio. **El panel de ejemplo** trae a
+  Ismael Barros caído el domingo 22 y la fila de Familia Aravena repetida.
+
 ## El buscador, en una columna angosta (2026-11-25)
 
 Lo marcó el cliente con una foto de *Configuración → Las del sitio van a*: el

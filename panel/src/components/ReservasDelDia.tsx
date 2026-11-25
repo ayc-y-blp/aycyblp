@@ -109,7 +109,7 @@ export default function ReservasDelDia({
     try {
       const res = await fetch(`/api/reservas/${r.fila}`, {
         method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ asistencia })
+        body: JSON.stringify({ id: r.id, asistencia })
       });
       const d = await res.json();
       if (d.error) { setError(d.error); cargar(); }
@@ -121,7 +121,7 @@ export default function ReservasDelDia({
     try {
       const res = await fetch(`/api/reservas/${r.fila}`, {
         method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ avisoRecepcion: '' })
+        body: JSON.stringify({ id: r.id, avisoRecepcion: '' })
       });
       const d = await res.json();
       if (d.error) { setError(d.error); cargar(); }

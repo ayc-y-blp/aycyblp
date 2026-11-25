@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { reservaDeLaFila } from '@/lib/filas';
 import { conLecturas } from '@/lib/sheets';
 import { HOJA_FECHAS, HOJA_RESERVAS, ESTADO_PAGO } from '@/lib/columnas';
 import { HOJA_CONFIG } from '@/lib/config';
@@ -52,8 +53,10 @@ async function laMesa(req: Request, fila: number):
   const [reservas, fechas, cfg, cierres, deCot] = await Promise.all([
     leerReservas(), leerFechas(), leerConfig(), leerCierres(), reservasDeCotizaciones()
   ]);
-  const r = reservas.find((x) => x.fila === fila);
-  if (!r) return { error: NextResponse.json({ error: 'Esa reserva ya no está.' }, { status: 404 }) };
+  // Con el `id` de la dirección (2026-11-25, `reservaDeLaFila()`): si la fila
+  // se movió, se cobra la mesa que se estaba mirando.
+  const r = reservaDeLaFila(reservas, fila, new URL(req.url).searchParams.get('id'));
+  if (!r) return { error: NextResponse.json({ error: 'Esa reserva ya no está: recarga la página.' }, { status: 404 }) };
   const apertura = fechas.find((f) => f.fecha === r.fecha)?.apertura || cfg.horaApertura;
   if (!yaAbrio(r.fecha, apertura, ahoraEnChile())) {
     return { error: NextResponse.json({

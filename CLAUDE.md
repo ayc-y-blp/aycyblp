@@ -1830,6 +1830,17 @@ del servidor, que nunca sale al navegador.
   `/api/shopify/webhook`. Si aparece alguno apuntando al Web App viejo de
   Apps Script, se borra: esa URL ya no existe, y Shopify igual lo daría por
   entregado porque Apps Script respondía 200 aunque la función no existiera.
+- **Un pedido recién hecho lo anota solo el aviso de *pedido nuevo*, y lo que
+  se cambia en el panel se queda** (2026-11-25, lo encontró el cliente: un
+  pedido *"2 veces en la planilla"* y una reserva borrada que *"hoy
+  reapareció"*). Shopify manda *pedido nuevo* y *pedido actualizado* casi
+  juntos, y los dos la agregaban; ahora el actualizado solo actualiza. Una
+  reserva de Shopify **no se borra** —el pedido sigue vivo allá y la revisión
+  de la mañana la volvía a anotar—: se marca **✕ Se cayó…**, en una columna que
+  la tienda no toca, y se cancela también en Shopify (la app del panel solo lee
+  pedidos). Y la fecha, los menús o el contacto cambiados en el panel ya no los
+  reescribe la tienda. El detalle, en `panel/CLAUDE.md`, "Reservas de Shopify:
+  no se repiten…".
 - **`order.phone` viene vacío casi siempre.** El checkout pide el teléfono
   dentro de la dirección, así que el número está en
   `billing_address.phone`. `telefonoDe()` mira los cuatro lugares.

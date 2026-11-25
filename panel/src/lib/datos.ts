@@ -26,7 +26,7 @@ import { filaReserva, filaFecha, buscarFilaPorId, leerReservasDe,
          idsRepetidos } from './filas.ts';
 import { HOJA_CONFIG, leerConfigDe, aFilasConfig, POR_DEFECTO,
          type Config } from './config.ts';
-import { camposDeShopify } from './shopify.ts';
+import { camposDeShopify, camposCambiadosEn } from './shopify.ts';
 import { estadoConCobroLocal } from './cobroLocal.ts';
 import { HOJA_CAJA, ENCABEZADO_CAJA, leerCajaDe, filaCaja, nuevoIdCaja, type Movimiento } from './caja.ts';
 import { HOJA_MENUS, leerMenusDe, aFilasMenus, POR_DEFECTO_MENUS,
@@ -155,8 +155,9 @@ export async function editarReserva(fila: number, cambios: Partial<Reserva>): Pr
   for (const k of ['agregados', 'valorFinal', 'mesaCerrada'] as const) {
     if (cambios[k] !== undefined) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS[k]);
   }
-  // El cobro en el local (2026-11-23, `cobroLocal.ts`).
-  for (const k of ['cobroLocal', 'comprobanteCobro', 'cobroCerrado'] as const) {
+  // El cobro en el local (2026-11-23, `cobroLocal.ts`), y si se cayó o qué se
+  // cambió en el panel de una de Shopify (2026-11-25, `caida.ts`).
+  for (const k of ['cobroLocal', 'comprobanteCobro', 'cobroCerrado', 'cayo', 'cambiadoEnPanel'] as const) {
     if (cambios[k] !== undefined) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS[k]);
   }
   const previa = filas[fila - 1];
@@ -350,26 +351,46 @@ export async function guardarConfig(c: Config): Promise<void> {
  * adivinarlo después.
  */
 export async function guardarPedido(
-  r: Omit<Reserva, 'fila'>
-): Promise<'creada' | 'actualizada' | 'omitida'> {
+  r: Omit<Reserva, 'fila'>,
+  /**
+   * **Si puede agregarlo cuando no está** (2026-11-25, `puedeAnotarPedido()`):
+   * un pedido recién hecho lo agrega solo el aviso de pedido nuevo. Así dos
+   * avisos que llegan juntos no lo anotan dos veces.
+   */
+  { crear = true }: { crear?: boolean } = {}
+): Promise<{
+  que: 'creada' | 'actualizada' | 'omitida' | 'esperaNuevo';
+  /**
+   * **Cómo quedó la fila**, con lo del panel adentro (2026-11-25): si se
+   * cayó o se le cambió la fecha en el panel, el evento del calendario sigue
+   * a esto y no a lo que dice la tienda.
+   */
+  guardada?: Reserva;
+}> {
   const filas = await leerHoja(HOJA_RESERVAS, true);
   const enc = filas[0] ?? [];
   const fila = buscarFilaPorId(filas, enc, r.id);
 
   if (fila > 1) {
-    const campos = camposDeShopify(r);
+    // **Lo que se cambió en el panel se queda** (2026-11-25): la tienda no
+    // reescribe esos campos (`camposDeShopify()`).
+    const iPanel = indices(enc, COL_RESERVAS).cambiadoEnPanel;
+    const delPanel = iPanel === -1 ? [] : camposCambiadosEn(String(filas[fila - 1]?.[iPanel] ?? ''));
+    const campos = camposDeShopify(r, delPanel);
     // **Lo cobrado en la mesa manda sobre *por pagar*** (2026-11-23,
     // `cobroLocal.ts`): la tienda no sabe que el cliente pagó en el local, y
     // sin esto la próxima pasada devolvería la reserva a *por pagar*.
     const iCobro = indices(enc, COL_RESERVAS).cobroCerrado;
     const cobro = iCobro === -1 ? '' : String(filas[fila - 1]?.[iCobro] ?? '');
     if (campos.estadoPago !== undefined) campos.estadoPago = estadoConCobroLocal(campos.estadoPago, cobro);
-    await escribirFila(HOJA_RESERVAS, fila, filaReserva(enc, campos, filas[fila - 1]));
-    return 'actualizada';
+    const escrita = filaReserva(enc, campos, filas[fila - 1]);
+    await escribirFila(HOJA_RESERVAS, fila, escrita);
+    return { que: 'actualizada', guardada: leerReservasDe([enc, escrita.map((v) => String(v ?? ''))])[0] };
   }
-  if (!ocupaLugar(r as Reserva)) return 'omitida';
+  if (!ocupaLugar(r as Reserva)) return { que: 'omitida' };
+  if (!crear) return { que: 'esperaNuevo' };
   await agregarFila(HOJA_RESERVAS, filaReserva(enc, r));
-  return 'creada';
+  return { que: 'creada' };
 }
 
 /* ---------- Menús ---------- */

@@ -12,6 +12,7 @@ import type { Reserva } from '@/lib/tipos';
 import { ESTADO_PAGO, TIPO_PAGO, esManual } from '@/lib/columnas';
 import { liberaCupo, pagoEnEspanol } from '@/lib/pagos';
 import { liberadaPorExclusivo } from '@/lib/exclusivo';
+import { partesCaida, POR_ERROR } from '@/lib/caida';
 
 const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
@@ -21,7 +22,7 @@ export function origenDe(r: Pick<Reserva, 'id' | 'tipoPago'>, deCotizacion = fal
   return r.tipoPago ? `Shopify · ${r.tipoPago}` : 'Shopify';
 }
 
-type ConPago = Pick<Reserva, 'id' | 'tipoPago' | 'estadoPago' | 'notaPago'> & { abonado?: number | null; liberada?: string };
+type ConPago = Pick<Reserva, 'id' | 'tipoPago' | 'estadoPago' | 'notaPago'> & { abonado?: number | null; liberada?: string; cayo?: string };
 
 /**
  * **La pastilla sola**, sin el origen ni la nota (2026-11-22): para ponerla
@@ -34,7 +35,9 @@ export function EstadoDelPago({ r, className = '' }: { r: ConPago; className?: s
   // Se cayó por cupo (2026-11-12): libera el lugar aunque el estado del pago
   // siga diciendo *por pagar*, y se dice con esas palabras.
   const cayo = !!String(r.liberada ?? '').trim();
-  const libera = cayo || liberaCupo(e);
+  // **Se cayó** (2026-11-25, `lib/caida.ts`): su propia marca, con su motivo.
+  const caida = partesCaida(r.cayo);
+  const libera = cayo || !!caida || liberaCupo(e);
   const [icono, clase] = libera ? ['✕', 'border-rojo-fuerte/60 bg-rojo/10 text-rojo-texto']
     : e === ESTADO_PAGO.pagado ? ['✓', 'border-verde-fuerte/60 bg-verde/10 text-verde-texto']
     : e === ESTADO_PAGO.abonado ? ['½', 'border-cielo-fuerte/60 bg-cielo/10 text-cielo-texto']
@@ -45,6 +48,7 @@ export function EstadoDelPago({ r, className = '' }: { r: ConPago; className?: s
       <span aria-hidden>{icono}</span>
       {/* Por un evento exclusivo (2026-11-12) dice eso, no "por cupo". */}
       {cayo ? (liberadaPorExclusivo(r.liberada) ? 'Liberada: evento exclusivo' : 'Se cayó por cupo')
+        : caida ? (caida.motivo === POR_ERROR ? 'Anotada por error' : 'Se cayó')
         : pagoEnEspanol(e) || 'Por pagar'}
       {e === ESTADO_PAGO.abonado && (r.abonado ?? 0) > 0 && (
         <span className="font-semibold">· {pesos(r.abonado ?? 0)}</span>
@@ -70,6 +74,7 @@ export default function PastillaPago({ r, deCotizacion = false, sinOrigen = fals
       )}
       <EstadoDelPago r={r} />
       {cayo && <p className="text-[13px] text-rojo-texto">{r.liberada}</p>}
+      {!cayo && r.cayo && <p className="text-[13px] text-rojo-texto">{r.cayo}</p>}
       {r.notaPago && <p className="text-[13px] text-hueso/65">{r.notaPago}</p>}
     </div>
   );

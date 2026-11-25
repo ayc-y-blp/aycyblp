@@ -13,6 +13,8 @@ import { guardaDelDia } from '@/lib/guardaCierre';
 import { yaLlego, yaAbrio } from '@/lib/cierres';
 import { ahoraEnChile } from '@/lib/bitacora';
 import { hoy } from '@/lib/fechas';
+import { reservaDeLaFila } from '@/lib/filas';
+import { camposQueCambian, marcaCambiado } from '@/lib/shopify';
 import { alcanceDeContacto, recortarReserva, estaTapado } from '@/lib/privacidad';
 
 export const dynamic = 'force-dynamic';
@@ -81,8 +83,8 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
     return no;
   }
   try {
-    const fila = Number(params.fila);
-    if (!(fila > 1)) return NextResponse.json({ error: 'Fila inválida.' }, { status: 400 });
+    const filaPedida = Number(params.fila);
+    if (!(filaPedida > 1)) return NextResponse.json({ error: 'Fila inválida.' }, { status: 400 });
     // **La modalidad no se acepta del navegador**, igual que al crear: sale
     // del `variant_title` del pedido y la escribe el sincronizador. Como la
     // edición es parcial, dejarla fuera conserva la que ya tenga la fila.
@@ -96,6 +98,7 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
     // Las marcas de la plata (`plata.ts`) tampoco: las pone el servidor.
     const { tipoPago, id, creada, fila: _f, correccion, anotadaPor,
             pagoAnotado: _pa, pagoRevisado: _pr, descuentoRevisado: _dr, mesaCerrada: _mc,
+            cayo: _cy, cambiadoEnPanel: _cp,
             ...cambios } = cuerpo;
     if (cambios.llegaron !== undefined) {
       const n = Number(cambios.llegaron);
@@ -109,7 +112,16 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
     // cerrado necesita saber en qué día está la reserva, y el empujón al CRM
     // necesita el día del que sale —una edición puede moverla de fecha, y
     // entonces el día que la pierde también cambia para el socio—.
-    const antes = (await leerReservas()).find((r) => r.fila === fila);
+    //
+    // **Y con el `id` que manda la pantalla** (2026-11-25,
+    // `reservaDeLaFila()`): si la fila se movió porque alguien borró otra más
+    // arriba, se escribe en la reserva que se estaba mirando, no en la de al
+    // lado.
+    const antes = reservaDeLaFila(await leerReservas(), filaPedida, id);
+    if (String(id ?? '').trim() && !antes) {
+      return NextResponse.json({ error: 'Esa reserva ya no está en la planilla: recarga la página.' }, { status: 404 });
+    }
+    const fila = antes?.fila ?? filaPedida;
     // Cuánto abonó: un número, y solo si queda *Abonada*; cualquier otro
     // estado lo vacía, para que no quede un abono viejo colgando.
     if (cambios.abonado !== undefined || cambios.estadoPago !== undefined) {
@@ -221,6 +233,13 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
       Object.assign(cambios, marcasDePago(antes, cambios, quien0.usuario, ahoraEnChile(),
         puede(quien0.rol as Rol, 'pagar')));
     }
+    // **Lo que se cambia en el panel se queda** (2026-11-25, `camposQueCambian()`):
+    // en una reserva de Shopify se anota qué campos cambió una persona, y la
+    // tienda deja de reescribirlos en la próxima pasada.
+    if (antes && /^\d+$/.test(String(antes.id ?? '').trim()) && !deCotizacion) {
+      const nuevos = camposQueCambian(antes, cambios);
+      if (nuevos.length) cambios.cambiadoEnPanel = marcaCambiado(antes.cambiadoEnPanel, nuevos, quien0.usuario, ahoraEnChile());
+    }
     await editarReserva(fila, cambios);
     // Los dos días, el de antes y el de después. Si no se movió es el mismo y
     // `empujarDias()` lo manda una sola vez.
@@ -249,13 +268,36 @@ export const DELETE = conLecturas([], async function DELETE(req: Request, { para
   const no = await exigir(req, 'reservas');
   if (no) return no;
   try {
-    const fila = Number(params.fila);
-    if (!(fila > 1)) return NextResponse.json({ error: 'Fila inválida.' }, { status: 400 });
+    const filaPedida = Number(params.fila);
+    if (!(filaPedida > 1)) return NextResponse.json({ error: 'Fila inválida.' }, { status: 400 });
     // Se lee ANTES de borrarla: después no queda de dónde sacar el nombre,
-    // y "se borró la fila 7" no le sirve a nadie dentro de un mes.
-    const antes = (await leerReservas()).find((r) => r.fila === fila);
+    // y "se borró la fila 7" no le sirve a nadie dentro de un mes. Con el
+    // `id` de la dirección, la que se estaba mirando (`reservaDeLaFila()`).
+    const idPedido = new URL(req.url).searchParams.get('id') ?? '';
+    const antes = reservaDeLaFila(await leerReservas(), filaPedida, idPedido);
+    if (idPedido && !antes) {
+      return NextResponse.json({ error: 'Esa reserva ya no está en la planilla: recarga la página.' }, { status: 404 });
+    }
+    const fila = antes?.fila ?? filaPedida;
     const ajena = await duenaDeLaReserva(req, antes);
     if (ajena) return ajena;
+    // **Borrar es del administrador, y solo una anotada a mano** (2026-11-25,
+    // lo decidió el cliente: *"deja borrar para el administrador, por el caso
+    // que se ingresó dos veces por error"*). Si no viene, *✕ Se cayó…*, que
+    // deja el rastro (`/api/reservas/cayo`). Una de Shopify no se borra:
+    // el pedido sigue vivo allá y la revisión de la mañana la volvía a anotar.
+    const quienBorra = await quienEs(req);
+    if (quienBorra.rol !== 'admin') {
+      return NextResponse.json({
+        error: 'Borrar una reserva es del administrador. Si no viene, márcala con ✕ Se cayó…', permiso: true
+      }, { status: 403 });
+    }
+    if (antes && /^\d+$/.test(String(antes.id ?? '').trim())) {
+      return NextResponse.json({
+        error: 'Una reserva de Shopify no se borra: el pedido sigue vivo allá y volvería sola. '
+             + 'Si no viene, márcala con ✕ Se cayó… (y cancela el pedido en Shopify).'
+      }, { status: 409 });
+    }
     // Una reserva de una cotización no se borra: su cotización la volvería
     // a escribir, y quedaría ganada sin reserva. Si el cliente cancela, se
     // marca cancelada, que libera el cupo y deja el rastro.

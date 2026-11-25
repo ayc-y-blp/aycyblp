@@ -19,7 +19,7 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { firmaValida } from '@/lib/firma';
-import { aReserva, fechaDe } from '@/lib/shopify';
+import { aReserva, fechaDe, puedeAnotarPedido } from '@/lib/shopify';
 import { guardarPedido, leerMenus, leerConfig } from '@/lib/datos';
 import { eventoDe, idDeEvento } from '@/lib/calendario';
 import { guardarEvento, borrarEvento, hayCalendario } from '@/lib/google-calendar';
@@ -70,14 +70,22 @@ export const POST = conLecturas([], async function POST(req: Request) {
       return NextResponse.json({ ok: true, ignorado: 'sin fecha de reserva' });
     }
 
-    const que = await guardarPedido(reserva);
-    console.log(`[webhook] ${req.headers.get('x-shopify-topic')} pedido ${reserva.id}: ${que}`
-      + (que === 'omitida' ? ', ya no ocupa lugar y no estaba anotado' : ''));
+    // **Un pedido recién hecho lo agrega solo el aviso de pedido nuevo**
+    // (2026-11-25, `puedeAnotarPedido()`): el actualizado llega casi junto, y
+    // los dos lo anotaban. Si este no puede agregarlo, lo deja para el otro.
+    const tema = req.headers.get('x-shopify-topic') ?? '';
+    const crear = puedeAnotarPedido(tema, pedido?.created_at, Date.now());
+    const { que, guardada } = await guardarPedido(reserva, { crear });
+    console.log(`[webhook] ${tema || 'sin topic'} pedido ${reserva.id}: ${que}`
+      + (que === 'omitida' ? ', ya no ocupa lugar y no estaba anotado' : '')
+      + (que === 'esperaNuevo' ? ', recién hecho: lo agrega el aviso de pedido nuevo' : ''));
+    if (que === 'esperaNuevo') return NextResponse.json({ ok: true, espera: reserva.id });
     // Cancelado o devuelto y sin anotar (ver `guardarPedido()`): tampoco
     // tiene evento que borrar. Para Shopify se entregó bien: 200.
     if (que === 'omitida') return NextResponse.json({ ok: true, omitida: reserva.id });
 
-    await anotarEnElCalendario(reserva);
+    // Con lo del panel adentro: una que se cayó allá no vuelve al calendario.
+    await anotarEnElCalendario(guardada ?? reserva);
 
     return NextResponse.json({ ok: true, [que]: reserva.id });
   } catch (e) {

@@ -32,6 +32,8 @@ import {
 
 export interface DatosMesa {
   fila: number;
+  /** Su id (2026-11-25): si la fila se movió, el servidor la encuentra igual (`reservaDeLaFila()`). */
+  id?: string;
   nombre: string;
   agregados?: string;
   valorFinal?: number | null;
@@ -85,7 +87,7 @@ function CobroMesa({ r, editable, revisado, onGuardado, onCobrando }: {
         cuerpo.set('cobro', JSON.stringify(lista.filter((p) => p.monto > 0)));
         if (archivo && conTransferencia) cuerpo.set('archivo', archivo);
       }
-      const res = await fetch(`/api/reservas/${r.fila}/cobro`, { method: metodo, body: cuerpo });
+      const res = await fetch(`/api/reservas/${r.fila}/cobro${r.id ? `?id=${encodeURIComponent(r.id)}` : ''}`, { method: metodo, body: cuerpo });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || d.error) { avisar(d.error || 'No se pudo guardar.', 'atencion'); return; }
       avisar(metodo === 'POST' ? `${r.nombre}: pagó todo${d.efectivo ? ` · ${pesosCL(d.efectivo)} a la caja chica` : ''}`
@@ -277,7 +279,7 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
     setGuardando(true);
     try {
       const res = await fetch(`/api/reservas/${r.fila}`, {
-        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(cambios)
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...cambios, id: r.id })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || d.error) { avisar(d.error || 'No se pudo guardar.', 'atencion'); return; }
