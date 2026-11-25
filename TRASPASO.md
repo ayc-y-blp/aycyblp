@@ -628,9 +628,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   recontacto, la última nota y la empresa del cliente, en todas partes (arriba).
 - **En *Productos*, *Qué incluye* y *Bebestibles* traen el texto del sitio al
   apretar adentro** (25-11-2026, lo pidió el cliente): se trabaja desde esa
-  base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **En un PR,
-  en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "Qué incluye cada
-  producto, escrito en su ficha".
+  base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **PR #367,
+  mergeado el 25-11-2026** con el *"mergea"* del cliente, junto con lo de abajo.
+  Ver `panel/CLAUDE.md`, "Qué incluye cada producto, escrito en su ficha".
 - **Clientes: *👤 Por vendedor…*** (25-11-2026, lo pidió el cliente): pagos, la
   gerencia y el administrador filtran los clientes de un vendedor. En el mismo
   PR que lo del texto de *Productos*. Ver `panel/CLAUDE.md`, "Clientes:
