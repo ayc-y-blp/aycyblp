@@ -464,6 +464,10 @@
   .cot-extra > .cot-opcion input{ margin-top:2px; }
   .cot-extra .cot-opcion-texto{ flex:1; display:grid; grid-template-columns:1fr auto; align-items:baseline; gap:0 10px; }
   .cot-extra .cot-cobra{ grid-column:1 / -1; font-size:0.85rem; color: var(--ink-dim); }
+  .cot-exclusivo{ margin-top:10px; }
+  /* Su columna es angosta: el título entero arriba y el precio debajo, no al lado. */
+  .cot-extra.cot-exclusivo .cot-opcion-texto{ grid-template-columns:1fr; gap:2px 0; }
+  .cot-exclusivo .cot-precio{ font-size:0.9rem; color: var(--ink-dim); }
   .cot-cuantos{ padding:0 0 6px; flex-wrap:wrap; row-gap:6px; }
   .cot-cuantos .cot-teclas{ margin-left:auto; }
   .cot-cuantos .cot-numero{ width:56px; }
@@ -936,7 +940,7 @@
 <link rel="stylesheet" href="assets/css/tema.css?v=8bedec7b">
 <script src="assets/js/tema.js?v=9398876b"></script>
 <script src="assets/js/idioma.js?v=30e2a7c2" defer></script>
-<script src="assets/js/cotizador.js?v=f2e5cbf8" defer></script>
+<script src="assets/js/cotizador.js?v=90156480" defer></script>
 </head>
 <body>
   <div class="topbar">

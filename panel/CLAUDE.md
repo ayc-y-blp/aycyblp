@@ -1151,7 +1151,68 @@ la cotización del vendedor no cambia nada: la cantidad de una línea ya se
 escribe. **Ninguna lectura más, ningún permiso ni columna.** **Ayuda**:
 `promoSuma`.
 
-### Lo que cobra otra empresa (`Menu.loCobra`)
+### El lugar exclusivo en el cotizador (2026-11-25)
+
+Lo pidió el cliente: *"en el cotizador debe haber la posibilidad también de
+tener el botón quiero el lugar exclusivo. Y desde ahí calcule el precio de
+arriendo del recinto… que en el cotizador usa el valor estándar, no con el
+descuento aplicado… si quiere reservar un sábado, tiene que ver el precio
+arriendo estándar. Y después se puede quizás negociar como el vendedor que
+hace seguimiento"*. Hasta ese día el cotizador **no preguntaba ¿exclusivo?**
+(lo conversaba el vendedor) y un sábado abierto no llevaba arriendo.
+
+- **`Eleccion.exclusivo`** (`lib/promociones.ts`): si el cliente lo marca,
+  `cotizarPromocion()` suma el producto de tipo Arriendo del catálogo
+  (`arriendoDe()`) **a su precio de cotización**, una vez, sin descuento. Es el
+  precio estándar, no el mínimo del tramo: `arriendoDelDia()` corre igual, con
+  `exclusivo` en verdad, y solo sube la línea si el estándar quedara bajo el
+  mínimo. En un día privado, si lo pidió, también paga el estándar.
+- **El descuento de la promoción va línea por línea** cuando hay lugar
+  exclusivo (`descuentoEnLineas`): el menú, lo que incluye y lo que se suma
+  llevan el descuento; **el arriendo, el show y lo que cobra otra empresa no**.
+  Sobre el total, el arriendo lo habría alcanzado. Las cuentas que ve el
+  sitio siguen siendo *Neto · Descuento · IVA · Total*: el neto de la lista,
+  lo que baja y lo que queda (`neto + iva === total`). **Sin lugar
+  exclusivo, todo igual que antes** (descuento sobre el total).
+- **Si la promoción perdona el arriendo ese día** (`perdonaArriendo()`), el
+  lugar exclusivo va incluido: no se agrega línea y la respuesta trae
+  `exclusivoGratis`. Si Configuración no arrienda ese día en exclusiva
+  (`fechasSinExclusivo`), responde `sinExclusivo`; sin un Arriendo con precio
+  en el catálogo (o en UF), `sinPrecio`.
+- **Lo que llega al vendedor**: `cotizacionDelSitio()` deja la cotización con
+  *¿Exclusivo?* en *Sí*, el descuento de sus líneas (el descuento sobre el
+  total en 0) y una nota. Después el vendedor negocia el arriendo con el
+  descuento de línea de siempre, o con *🎁 Promoción…*.
+- **En la ventana de cotizar**: con el descuento ya en las líneas, la
+  pastilla *🎁 nombre −N%* **no ofrece *Usar −N%*** (lo pondría dos veces), y
+  *Quitar* también quita el descuento de esas líneas.
+- **Lo que ve el sitio** (`/api/publico/promociones`): `arriendo` (el
+  producto, con su precio y si va + IVA) y `arriendoIncluido` (la promoción
+  *Sin arriendo*). **Un `cotizador.js` de antes ignora los dos campos nuevos, y
+  un panel de antes no los manda: la casilla no sale.** `/api/publico/cotizar`
+  lee `exclusivo` y devuelve `exclusivo` y `exclusivoGratis`; los netos de las
+  líneas salen **de lista** (el descuento es una fila aparte).
+- **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
+  **Ayuda**: `promoArriendo` y `promoEnCotizacion`.
+- **El precio de lunes a viernes, en Configuración** (2026-11-25, lo pidió el
+  cliente: *"sí agrega número en configuración"*): *Configuración → Extras y
+  arriendo → Eventos exclusivos → **Arriendo de lunes a viernes*** (`arriendoSemana`,
+  clave `arriendo_semana`). El sitio anuncia $2.500.000 los fines de semana y
+  $1.500.000 de lunes a viernes: el producto Arriendo del catálogo tiene el
+  primero, y este número, el segundo. Va en los mismos términos del producto
+  (+ IVA o IVA incluido). **En 0, el del catálogo todos los días.** La cuenta es
+  `precioArriendoEstandar()` (`lib/promociones.ts`): la misma para lo que se
+  cotiza y para lo que el sitio muestra, que lo recibe como `arriendoSemana` en
+  `/api/publico/promociones` y cambia la etiqueta de la casilla según el día
+  elegido. Un `cotizador.js` de antes ignora el campo. **Lecturas de Google**:
+  `/api/publico/promociones` suma `Config` a su tanda (una más cada 5 minutos).
+- **Probado**: `npm run prueba` (el sábado con y sin lugar exclusivo, el
+  descuento solo sobre el menú, el martes con la promoción que perdona el
+  arriendo, el día sin exclusivo, la cotización que se guarda con el mismo total
+  del sitio) y el cotizador real contra el panel de ejemplo, en español, inglés
+  y portugués, a 1262×573 y a 393px.
+
+### Lo que cobra otra empresa (`Menu.loCobra`)### Lo que cobra otra empresa (`Menu.loCobra`)
 
 - **En el catálogo**, un extra lleva *Lo cobra otra empresa* (columna nueva
   `Lo cobra` en `Menús`): el karting, el taller de queso. Solo un extra: un

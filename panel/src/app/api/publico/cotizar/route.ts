@@ -70,6 +70,8 @@ function eleccionDe(x: Record<string, unknown>): Eleccion & { promo: string } {
     // una lista en el cuerpo; vacío es para todo el grupo.
     cuantos: (Array.isArray(x.cuantos) ? x.cuantos : String(x.cuantos ?? '').split('|'))
       .slice(0, 20).map((n) => Number(n) || 0),
+    // El lugar exclusivo (2026-11-25): `1` en la dirección, `true` en el cuerpo.
+    exclusivo: x.exclusivo === true || ['1', 'true', 'si', 'sí'].includes(String(x.exclusivo ?? '').trim().toLowerCase()),
     fecha: String(x.fecha ?? '').trim().slice(0, 10)
   };
 }
@@ -82,7 +84,7 @@ async function cotizar(e: Eleccion & { promo: string }) {
   const promo = promos.find((p) => p.sitio === e.promo && p.activa);
   const ctx: ContextoCotizar = {
     catalogo: menus, fechas, diasAbiertos: cfg.diasAbiertos, hoy: hoy(),
-    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg),
+    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg), fechasSinExclusivo: cfg.fechasSinExclusivo, arriendoSemana: cfg.arriendoSemana,
     reservasDelDia: (f) => reservas.filter((r) => r.fecha === f && ocupaLugar(r)).length
   };
   return { promo, cfg, r: cotizarPromocion(promo, e, ctx) };
@@ -94,7 +96,9 @@ function respuesta(r: Cotizada) {
     ok: true,
     lineas: r.lineas.filter((l) => !l.loCobra).map((l) => ({
       concepto: l.concepto, cantidad: l.cantidad,
-      neto: Math.round(l.cantidad * l.precio * (1 - (l.descuento || 0) / 100) / (l.ivaIncluido === false ? 1 : 1.19)),
+      // El neto de lista: el descuento de la promoción es una fila aparte, también
+      // cuando va línea por línea (con el lugar exclusivo).
+      neto: Math.round(l.cantidad * l.precio / (l.ivaIncluido === false ? 1 : 1.19)),
       incluido: l.precio === 0
     })),
     // Lo aparte dice para cuántos (2026-11-24): *15 × Karting*, que el
@@ -105,7 +109,9 @@ function respuesta(r: Cotizada) {
       conceptos: r.lineas.filter((l) => normalizar(l.loCobra ?? '') === normalizar(o.empresa))
         .map((l) => (l.cantidad > 1 ? `${l.cantidad} × ` : '') + l.concepto)
     })),
-    publico: r.publico, arriendo: r.arriendo, descuento: r.descuento
+    publico: r.publico, arriendo: r.arriendo, descuento: r.descuento,
+    // El lugar exclusivo: si se sumó su arriendo, y si la promoción se lo perdona ese día.
+    exclusivo: r.exclusivo, exclusivoGratis: r.exclusivoGratis
   };
 }
 
@@ -170,7 +176,7 @@ export const POST = conLecturas([...TANDA, HOJA_PRESUPUESTOS, HOJA_CLIENTES, HOJ
     await guardarLineas(id, r.lineas.map((l) => ({ ...l, presupuesto: id })));
     await guardarPresupuesto(p);
     await anotar({ usuario: 'Sitio', rol: '', accion: 'Llegó una cotización del sitio',
-      detalle: `${folioDe(p)} · ${promo.nombre} · ${eleccion.fecha} · ${r.invitados} personas · para ${vendedor || 'sin vendedor'}` });
+      detalle: `${folioDe(p)} · ${promo.nombre} · ${eleccion.fecha} · ${r.invitados} personas${r.exclusivo ? ' · con el lugar exclusivo' : ''} · para ${vendedor || 'sin vendedor'}` });
     return NextResponse.json({
       ...respuesta(r), numero: folioDe(p),
       link: `${new URL(req.url).origin}/presupuesto/${p.token}`

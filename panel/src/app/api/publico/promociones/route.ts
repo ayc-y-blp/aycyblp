@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
-import { leerMenus, leerPromociones } from '@/lib/datos';
+import { leerMenus, leerPromociones, leerConfig } from '@/lib/datos';
+import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_MENUS } from '@/lib/menus';
 import { HOJA_PROMOCIONES, promocionesParaElSitio, bloquesDelSitio } from '@/lib/promociones';
 
@@ -33,11 +34,11 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS });
 }
 
-export const GET = conLecturas([HOJA_PROMOCIONES, HOJA_MENUS], async function GET() {
+export const GET = conLecturas([HOJA_PROMOCIONES, HOJA_MENUS, HOJA_CONFIG], async function GET() {
   try {
-    const [promos, menus] = await Promise.all([leerPromociones(), leerMenus()]);
+    const [promos, menus, cfg] = await Promise.all([leerPromociones(), leerMenus(), leerConfig()]);
     return NextResponse.json({
-      promociones: promocionesParaElSitio(promos, menus), bloques: bloquesDelSitio(promos)
+      promociones: promocionesParaElSitio(promos, menus, cfg.arriendoSemana), bloques: bloquesDelSitio(promos)
     }, { headers: CORS });
   } catch (e) {
     console.error('[publico/promociones]', e);

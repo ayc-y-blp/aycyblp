@@ -16,6 +16,11 @@
  * - **Las promociones salen del panel** (`/api/publico/promociones`): las que
  *   están conectadas a un bloque y con el cotizador encendido. Un bloque sin
  *   la suya se queda como estaba.
+ * - **El lugar exclusivo** (2026-11-25, lo pidió el cliente: *"en el
+ *   cotizador debe haber la posibilidad también de tener el botón quiero el
+ *   lugar exclusivo"*): una casilla en el paso 1 que suma el arriendo del
+ *   recinto **a su precio estándar**, el del catálogo del panel, sin el
+ *   descuento de la promoción. Lo que se negocie después lo hace el vendedor.
  * - **Manda la cotización** al panel, que la deja enviada y a nombre de la
  *   vendedora de turno, y le ofrece al cliente el WhatsApp de Eventos.
  * - **Abre la promoción del link** (`promociones.html#gran-premio`): el link
@@ -71,7 +76,11 @@
       prueba: 'Versión de prueba: se calculó, pero no se mandó.',
       mensaje: 'Hola, cotizé {promo} en el sitio. N° {n}.',
       desde: 'desde', porPersonaIva: '+ IVA por persona', enAdelante: 'personas en adelante',
-      soloLink: 'solo con el link', noSale: 'no sale en el sitio'
+      soloLink: 'solo con el link', noSale: 'no sale en el sitio',
+      exclusivo: 'Quiero el lugar exclusivo', exclusivoPrecio: '{m} · precio estándar',
+      arriendoEstandar: 'Arriendo a precio estándar, sin descuento de la promoción. Tu ejecutivo lo conversa contigo.',
+      arriendoIncluido: 'El arriendo del recinto va incluido en esta promoción ese día.',
+      sinExclusivo: 'Ese día el recinto no se arrienda en exclusiva. Prueba con otro día.'
     },
     en: {
       locale: 'en-US', moneda: ' CLP',
@@ -104,7 +113,11 @@
       prueba: 'Test version: calculated, but not sent.',
       mensaje: 'Hi, I quoted {promo} on the website. No. {n}.',
       desde: 'from', porPersonaIva: '+ VAT per person', enAdelante: 'people and up',
-      soloLink: 'link only', noSale: 'hidden on the site'
+      soloLink: 'link only', noSale: 'hidden on the site',
+      exclusivo: 'I want the venue exclusively', exclusivoPrecio: '{m} · standard price',
+      arriendoEstandar: 'Standard rental price, without the offer discount. Your executive goes over it with you.',
+      arriendoIncluido: 'Venue rental is included in this offer that day.',
+      sinExclusivo: 'The venue cannot be rented exclusively that day. Try another day.'
     },
     pt: {
       locale: 'pt-BR', moneda: ' CLP',
@@ -137,7 +150,11 @@
       prueba: 'Versão de teste: calculado, mas não enviado.',
       mensaje: 'Olá, fiz um orçamento de {promo} no site. Nº {n}.',
       desde: 'a partir de', porPersonaIva: '+ IVA por pessoa', enAdelante: 'pessoas ou mais',
-      soloLink: 'só com o link', noSale: 'oculta no site'
+      soloLink: 'só com o link', noSale: 'oculta no site',
+      exclusivo: 'Quero o espaço exclusivo', exclusivoPrecio: '{m} · preço padrão',
+      arriendoEstandar: 'Aluguel pelo preço padrão, sem o desconto da promoção. Seu executivo conversa com você.',
+      arriendoIncluido: 'O aluguel do espaço está incluído nesta promoção nesse dia.',
+      sinExclusivo: 'Nesse dia o espaço não é alugado com exclusividade. Tente outro dia.'
     }
   };
 
@@ -326,7 +343,7 @@
     var menusNinos = Array.isArray(promo.ninos) ? promo.ninos : (promo.ninos ? [promo.ninos] : []);
     var estado = {
       adultos: promo.minimo, ninos: menusNinos.map(function () { return 0; }), fecha: '',
-      menu: promo.menus.length === 1 ? promo.menus[0].nombre : '', suma: [],
+      menu: promo.menus.length === 1 ? promo.menus[0].nombre : '', suma: [], exclusivo: false,
       // Para cuántos va cada extra sumado que se cobra por persona, y si el
       // cliente ya lo movió: mientras no lo toque, sigue al grupo.
       cuantos: {}, tocado: {}
@@ -416,6 +433,35 @@
     if (promo.incluye.length) {
       var inc = el('p', 'cot-incluye'); inc.append(el('span', 'cot-rotulo', T.incluye), document.createTextNode(promo.incluye.join(' · ')));
       p1.appendChild(inc);
+    }
+    // **El lugar exclusivo** (2026-11-25): suma el arriendo del recinto a su
+    // precio estándar, sin el descuento de la promoción. Solo si el panel manda
+    // el arriendo (un panel de antes no lo manda: sin casilla, como siempre).
+    // Va en el paso 1, que tiene espacio. Si la promoción nunca cobra arriendo,
+    // dice que va incluido.
+    if (promo.arriendo) {
+      var exCaja = el('div', 'cot-extra cot-exclusivo');
+      var exO = el('label', 'cot-opcion');
+      var exC = el('input'); exC.type = 'checkbox';
+      var exTexto = el('span', 'cot-opcion-texto');
+      var exPrecio = el('span', 'cot-precio');
+      // El precio estándar depende del día: de lunes a viernes puede ser otro
+      // (Configuración → arriendoSemana). Se reescribe al cambiar la fecha.
+      var precioExclusivo = function () {
+        if (promo.arriendoIncluido) return T.incluido;
+        var p = promo.arriendo.precio;
+        if (promo.arriendoSemana > 0 && estado.fecha) {
+          var d = new Date(estado.fecha + 'T12:00:00').getDay();
+          if (d >= 1 && d <= 5) p = promo.arriendoSemana;
+        }
+        return T.exclusivoPrecio.replace('{m}', pesos(p) + (promo.arriendo.masIva ? ' ' + T.masIva : ''));
+      };
+      exPrecio.textContent = precioExclusivo();
+      fecha.addEventListener('change', function () { exPrecio.textContent = precioExclusivo(); });
+      exTexto.append(el('strong', '', T.exclusivo), exPrecio);
+      exO.append(exC, exTexto); exCaja.appendChild(exO);
+      exC.addEventListener('change', function () { estado.exclusivo = exC.checked; calcular(); });
+      p1.appendChild(exCaja);
     }
     if (promo.suma.length) {
       p2.appendChild(el('p', 'cot-rotulo cot-rotulo-suelto', T.suma));
@@ -508,6 +554,7 @@
     function textoError(codigo, minimo, dias) {
       if (codigo === 'minimo') return T.minimo.replace('{n}', minimo);
       if (codigo === 'anticipacion') return T.anticipacion.replace('{n}', dias || plazo);
+      if (codigo === 'sinExclusivo') return T.sinExclusivo;
       return T[codigo] || (codigo === 'sinPrecio' || codigo === 'promocion' ? T.sinCotizar : T.error);
     }
 
@@ -538,7 +585,10 @@
         boleta.appendChild(el('p', 'cot-aparte', T.aparte.replace('{c}', o.conceptos.join(', '))
           .replace('{m}', pesos(o.total)).replace('{e}', o.empresa)));
       });
-      if (r.publico) boleta.appendChild(el('p', 'cot-nota', T.publico));
+      // Con el lugar exclusivo, la nota es la del arriendo estándar (o la de que va incluido).
+      if (r.exclusivo) boleta.appendChild(el('p', 'cot-nota', T.arriendoEstandar));
+      else if (r.exclusivoGratis) boleta.appendChild(el('p', 'cot-nota', T.arriendoIncluido));
+      else if (r.publico) boleta.appendChild(el('p', 'cot-nota', T.publico));
       else if (r.arriendo > 0) boleta.appendChild(el('p', 'cot-nota', T.arriendo + ' ' + pesos(r.arriendo) + ' ' + T.masIva + '.'));
     }
 
@@ -567,6 +617,8 @@
           promo: promo.sitio, adultos: String(estado.adultos), ninos: estado.ninos.join(','),
           menu: estado.menu, suma: estado.suma.join('|'), cuantos: cuantos().join('|'), fecha: estado.fecha
         });
+        // Solo si lo pidió: así la misma pregunta de antes sigue siendo la misma.
+        if (estado.exclusivo) q.set('exclusivo', '1');
         fetch(panel + '/api/publico/cotizar?' + q.toString())
           .then(function (r) { return r.json(); })
           .then(dibujar)
@@ -585,7 +637,7 @@
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           promo: promo.sitio, adultos: estado.adultos, ninos: estado.ninos, menu: estado.menu, suma: estado.suma, cuantos: cuantos(),
-          fecha: estado.fecha, nombre: nombre, empresa: fEmpresa.value.trim(), telefono: telefono, correo: correo,
+          exclusivo: estado.exclusivo, fecha: estado.fecha, nombre: nombre, empresa: fEmpresa.value.trim(), telefono: telefono, correo: correo,
           web: trampa.value, idioma: idioma, prueba: !esReal
         })
       }).then(function (r) { return r.json(); }).then(function (d) {

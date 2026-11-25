@@ -857,6 +857,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       '"🎁 Promoción…", al lado del descuento sobre el total, la aplica: su menú reemplaza al de adulto que haya, suma lo que incluye y pone su descuento. Después se edita todo como siempre.',
       'Su descuento vale aunque pase el tope del vendedor: es el del tramo que alcanza el grupo. Si cambian los invitados, "Usar −N%" pone el que corresponde.',
+      'Una cotización del sitio con el lugar exclusivo trae el descuento en cada línea, menos el arriendo, que va a su precio estándar: ahí no se ofrece "Usar −N%", porque lo pondría dos veces.',
       'Si la promoción no cobra arriendo ese día (de lunes a viernes, o nunca), el arriendo mínimo no se agrega.',
       'Bajo su mínimo de personas no rige: ni su descuento ni su arriendo. "Quitar" la saca; los productos quedan.',
       'Si pide días de anticipación y el evento es antes, no se aplica, ni se le puede mover el día ahí; la gerencia, el encargado de pagos y el administrador sí.'
@@ -1450,7 +1451,11 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       '*Como siempre*: un día que no abrimos al público, con poca gente, lleva el arriendo mínimo de Configuración. '
       + 'Las otras dos lo perdonan: siempre, o solo de lunes a viernes.',
-      'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.'
+      'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.',
+      'Si el cliente marca *Quiero el lugar exclusivo* en el cotizador del sitio, se suma el arriendo del recinto a su '
+      + 'precio estándar, el del producto de tipo Arriendo de *Productos* (de lunes a viernes, el de Configuración → *Arriendo de lunes a viernes*, si está puesto), y sin el descuento de la promoción: ese '
+      + 'lo conversa después el vendedor. Si la promoción perdona el arriendo ese día, va incluido. La cotización llega '
+      + 'marcada exclusiva.'
     ]
   },
   descripcionProducto: {
