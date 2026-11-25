@@ -358,13 +358,15 @@ export default function ReservaForm({
                 <input type="number" min={0} step={1000} className={ENTRADA}
                   value={montoManual} placeholder={sugerido > 0 ? String(sugerido) : '—'}
                   onChange={(e) => setMontoManual(e.target.value)} />
-                <span className="mt-1 block text-[13px] text-hueso/65">
+                <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-hueso/65">
                   {montoManual.trim() !== '' && aMonto(montoManual) !== sugerido ? (
                     <>
-                      Escrito a mano.{' '}
+                      Escrito a mano.
+                      {/* Se aprieta: un botón de 36px, no un texto subrayado (regla PlayStation). */}
                       <button type="button" onClick={() => setMontoManual('')}
-                        className="font-semibold text-oro hover:underline">Volver al calculado</button>
-                      {sugerido > 0 && <> ({sugerido.toLocaleString('es-CL')})</>}
+                        className="boton min-h-[36px] !px-2.5 text-[13px] font-semibold text-oro">
+                        Volver al calculado{sugerido > 0 && <> ({sugerido.toLocaleString('es-CL')})</>}
+                      </button>
                     </>
                   ) : sugerido > 0 ? (
                     <>Calculado: precio {enElLocal ? 'del local' : 'en línea'}</>
