@@ -173,7 +173,7 @@ revisan antes de cada cambio en esta carpeta.
   | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
   | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*, también desde la ficha del cliente) y `HistorialNotas` (la misma lista en la ficha del cliente, filtrable por cotización) |
   | La última nota y el próximo contacto | `LoConversado` (paso 4 de cotizar) y `UltimaNota` (la ficha del cliente y la Agenda); dentro del botón *🗒 Notas* de la cotización, en un renglón |
-  | El día elegido para volver a contactarlo | `PastillaContacto` (📞, con `textoContacto()`): la Lista de cotizaciones y Clientes |
+  | El día elegido para volver a contactarlo | `PastillaContacto` (📞, con `textoContacto()`): ámbar hasta el día y rojo desde el día; en la primera fila de cada cotización de la lista (al centro), y en Clientes |
   | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
@@ -266,16 +266,23 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
   `cuentasDeRecontacto()`): todas las que tienen un día elegido para volver a
   contactarlo (`Recontactar el`), **de cualquier fecha** —no sigue al periodo,
   como la Agenda—, por ese día y lo atrasado primero. Su número se pone rojo
-  con alguna atrasada y ámbar con una de hoy. Son siete tarjetas en una fila
+  si alguna ya llegó a su día (hoy o atrasada) y ámbar si todas vienen. Son siete tarjetas en una fila
   desde 1280px: para que *Tasa de cierre* no se doblara, `TarjetaNumero` bajó
   el espaciado entre letras (*wider* → *wide*) y el margen desde 1280px (12 →
   10px); el título va sin el 📞, que llevan las pastillas.
 - **La pastilla 📞** (`PastillaContacto`, `textoContacto()` y `recontactoDe()`
-  en `lib/agenda.ts`): *Contactar: atrasado 2 días* (borde grueso rojo),
-  *Contactar hoy* (borde grueso ámbar), *Contactar el mié 2 dic* (borde fino).
-  Solo el día elegido, no el recordatorio automático. Va en la fila de la
-  Lista, en la tarjeta cerrada de cada cliente (el más cercano de sus
-  cotizaciones) y en cada cotización de su ficha.
+  en `lib/agenda.ts`): *Contactar el mié 2 dic*, *Contactar hoy*, *Contactar:
+  atrasado 2 días*. **Ámbar hasta el día del recontacto y rojo desde ese día**,
+  con la misma forma (borde grueso) —lo pidió el cliente con una foto: *"misma
+  forma pero en amarilla hasta el día del recontacto, en rojo a partir del día
+  de recontacto agendado"*—; la frase dice cuándo. Solo el día elegido, no el
+  recordatorio automático. Va en la tarjeta cerrada de cada cliente (el más
+  cercano de sus cotizaciones), en cada cotización de su ficha y **en la
+  primera fila de cada cotización de la lista, al centro** (*"deja el
+  contactar el 26 en primera fila, centrado"*), entre la fecha y los valores:
+  la pone `fila()` de `CotizacionesVista`, así que sale igual en la Lista, en
+  el día del calendario y en *Sin fecha*. En el celular, donde la fila se
+  dobla, va a la izquierda de su renglón.
 - **Las notas, de la más nueva a la más vieja, y con la misma hora, la anotada
   después** (`ordenarNotas()`, `ultimaNota()` en `lib/notas.ts`): la que viene
   después en la lista, que es la que se anotó después. A la pantalla las notas
@@ -289,8 +296,8 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
   notas.
 - **La última nota, en todas partes**:
   - **En la cotización, dentro del botón *🗒 Notas***, en los cinco pasos, en
-    un renglón (entera al pasar el mouse), con el día del próximo contacto en
-    rojo o ámbar. Se probó como bloque en el paso 2 y no cabía en 1280×650 (661
+    un renglón (entera al pasar el mouse), con el día del próximo contacto como
+    la pastilla: ámbar hasta ese día y rojo desde ese día. Se probó como bloque en el paso 2 y no cabía en 1280×650 (661
     a 745px, según la columna); dentro del botón, el paso 2 mide 580.
   - **En el paso 4**, *Lo conversado*, que pasó a ser una pieza propia
     (`LoConversado`, con `UltimaNota`).

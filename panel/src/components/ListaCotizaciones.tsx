@@ -24,7 +24,6 @@ import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
 import BuscarEnLista from './BuscarEnLista';
-import { PastillaContacto } from './Pastilla';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
@@ -220,8 +219,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         <Tarjeta que="Recontactar" ayuda="listaRecontactar" valor={String(recontacto.total)}
           nota={recontacto.atrasadas ? `${recontacto.atrasadas} ${recontacto.atrasadas === 1 ? 'atrasada' : 'atrasadas'}${recontacto.hoy ? ` · ${recontacto.hoy} hoy` : ''}`
             : recontacto.hoy ? `${recontacto.hoy} para hoy` : recontacto.total ? 'ninguna atrasada' : 'ninguna puesta'}
-          tono={recontacto.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
-            : recontacto.hoy ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
+          tono={recontacto.atrasadas || recontacto.hoy ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
+            : recontacto.total ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
           activa={filtro === 'recontactar'} onClick={() => alternar('recontactar')} />
         <Tarjeta que="Por cobrar" ayuda="listaPorCobrar" valor={enPesos(r.porCobrar.monto)}
           nota={`${r.porCobrar.n} ${r.porCobrar.n === 1 ? 'ganada' : 'ganadas'} con saldo`}
@@ -287,11 +286,10 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
                   {equipo && p.creadoPor && <span>👤 {p.creadoPor}</span>}
                   {p.socio && <span>🤝 {nombreSocio(p.socio)}</span>}
                   {p.tipoEvento && <span>{p.tipoEvento}</span>}
-                  {/* El día elegido para recontactarlo va como la pastilla 📞
-                      (2026-11-25): la misma de la ficha del cliente. */}
-                  {proximosPasos(p, ctx).map((x) => (x.contacto
-                    ? <PastillaContacto key={x.texto} fecha={x.contacto} hoy={ctx.hoy} />
-                    : <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
+                  {/* El día elegido para recontactarlo va como la pastilla 📞,
+                      en la primera fila (2026-11-25): `fila` la pone. */}
+                  {proximosPasos(p, ctx).filter((x) => !x.contacto).map((x) => (
+                    <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
                 </>
               );
               return fila(p, detalle);

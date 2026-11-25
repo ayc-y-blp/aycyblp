@@ -47,7 +47,7 @@ import { faltaDevolver } from '@/lib/cancelacion';
 import { puede, puedeTocarPresupuesto, esSuya, ROL, type Rol } from '@/lib/auth';
 import Agenda from './Agenda';
 import NotasCotizacion from './NotasCotizacion';
-import { agendaDe, paraHoy, type ItemAgenda } from '@/lib/agenda';
+import { agendaDe, paraHoy, recontactoDe, type ItemAgenda } from '@/lib/agenda';
 import { puedeVerNotas, ordenarNotas, type Nota } from '@/lib/notas';
 import type { Ocupacion } from '@/lib/tipos';
 import PuntoDia, { PuntoYPalabra } from './PuntoDia';
@@ -59,7 +59,7 @@ import AvisoSobrecupo, { type SobrecupoCorto } from './AvisoSobrecupo';
 import Pendientes, { FilaPendiente } from './Pendientes';
 import AvisoFijo from './AvisoFijo';
 import { BotonMias, BotonTodos } from './BotonMias';
-import { Pastilla, PastillaCotizado } from './Pastilla';
+import { Pastilla, PastillaCotizado, PastillaContacto } from './Pastilla';
 import ListaCotizaciones from './ListaCotizaciones';
 import { veElEquipo, type ContextoLista } from '@/lib/listaCotizaciones';
 
@@ -401,7 +401,15 @@ export default function CotizacionesVista() {
             {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
           </span>
         )}
-        <span className="flex-1" />
+        {/* **📞 El próximo contacto, en la primera fila y al centro**
+            (2026-11-25, lo pidió el cliente: *"deja el contactar el 26 en
+            primera fila, centrado"*): el hueco entre la fecha y los valores
+            lo ocupa la pastilla. La misma en la lista, el día del calendario
+            y *Sin fecha*. En el celular, donde la fila se dobla, va a la
+            izquierda de su renglón. */}
+        <span className="flex flex-1 lg:justify-center">
+          <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
+        </span>
         {caerse && botonCaer('hidden lg:inline-flex')}
         <span className="text-[14px] text-hueso/70">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}

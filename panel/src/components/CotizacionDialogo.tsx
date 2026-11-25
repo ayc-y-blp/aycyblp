@@ -1906,8 +1906,8 @@ export default function CotizacionDialogo({
           en paso 2 Evento y paso 4 Envío y en todos lados"*). Va dentro de
           este botón, en un renglón: en el paso 2 un bloque aparte no cabía en
           1280×650. Entera, al pasar el mouse y en *🗒 Notas*; en el paso 4
-          sigue además *Lo conversado*. El día del próximo contacto, en rojo si
-          se atrasó y en ámbar si es hoy, como la pastilla 📞. */}
+          sigue además *Lo conversado*. El día del próximo contacto, como la
+          pastilla 📞: ámbar hasta ese día y rojo desde ese día. */}
       {p && veNotas && (
         <button type="button" onClick={() => setNotasAbiertas(true)} title={ultima ? ultima.nota : undefined}
           className="boton mb-4 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-x-2 text-[15px]
@@ -1915,8 +1915,8 @@ export default function CotizacionDialogo({
                      lg:flex-1 lg:flex-nowrap lg:justify-start">
           <span className="shrink-0">🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}</span>
           {esFecha(recontactar) && (
-            <span className={`shrink-0 ${recontactar < datos.hoy ? 'text-rojo-texto' : recontactar === datos.hoy
-              ? 'text-ambar-texto' : 'font-normal text-hueso/70'}`}>· 📞 {enCorto(recontactar)}</span>
+            <span className={`shrink-0 ${recontactar <= datos.hoy ? 'text-rojo-texto' : 'text-ambar-texto'}`}>
+              · 📞 {enCorto(recontactar)}</span>
           )}
           {ultima && (
             <span className="min-w-0 basis-full truncate text-[14px] font-normal text-hueso/75 lg:basis-auto">

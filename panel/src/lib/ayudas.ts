@@ -477,8 +477,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + '*Todos*, la lista entera. Si todavía no tienes ninguno, parte en *Todos*. '
       + 'El buscador busca dentro de lo que estés mirando.',
       '📞 Por contactar deja solo los clientes con un día elegido para volver a '
-      + 'contactarlos, el más cercano primero. Ese día sale en su línea, en rojo si '
-      + 'se atrasó y en ámbar si es hoy. Al abrir la ficha ves la última nota y, en '
+      + 'contactarlos, el más cercano primero. Ese día sale en su línea, en ámbar '
+      + 'hasta ese día y en rojo desde ese día. Al abrir la ficha ves la última nota y, en '
       + 'cada cotización, su próximo contacto y 📝 Anotar: la misma ventanita de la '
       + 'cotización, con qué conversaron y cuándo volver a contactarlo. Si tiene '
       + 'notas en dos o más cotizaciones, en 🗒 Notas eliges de cuál (Todas o el '
@@ -1289,7 +1289,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Las cotizaciones con un día elegido para volver a contactar al cliente, de cualquier fecha: no sigue al periodo de arriba.',
       'El día se elige al anotar, en 📝 Anotar. Apriétala y la lista las muestra por ese día, las atrasadas primero.',
-      'Cada una lleva su pastilla 📞: en rojo si se atrasó, en ámbar si es hoy.'
+      'Cada una lleva su pastilla 📞 en su primera fila, al centro: en ámbar hasta ese día y en rojo desde ese día. La tarjeta se pone roja si alguna ya llegó a su día.'
     ]
   },
   listaPorCobrar: {

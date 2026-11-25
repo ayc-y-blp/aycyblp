@@ -61,13 +61,15 @@ export const PASTILLA = {
   /**
    * **El día que quedó en volver a contactarlo** (2026-11-25, lo pidió el
    * cliente: *"tiene que llegar una notificación de recontacto en varios
-   * lugares"*). La forma dice la urgencia, no solo el color: atrasado con
-   * borde grueso rojo, hoy con borde grueso ámbar, un día que viene con
-   * borde fino. Ver `PastillaContacto`.
+   * lugares"*). **Ámbar hasta el día del recontacto y rojo desde ese día**
+   * (lo pidió el cliente el mismo día: *"misma forma pero en amarilla hasta
+   * el día del recontacto, en rojo a partir del día de recontacto
+   * agendado"*): la misma forma, con borde grueso, y la frase dice cuándo
+   * (*Contactar el mié 2 dic · Contactar hoy · atrasado 2 días*). Ver
+   * `PastillaContacto`.
    */
-  contactoAtrasado: `${BASE} border-2 border-rojo-fuerte text-rojo-texto`,
-  contactoHoy: `${BASE} border-2 border-ambar-fuerte text-ambar-texto`,
-  contacto: `${BASE} border border-hueso/40 text-hueso/80`
+  contactoToca: `${BASE} border-2 border-rojo-fuerte text-rojo-texto`,
+  contactoViene: `${BASE} border-2 border-ambar-fuerte text-ambar-texto`
 } as const;
 
 export function Pastilla({ tipo, children, title, className = '' }: {
@@ -98,13 +100,14 @@ export function PastillaCotizado({ cotizaciones = 0, posibles = 0, corta = false
 
 /**
  * **📞 El próximo contacto elegido** (2026-11-25): la misma pastilla en la
- * Lista de cotizaciones, en la ficha del cliente y en su tarjeta cerrada.
+ * primera fila de cada cotización de la lista, en la ficha del cliente y en
+ * su tarjeta cerrada. Ámbar hasta el día, rojo desde el día.
  * Sin día (`''`), nada.
  */
 export function PastillaContacto({ fecha, hoy, className = '' }: { fecha: string; hoy: string; className?: string }) {
   if (!esFecha(fecha) || !esFecha(hoy)) return null;
   const { texto, cuando } = textoContacto(fecha, hoy);
-  const tipo = cuando === 'atrasado' ? 'contactoAtrasado' : cuando === 'hoy' ? 'contactoHoy' : 'contacto';
+  const tipo = cuando === 'proximo' ? 'contactoViene' : 'contactoToca';
   return (
     <Pastilla tipo={tipo} className={className} title="El día que quedaste en volver a contactarlo: se cambia al anotar">
       <span aria-hidden>📞</span>{texto}
