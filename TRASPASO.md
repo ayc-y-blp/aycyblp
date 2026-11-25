@@ -592,7 +592,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   **Borrar, solo el administrador y en una anotada a mano** (lo decidió el
   cliente). Lo que se cambia en el panel de una de Shopify ya no lo reescribe
   la tienda (`Cambiado en el panel`). Cada cambio manda el id de la reserva. La
-  ventana *Editar reserva*, con las reglas. **En un PR, en preview hasta el
+  ventana *Editar reserva*, con las reglas. **PR #361, en preview hasta el
   *"mergea"*.** Para la de Ismael Barros, hoy: si se cayó, cancelar el pedido
   en Shopify. Ver `panel/CLAUDE.md`, "Reservas de Shopify: no se repiten…".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
