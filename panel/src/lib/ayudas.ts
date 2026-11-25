@@ -1407,8 +1407,15 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   promoCotizador: {
     titulo: 'El cotizador',
     texto: [
+      'Lo que va en este marco es lo que trae la promoción: los menús, la condición, los extras, lo de fuera del '
+      + 'local y la anticipación. Con eso cotiza el sitio, y lo mismo aplica el vendedor con *🎁 Promoción…*.',
       'Con *Sí*, el bloque de la promoción en el sitio muestra el cotizador: el cliente elige cuántos son, el día '
-      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.',
+      + 'y el menú, ve el total y manda su cotización. Con *No*, el bloque queda solo con el botón de WhatsApp.'
+    ]
+  },
+  promoLink: {
+    titulo: 'El link',
+    texto: [
       'El link abre la página de promociones con esta ya elegida: es el que va en una publicación de Instagram o '
       + 'en un anuncio, y el que abre una que no se muestra en el sitio. *Copiar* da el del español (también '
       + 'está en la tarjeta cerrada, *🔗 Copiar link*); *EN* y *PT*, el de la página en inglés y en portugués. '

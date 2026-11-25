@@ -1,4 +1,4 @@
-# Traspaso: Brasas de Lo Pirque (estado al 23-11-2026)
+# Traspaso: Brasas de Lo Pirque (estado al 25-11-2026)
 
 Para quien retoma el proyecto en una sesión nueva, sin haber visto las
 anteriores. **Este archivo es el mapa**; el detalle de cada decisión vive en
@@ -531,6 +531,32 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   toca al que sigue (`lib/rotacion.ts`); sin nadie marcado, vale *Las del sitio van
   a*. Columna nueva `Rotación del sitio` en `Vendedores`. Ver `panel/CLAUDE.md`,
   "La rotación de las cotizaciones del sitio".
+- **El 25-11-2026, mergeado con el *"mergea"* del cliente** (`verificar.sh`, 15
+  de 15 después):
+  - **#353, el buscador en una columna angosta**: en Configuración → *Las del
+    sitio van a*, los nombres salían de a una letra por renglón; `BuscarEnLista`
+    deja que el nombre y su detalle se doblen. Ver `panel/CLAUDE.md`, "El
+    buscador, en una columna angosta".
+  - **#354, regla nueva *Una captura no es un sí***: una foto o un *"¿qué
+    pasó?"* se contesta con el diagnóstico y una propuesta, y no se edita nada
+    hasta el sí explícito (*"nunca más hagas cambios de esta magnitud en el
+    sitio sin preguntarme explícitamente"*). Nació porque el arreglo de #353 se
+    aplicó a partir de una captura sin proponerlo antes. Está en `CLAUDE.md`,
+    `cultura/` y el skill `ritual-de-trabajo`.
+  - **#354, una línea fina entre *Adultos* y *Niños*** en la ficha de una
+    promoción (pedido con palabras). Ver `panel/CLAUDE.md`, "La ficha, ordenada".
+- **La ficha de una promoción: el link en su fila y el cotizador en su marco**
+  (25-11-2026, lo pidió el cliente): marco dorado *🧮 Cotizador* con Menús,
+  Condición, Extras, Fuera del local y Anticipación. Mide 677px en 1280×650, 27
+  más que la pantalla, anotado en `NO_CABEN`. Ver `panel/CLAUDE.md`, "La ficha,
+  ordenada".
+- **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
+  comentarán en producción"*): en una versión de prueba no aparece porque
+  `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un
+  error: no se agrega a Preview.
+- **Los precios de las cinco promociones, en pausa** (25-11-2026, el cliente:
+  *"por ahora olvídate"*): siguen de ejemplo y no se le recuerdan hasta que él
+  los traiga (pendiente 13).
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -770,7 +796,7 @@ detalle de cada una (qué es, en qué entorno, cómo recuperarla) está en
 | `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET` | solo Production (app *Reservas Pirque* del Dev Dashboard) |
 | `SHOPIFY_WEBHOOK_SECRET` | secreto de la real / de la de desarrollo |
 | `CRON_SECRET` | igual |
-| `COMENTARIOS_SHEET_ID` | igual (sin ella no aparece el botón 💬) |
+| `COMENTARIOS_SHEET_ID` | solo Production, a propósito: se comenta solo en producción (25-11-2026). Sin ella no aparece el botón 💬 |
 | `CRM_API_KEY` | solo Production (opcional; el CRM está apagado) |
 
 El proyecto del sitio no lleva variables: es estático.
@@ -1491,7 +1517,7 @@ Cada una tiene su sección con fecha en `CLAUDE.md` o `panel/CLAUDE.md`.
 | 10 | **Importar el CRM y los pedidos del sitio viejo** | El importador está en producción desde el 22-11-2026 (PR #293). **Importado en producción el 22-11-2026**, después de la base en cero. Queda: (a) el cliente decide las dos ganadas que no calzan (fecha y gente) y revisa la columna *Estado* del Excel; (b) y (c) hechos: lo ensayó y se mergeó; (d) en producción, **después de la base en cero**: *Ver qué entra* → sube el Excel, importa, y anota el anticipo de cada ganada en su cotización; (e) borra las tres pestañas `Importar …` de la planilla. **El Excel se sube con *⬆ Subir el Excel…* en la misma ventana**, sin abrir Google Sheets | Cliente, con Claude |
 | 11 | **Política de privacidad y condiciones de reserva** | No existen; son del negocio y conviene que las vea un abogado. Anotado en la guía *Traspaso a producción* (documento fuera del repo) | Cliente |
 | 12 | **Migración, pasos que quedan** | Pruebas a mano de punta a punta, respaldo de claves en la bóveda y apagar lo de la cuenta personal (`migracion-team/README.md`) | Cliente |
-| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA; **aclarar el tema del taller de queso** (lo pidió el cliente el 22-11-2026; hoy figura como actividad adicional en *Actividades* y en los tres landings de empresa); pintacaritas y castillo inflable en *Productos* (¿+ IVA o IVA incluido?). **Los precios, los mínimos y la condición especial de los cinco productos de promociones** (hoy de ejemplo, ver `CLAUDE.md`, "Seis promociones…"), y una foto de una charla para IA a las Brasas. Los dos últimos, también en la guía *Traspaso a producción* | Cliente |
+| 13 | **Decisiones abiertas** | Si un contrato firmado sin pago da preferencia (gerencia); el recargo de pequeños; el mínimo de 25 en venta directa; el desayuno y la once a $8.000 + IVA; **aclarar el tema del taller de queso** (lo pidió el cliente el 22-11-2026; hoy figura como actividad adicional en *Actividades* y en los tres landings de empresa); pintacaritas y castillo inflable en *Productos* (¿+ IVA o IVA incluido?). **Los precios, los mínimos y la condición especial de los cinco productos de promociones** (hoy de ejemplo, ver `CLAUDE.md`, "Seis promociones…"; **en pausa desde el 25-11-2026**: no se le recuerdan hasta que el cliente los traiga), y una foto de una charla para IA a las Brasas. Los dos últimos, también en la guía *Traspaso a producción* | Cliente |
 | 14 | **En pausa por datos** | Video del hero (sigue vivo en el CDN de Shopify, 63 MB); logo en SVG recoloreable; fotos de cabalgatas y de la cancha de beach tenis; Calicanto y el contrato de matrimonio (Fase 5) | Cliente |
 | 15 | ~~Ganar en un sábado que todavía no está en el calendario~~ | **Hecho el 23-11-2026** (el cliente: *"sí, cambia lo del sábado"*): nace público si la cotización no es exclusiva (`diaParaGanar()`). Las reservas a mano y lo importado siguen creándolo privado | — |
 | 16 | **Cuándo pasar a una base de datos de verdad** (23-11-2026, lo preguntó el cliente) | **Hoy no hace falta.** Se cambia cuando pase **cualquiera** de estas: (a) errores del límite de lecturas de Google con uso normal, aun después de pedir más cupo (es gratis); (b) más o menos 10 a 15 personas usando el panel a la vez; (c) cambios que se pisan: algo guardado que se pierde, una reserva duplicada o un día sobrevendido; (d) algo que la planilla no puede hacer: apartar un cupo mientras alguien paga en Shopify, informes de varios años o que crucen las dos empresas. **Antes, lo barato**: pedir más cupo en Google Cloud y pasar la bitácora de cada año a otra planilla. **Se revisa con un número cuando Asados y Corderos esté en uso real**: las dos empresas usan la misma cuenta del panel y comparten el límite. **Cuando toque**: Postgres desde la pestaña *Storage* de Vercel (hoy es Neon, por el Marketplace): se cobra en la misma cuenta, conecta sus variables al panel solo y cada versión de prueba puede tener su copia de la base, como hoy la planilla "Pruebas". No Blob ni Edge Config: guardan archivos y configuración, no datos. Los precios se revisan ese día. Lo que se pierde es abrir la planilla: conviene dejar una copia diaria de solo lectura en Google Sheets. Es un proyecto propio, en un mes tranquilo; lo facilita que todo pasa por `lib/sheets.ts` | Cliente decide; Claude mide |

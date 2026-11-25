@@ -17,7 +17,7 @@ import AyudaCorta from './AyudaCorta';
 import BotonGuardar from './BotonGuardar';
 import { Aviso } from './CalendarView';
 import { avisar, copiarConAviso } from './AvisoFlotante';
-import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, marcoTarjeta } from './TarjetaLista';
+import { CUERPO_ABIERTO, LISTA_TARJETAS, PieCerrar, SignoAbrir, TITULO_GRUPO, marcoGrupo, marcoTarjeta } from './TarjetaLista';
 import { enPesos } from '@/lib/ocupacion';
 import { IVA_PRECIO, COBRO, TIPO_PRODUCTO, precioParaCotizar, type Menu } from '@/lib/menus';
 import {
@@ -78,7 +78,7 @@ function Seccion({ titulo, ayuda, accion, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section className={`${marcoTarjeta(false, 'normal', false, true)} space-y-2 p-2.5 lg:space-y-1.5`}>
+    <section className={`${marcoTarjeta(false, 'normal', false, true)} space-y-2 p-2.5 lg:space-y-1.5 lg:p-2`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center text-[15px] font-bold">{titulo}{ayuda && <AyudaCorta tema={ayuda} />}</p>
         {accion}
@@ -386,17 +386,15 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                     )}
                     </div>
                   </Fila>
+                  {/* **El link, en su fila; el cotizador, en su marco** (2026-11-25, lo
+                      pidió el cliente: *"cotizador y link tienen que separarse. El
+                      cotizador es el cuadro donde se configura menús, extras, condición,
+                      fuera del local, la anticipación… en un marco y en un campo bien
+                      visible, que aquí estoy dentro de un configurador de la
+                      cotización"*). Arriba, lo de la página: nombre, bloque y link. */}
                   {p.sitio && (
-                    <Fila rotulo="Cotizador y link" ayuda="promoCotizador">
+                    <Fila rotulo="Link" ayuda="promoLink">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div role="radiogroup" aria-label="Cotizador en el sitio" className="flex gap-2">
-                          {([[true, 'Sí'], [false, 'No, solo WhatsApp']] as const).map(([v, texto]) => (
-                            <button key={String(v)} type="button" role="radio" aria-checked={p.cotizador === v}
-                              onClick={() => cambiar(i, { cotizador: v })}
-                              className={`${BOTON} ${p.cotizador === v ? ELEGIDO : ''}`}>{texto}</button>
-                          ))}
-                        </div>
-                        <span aria-hidden className="mx-1 hidden h-6 border-l border-hueso/25 sm:inline-block" />
                         <code className="min-w-0 break-all rounded bg-hueso/10 px-2 py-1 text-[14px]">{linkDeCampana(p.sitio)}</code>
                         {(['es', 'en', 'pt'] as const).map((idioma) => (
                           <button key={idioma} type="button" className={BOTON}
@@ -408,8 +406,37 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                       </div>
                     </Fila>
                   )}
-                  <div className="grid gap-3 lg:grid-cols-2 lg:gap-2.5">
-                    <div className="space-y-3 lg:space-y-2.5">
+                  <section aria-label="Cotizador" className={`${marcoGrupo('oro')} space-y-2.5 p-2.5 lg:space-y-1.5 lg:p-1.5`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className={`${TITULO_GRUPO} flex items-center`}>🧮 Cotizador<AyudaCorta tema="promoCotizador" /></p>
+                    {/* **La anticipación, en la fila del título** (2026-11-25): es un
+                        ajuste de todo el cotizador, de una línea; como sección suelta
+                        quedaba corrida respecto de los tramos de la columna de al lado. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="flex items-center text-[15px] font-bold">⏳ Anticipación<AyudaCorta tema="promoAnticipacion" /></span>
+                      <label className="flex items-center gap-2 text-[15px]">
+                          <input type="number" min={0} max={365} value={p.anticipacion || ''} placeholder="0"
+                            aria-label="Días de anticipación"
+                            onChange={(e) => cambiar(i, { anticipacion: Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
+                            className={`${ENTRADA} !w-[4.5rem] text-center lg:py-1`} />
+                          <span>{p.anticipacion > 0 ? 'días antes del evento, como mínimo' : 'días: sin plazo'}</span>
+                        </label>
+                    </div>
+                    {p.sitio && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rotulo-ficha">En el sitio</span>
+                        <div role="radiogroup" aria-label="Cotizador en el sitio" className="flex gap-2">
+                          {([[true, 'Sí'], [false, 'No, solo WhatsApp']] as const).map(([v, texto]) => (
+                            <button key={String(v)} type="button" role="radio" aria-checked={p.cotizador === v}
+                              onClick={() => cambiar(i, { cotizador: v })}
+                              className={`${BOTON} ${p.cotizador === v ? ELEGIDO : ''}`}>{texto}</button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid gap-3 lg:grid-cols-2 lg:gap-1.5">
+                    <div className="space-y-3 lg:space-y-1.5">
                       <Seccion titulo="🍽 Menús" ayuda="promoMenu">
                         <FilaSeccion rotulo="Adultos">
                           <Elegir etiqueta="Menú de adultos" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
@@ -445,7 +472,7 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                         aparece en este fuera del local. Puede ser también un transfer…
                         segmentar esto"*). Es el mismo control; lo de fuera del local va
                         aparte del total, con quién lo cobra. */}
-                    <div className="space-y-3 lg:space-y-2.5">
+                    <div className="space-y-3 lg:space-y-1.5">
                       <Seccion titulo="➕ Extras" ayuda="promoSuma">
                         <Extras extras={extras.filter((m) => !m.loCobra)} incluye={p.incluye} suma={p.suma}
                           onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
@@ -456,22 +483,9 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                             onCambio={(incluye, suma) => cambiar(i, { incluye, suma })} />
                         </Seccion>
                       )}
-                      {/* **Con cuántos días de anticipación** (2026-11-24, lo pidió el
-                          cliente: el karting o el taller de queso no se organizan sin
-                          tiempo). Vale en el sitio y cuando un vendedor la aplica. Una
-                          sección de una línea, con el campo al lado del título: en esta
-                          columna sobra alto, y así la ficha sigue cabiendo en la pantalla. */}
-                      <Seccion titulo="⏳ Anticipación" ayuda="promoAnticipacion" accion={(
-                        <label className="flex items-center gap-2 text-[15px]">
-                          <input type="number" min={0} max={365} value={p.anticipacion || ''} placeholder="0"
-                            aria-label="Días de anticipación"
-                            onChange={(e) => cambiar(i, { anticipacion: Math.min(365, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
-                            className={`${ENTRADA} !w-[4.5rem] text-center lg:py-1`} />
-                          <span>{p.anticipacion > 0 ? 'días antes del evento, como mínimo' : 'días: sin plazo'}</span>
-                        </label>
-                      )}>{null}</Seccion>
                     </div>
                   </div>
+                  </section>
                 </fieldset>
               )}
               {abierta === i && <PieCerrar nombre={p.nombre.trim()} onCerrar={() => setAbierta(null)} />}
