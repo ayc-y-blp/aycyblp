@@ -439,7 +439,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'en una cotización va aparte del total y no paga comisión.',
       '*Qué incluye* y *Bebestibles* son lo que propone ese producto para la '
       + 'cotización y el contrato. En blanco va el texto del sitio, que se ve de '
-      + 'muestra; escritos, lo reemplazan: así se arma un menú especial con su '
+      + 'muestra y llena el campo al apretar adentro, para cambiarlo desde ahí; '
+      + 'escritos, lo reemplazan: así se arma un menú especial con su '
       + 'propio detalle. Cada campo cambia solo su parte. Se copian a la cotización '
       + 'al agregar el producto, y ahí se pueden cambiar solo para esa: cambiarlos '
       + 'acá no toca las cotizaciones que ya lo tienen.',
@@ -485,7 +486,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'N° de cada una), y con Todas cada nota dice de qué cotización es.',
       'La gerencia, el encargado de pagos y el administrador pueden cambiar '
       + 'el vendedor de un cliente: al abrir su ficha, *Vendedor: … · Cambiar…*. '
-      + 'Lo mismo en una cotización, en el paso Evento.'
+      + 'Lo mismo en una cotización, en el paso Evento.',
+      'Ellos tienen además 👤 Por vendedor…: eliges un vendedor en el buscador y '
+      + 'quedan solo sus clientes, los que creó o a los que les cotizó. Se suma a '
+      + '📞 Por contactar y al buscador; el ✕ del botón lo suelta.'
     ],
     pasos: [
       'Busca primero: por nombre, empresa, teléfono, correo o RUT.',
@@ -1402,7 +1406,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       '📞 Contactar: los clientes a quienes quedaste en hablarles (el día que elegiste al anotar) y los recordatorios de siempre: mandadas sin respuesta hace días, el evento cerca sin ganar y el contrato que no vuelve firmado.',
       '✍ Por redactar: los candidatos y borradores, por el día para el que prometiste la cotización. Se cumple al mandarla.',
-      'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo.'
+      'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo, y el día que elegiste para contactarlo, en ámbar hasta ese día y en rojo desde ese día.'
     ]
   },
   notas: {
@@ -1543,7 +1547,9 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Qué incluye',
     texto: [
       'Lo que sale en la cotización y en el contrato, en «Qué incluye», para este producto. '
-      + 'En blanco va el texto del sitio, que se ve de muestra en el campo.',
+      + 'En blanco va el texto del sitio, que se ve de muestra en el campo. Al apretar adentro, el '
+      + 'campo se llena con ese texto para que lo cambies desde ahí; si sales sin cambiarlo, vuelve a '
+      + 'quedar en blanco y sigue al sitio.',
       'En un menú de adulto, lo que escribas reemplaza el menú de la casa (entrada, plato principal, '
       + 'acompañamientos y postre): sirve para un menú especial. Un renglón por parte, como '
       + '«Entrada: ceviche de reineta», se lee en dos columnas.',
@@ -1570,8 +1576,9 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Bebestibles',
     texto: [
       'Los bebestibles de este menú, en la cotización y el contrato. Reemplazan los del sitio; '
-      + 'en blanco van los de siempre. Se pueden cambiar solo los bebestibles y dejar el menú de la '
-      + 'casa, o al revés.',
+      + 'en blanco van los de siempre. Al apretar adentro, el campo se llena con los de siempre para '
+      + 'cambiarlos desde ahí; sin cambios, vuelve a blanco. Se pueden cambiar solo los bebestibles y '
+      + 'dejar el menú de la casa, o al revés.',
       'También salen en el «?» del cotizador de promociones, en la página en español.'
     ]
   },

@@ -33,6 +33,7 @@ import {
 import { PastillaEstado } from './CotizacionesVista';
 import { enPesos } from '@/lib/ocupacion';
 import FechaDia from './FechaDia';
+import BuscarEnLista from './BuscarEnLista';
 
 /** Una cotización en el historial de un cliente. */
 interface EnHistorial {
@@ -102,6 +103,18 @@ export default function ClientesEditor() {
    * primero. Se aprieta para filtrar y otra vez para soltar.
    */
   const [porContactar, setPorContactar] = useState(false);
+  /**
+   * **👤 Por vendedor…** (2026-11-25, lo pidió el cliente: *"pagos, gerencia y
+   * admin deberían poder filtrar por vendedor en clientes"*): la pieza de
+   * Cotizaciones → *Lista*. El servidor manda los clientes de cada vendedor
+   * (`porVendedor`) solo a quien puede cambiar el vendedor de un cliente
+   * —pagos, la gerencia y el administrador—: sin eso, el botón no sale.
+   * Elegido, *👤 Nombre ✕* lo suelta. Mira todos los clientes, no solo los
+   * suyos, y se suma a *📞 Por contactar* y al buscador.
+   */
+  const [porVendedor, setPorVendedor] = useState<Record<string, string[]> | null>(null);
+  const [vendedor, setVendedor] = useState('');
+  const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   const [hoyDia, setHoyDia] = useState('');
   const [usuario, setUsuario] = useState('');
   /** La ventanita de las notas abierta desde la ficha: de qué cotización y de quién. */
@@ -133,6 +146,7 @@ export default function ClientesEditor() {
     setSinFicha(d.sinFicha ?? 0);
     setMios(d.mios ?? []);
     setVendedores(d.vendedores ?? null);
+    setPorVendedor(d.porVendedor ?? null);
     setAbiertas(d.abiertas ?? {});
     setGanadas(d.ganadas ?? {});
   }).catch((e) => setError(String(e)));
@@ -142,8 +156,12 @@ export default function ClientesEditor() {
   const sonMios = useMemo(() => new Set(mios), [mios]);
   const hayFiltro = !!clientes && clientes.length > 0;
   const soloMios = hayFiltro && (ver ?? (mios.length > 0 ? 'mios' : 'todos')) === 'mios';
-  const deQuien = useMemo(() => (clientes ? (soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes) : []),
-    [clientes, soloMios, sonMios]);
+  const delVendedor = useMemo(() => new Set(vendedor ? porVendedor?.[vendedor] ?? [] : []), [vendedor, porVendedor]);
+  const deQuien = useMemo(() => (!clientes ? []
+    : vendedor ? clientes.filter((c) => delVendedor.has(c.id))
+      : soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes),
+  [clientes, soloMios, sonMios, vendedor, delVendedor]);
+  const nombreVendedor = (u: string) => vendedores?.find((v) => v.usuario === u)?.nombre || u;
   const conRecontacto = deQuien.filter((c) => primerRecontacto(historial[c.id])).length;
   const visibles = useMemo(() => {
     const lista = [...buscarClientes(porContactar ? deQuien.filter((c) => primerRecontacto(historial[c.id])) : deQuien, busqueda)];
@@ -230,10 +248,21 @@ export default function ClientesEditor() {
         {/* El mismo *Mías* de todo el panel (`BotonMias`). */}
         {hayFiltro && (
           <div role="group" aria-label="De quién son" className="flex gap-2">
-            <BotonMias texto="Míos" cuantas={mios.length} elegido={soloMios} onClick={() => setVer('mios')} />
-            <BotonTodos texto="Todos" cuantas={clientes!.length} elegido={!soloMios} onClick={() => setVer('todos')} />
+            <BotonMias texto="Míos" cuantas={mios.length} elegido={soloMios && !vendedor}
+              onClick={() => { setVer('mios'); setVendedor(''); }} />
+            <BotonTodos texto="Todos" cuantas={clientes!.length} elegido={!soloMios && !vendedor}
+              onClick={() => { setVer('todos'); setVendedor(''); }} />
           </div>
         )}
+        {hayFiltro && porVendedor && (vendedor ? (
+          <button type="button" onClick={() => setVendedor('')}
+            className="boton min-h-[44px] border-oro bg-oro/15 !font-semibold text-oro">
+            👤 {nombreVendedor(vendedor)} <span className="ml-1 tabular-nums">{delVendedor.size}</span> ✕
+          </button>
+        ) : (
+          <button type="button" onClick={() => setEligiendoVendedor(!eligiendoVendedor)}
+            aria-expanded={eligiendoVendedor} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
+        ))}
         {hayFiltro && (
           <button type="button" aria-pressed={porContactar} onClick={() => setPorContactar(!porContactar)}
             disabled={!conRecontacto && !porContactar}
@@ -249,6 +278,20 @@ export default function ClientesEditor() {
           </button>
         )}
       </div>
+
+      {eligiendoVendedor && porVendedor && vendedores && (
+        <div className="-mt-2 mb-4 max-w-md">
+          <BuscarEnLista etiqueta="Buscar vendedor" vacia="No hay vendedores."
+            elegido={vendedor}
+            // Solo los que tienen clientes: uno sin ninguno dejaría la lista vacía.
+            opciones={vendedores.filter((v) => (porVendedor[v.usuario]?.length ?? 0) > 0).map((v) => {
+              const n = porVendedor[v.usuario].length;
+              return { id: v.usuario, nombre: v.nombre, detalle: `${n} ${n === 1 ? 'cliente' : 'clientes'}` };
+            })}
+            onElegir={(id) => { setVendedor(id); setEligiendoVendedor(false); setAbierta(null); }}
+            onCerrar={() => setEligiendoVendedor(false)} />
+        </div>
+      )}
 
       {nuevo && (
         // `data-ficha`: así la encuentra `npm run ventanas`, que mide si cabe.

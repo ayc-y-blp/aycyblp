@@ -8068,5 +8068,31 @@ console.log('\nLa empresa del cliente, al lado de su nombre (2026-11-25)');
   ok(conCliente(p, fichas).empresaCliente === 'Andes SpA', 'la cotización trae la empresa de la ficha del cliente');
 }
 
+console.log('\nLa frase del recontacto: ámbar hasta el día, rojo desde el día (2026-11-25)');
+{
+  const A = await import('./agenda.ts');
+  const p0 = { id: 'X' } as unknown as Presupuesto;
+  const hoyF = '2026-11-13';
+  const item = (fecha: string, cuando: 'proximo' | 'hoy' | 'atrasado', motivo: 'elegida' | 'sinRespuesta') =>
+    A.fraseDe({ p: p0, tipo: 'contactar', fecha, cuando, motivo, dias: 3 } as Parameters<typeof A.fraseDe>[0], hoyF).tono;
+  ok(item('2026-11-16', 'proximo', 'elegida') === 'ambar' && item(hoyF, 'hoy', 'elegida') === 'rojo'
+     && item('2026-11-11', 'atrasado', 'elegida') === 'rojo',
+     'el día elegido: ámbar hasta el día, rojo el día mismo y después');
+  ok(item(hoyF, 'hoy', 'sinRespuesta') === 'ambar' && item('2026-11-16', 'proximo', 'sinRespuesta') === 'neutro',
+     'un recordatorio automático sigue como antes: ámbar hoy');
+}
+
+console.log('\nClientes: filtrar por vendedor (2026-11-25)');
+{
+  const A = await import('./asignar.ts');
+  const vend = [{ usuario: 'jorge', nombre: 'Jorge' }, { usuario: 'daniela', nombre: 'Daniela Rojas' }, { usuario: 'nadie', nombre: 'Nadie' }];
+  const fichas = [{ id: 'C-1', creadoPor: 'Jorge' }, { id: 'C-2', creadoPor: 'Daniela Rojas' }, { id: 'C-3', creadoPor: 'admin' }];
+  const pres = [{ idCliente: 'C-3', creadoPor: 'daniela' }, { idCliente: 'C-1', creadoPor: 'Daniela Rojas' }];
+  const por = A.clientesPorVendedor(vend, fichas, pres);
+  ok(por.jorge.join() === 'C-1', 'los clientes que creó el vendedor, por su nombre');
+  ok(por.daniela.sort().join() === 'C-1,C-2,C-3', 'y los que tienen una cotización suya, por usuario o por nombre');
+  ok(por.nadie.length === 0, 'un vendedor sin clientes sale vacío');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

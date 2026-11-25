@@ -137,14 +137,14 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
                 className="boton min-h-[44px] border-oro bg-oro/15 !font-semibold text-oro">👤 {vendedor} ✕</button>
             ) : (
               <button type="button" onClick={() => setEligiendo(eligiendo === 'vendedor' ? '' : 'vendedor')}
-                aria-expanded={eligiendo === 'vendedor'} className="boton min-h-[44px]">👤 Por vendedor…</button>
+                aria-expanded={eligiendo === 'vendedor'} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
             )}
             {socio ? (
               <button type="button" onClick={() => setSocio('')}
                 className="boton min-h-[44px] border-cielo-fuerte bg-cielo/15 !font-semibold text-cielo-texto">🤝 {nombreSocio(socio)} ✕</button>
             ) : (
               <button type="button" onClick={() => setEligiendo(eligiendo === 'socio' ? '' : 'socio')}
-                aria-expanded={eligiendo === 'socio'} className="boton min-h-[44px]">🤝 Por socio…</button>
+                aria-expanded={eligiendo === 'socio'} aria-haspopup="listbox" className="boton min-h-[44px]">🤝 Por socio…</button>
             )}
           </div>
         )}

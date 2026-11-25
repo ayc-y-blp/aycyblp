@@ -232,6 +232,27 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Clientes: filtrar por vendedor (2026-11-25)
+
+Lo pidió el cliente: *"pagos, gerencia y admin deberían poder filtrar por
+vendedor en clientes"*.
+
+- ***👤 Por vendedor…***, al lado de *Míos / Todos* y *📞 Por contactar*: la
+  misma pieza de Cotizaciones → *Lista*. Abre el buscador (`BuscarEnLista`) con
+  los vendedores que tienen clientes y cuántos; elegido, ***👤 Jorge 4 ✕*** lo
+  suelta. Se suma a *📞 Por contactar* y al buscador. *Míos* o *Todos* lo
+  sueltan también.
+- **Los clientes de un vendedor** son los que creó o a los que les cotizó —la
+  cuenta del filtro *Míos*, `clientePropio()`—, por su usuario o su nombre
+  (`clientesPorVendedor()` en `lib/asignar.ts`, con pruebas).
+- **Quién**: los que pueden cambiar el vendedor de un cliente
+  (`asignarVendedor`: pagos, la gerencia y el administrador). `/api/clientes`
+  manda `porVendedor` solo a ellos, junto con la lista de vendedores que ya les
+  mandaba; sin eso, el botón no sale. **Ningún permiso nuevo.**
+- **Lecturas de Google**: ninguna; sale de lo que la ruta ya leía.
+- **Ayuda**: el `?` de Clientes. **Ventanas**: la pantalla
+  `clientes-por-vendedor` entra en la prueba de espacio.
+
 ## La empresa del cliente, al lado de su nombre (2026-11-25)
 
 Lo pidió el cliente: *"y donde mostramos cotizaciones y mostramos el nombre del
@@ -307,6 +328,14 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
   el día del calendario y en *Sin fecha*. En el celular, donde la fila se
   dobla, va en su propio renglón, a la izquierda, y el total debajo: así las
   filas con pastilla quedan parejas.
+- **La frase del recontacto, con la misma regla** (lo decidió el cliente el
+  mismo día: *"sí, rojo desde el día"*): en la Agenda (*Tus pendientes* y
+  *🗓 Agenda*) y en *Lo conversado* del paso 4, *Contactar el lun 16 nov* va en
+  ámbar y *Quedaste en contactarlo hoy* o *…(hace 2 días)* en rojo, con el borde
+  de la fila rojo (`fraseDe()` en `lib/agenda.ts`, con pruebas). **Solo el día
+  elegido**: lo prometido (*✍ Por redactar*) y los recordatorios automáticos
+  siguen como antes, ámbar hoy y rojo atrasado. La tarjeta *🗓 Agenda* de la
+  Lista no cambia: cuenta todo lo de hoy.
 - **Las notas, de la más nueva a la más vieja, y con la misma hora, la anotada
   después** (`ordenarNotas()`, `ultimaNota()` en `lib/notas.ts`): la que viene
   después en la lista, que es la que se anotó después. A la pantalla las notas
@@ -751,6 +780,20 @@ uno para bebestibles"*.
   de la raíz, "El `?` de cada producto".
 - **Ayuda**: el `?` de Productos y los dos nuevos. **Ventanas**:
   `ficha-producto` mide 616px (era 495) y `ficha-producto-nuevo` 538 (era 417).
+
+- **Al apretar adentro, el campo trae el texto del sitio para trabajar desde
+  ahí** (2026-11-25, lo pidió el cliente con una foto de un producto nuevo:
+  *"cuando uno aprieta adentro del campo descripción, debería quedar el texto
+  por defecto editable para que puedo trabajar desde esta base"*). Al entrar a
+  *Qué incluye* o *Bebestibles* en blanco, el campo se llena con el texto de
+  siempre (`textoDeSiempre()`), el mismo que muestra de ejemplo; **al salir, si
+  quedó igual, vuelve a blanco** (`propioOVacio()`), como el 📝 de la
+  cotización: en blanco sigue al sitio y, en un menú de adulto, el menú de la
+  casa sigue arriba, en común. Entrar y salir sin cambiar nada no enciende
+  *Guardar cambios* (`ponerTexto()` compara con lo guardado). Un producto que el
+  sitio no describe no trae nada que llenar. **Ninguna lectura, permiso ni
+  columna.** **Ayuda**: `descripcionProducto`, `bebestiblesProducto` y el `?` de
+  Productos. La ficha mide lo mismo: el campo sigue de 3 renglones.
 
 ### Y en cada cotización, su propio texto (2026-11-24)
 
