@@ -251,12 +251,31 @@ cotizacion(Date.parse('2026-11-11T20:40:18.593Z'), {
   redactarAntes: '2026-11-13'
 });
 
+// Gonzalo Contreras (Daniela, 2026-11-25): vino del CRM antiguo, con su
+// historia en Notas internas y el evento en enero (sale con *Lo que viene*,
+// no en el mes en curso). Quedó en llamarlo el miércoles 11: atrasado.
+const gonzaloCrm = cotizacion(Date.parse('2026-11-10T22:07:00.000Z'), {
+  fecha: '2027-01-16', idCliente: 'C-0004', estado: 'Candidato', validoHasta: '', creadoPor: 'Daniela',
+  creado: '2026-11-10 19:07', invitados: 25, tipoEvento: 'Cumpleaños', anticipo: null,
+  notas: 'Del CRM (10-11-2026): etapa Contactado · llegó por Marketing/Redes · próximo seguimiento el 12-11-2026 · monto cotizado $520.000. (CRM-0004-a)',
+  recontactar: '2026-11-11'
+});
+
 // **Las notas del vendedor** (2026-11-23): dos conversaciones de Jorge con Andrés Pino.
 H['Notas'] = [not.ENCABEZADO_NOTAS,
   not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHR1A2', presupuesto: andres, cliente: 'C-0001', cuando: '2026-11-09 12:40',
     quien: 'Jorge', medio: 'WhatsApp', nota: 'Le mandé la cotización. La revisa con su gerente esta semana.' }),
   not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHV7K9', presupuesto: andres, cliente: 'C-0001', cuando: '2026-11-12 10:15',
-    quien: 'Jorge', medio: 'Llamada', nota: 'Dice que el lunes confirma cuántos niños van. Lo llamo el lunes en la mañana.' })];
+    quien: 'Jorge', medio: 'Llamada', nota: 'Dice que el lunes confirma cuántos niños van. Lo llamo el lunes en la mañana.' }),
+  // Una de su cumpleaños anterior, en la otra cotización: la ficha del
+  // cliente filtra las notas por cotización (2026-11-25).
+  not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MGF1B2', presupuesto: contreras, cliente: 'C-0004', cuando: '2026-10-06 18:30',
+    quien: 'Daniela', medio: 'Llamada', nota: 'Confirmó 42 personas. Pide la torta para las 17:00.' }),
+  // Dos del mismo minuto (2026-11-25): arriba tiene que salir la de después.
+  not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHX1A1', presupuesto: gonzaloCrm, cliente: 'C-0004', cuando: '2026-11-12 16:20',
+    quien: 'Daniela', medio: 'WhatsApp', nota: 'Le escribí: está comparando con otro lugar.' }),
+  not.filaNota(not.ENCABEZADO_NOTAS, { id: 'N-MHX1A2', presupuesto: gonzaloCrm, cliente: 'C-0004', cuando: '2026-11-12 16:20',
+    quien: 'Daniela', medio: 'WhatsApp', nota: 'Me respondió: quiere ver el menú de niños antes de decidir.' })];
 
 const encP = pre.ENCABEZADO_PRESUPUESTOS;
 H['Presupuestos'] = [encP, ...PRES.map((p) => pre.filaPresupuesto(encP, p))];

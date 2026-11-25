@@ -78,7 +78,8 @@ import SimularEvento from './SimularEvento';
 import EditarCliente from './EditarCliente';
 import ElegirFecha from './ElegirFecha';
 import NotasCotizacion from './NotasCotizacion';
-import { puedeVerNotas, iconoDeMedio, type Nota } from '@/lib/notas';
+import LoConversado from './LoConversado';
+import { puedeVerNotas, ultimaNota, type Nota } from '@/lib/notas';
 import { agendaDe, fraseDe } from '@/lib/agenda';
 import AplicarPromocion from './AplicarPromocion';
 import TextoDeLinea from './TextoDeLinea';
@@ -519,8 +520,7 @@ export default function CotizacionDialogo({
    * recontactos hubo"*). El próximo contacto es el de la agenda
    * (`agendaDe()`), con el día recién elegido en la ventana de notas.
    */
-  const ultimaNota = (datos.notas ?? []).filter((n) => n.presupuesto === grupoNotas)
-    .sort((a, b) => b.cuando.localeCompare(a.cuando))[0];
+  const ultima = ultimaNota(datos.notas ?? [], grupoNotas);
   const proximo = p
     ? agendaDe([p, ...alternativas].map((a) => ({ ...a, recontactar })), datos.hoy,
         { seguimientoDias: datos.seguimiento?.dias ?? 5, avisoEvento: datos.seguimiento?.antesEvento ?? 14 }).contactar[0]
@@ -1901,12 +1901,28 @@ export default function CotizacionDialogo({
           con el cliente y cuándo volver a contactarlo, a la vista en los cinco
           pasos. Solo para su vendedor y la gerencia (`puedeVerNotas()`). */}
       <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-2">
+      {/* **La última nota, en los cinco pasos** (2026-11-25, lo pidió el
+          cliente: *"se tiene que mostrar el último, no el primer comentario,
+          en paso 2 Evento y paso 4 Envío y en todos lados"*). Va dentro de
+          este botón, en un renglón: en el paso 2 un bloque aparte no cabía en
+          1280×650. Entera, al pasar el mouse y en *🗒 Notas*; en el paso 4
+          sigue además *Lo conversado*. El día del próximo contacto, en rojo si
+          se atrasó y en ámbar si es hoy, como la pastilla 📞. */}
       {p && veNotas && (
-        <button type="button" onClick={() => setNotasAbiertas(true)}
-          className="boton mb-4 min-h-[48px] w-full justify-center text-[15px] font-semibold sm:w-auto lg:order-last lg:mb-0
-                     lg:min-h-[44px] lg:min-w-[15rem] lg:shrink-0">
-          🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}
-          {esFecha(recontactar) && <span className="ml-1 font-normal text-hueso/70">· 📞 {enCorto(recontactar)}</span>}
+        <button type="button" onClick={() => setNotasAbiertas(true)} title={ultima ? ultima.nota : undefined}
+          className="boton mb-4 flex min-h-[48px] w-full flex-wrap items-center justify-center gap-x-2 text-[15px]
+                     font-semibold sm:w-auto lg:order-last lg:mb-0 lg:min-h-[44px] lg:min-w-[15rem] lg:max-w-[36rem]
+                     lg:flex-1 lg:flex-nowrap lg:justify-start">
+          <span className="shrink-0">🗒 Notas{notasDelGrupo ? ` · ${notasDelGrupo}` : ''}</span>
+          {esFecha(recontactar) && (
+            <span className={`shrink-0 ${recontactar < datos.hoy ? 'text-rojo-texto' : recontactar === datos.hoy
+              ? 'text-ambar-texto' : 'font-normal text-hueso/70'}`}>· 📞 {enCorto(recontactar)}</span>
+          )}
+          {ultima && (
+            <span className="min-w-0 basis-full truncate text-[14px] font-normal text-hueso/75 lg:basis-auto">
+              · {ultima.nota}
+            </span>
+          )}
         </button>
       )}
 
@@ -3344,7 +3360,7 @@ export default function CotizacionDialogo({
                 </div>
               )}
               {p && (veNotas || proximo) && (
-                <LoConversado veNotas={veNotas} cuantas={notasDelGrupo} ultima={ultimaNota}
+                <LoConversado veNotas={veNotas} cuantas={notasDelGrupo} ultima={ultima}
                   frase={proximo ? fraseDe(proximo, datos.hoy) : null}
                   onAnotar={() => setNotasAbiertas(true)} />
               )}
@@ -3997,50 +4013,6 @@ function Camino({ pasos }: { pasos: { nombre: string; listo: boolean }[] }) {
   );
 }
 
-const TONO_FRASE = { rojo: 'font-semibold text-rojo-texto', ambar: 'font-semibold text-ambar-texto', neutro: 'text-hueso/80' } as const;
-
-/**
- * **Lo conversado, al pie de *Seguimiento y envío*** (2026-11-23, lo pidió el
- * cliente con una foto: ahí había espacio). *Contactos · N*, cuántos van anotados,
- * cuándo toca el próximo —la misma frase de la agenda— y **solo la última
- * nota**: las demás están en *🗒 Notas*. La nota se ve a quien las lee (su
- * vendedor y la gerencia); el próximo contacto, a todos los que abren la
- * cotización.
- */
-function LoConversado({ veNotas, cuantas, ultima, frase, onAnotar }: {
-  veNotas: boolean; cuantas: number; ultima?: Nota;
-  frase: { texto: string; tono: keyof typeof TONO_FRASE } | null;
-  onAnotar: () => void;
-}) {
-  return (
-    <div className="border-t border-hueso/10 pt-2">
-      <p className="mb-1 flex items-center text-[13px] font-medium uppercase tracking-wide text-hueso/60">
-        {/* *Lo conversado · 3 contactos* se partía en dos renglones en la columna. */}
-        {veNotas ? <>Contactos · {cuantas}</> : 'Próximo contacto'}
-        {veNotas && <AyudaCorta tema="notas" />}
-        {veNotas && (
-          <button type="button" onClick={onAnotar}
-            className="boton ml-auto min-h-[40px] !border-oro font-semibold normal-case tracking-normal lg:min-h-[36px]">
-            📝 Anotar
-          </button>
-        )}
-      </p>
-      <p className={`text-[14px] ${frase ? TONO_FRASE[frase.tono] : 'text-hueso/60'}`}>
-        <span aria-hidden>📞 </span>{frase ? frase.texto : 'Sin próximo contacto: elígelo al anotar'}
-      </p>
-      {veNotas && ultima && (
-        <div className="mt-1.5 rounded-lg border border-hueso/15 bg-panel px-3 py-1.5">
-          <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-hueso/65">
-            <span>Última nota · {enCorto(ultima.cuando.slice(0, 10))}</span>
-            {ultima.medio && <span><span aria-hidden>{iconoDeMedio(ultima.medio)} </span>{ultima.medio}</span>}
-            <span>· <b className="text-hueso/85">{ultima.quien || '—'}</b></span>
-          </p>
-          <p className="mt-0.5 line-clamp-3 whitespace-pre-wrap break-words text-[14px] lg:line-clamp-2">{ultima.nota}</p>
-        </div>
-      )}
-    </div>
-  );
-}
 
 
 /** WhatsApp, correo y link: los tres preguntan "¿la mandaste?" (ver `mandar()`). */

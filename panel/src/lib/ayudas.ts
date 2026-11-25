@@ -296,9 +296,12 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ganó. Un día que ya pasó se mira y no se cotiza.',
       '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
       + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
-      + 'que esperan que alguien las siga y lo que falta cobrar. Parte en el mes '
-      + 'en curso: en el marco dorado eliges Mes, Semana o Todo, te mueves con '
-      + '◀ ▶ y eliges si cuenta la fecha del evento o la de cotización. Se filtra '
+      + 'que esperan que alguien las siga, a quiénes quedaste en recontactar y lo '
+      + 'que falta cobrar. Parte en Lo que viene: los eventos de hoy en adelante, '
+      + 'de cualquier mes, y los que todavía no tienen día. En el marco dorado '
+      + 'eliges también Semana, Mes o Todo, te mueves con ◀ ▶ y eliges si cuenta '
+      + 'la fecha del evento o la de cotización. 📞 Recontactar muestra todas las '
+      + 'que tienen un día para volver a contactarlo, de cualquier fecha. Se filtra '
       + 'además por estado y con el buscador; la gerencia, también por vendedor '
       + 'o por socio. '
       + 'La lista va por fecha del evento, de la más próxima a la más lejana; '
@@ -473,6 +476,13 @@ export const AYUDAS: Record<string, Ayuda> = {
       '*Míos* muestra los clientes que creaste o a los que les cotizaste; '
       + '*Todos*, la lista entera. Si todavía no tienes ninguno, parte en *Todos*. '
       + 'El buscador busca dentro de lo que estés mirando.',
+      '📞 Por contactar deja solo los clientes con un día elegido para volver a '
+      + 'contactarlos, el más cercano primero. Ese día sale en su línea, en rojo si '
+      + 'se atrasó y en ámbar si es hoy. Al abrir la ficha ves la última nota y, en '
+      + 'cada cotización, su próximo contacto y 📝 Anotar: la misma ventanita de la '
+      + 'cotización, con qué conversaron y cuándo volver a contactarlo. Si tiene '
+      + 'notas en dos o más cotizaciones, en 🗒 Notas eliges de cuál (Todas o el '
+      + 'N° de cada una), y con Todas cada nota dice de qué cotización es.',
       'La gerencia, el encargado de pagos y el administrador pueden cambiar '
       + 'el vendedor de un cliente: al abrir su ficha, *Vendedor: … · Cambiar…*. '
       + 'Lo mismo en una cotización, en el paso Evento.'
@@ -1274,6 +1284,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Apriétala para ver la agenda entera: lo de hoy y lo de los próximos 7 días. No sigue al mes de arriba.'
     ]
   },
+  listaRecontactar: {
+    titulo: '📞 Recontactar',
+    texto: [
+      'Las cotizaciones con un día elegido para volver a contactar al cliente, de cualquier fecha: no sigue al periodo de arriba.',
+      'El día se elige al anotar, en 📝 Anotar. Apriétala y la lista las muestra por ese día, las atrasadas primero.',
+      'Cada una lleva su pastilla 📞: en rojo si se atrasó, en ámbar si es hoy.'
+    ]
+  },
   listaPorCobrar: {
     titulo: 'Por cobrar',
     texto: [
@@ -1286,7 +1304,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Lo que ganó quien dice el título —todo el equipo, tú, o el vendedor o el socio que elegiste arriba—, mes a mes. Muestra los últimos seis meses con algo ganado.',
       'Cuenta el día en que se marcó ganada, no el día del evento. Lo importado del CRM cuenta el día en que se importó.',
-      'Sale cuando miras Todo. Con Mes o Semana, lo ganado en ese periodo lo dice la tarjeta Ganado.'
+      'Sale cuando miras Todo. Con Lo que viene, Semana o Mes, lo ganado en ese periodo lo dice la tarjeta Ganado.'
     ]
   },
 
@@ -1393,7 +1411,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Qué conversaron con el cliente, por qué medio y cuándo volver a contactarlo. Se ordenan solas por día, la más nueva primero, y valen para todas las alternativas de la cotización.',
       'Las leen solo el vendedor de la cotización y la gerencia. Una nota no se borra: quien la escribió la corrige el mismo día.',
       'El día que elijas aparece en tu agenda. Si no eliges uno, una cotización mandada te la recuerda sola a los días de Configuración.',
-      'En el paso Envío, al pie de Seguimiento y envío, ves cuántos contactos van anotados (Contactos · N), cuándo toca el próximo y la última nota. Las demás, en 🗒 Notas.'
+      'La última nota sale arriba, en el botón 🗒 Notas, en todos los pasos de la cotización. En el paso Envío ves además cuántos contactos van anotados (Contactos · N) y cuándo toca el próximo. La última también sale en la Agenda y en la ficha del cliente.',
+      'Lo que vino del CRM antiguo es la primera nota, firmada Del CRM antiguo.'
     ]
   },
   redactarAntes: {

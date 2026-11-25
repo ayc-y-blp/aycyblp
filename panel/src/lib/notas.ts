@@ -126,21 +126,82 @@ export function notasVisibles(
   return notas.filter((n) => suyos.has(n.presupuesto));
 }
 
+/**
+ * **De la más nueva a la más vieja, y con la misma hora, la anotada después
+ * primero** (2026-11-25, lo marcó el cliente con una foto: *hallo* y *hallo 2*,
+ * las dos a las 16:20, y arriba salía *hallo*). `Cuándo` llega al minuto: dos
+ * notas del mismo minuto empataban, y el orden de la pestaña —la vieja
+ * primero— decidía. Ahora el empate lo gana la que viene después en la
+ * lista, que es la que se anotó después (la pestaña se lee en orden y las
+ * notas se agregan al final). Va con `T` porque a la pantalla las notas
+ * llegan sin `fila`.
+ */
+export function ordenarNotas<T extends Pick<Nota, 'cuando'>>(notas: T[]): T[] {
+  return notas.map((n, i) => ({ n, i }))
+    .sort((a, b) => b.n.cuando.localeCompare(a.n.cuando) || b.i - a.i)
+    .map((x) => x.n);
+}
+
 /** Las del grupo, de la más nueva a la más vieja. */
-export function notasDelGrupo(notas: Nota[], grupo: string): Nota[] {
-  return notas.filter((n) => n.presupuesto === grupo).sort((a, b) => b.cuando.localeCompare(a.cuando));
+export function notasDelGrupo<T extends Pick<Nota, 'cuando' | 'presupuesto'>>(notas: T[], grupo: string): T[] {
+  return ordenarNotas(notas.filter((n) => n.presupuesto === grupo));
+}
+
+/** La última nota del grupo, o `undefined`: la que se muestra en todas partes. */
+export function ultimaNota<T extends Pick<Nota, 'cuando' | 'presupuesto'>>(notas: T[], grupo: string): T | undefined {
+  return notasDelGrupo(notas, grupo)[0];
 }
 
 /** Por día, el más nuevo primero: `[fecha, notas del día]`. */
-export function notasPorDia(notas: Nota[]): [Fecha, Nota[]][] {
-  const m = new Map<Fecha, Nota[]>();
-  for (const n of [...notas].sort((a, b) => b.cuando.localeCompare(a.cuando))) {
+export function notasPorDia<T extends Pick<Nota, 'cuando'>>(notas: T[]): [Fecha, T[]][] {
+  const m = new Map<Fecha, T[]>();
+  for (const n of ordenarNotas(notas)) {
     const f = n.cuando.slice(0, 10);
     const dia = esFecha(f) ? f : '';
     if (!m.has(dia)) m.set(dia, []);
     m.get(dia)!.push(n);
   }
   return [...m];
+}
+
+/** Quién firma la nota que vino del CRM antiguo. */
+export const QUIEN_CRM = 'CRM antiguo';
+
+/** El encabezado que el importador puso en *Notas internas*: *"Del CRM (20-11-2026): "*. */
+const DEL_CRM = /^Del CRM \((\d{1,2})-(\d{1,2})-(\d{4})\):\s*/;
+
+/**
+ * **Lo que vino del CRM antiguo, como la primera nota** (2026-11-25, lo pidió
+ * el cliente: *"agrega el comentario que viene del CRM antiguo como primer
+ * comentario"*). Las cotizaciones importadas traen su historia en *Notas
+ * internas* (`Notas` de `Presupuestos`), con el encabezado *Del CRM
+ * (20-11-2026):*, y no en la pestaña `Notas`: por eso no salía en *Lo
+ * conversado*.
+ *
+ * **No se escribe nada**: se arma al leer, una por grupo de alternativas,
+ * con la fecha del encabezado (sin hora) y firmada *CRM antiguo*. Como es
+ * del día de la exportación, queda siempre como la más vieja. No se corrige
+ * —no es de nadie— y sigue a *Notas internas*: si alguien la cambia ahí,
+ * cambia acá. Sin la marca del importador al final, que es para él.
+ */
+export function notasDelCrm(
+  presupuestos: { id: string; grupo?: string; idCliente?: string; notas?: string }[]
+): Nota[] {
+  const vistos = new Set<string>();
+  const salida: Nota[] = [];
+  for (const p of presupuestos) {
+    const grupo = p.grupo || p.id;
+    if (vistos.has(grupo)) continue;
+    const texto = String(p.notas ?? '').trim();
+    const m = DEL_CRM.exec(texto);
+    if (!m) continue;
+    vistos.add(grupo);
+    const cuando = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const nota = texto.slice(m[0].length).replace(/\s*\(CRM-[\w-]+\)\s*$/, '').trim();
+    salida.push({ id: `CRM-${grupo}`, presupuesto: grupo, cliente: p.idCliente ?? '',
+      cuando: esFecha(cuando) ? cuando : '', quien: QUIEN_CRM, medio: '', nota: nota || texto, fila: 0 });
+  }
+  return salida;
 }
 
 /** Su autor la corrige el mismo día; después es historia. */

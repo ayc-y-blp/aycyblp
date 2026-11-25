@@ -24,13 +24,15 @@ import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
 import BuscarEnLista from './BuscarEnLista';
+import { PastillaContacto } from './Pastilla';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
 import { agendaDe, cuentasDeHoy, type ItemAgenda } from '@/lib/agenda';
 import {
   veElEquipo, unaPorGrupo, enRango, rangoDe, pasaFiltro, calzaBusqueda, resumenLista, ganadoPorMes,
-  cuentasPorFiltro, proximosPasos, ordenarLista, vendedoresDe,
+  cuentasPorFiltro, proximosPasos, ordenarLista, vendedoresDe, enLoQueViene, LO_QUE_VIENE,
+  ordenarPorRecontacto, cuentasDeRecontacto,
   type ContextoLista, type FiltroLista, type PorFecha
 } from '@/lib/listaCotizaciones';
 
@@ -51,7 +53,8 @@ const ESTADOS: [FiltroLista, string][] = [
   ['ganadas', 'Ganadas'], ['cerradas', 'Perdidas y vencidas'], ['todas', 'Todas']
 ];
 const DE_LAS_TARJETAS: Partial<Record<FiltroLista, string>> = {
-  mandadas: 'lo mandado', porCobrar: 'las ganadas con plata por cobrar'
+  mandadas: 'lo mandado', porCobrar: 'las ganadas con plata por cobrar',
+  recontactar: 'las que tienen un día para recontactar, de todas las fechas'
 };
 
 export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda }: {
@@ -74,24 +77,36 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   const equipo = veElEquipo(rol);
   const [filtro, setFiltro] = useState<FiltroLista>('enCarrera');
   const [busqueda, setBusqueda] = useState('');
-  /** `''`: todo; `AAAA-MM`: un mes; `AAAA-MM-DD`: la semana que parte ese lunes. */
-  // **Parte en el mes en curso** (2026-11-22, lo pidió el cliente: *"por
-  // defecto debería estar puesto mes"*): *Semana* y *Todo* quedan a un toque.
-  const [periodo, setPeriodo] = useState(ctx.hoy.slice(0, 7));
+  /**
+   * `'viene'`: lo que viene; `''`: todo; `AAAA-MM`: un mes; `AAAA-MM-DD`: la
+   * semana que parte ese lunes.
+   */
+  // **Parte en *Lo que viene*** (2026-11-25, lo pidió el cliente: *"dale, lo
+  // que viene"*). Hasta ese día partía en el mes en curso (2026-11-22), y lo
+  // importado del CRM con su día en diciembre o enero no se veía: estaba en
+  // la Agenda y no en la Lista. *Semana*, *Mes* y *Todo* quedan a un toque.
+  const [periodo, setPeriodo] = useState<string>(LO_QUE_VIENE);
   const [porFecha, setPorFecha] = useState<PorFecha>('evento');
   const [vendedor, setVendedor] = useState('');
   const [socio, setSocio] = useState('');
   const [eligiendo, setEligiendo] = useState<'' | 'vendedor' | 'socio'>('');
 
-  const rango = rangoDe(periodo);
+  const viene = periodo === LO_QUE_VIENE;
+  const rango = viene ? null : rangoDe(periodo);
   // **De quién**: el vendedor, lo suyo; quien ve el equipo, lo que deja ver
   // *Mías / De todos* y, si eligió, un vendedor o un socio.
   const deQuien = useMemo(() => {
     const desde = equipo ? visibles : mias;
     return desde.filter((p) => (!vendedor || p.creadoPor === vendedor) && (!socio || p.socio === socio));
   }, [equipo, visibles, mias, vendedor, socio]);
-  const base = useMemo(() => unaPorGrupo(deQuien.filter((p) => enRango(p, rango, porFecha)), ctx),
-    [deQuien, rango?.desde, rango?.hasta, porFecha, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  const base = useMemo(() => unaPorGrupo(deQuien.filter((p) => (viene ? enLoQueViene(p, ctx.hoy) : enRango(p, rango, porFecha))), ctx),
+    [deQuien, viene, rango?.desde, rango?.hasta, porFecha, ctx]); // eslint-disable-line react-hooks/exhaustive-deps
+  // **📞 Recontactar no sigue al periodo** (2026-11-25, lo pidió el cliente:
+  // *"un cuadro como el de agenda para filtrar por recontactar y aparecen
+  // todas las cotizaciones que tienen un recontacto puesto"*): de *De quién*,
+  // todas las fechas.
+  const todasDeQuien = useMemo(() => unaPorGrupo(deQuien, ctx), [deQuien, ctx]);
+  const recontacto = useMemo(() => cuentasDeRecontacto(todasDeQuien, ctx.hoy), [todasDeQuien, ctx]);
   const r = useMemo(() => resumenLista(base, ctx), [base, ctx]);
   const meses = useMemo(() => ganadoPorMes(unaPorGrupo(deQuien, ctx), ctx), [deQuien, ctx]);
   const cuantas = useMemo(() => cuentasPorFiltro(base, ctx), [base, ctx]);
@@ -99,9 +114,10 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   // próximos días, de lo que se mira en *De quién*.
   const agenda = useMemo(() => agendaDe(deQuien, ctx.hoy, ctx.seguimiento), [deQuien, ctx]);
   const deHoy = cuentasDeHoy(agenda);
-  const lista = useMemo(() => ordenarLista(
-    base.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx),
-  [base, filtro, busqueda, ctx]);
+  const lista = useMemo(() => (filtro === 'recontactar'
+    ? ordenarPorRecontacto(todasDeQuien.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx.hoy)
+    : ordenarLista(base.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx)),
+  [base, todasDeQuien, filtro, busqueda, ctx]);
 
   const nombreSocio = (id: string) => socios.find((s) => s.id === id)?.nombre ?? id;
   const esMes = periodo.length === 7;
@@ -139,10 +155,14 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
             flechas y por qué fecha se cuenta, en un mismo marco y en la fila de
             *De quién*. La frase *Mostrando…* que había acá se fue: repetía lo
             que dicen los botones. */}
+        {/* *Lo que viene · Semana · Mes*, en el orden de los calendarios
+            (`MODOS_CALENDARIO`), y *Todo* al final (2026-11-25). */}
         <ElegirPeriodo
-          modos={[{ clave: 'mes', rotulo: 'Mes' }, { clave: 'semana', rotulo: 'Semana' }, { clave: 'todo', rotulo: 'Todo' }]}
-          modo={!periodo ? 'todo' : esMes ? 'mes' : 'semana'}
-          onModo={(m) => setPeriodo(m === 'mes' ? ctx.hoy.slice(0, 7) : m === 'semana' ? semanaDe(ctx.hoy) : '')}
+          modos={[{ clave: 'viene', rotulo: 'Lo que viene' }, { clave: 'semana', rotulo: 'Semana' },
+            { clave: 'mes', rotulo: 'Mes' }, { clave: 'todo', rotulo: 'Todo' }]}
+          modo={viene ? 'viene' : !periodo ? 'todo' : esMes ? 'mes' : 'semana'}
+          onModo={(m) => setPeriodo(m === 'viene' ? LO_QUE_VIENE : m === 'mes' ? ctx.hoy.slice(0, 7)
+            : m === 'semana' ? semanaDe(ctx.hoy) : '')}
           titulo={rango ? titulo : undefined}
           onMover={(n) => setPeriodo(esMes ? moverMes(periodo, n) : sumarDias(periodo, 7 * n))}
           fechas={rango ? [
@@ -171,7 +191,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       )}
 
       {/* 2. Las tarjetas. */}
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
         <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
           nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}
           tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'enCarrera'} onClick={() => setFiltro('enCarrera')} />
@@ -194,6 +214,15 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
           tono={deHoy.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
             : deHoy.hoy ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
           activa={filtro === 'agenda'} onClick={() => alternar('agenda')} />
+        {/* **📞 Recontactar** (2026-11-25): todas las que tienen un día para
+            volver a contactarlo, de todas las fechas. Se aprieta y la lista
+            las muestra por ese día, lo atrasado primero. */}
+        <Tarjeta que="Recontactar" ayuda="listaRecontactar" valor={String(recontacto.total)}
+          nota={recontacto.atrasadas ? `${recontacto.atrasadas} ${recontacto.atrasadas === 1 ? 'atrasada' : 'atrasadas'}${recontacto.hoy ? ` · ${recontacto.hoy} hoy` : ''}`
+            : recontacto.hoy ? `${recontacto.hoy} para hoy` : recontacto.total ? 'ninguna atrasada' : 'ninguna puesta'}
+          tono={recontacto.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
+            : recontacto.hoy ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
+          activa={filtro === 'recontactar'} onClick={() => alternar('recontactar')} />
         <Tarjeta que="Por cobrar" ayuda="listaPorCobrar" valor={enPesos(r.porCobrar.monto)}
           nota={`${r.porCobrar.n} ${r.porCobrar.n === 1 ? 'ganada' : 'ganadas'} con saldo`}
           tono={r.porCobrar.monto ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
@@ -206,7 +235,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
           un socio, lo que se eligió en *De quién*—, y **sale solo mirando
           *Todo***: con *Mes* o *Semana* el periodo de arriba no lo movía, y la
           tarjeta *Ganado* ya dice lo de ese periodo. */}
-      {meses.length > 0 && !rango && (
+      {meses.length > 0 && periodo === '' && (
         <div className="mt-3 lg:flex lg:items-center lg:gap-3">
           <p className="flex shrink-0 flex-wrap items-center gap-x-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">
             Ganado mes a mes ·
@@ -237,7 +266,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       </div>
       {DE_LAS_TARJETAS[filtro] && (
         <p className="mt-2 flex flex-wrap items-center gap-2 text-[14px] lg:order-3 lg:mt-0 lg:basis-full">
-          Mostrando {DE_LAS_TARJETAS[filtro]} ({cuantas[filtro]}).
+          Mostrando {DE_LAS_TARJETAS[filtro]} ({filtro === 'recontactar' ? recontacto.total : cuantas[filtro]}).
           <button type="button" className="boton min-h-[40px]" onClick={() => setFiltro('enCarrera')}>Ver todo lo en carrera</button>
         </p>
       )}
@@ -258,7 +287,11 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
                   {equipo && p.creadoPor && <span>👤 {p.creadoPor}</span>}
                   {p.socio && <span>🤝 {nombreSocio(p.socio)}</span>}
                   {p.tipoEvento && <span>{p.tipoEvento}</span>}
-                  {proximosPasos(p, ctx).map((x) => <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>)}
+                  {/* El día elegido para recontactarlo va como la pastilla 📞
+                      (2026-11-25): la misma de la ficha del cliente. */}
+                  {proximosPasos(p, ctx).map((x) => (x.contacto
+                    ? <PastillaContacto key={x.texto} fecha={x.contacto} hoy={ctx.hoy} />
+                    : <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
                 </>
               );
               return fila(p, detalle);

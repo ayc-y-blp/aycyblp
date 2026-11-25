@@ -38,8 +38,13 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
     </>
   );
   return (
-    <div className={`min-w-0 rounded-xl border-2 px-3 py-2 ${tono} ${activa ? 'ring-2 ring-oro ring-offset-2 ring-offset-tinta' : ''}`}>
-      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
+    // **Un poco menos de aire en pantallas anchas** (2026-11-25): con la
+    // tarjeta *Recontactar*, la Lista lleva siete en una fila y *Tasa de
+    // cierre* se doblaba en dos renglones —su número quedaba más abajo que el
+    // de las otras—. El espaciado entre letras baja de *wider* a *wide* y el
+    // margen, desde 1280px, de 12 a 10px. La letra no baja.
+    <div className={`min-w-0 rounded-xl border-2 px-3 py-2 xl:px-2.5 ${tono} ${activa ? 'ring-2 ring-oro ring-offset-2 ring-offset-tinta' : ''}`}>
+      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-hueso/70">
         {que}<AyudaCorta tema={ayuda} />
       </p>
       {onClick ? (

@@ -25,7 +25,7 @@ import ElegirFecha from './ElegirFecha';
 import FechaDia from './FechaDia';
 import { avisar } from './AvisoFlotante';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
-import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, type Nota } from '@/lib/notas';
+import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, QUIEN_CRM, type Nota } from '@/lib/notas';
 import { esFecha, sumarDias, type Fecha } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
 
@@ -43,8 +43,11 @@ function guardarBorrador(grupo: string, texto: string) {
 }
 
 export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambio, onCerrar, onAnotado }: {
-  /** La cotización del grupo desde donde se abrió. */
-  p: Presupuesto;
+  /**
+   * La cotización del grupo desde donde se abrió: solo lo que la ventana usa,
+   * para que la abra también la ficha del cliente (2026-11-25).
+   */
+  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'>;
   grupo: string;
   /** Las notas que esta cuenta puede leer (de todas sus cotizaciones). */
   notas: Nota[];
@@ -152,8 +155,13 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
  * hora, el medio y quién la escribió; su autor la corrige el mismo día.
  * La misma pieza en la ventana de notas y en la ficha del cliente.
  */
-export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todavía no hay notas.' }: {
+export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todavía no hay notas.', cotizacionDe }: {
   notas: Nota[]; hoy: Fecha; usuario: string; onCambio: () => void; vacio?: string;
+  /**
+   * De qué cotización es cada nota (*N° 420000*), para la ficha de un cliente
+   * con varias (2026-11-25). Sin esto, no se dice: en una cotización es obvio.
+   */
+  cotizacionDe?: (n: Nota) => string;
 }) {
   const [corrigiendo, setCorrigiendo] = useState<{ id: string; texto: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -189,7 +197,8 @@ export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todaví
                   <span aria-hidden>{iconoDeMedio(n.medio)}</span>
                   <span className="tabular-nums">{n.cuando.slice(11, 16)}</span>
                   {n.medio && <span>{n.medio}</span>}
-                  <span>· <b className="text-hueso/85">{n.quien || '—'}</b></span>
+                  <span>· <b className="text-hueso/85">{n.quien === QUIEN_CRM ? 'Del CRM antiguo' : n.quien || '—'}</b></span>
+                  {cotizacionDe?.(n) && <span className="font-semibold text-hueso/80">· {cotizacionDe(n)}</span>}
                   <span className="flex-1" />
                   {sePuedeCorregir(n, usuario, hoy) && corrigiendo?.id !== n.id && (
                     <button type="button" className="boton min-h-[36px] !text-[13px]"

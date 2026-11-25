@@ -22,8 +22,10 @@ import { Aviso } from './CalendarView';
 import { BotonMias, BotonTodos } from './BotonMias';
 import CambiarVendedor from './CambiarVendedor';
 import EditarCliente, { CLIENTE_VACIO, CamposCliente } from './EditarCliente';
-import { HistorialNotas } from './NotasCotizacion';
-import type { Nota } from '@/lib/notas';
+import NotasCotizacion, { HistorialNotas } from './NotasCotizacion';
+import { UltimaNota } from './LoConversado';
+import { PastillaContacto } from './Pastilla';
+import { ordenarNotas, type Nota } from '@/lib/notas';
 import { avisar } from './AvisoFlotante';
 import {
   buscarClientes, porNombreCliente, type Cliente, type DatosCliente
@@ -36,7 +38,22 @@ import FechaDia from './FechaDia';
 interface EnHistorial {
   id: string; folio: string; fecha: string; periodo: string; estado: string;
   total: number; grupo: string;
+  /** El día elegido para volver a contactarlo (2026-11-25), o `''`. */
+  recontactar?: string;
+  /** Si esta cuenta anota en esa cotización (su vendedor o la gerencia). */
+  anota?: boolean;
 }
+
+/** Las cotizaciones (grupos) con notas, la de la nota más nueva primero. */
+const gruposDeNotas = (notas: Nota[]) => [...new Set(ordenarNotas(notas).map((n) => n.presupuesto))];
+
+/** El N° de un grupo: el de su cotización principal, o el de cualquiera del grupo. */
+const folioDelGrupo = (h: EnHistorial[] = [], grupo: string) =>
+  (h.find((x) => x.id === grupo) ?? h.find((x) => x.grupo === grupo))?.folio ?? '—';
+
+/** El recontacto más cercano de un cliente, entre sus cotizaciones, o `''`. */
+const primerRecontacto = (h: EnHistorial[] = []) =>
+  h.map((x) => x.recontactar ?? '').filter(Boolean).sort()[0] ?? '';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -50,6 +67,13 @@ export default function ClientesEditor() {
   const [notas, setNotas] = useState<Record<string, Nota[]>>({});
   /** Si las notas de la ficha abierta están a la vista: parten plegadas. */
   const [verNotas, setVerNotas] = useState(false);
+  /**
+   * **De qué cotización se ven las notas** (2026-11-25, lo pidió el cliente:
+   * *"¿qué pasa si el cliente tiene dos cotizaciones vigentes… puedes mostrar
+   * las notas de ambas cotizaciones pero filtrable por cotización?"*): `''`
+   * son todas, si no, el grupo. Vuelve a *Todas* al abrir otra ficha.
+   */
+  const [notasDe, setNotasDe] = useState('');
   const [sinFicha, setSinFicha] = useState(0);
   /** Para cambiar el vendedor (2026-11-22): solo llega a quien puede. */
   const [vendedores, setVendedores] = useState<{ usuario: string; nombre: string }[] | null>(null);
@@ -72,6 +96,17 @@ export default function ClientesEditor() {
   const [mios, setMios] = useState<string[]>([]);
   const [ver, setVer] = useState<'mios' | 'todos' | null>(null);
   /**
+   * **📞 Por contactar** (2026-11-25, lo pidió el cliente: *"tiene que llegar
+   * una notificación de recontacto en varios lugares, ficha cliente…"*): solo
+   * los que tienen un día elegido para volver a contactarlos, el más cercano
+   * primero. Se aprieta para filtrar y otra vez para soltar.
+   */
+  const [porContactar, setPorContactar] = useState(false);
+  const [hoyDia, setHoyDia] = useState('');
+  const [usuario, setUsuario] = useState('');
+  /** La ventanita de las notas abierta desde la ficha: de qué cotización y de quién. */
+  const [anotando, setAnotando] = useState<{ h: EnHistorial; nombre: string } | null>(null);
+  /**
    * Qué ficha está abierta. Una a la vez, como en `/equipo`. Lo escrito y su
    * guardado viven en `EditarCliente`, la misma pieza de la ventana de cotizar.
    */
@@ -92,6 +127,8 @@ export default function ClientesEditor() {
     setClientes(d.clientes);
     setCotizaciones(d.cotizaciones ?? {});
     setHistorial(d.historial ?? {});
+    setHoyDia(d.hoy ?? '');
+    setUsuario(d.usuario ?? '');
     setNotas(d.notas ?? {});
     setSinFicha(d.sinFicha ?? 0);
     setMios(d.mios ?? []);
@@ -105,15 +142,20 @@ export default function ClientesEditor() {
   const sonMios = useMemo(() => new Set(mios), [mios]);
   const hayFiltro = !!clientes && clientes.length > 0;
   const soloMios = hayFiltro && (ver ?? (mios.length > 0 ? 'mios' : 'todos')) === 'mios';
-  const visibles = useMemo(
-    () => (clientes ? [...buscarClientes(soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes, busqueda)]
-      .sort(porNombreCliente) : []),
-    [clientes, busqueda, soloMios, sonMios]);
+  const deQuien = useMemo(() => (clientes ? (soloMios ? clientes.filter((c) => sonMios.has(c.id)) : clientes) : []),
+    [clientes, soloMios, sonMios]);
+  const conRecontacto = deQuien.filter((c) => primerRecontacto(historial[c.id])).length;
+  const visibles = useMemo(() => {
+    const lista = [...buscarClientes(porContactar ? deQuien.filter((c) => primerRecontacto(historial[c.id])) : deQuien, busqueda)];
+    return porContactar
+      ? lista.sort((a, b) => primerRecontacto(historial[a.id]).localeCompare(primerRecontacto(historial[b.id])) || porNombreCliente(a, b))
+      : lista.sort(porNombreCliente);
+  }, [deQuien, busqueda, porContactar, historial]);
 
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!clientes) return <p className="text-hueso/50">Cargando…</p>;
 
-  const abrir = (c: Cliente) => setAbierta(abierta === c.id ? null : c.id);
+  const abrir = (c: Cliente) => { setAbierta(abierta === c.id ? null : c.id); setNotasDe(''); };
 
   async function crear(forzar = false) {
     if (!nuevo) return;
@@ -191,6 +233,13 @@ export default function ClientesEditor() {
             <BotonMias texto="Míos" cuantas={mios.length} elegido={soloMios} onClick={() => setVer('mios')} />
             <BotonTodos texto="Todos" cuantas={clientes!.length} elegido={!soloMios} onClick={() => setVer('todos')} />
           </div>
+        )}
+        {hayFiltro && (
+          <button type="button" aria-pressed={porContactar} onClick={() => setPorContactar(!porContactar)}
+            disabled={!conRecontacto && !porContactar}
+            className={`boton min-h-[44px] ${porContactar ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
+            📞 Por contactar <span className="ml-1 tabular-nums text-hueso/60">{conRecontacto}</span>
+          </button>
         )}
         {!nuevo && !soloMira && (
           <button onClick={() => { setNuevo({ ...CLIENTE_VACIO, nombre: busqueda }); setParecidas([]);
@@ -278,6 +327,8 @@ export default function ClientesEditor() {
                         {n} cotizaci{n === 1 ? 'ón' : 'ones'}
                       </span>
                     )}
+                    {/* El recontacto más cercano, también con la ficha cerrada. */}
+                    <PastillaContacto fecha={primerRecontacto(historial[c.id])} hoy={hoyDia} />
                   </button>
                   {n === 0 && !soloMira && !c.contactoTapado && (
                     <button onClick={() => void borrar(c)}
@@ -296,7 +347,18 @@ export default function ClientesEditor() {
                         <p className="text-[13px] font-semibold uppercase tracking-wide text-hueso/60">
                           Cotizaciones
                         </p>
-                        <span className="flex-1" />
+                        {/* **La última nota, a la vista** (2026-11-25, lo pidió el
+                            cliente: *"se tiene que mostrar el último comentario…
+                            en todos lados"*): con las notas plegadas, la última de
+                            sus cotizaciones, con su N° si tiene varias. En el
+                            computador va en esta fila, que tenía el medio vacío;
+                            en el celular, debajo. La misma cajita de la cotización. */}
+                        {!verNotas && (notas[c.id] ?? []).length > 0 ? (
+                          <UltimaNota nota={ordenarNotas(notas[c.id] ?? [])[0]}
+                            className="order-last min-w-0 basis-full lg:order-none lg:basis-0 lg:flex-1"
+                            cotizacion={gruposDeNotas(notas[c.id] ?? []).length > 1
+                              ? `N° ${folioDelGrupo(historial[c.id], ordenarNotas(notas[c.id] ?? [])[0].presupuesto)}` : ''} />
+                        ) : <span className="flex-1" />}
                         {/* **Las notas de sus cotizaciones** (2026-11-23): plegadas,
                             para que la ficha siga cabiendo en la pantalla. Solo
                             llegan las que esta cuenta lee. */}
@@ -311,11 +373,32 @@ export default function ClientesEditor() {
                             className="tecla boton">+ Cotizarle</a>
                         )}
                       </div>
-                      {verNotas && (notas[c.id] ?? []).length > 0 && (
-                        <div className="mb-3 rounded-lg border border-hueso/15 p-2.5">
-                          <HistorialNotas notas={notas[c.id] ?? []} hoy="" usuario="" onCambio={() => void cargar()} />
-                        </div>
-                      )}
+                      {verNotas && (notas[c.id] ?? []).length > 0 && (() => {
+                        const todas = notas[c.id] ?? [];
+                        const grupos = gruposDeNotas(todas);
+                        const varios = grupos.length > 1;
+                        const vistas = notasDe ? todas.filter((n) => n.presupuesto === notasDe) : todas;
+                        return (
+                          <div className="mb-3 rounded-lg border border-hueso/15 p-2.5">
+                            {/* Con notas en dos o más cotizaciones, un botón por
+                                cotización: son pocas y fijas. */}
+                            {varios && (
+                              <div className="mb-2.5 flex flex-wrap gap-2" role="group" aria-label="De qué cotización">
+                                {[{ g: '', t: 'Todas', n: todas.length },
+                                  ...grupos.map((g) => ({ g, t: `N° ${folioDelGrupo(historial[c.id], g)}`, n: todas.filter((x) => x.presupuesto === g).length }))]
+                                  .map(({ g, t, n }) => (
+                                    <button key={g || 'todas'} type="button" aria-pressed={notasDe === g} onClick={() => setNotasDe(g)}
+                                      className={`boton min-h-[40px] ${notasDe === g ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
+                                      {t} <span className="ml-1 tabular-nums text-hueso/60">{n}</span>
+                                    </button>
+                                  ))}
+                              </div>
+                            )}
+                            <HistorialNotas notas={vistas} hoy={hoyDia} usuario={usuario} onCambio={() => void cargar()}
+                              cotizacionDe={varios && !notasDe ? (n) => `N° ${folioDelGrupo(historial[c.id], n.presupuesto)}` : undefined} />
+                          </div>
+                        );
+                      })()}
                       {(historial[c.id] ?? []).length === 0 ? (
                         <p className="text-[14px] text-hueso/60">Todavía ninguna.</p>
                       ) : (
@@ -323,9 +406,9 @@ export default function ClientesEditor() {
                           {(historial[c.id] ?? []).map((h) => {
                             const alternativas = (historial[c.id] ?? []).filter((x) => x.grupo === h.grupo).length;
                             return (
-                              <li key={h.id}>
+                              <li key={h.id} className="flex items-stretch gap-2">
                                 <a href={`/presupuestos?abrir=${encodeURIComponent(h.id)}`}
-                                  className={`tecla flex flex-wrap items-center gap-x-3 gap-y-1 rounded border
+                                  className={`tecla flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 rounded border
                                               px-3 py-2 min-h-[48px] ${h.estado === 'Ganada'
                                     ? 'border-verde-fuerte bg-verde/10' : 'border-hueso/15'}`}>
                                   <span className="text-[14px] font-semibold">N° {h.folio}</span>
@@ -337,9 +420,17 @@ export default function ClientesEditor() {
                                     {/* Como en la lista de cotizaciones (2026-11-22): *DOM 22 nov 2026*. */}
                                     {h.fecha ? <FechaDia fecha={h.fecha} tamano="aviso" conAno /> : h.periodo}
                                   </span>
+                                  <PastillaContacto fecha={h.recontactar ?? ''} hoy={hoyDia} />
                                   <span className="flex-1" />
                                   <strong className="text-[15px]">{enPesos(h.total)}</strong>
                                 </a>
+                                {/* **📝 Anotar, desde la ficha** (2026-11-25): la
+                                    misma ventanita de la cotización —qué
+                                    conversaron y cuándo volver a contactarlo—. */}
+                                {h.anota && !soloMiraCotizar && (
+                                  <button type="button" onClick={() => setAnotando({ h, nombre: c.nombre })}
+                                    className="boton min-h-[48px] shrink-0 !border-oro font-semibold">📝 Anotar</button>
+                                )}
                               </li>
                             );
                           })}
@@ -368,6 +459,12 @@ export default function ClientesEditor() {
             );
           })}
         </ul>
+      )}
+      {anotando && (
+        <NotasCotizacion
+          p={{ id: anotando.h.id, cliente: anotando.nombre, recontactar: anotando.h.recontactar ?? '', fecha: anotando.h.fecha }}
+          grupo={anotando.h.grupo} notas={Object.values(notas).flat()} hoy={hoyDia} usuario={usuario}
+          onCambio={() => void cargar()} onCerrar={() => setAnotando(null)} />
       )}
     </section>
   );

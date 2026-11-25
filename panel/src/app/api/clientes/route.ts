@@ -13,7 +13,8 @@ import { grupoDe } from '@/lib/cotizar';
 import { hoy } from '@/lib/fechas';
 import { puede } from '@/lib/auth';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
-import { HOJA_NOTAS, notasVisibles, type Nota } from '@/lib/notas';
+import { HOJA_NOTAS, notasVisibles, notasDelCrm, puedeVerNotas, type Nota } from '@/lib/notas';
+import { recontactoDe } from '@/lib/agenda';
 import { vendedoresParaAsignar, estaAbierta } from '@/lib/asignar';
 import type { Cliente } from '@/lib/clientes';
 import { alcanceDeContacto, recortarCliente, clientePropio, estaTapado } from '@/lib/privacidad';
@@ -76,16 +77,25 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
     const historial: Record<string, {
       id: string; folio: string; fecha: string; periodo: string; estado: string;
       total: number; grupo: string;
+      /** El día elegido para volver a contactarlo, si sigue valiendo (`recontactoDe()`, 2026-11-25). */
+      recontactar: string;
+      /** Si esta cuenta lee y escribe las notas de esa cotización (`puedeVerNotas()`). */
+      anota: boolean;
     }[]> = {};
     if (verPresupuestos) {
       const lineas = await leerLineasPresupuesto().catch(() => []);
       const h = hoy();
+      // **El recontacto y las notas, también en la ficha del cliente**
+      // (2026-11-25, lo pidió el cliente). Un grupo de alternativas es una
+      // sola conversación: se anota si alguna es de esta cuenta.
+      const anotaEn = new Set(presupuestos.filter((p) => puedeVerNotas(quien.rol, quien.usuario, p.creadoPor))
+        .map((p) => grupoDe(p)));
       for (const p of presupuestos) {
         if (!p.idCliente) continue;
         (historial[p.idCliente] ??= []).push({
           id: p.id, folio: folioDe(p), fecha: p.fecha, periodo: p.periodo,
           estado: estadoVisible(p, h), total: totalDe(lineasDe(lineas, p.id), p.descuento),
-          grupo: grupoDe(p)
+          grupo: grupoDe(p), recontactar: recontactoDe(p, h), anota: anotaEn.has(grupoDe(p))
         });
       }
       for (const k of Object.keys(historial)) {
@@ -98,7 +108,8 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
     const notasPorCliente: Record<string, Omit<Nota, 'fila'>[]> = {};
     if (verPresupuestos) {
       const clienteDe = new Map(presupuestos.map((p) => [grupoDe(p), p.idCliente ?? '']));
-      for (const n of notasVisibles(await leerNotas().catch(() => []), presupuestos, quien.rol, quien.usuario)) {
+      for (const n of notasVisibles([...notasDelCrm(presupuestos), ...await leerNotas().catch(() => [])],
+        presupuestos, quien.rol, quien.usuario)) {
         const c = n.cliente || clienteDe.get(n.presupuesto) || '';
         if (!c) continue;
         const { fila: _f, ...sinFila } = n;
@@ -113,6 +124,8 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       mios: clientes.filter((c) => clientePropio(c, quien.usuario, presupuestos)).map((c) => c.id),
       cotizaciones,
       historial,
+      hoy: hoy(),
+      usuario: quien.usuario,
       notas: notasPorCliente,
       sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0,
       // **A quién se le puede pasar un cliente** (2026-11-22, `asignar.ts`), y

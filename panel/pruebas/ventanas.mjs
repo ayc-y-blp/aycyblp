@@ -103,8 +103,8 @@ export const PANTALLAS = [
   ['cotizaciones-mes', '/presupuestos', async (p) => {
     await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Mes' }).click(); await p.waitForTimeout(400); }],
   ['cotizaciones-lista', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); }],
-  // La Lista abre en *Mes* desde el 2026-11-22: la otra vista que se mide es *Todo*,
-  // la que trae *Ganado mes a mes*.
+  // La Lista abre en *Lo que viene* desde el 2026-11-25: la otra vista que se
+  // mide es *Todo*, la que trae *Ganado mes a mes*.
   ['cotizaciones-lista-todo', '/presupuestos', async (p) => {
     await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
     await p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }).click(); }],
@@ -114,6 +114,16 @@ export const PANTALLAS = [
   ['cotizaciones-agenda', '/presupuestos', async (p) => {
     await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
     await p.locator('p:visible', { hasText: '🗓 Agenda' }).first().locator('xpath=..').locator('button[aria-pressed]').click(); await p.waitForTimeout(300);
+  }],
+  // **📞 Recontactar** (2026-11-25): la tarjeta de la Lista, con todas las que tienen un día.
+  ['cotizaciones-lista-recontactar', '/presupuestos', async (p) => {
+    await p.locator('button:visible', { hasText: '📋 Lista' }).first().click(); await p.waitForTimeout(300);
+    await p.locator('p:visible', { hasText: /^Recontactar/ }).first().locator('xpath=..').locator('button[aria-pressed]').click(); await p.waitForTimeout(300);
+  }],
+  // Clientes con *📞 Por contactar* (2026-11-25).
+  ['clientes-por-contactar', '/clientes', async (p) => {
+    await p.locator('button:visible', { hasText: /^👥 Todos/ }).first().click().catch(() => {});
+    await p.locator('button:visible', { hasText: /Por contactar/ }).first().click(); await p.waitForTimeout(300);
   }],
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
@@ -194,6 +204,18 @@ export const ESCENAS = {
   'ficha-reserva-del-dia': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); },
   'ficha-persona-del-informe': personaDelInforme,
   'ficha-cliente-nuevo': async () => { await ir('/clientes'); await clic(boton(/Nuevo cliente/)); },
+  // **El recontacto y las notas en la ficha del cliente** (2026-11-25): Gonzalo
+  // Contreras, con dos cotizaciones, la última nota y *📝 Anotar* en cada una.
+  'ficha-cliente-recontacto': async () => {
+    await ir('/clientes'); await clic(boton(/Por contactar/));
+    await clic(p.locator('main button[aria-expanded="false"]', { hasText: 'Gonzalo Contreras' }));
+  },
+  // La ventanita de las notas, abierta desde la ficha del cliente. Solo se abre.
+  'v-notas-desde-ficha': async () => {
+    await ir('/clientes'); await clic(boton(/Por contactar/));
+    await clic(p.locator('main button[aria-expanded="false"]', { hasText: 'Gonzalo Contreras' }));
+    await clic(p.locator('main button:visible', { hasText: '📝 Anotar' }));
+  },
   // **Cobrar la mesa** (2026-11-23, `cobroLocal.ts`): la de Martín Araya, a la
   // que le faltan $18.000, con dos medios elegidos. La escena no cobra.
   'ficha-recepcion-cobro': async () => {

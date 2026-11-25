@@ -19,6 +19,8 @@
  * o un borrador no es gente posible todavía. Ver `CotizacionesVista`.
  */
 import type { ReactNode } from 'react';
+import { textoContacto } from '@/lib/agenda';
+import { esFecha } from '@/lib/fechas';
 
 const BASE = 'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[13px] font-semibold';
 
@@ -55,7 +57,17 @@ export const PASTILLA = {
    * borde fino, sin relleno y en minúscula, al lado del detalle de la
    * persona. La misma en Informe, Vendedores, Equipo y Extras.
    */
-  falta: `${BASE} border border-ambar/50 text-ambar-texto`
+  falta: `${BASE} border border-ambar/50 text-ambar-texto`,
+  /**
+   * **El día que quedó en volver a contactarlo** (2026-11-25, lo pidió el
+   * cliente: *"tiene que llegar una notificación de recontacto en varios
+   * lugares"*). La forma dice la urgencia, no solo el color: atrasado con
+   * borde grueso rojo, hoy con borde grueso ámbar, un día que viene con
+   * borde fino. Ver `PastillaContacto`.
+   */
+  contactoAtrasado: `${BASE} border-2 border-rojo-fuerte text-rojo-texto`,
+  contactoHoy: `${BASE} border-2 border-ambar-fuerte text-ambar-texto`,
+  contacto: `${BASE} border border-hueso/40 text-hueso/80`
 } as const;
 
 export function Pastilla({ tipo, children, title, className = '' }: {
@@ -81,5 +93,21 @@ export function PastillaCotizado({ cotizaciones = 0, posibles = 0, corta = false
     <span className={PASTILLA.cotizado} title="Gente que podría venir si se confirma: todavía no ocupa cupo">
       {corta ? (gente || cuantas) : <>{cuantas}{cuantas && gente && ' · '}{gente}</>}
     </span>
+  );
+}
+
+/**
+ * **📞 El próximo contacto elegido** (2026-11-25): la misma pastilla en la
+ * Lista de cotizaciones, en la ficha del cliente y en su tarjeta cerrada.
+ * Sin día (`''`), nada.
+ */
+export function PastillaContacto({ fecha, hoy, className = '' }: { fecha: string; hoy: string; className?: string }) {
+  if (!esFecha(fecha) || !esFecha(hoy)) return null;
+  const { texto, cuando } = textoContacto(fecha, hoy);
+  const tipo = cuando === 'atrasado' ? 'contactoAtrasado' : cuando === 'hoy' ? 'contactoHoy' : 'contacto';
+  return (
+    <Pastilla tipo={tipo} className={className} title="El día que quedaste en volver a contactarlo: se cambia al anotar">
+      <span aria-hidden>📞</span>{texto}
+    </Pastilla>
   );
 }

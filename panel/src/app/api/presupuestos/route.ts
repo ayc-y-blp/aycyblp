@@ -23,7 +23,7 @@ import {
 } from '@/lib/datos';
 import { HOJA_OTRAS_EMPRESAS, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { HOJA_CIERRES } from '@/lib/cierres';
-import { HOJA_NOTAS, notasVisibles } from '@/lib/notas';
+import { HOJA_NOTAS, notasVisibles, notasDelCrm } from '@/lib/notas';
 import { fechaDeAgenda } from '@/lib/agenda';
 import { HOJA_USUARIOS, cuentaDeSesion } from '@/lib/usuarios';
 import {
@@ -168,7 +168,10 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // **Las notas del vendedor** (2026-11-23, `lib/notas.ts`): solo las que
       // esta cuenta puede leer —las de sus cotizaciones, o todas si es la
       // gerencia o el administrador—. `Notas` va en la misma tanda.
-      notas: notasVisibles(notas, presupuestos, quien.rol, quien.usuario).map(({ fila: _f, ...n }) => n),
+      // **Con lo que vino del CRM antiguo como la primera nota** (2026-11-25,
+      // `notasDelCrm()`): se arma al leer, de lo ya leído.
+      notas: notasVisibles([...notasDelCrm(presupuestos), ...notas], presupuestos, quien.rol, quien.usuario)
+        .map(({ fila: _f, ...n }) => n),
       // **Las promociones, para aplicarlas en una cotización** (2026-11-24):
       // las activas, y las que ya están aplicadas en alguna aunque se hayan
       // apagado (para decir su nombre). `Promociones` va en la misma tanda.

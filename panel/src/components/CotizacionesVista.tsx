@@ -48,7 +48,7 @@ import { puede, puedeTocarPresupuesto, esSuya, ROL, type Rol } from '@/lib/auth'
 import Agenda from './Agenda';
 import NotasCotizacion from './NotasCotizacion';
 import { agendaDe, paraHoy, type ItemAgenda } from '@/lib/agenda';
-import { puedeVerNotas } from '@/lib/notas';
+import { puedeVerNotas, ordenarNotas, type Nota } from '@/lib/notas';
 import type { Ocupacion } from '@/lib/tipos';
 import PuntoDia, { PuntoYPalabra } from './PuntoDia';
 import FechaDia, { MarcaAhora, MARCO_HOY } from './FechaDia';
@@ -295,11 +295,14 @@ export default function CotizacionesVista() {
   const notasVisibles = datos.notas ?? [];
   const notasPorGrupo = new Map<string, number>();
   for (const n of notasVisibles) notasPorGrupo.set(n.presupuesto, (notasPorGrupo.get(n.presupuesto) ?? 0) + 1);
+  // La última de cada grupo: la primera de `ordenarNotas()` que se ve de él.
+  const ultimaPorGrupo = new Map<string, Nota>();
+  for (const n of ordenarNotas(notasVisibles)) if (!ultimaPorGrupo.has(n.presupuesto)) ultimaPorGrupo.set(n.presupuesto, n);
   const anotadasHoy = new Set(notasVisibles.filter((n) => n.quien === datos.usuario && n.cuando.slice(0, 10) === hoy)
     .map((n) => n.presupuesto)).size;
   /** La agenda dibujada, con los botones de cada fila: la misma en la Lista y en *Tus pendientes*. */
   const verAgenda = (agenda: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }, soloHoy = false) => (
-    <Agenda agenda={agenda} hoy={hoy} todas={datos.presupuestos} notasPorGrupo={notasPorGrupo}
+    <Agenda agenda={agenda} hoy={hoy} todas={datos.presupuestos} notasPorGrupo={notasPorGrupo} ultimaPorGrupo={ultimaPorGrupo}
       soloHoy={soloHoy} anotadasHoy={anotadasHoy}
       puedeTocar={(p) => puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor)}
       puedeAnotar={(p) => alternativasDe(p, datos.presupuestos).some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor))}
