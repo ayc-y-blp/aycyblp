@@ -36,7 +36,9 @@
    tomé. Una pregunta que se resuelve mirando el código no se hace.
 4. **Mostrar sin preguntar.** Todo cambio que se ve se manda con capturas
    —computador y celular, y el estado que importa— en la misma pasada en que
-   se termina, sin esperar a que lo pida.
+   se termina, sin esperar a que lo pida. **Y con el link de la versión de
+   prueba, siempre**: la única excepción es un cambio chico que el cliente ya
+   mandó a mergear directo.
 5. **Nada se mergea a producción sin preguntar.** La versión de prueba va
    sin aviso (commit, push, PR, preview). Mergear a producción solo cuando el
    cliente dice *"mergea"*, también lo chico y también un arreglo urgente

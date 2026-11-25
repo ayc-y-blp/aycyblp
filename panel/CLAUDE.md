@@ -243,6 +243,21 @@ se achicaba y se quedaba con todo el ancho.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
   describe cómo se dibuja la lista.
 
+## El catálogo se filtra por tipo (2026-11-25)
+
+Lo pidió el cliente con una foto de *Productos → 📦 Catálogo*: *"aquí deberíamos
+poder filtrar entre las distintas categorías, menú, extra, etc."*.
+
+- **Arriba de la lista, *Menú · Extra · Arriendo · Show*** (`TIPO_PRODUCTO`), con
+  cuántos hay de cada uno. **La forma del filtro de origen del calendario**:
+  pastillas redondas, la elegida en dorado, se aprieta para filtrar y otra vez para
+  soltar; un tipo sin productos va apagado. *Mostrar desactivados* va en la misma
+  fila.
+- **La tarjeta abierta se sigue viendo** aunque sea de otro tipo: un producto nuevo
+  nace como Menú y no desaparece si se estaba mirando *Extra*.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?` de
+  Productos.
+
 ## El lugar exclusivo: dos precios estándar y el show a su precio (2026-11-25, segunda pasada)
 
 Lo marcó el cliente con una foto del cotizador, un sábado con el lugar exclusivo: la casilla decía

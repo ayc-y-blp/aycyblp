@@ -67,6 +67,9 @@ decisión, actualizar también `TRASPASO.md`.
 ## 6. Preguntar el merge (siempre)
 
 Mandar **las capturas y el link de la preview** y preguntar *"¿mergeo?"*.
+**El link de prueba va siempre** (el del panel y, si toca el sitio, el del sitio:
+salen del chequeo del hosting en el PR); la única excepción es un cambio chico que
+el cliente ya mandó a mergear directo.
 **Nada va a producción sin el "mergea" del cliente**, también lo chico.
 Un arreglo urgente de algo roto en producción también se pregunta, diciendo
 que es urgente y qué está roto.

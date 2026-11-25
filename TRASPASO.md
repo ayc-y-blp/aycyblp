@@ -550,6 +550,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Condición, Extras, Fuera del local y Anticipación. Mide 677px en 1280×650, 27
   más que la pantalla, anotado en `NO_CABEN`. Ver `panel/CLAUDE.md`, "La ficha,
   ordenada".
+- **El catálogo de Productos se filtra por tipo** (25-11-2026): *Menú · Extra ·
+  Arriendo · Show* arriba de la lista. Ver `panel/CLAUDE.md`. **Y regla nueva:
+  el link de prueba, siempre**, con las capturas (sección 9).
 - **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un
@@ -1665,6 +1668,9 @@ misma pasada.
 - **Una captura no es un sí** (25-11-2026): una foto o un *"¿qué pasó?"* se
   contesta con el diagnóstico y una propuesta —qué archivos, qué otras
   pantallas toca— y se espera el sí explícito antes de editar.
+- **El link de prueba, siempre** (25-11-2026): cada cambio terminado va con el
+  link de la versión de prueba y las capturas, salvo uno chico que el cliente ya
+  mandó a mergear directo.
 - **No inventar datos del negocio** (precios, horarios, capacidades,
   direcciones): si falta, se pide; mejor un hueco visible que algo plausible
   y falso.

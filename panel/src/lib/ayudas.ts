@@ -413,6 +413,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Todo lo que se vende: los menús del sitio y lo que se cotiza, como la '
       + 'once, el desayuno, el show ecuestre o el arriendo. Un solo catálogo '
       + 'para que lo cotizado y lo reservado se llamen igual.',
+      'Arriba de la lista, *Menú · Extra · Arriendo · Show* muestran solo ese tipo, '
+      + 'con cuántos hay de cada uno; se aprieta otra vez para ver todos.',
       'Cada producto dice si se vende en el sitio y en las reservas, y si se '
       + 'puede cotizar. Los precios de reserva valen para las reservas anotadas '
       + 'a mano; el precio de cotización es el que propone una cotización, y '

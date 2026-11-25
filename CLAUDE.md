@@ -44,6 +44,13 @@ más abajo; esto es la lista para revisar.
   él pidió el cambio con palabras, no cuando mostró un problema. Nació de
   un arreglo a `BuscarEnLista` que se aplicó sin preguntar a partir de una
   captura.
+- **El link de prueba, siempre** (regla del cliente, 2026-11-25: *"no te olvides
+  siempre enviarme el link de prueba, si no es un merge chico directo… ponlo como
+  regla para que todos los chats lo hagan"*). Cada cambio que se termina se le
+  manda al cliente **con el link de la versión de prueba** —el del panel y, si toca
+  el sitio, el del sitio, que salen del chequeo de Vercel del PR—, junto con las
+  capturas. **La única excepción** es un cambio chico que el cliente ya mandó a
+  mergear directo (*"luego mergea"*): ahí se mergea y se avisa.
 - Cada cambio deja escrito en este archivo —o en `panel/CLAUDE.md`— qué
   cambió y por qué.
 - **Mostrar sin preguntar** (regla del cliente, 2026-11-12): todo cambio

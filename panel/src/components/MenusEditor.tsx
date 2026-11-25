@@ -126,6 +126,13 @@ export default function MenusEditor() {
   /** Qué tarjeta está abierta: la posición en la lista. Una a la vez. */
   const [abierta, setAbierta] = useState<number | null>(null);
   /**
+   * **Filtrar el catálogo por tipo** (2026-11-25, lo pidió el cliente: *"aquí
+   * deberíamos poder filtrar entre las distintas categorías, menú, extra,
+   * etc."*). La forma del filtro de origen del calendario: se aprieta para
+   * filtrar y otra vez para soltar, con cuántos hay de cada uno.
+   */
+  const [tipoVisto, setTipoVisto] = useState('');
+  /**
    * Los productos que ya se vendieron o se cotizaron, normalizados. A esos
    * no se les ofrece *Quitar* sino *Desactivar* (2026-11-10). Lo decide el
    * servidor, que además rechaza quitarlos.
@@ -312,10 +319,25 @@ export default function MenusEditor() {
         </div>
       )}
 
-      <MostrarDesactivados cuantos={menus.filter((m) => !m.activo).length}
-        visible={verInactivos} onCambio={(v) => { setVerInactivos(v); setAbierta(null); }} />
+      <div className="mb-3 flex flex-wrap items-center gap-2 [&>button]:mb-0">
+        <span role="group" aria-label="Qué tipo" className="flex flex-wrap items-center gap-2">
+          {Object.values(TIPO_PRODUCTO).map((t) => {
+            const n = menus.filter((m) => m.tipo === t && (m.activo || verInactivos)).length;
+            const elegido = tipoVisto === t;
+            return (
+              <button key={t} type="button" aria-pressed={elegido} disabled={!n && !elegido}
+                onClick={() => { setTipoVisto(elegido ? '' : t); setAbierta(null); }}
+                className={`boton min-h-[44px] rounded-full disabled:opacity-40 ${elegido ? 'border-oro bg-oro/15 font-semibold text-oro' : ''}`}>
+                {t} <span className="tabular-nums text-hueso/65">{n}</span>
+              </button>
+            );
+          })}
+        </span>
+        <MostrarDesactivados cuantos={menus.filter((m) => !m.activo).length}
+          visible={verInactivos} onCambio={(v) => { setVerInactivos(v); setAbierta(null); }} />
+      </div>
       <ul className={LISTA_TARJETAS}>
-        {menus.map((m, i) => (!m.activo && !verInactivos) ? null : (
+        {menus.map((m, i) => ((!m.activo && !verInactivos) || (tipoVisto && m.tipo !== tipoVisto && abierta !== i)) ? null : (
           <li key={i} className={`overflow-hidden ${marcoTarjeta(abierta === i, m.activo ? 'normal' : 'apagada')}`}>
             <div className="flex items-center gap-2 pr-2">
               <button type="button" aria-expanded={abierta === i}
