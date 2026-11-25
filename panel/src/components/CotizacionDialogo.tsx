@@ -1920,7 +1920,7 @@ export default function CotizacionDialogo({
           )}
           {ultima && (
             <span className="min-w-0 basis-full truncate text-[14px] font-normal text-hueso/75 lg:basis-auto">
-              · {ultima.nota}
+              <span aria-hidden className="hidden lg:inline">· </span>{ultima.nota}
             </span>
           )}
         </button>
