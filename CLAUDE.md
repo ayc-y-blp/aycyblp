@@ -1309,6 +1309,7 @@ Brasas y Mesa de Directorio—.
 - **Fotos**: la parrilla (`g20`), el karting (`g24`), la carreta
   (`paseo-carreta`), el galpón montado (`g27`, a falta de una foto de una
   charla) y la mesa servida (`g18`).
+- **La foto del Combate de Parrillas** (2026-11-25, lo pidió el cliente: *"cambia la promo combate por la carne en la espada"*): pasó de `g20` a `assets/gallery/asado-estaca.jpg`, vertical, encuadrada abajo (`.foco-asado`, `object-position` 50% 80%). Ese mismo día el cliente subió nueve fotos más —parrilla, familia en el jardín, dos salones de evento, el karting aéreo y de pista, el picadero y un picnic—, achicadas a 2000px y guardadas en `assets/gallery/` **sin usar todavía** (`parrilla-brasas`, `familia-jardin`, `salon-empresa`, `salon-aniversario`, `karting-aereo`, `karting-pista`, `picadero`, `picnic-jardin`). Las dos de salón muestran a personas de empresas (Ab InBev, UDLA): **no se publican en una página sin confirmar el permiso**.
 - Los nombres en inglés y portugués (*Grill Battle*, *Duelo de Churrasco*…)
   los escribió Claude.
 

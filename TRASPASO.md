@@ -600,6 +600,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   ventana *Editar reserva*, con las reglas. **PR #361, en preview hasta el
   *"mergea"*.** Para la de Ismael Barros, hoy: si se cayó, cancelar el pedido
   en Shopify. Ver `panel/CLAUDE.md`, "Reservas de Shopify: no se repiten…".
+- **Fotos nuevas** (25-11-2026, lo pidió el cliente): subió 10 fotos grandes; quedan achicadas en `assets/gallery/` y solo se usa la de la carne en la estaca, en la promoción *Combate de Parrillas*. Faltan 3 que no llegaron. Ver `CLAUDE.md`, "Seis promociones…".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
