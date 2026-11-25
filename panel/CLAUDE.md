@@ -229,6 +229,57 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Con boleta, lo que gana es líquido (2026-11-25)
+
+Lo pidió el cliente con una foto de la tarjeta de Carmen Barros (sueldo fijo $550.000, *Pagarle
+$466.125*): *"cuando se ingresa un sueldo, tiene que ser líquido… lo que recibe el trabajador… y de
+ahí, si se aplica boleta, es líquido más retención… la Carmen tiene sueldo 550 líquido, entonces le
+tiene que llegar líquido y las comisiones se quedan como están"*. Por ahora solo la **boleta de
+honorarios**; la factura sigue con *IVA incluido / más IVA*.
+
+- **Con boleta, `desgloseDocumento()` siempre trata el monto como líquido**: se le transfiere eso y
+  la boleta va por más, con la retención del año (`brutoParaNeto()`). $550.000 → boleta $648.968,
+  retención $98.968, transferencia $550.000. **La ficha de antes que decía *Retención incluida* se lee
+  igual: con retención, líquido** (`incluido` ya no cuenta con boleta).
+- **La única opción es *Con retención* o *Sin retención*** (`ComoSeDocumenta.sinRetencion`): sin
+  retención, la boleta va por lo mismo que se le transfiere. En la ficha (`CamposDocumento`) dice
+  qué monto queda en la boleta con un ejemplo, y la caja `CajaBoleta` lo muestra: bruto, retención y
+  neto, o solo el monto si es sin retención.
+- **Se guarda en la columna `Impuesto` de `Vendedores`**: con boleta, *Con retención* / *Sin
+  retención*; con factura, *Incluido* / *Aparte*, como antes (`filaVendedor()`, `leerVendedoresDe()`).
+  Sin columna ni pestaña nueva.
+- **Las comisiones no cambian**: lo que cambia es lo que se le transfiere y lo que dice la boleta
+  (*Pagarle*, el Informe, el link personal, la caja de la boleta). El equipo y los extras ya eran así.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?` del Informe y los
+  textos de la ficha. **Las fotos de la ayuda de Vendedores y del Informe quedan por rehacer**: la
+  ficha ya no dice *retención incluida*.
+
+## La rotación de las cotizaciones del sitio (2026-11-25)
+
+Lo pidió el cliente: *"cuando caen estas cotizaciones desde el sistema… que asignas las ventas o las
+cotizaciones rotativamente a los vendedores que se ponen la casilla check y ellos participan en esta
+rotación"*.
+
+- **Casilla *Participa en la rotación*** (*Cotizaciones del sitio*) en la ficha de cada vendedor
+  (Vendedores), con su `?` (`vendRotacion`). Se guarda sola, como el resto del trato, con el permiso
+  `pagar` (pagos, gerencia y administrador). Columna nueva al final de `Vendedores`: **`Rotación del
+  sitio`** (*Sí* o en blanco). Un socio no participa.
+- **A quién le toca** (`lib/rotacion.ts`, pura y con pruebas): participan las cuentas con la
+  casilla, **activas y que pueden cotizar**, en orden de nombre. Cada cotización del sitio le toca
+  **al que sigue** al de la última cotización con `Origen` *Sitio · …* —sin guardar un contador: la
+  lista de cotizaciones es la única verdad—; al final de la lista vuelve al primero, y si la última
+  fue de alguien que ya no participa, parte del primero. Quien se desmarca o se desactiva sale solo.
+- **Sin nadie marcado, vale la cuenta de *Configuración → Las del sitio van a***, como antes
+  (ahora es el respaldo), y sin ninguna, queda sin vendedor y la ven quienes asignan.
+- **`PATCH /api/vendedores` acepta a cualquier cuenta activa que cotiza**, no solo al rol Vendedor:
+  quien vende con otro rol (operaciones) aparece en la lista y puede tener su casilla.
+- **Qué no hace**: dos cotizaciones que llegan a la vez pueden caerle a la misma persona, y una
+  persona que cotiza dos veces seguidas le toca a dos vendedores distintos. Si molesta, se hace que
+  el mismo cliente vuelva con su vendedor.
+- **Lecturas de Google**: el `POST` de `/api/publico/cotizar` suma `Vendedores` a su tanda (una más
+  por cotización que llega; el `GET` no cambia). **Ningún permiso cambió.** **Ayuda**: `vendRotacion` y
+  el texto de *Las del sitio van a* en Configuración.
+
 ## El calendario de Cotizaciones también va al pasado (2026-11-24)
 
 Lo pidió el cliente con una foto del marco de Reservas: *"aplícalo para

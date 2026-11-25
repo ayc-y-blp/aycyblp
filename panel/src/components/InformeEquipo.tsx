@@ -987,7 +987,7 @@ export default function InformeEquipo() {
   /** El equipo de ventas (2026-11-12): solo llega para quien paga, la gerencia y el administrador. */
   const [vendedores, setVendedores] = useState<{
     nombre: string; usuario: string;
-    ficha: Pick<FichaVendedor, 'sueldoFijo' | 'comisionPct' | 'montoEvento' | 'base' | 'documento' | 'incluido'>;
+    ficha: Pick<FichaVendedor, 'sueldoFijo' | 'comisionPct' | 'montoEvento' | 'base' | 'documento' | 'incluido' | 'sinRetencion'>;
     ventas: (Venta & { folio: string })[];
     /** Vendedor con cuenta, o socio comercial (2026-11-12). */
     tipo?: 'vendedor' | 'socio';
@@ -1104,7 +1104,7 @@ export default function InformeEquipo() {
     const r = resumenDelPeriodo(v.ficha, v.ventas, desde, hasta);
     // **Su documento** (2026-11-20): boleta o factura, con el impuesto
     // incluido o aparte. Decide lo que se le transfiere y lo que cuesta.
-    const como = { documento: v.ficha.documento ?? (v.tipo === 'socio' ? 'factura' : 'boleta'), incluido: v.ficha.incluido ?? true } as const;
+    const como = { documento: v.ficha.documento ?? (v.tipo === 'socio' ? 'factura' : 'boleta'), incluido: v.ficha.incluido ?? true, sinRetencion: v.ficha.sinRetencion ?? false } as const;
     const doc = desgloseDocumento(r.total, como, retencionDelAno(fechaDeEmision(hasta, hoy())));
     return { nombre: v.nombre, usuario: v.usuario, socio: v.tipo === 'socio', total: r.total, comisiones: r.comisiones,
              sueldoFijo: r.sueldoFijo, mesesFijo: r.mesesFijo,

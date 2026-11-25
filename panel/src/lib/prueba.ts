@@ -6475,8 +6475,14 @@ console.log('\nLa boleta: bruto, neto y lo que falta boletear');
   const ba = B.desgloseDocumento(300000, { documento: 'boleta', incluido: false }, 1525);
   const fi = B.desgloseDocumento(300000, { documento: 'factura', incluido: true }, 1525);
   const fa = B.desgloseDocumento(300000, { documento: 'factura', incluido: false }, 1525);
-  ok(bi.enDocumento === 300000 && bi.impuesto === 45750 && bi.aTransferir === 254250 && bi.neto === 254250,
-     'boleta con la retención incluida: lo que gana es el bruto y se le transfiere el bruto menos la retención');
+  const bs = B.desgloseDocumento(300000, { documento: 'boleta', incluido: false, sinRetencion: true }, 1525);
+  const carmen = B.desgloseDocumento(550000, { documento: 'boleta', incluido: true }, 1525);
+  ok(bi.neto === 300000 && bi.aTransferir === 300000 && bi.enDocumento === B.brutoParaNeto(300000, 1525) && !bi.sinRetencion,
+     'con boleta lo que gana es siempre el líquido (2026-11-25): aunque la ficha de antes diga retención incluida, se le transfiere lo que gana y la boleta va por más');
+  ok(bs.sinRetencion && bs.enDocumento === 300000 && bs.impuesto === 0 && bs.aTransferir === 300000,
+     'boleta sin retención: se le transfiere lo que gana y la boleta va por lo mismo');
+  ok(carmen.aTransferir === 550000 && carmen.enDocumento === 648968 && carmen.impuesto === 98968,
+     'un sueldo líquido de $550.000: se le transfieren $550.000 y la boleta va por $648.968');
   ok(ba.neto === 300000 && ba.aTransferir === 300000 && ba.enDocumento === B.brutoParaNeto(300000, 1525),
      'boleta con la retención aparte: lo que gana es el neto y el bruto se calcula hacia arriba');
   ok(fi.enDocumento === 300000 && fi.neto === 252101 && fi.impuesto === 47899 && fi.aTransferir === 300000,
@@ -6485,7 +6491,7 @@ console.log('\nLa boleta: bruto, neto y lo que falta boletear');
      'factura más IVA: se le suma el 19%');
   let cuadra = true;
   for (const m of [1, 99, 44000, 70001, 123457, 999999]) {
-    for (const como of [{ documento: 'boleta', incluido: true }, { documento: 'boleta', incluido: false },
+    for (const como of [{ documento: 'boleta', incluido: true }, { documento: 'boleta', incluido: false, sinRetencion: true },
       { documento: 'factura', incluido: true }, { documento: 'factura', incluido: false }] as const) {
       const x = B.desgloseDocumento(m, como, 1525);
       if (x.neto + (x.documento === 'factura' ? x.impuesto : x.impuesto) !== x.enDocumento || x.impuesto < 0) cuadra = false;
@@ -6494,18 +6500,22 @@ console.log('\nLa boleta: bruto, neto y lo que falta boletear');
   ok(cuadra, 'en los cuatro casos el neto más el impuesto es lo que va en el documento');
   const vend = B.cuentaBoleta([{ fecha: '2026-11-15', monto: 300000 }], [], 'Jorge', '2026-11-01', '2026-11-30', '2026-11-20',
     { documento: 'boleta', incluido: true });
-  ok(vend.total === 300000 && vend.porBoletear.aTransferir === 254250 && B.netoAlMarcar(vend) === 254250,
-     'la cuenta de un vendedor con retención incluida: al marcar se guarda el neto que recibe');
+  ok(vend.total === 300000 && vend.porBoletear.aTransferir === 300000 && B.netoAlMarcar(vend) === 300000,
+     'la cuenta de un vendedor con boleta: al marcar se guarda el líquido que recibe');
   const V = await import('./vendedores.ts');
   const encV = [...V.ENCABEZADO_VENDEDORES];
   const socioF = { ...V.fichaSocio('S-0009', 'Turismo Sur'), incluido: false,
     factura: { razonSocial: 'Turismo Sur SpA', rut: '76.123.456-7', giro: 'Agencia de viajes', direccion: '' } };
   const vuelta = V.leerVendedoresDe([encV, V.filaVendedor(socioF, encV), V.filaVendedor(V.fichaVacia('jorge', 'Jorge'), encV)]);
   ok(vuelta[0].documento === 'factura' && !vuelta[0].incluido && vuelta[0].factura.giro === 'Agencia de viajes'
-     && vuelta[1].documento === 'boleta' && vuelta[1].incluido,
+     && vuelta[1].documento === 'boleta' && vuelta[1].incluido && !vuelta[1].sinRetencion,
      'la ficha guarda el documento, el impuesto y los datos de la factura');
   ok(V.faltaParaFacturar(vuelta[0]).join() === 'dirección' && V.faltaParaFacturar(vuelta[1]).length === 0,
      'con factura avisa lo que falta para emitirla; con boleta, nada');
+  const sinRet = V.leerVendedoresDe([encV, V.filaVendedor({ ...V.fichaVacia('ana', 'Ana'), sinRetencion: true }, encV),
+    V.filaVendedor({ ...V.fichaVacia('luis', 'Luis'), incluido: false }, encV)]);
+  ok(sinRet[0].sinRetencion && !sinRet[1].sinRetencion,
+     'la ficha guarda si la boleta va sin retención; una de antes que decía retención incluida o aparte se lee con retención');
   const deAntes = V.leerVendedoresDe([['Usuario', 'Nombre', 'Tipo'], ['S-0001', 'Agencia', 'Socio comercial'], ['ana', 'Ana', '']]);
   ok(deAntes[0].documento === 'factura' && deAntes[0].incluido && deAntes[1].documento === 'boleta' && deAntes[1].incluido,
      'una ficha de antes: el socio con factura y el vendedor con boleta, con el impuesto incluido');
@@ -7452,6 +7462,37 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catNP)[0]?.ninos.map((n) => n.nombre).join() === 'Niños,Pequeños'
      && PR.limpiarPromocion({ id: 'x', nombre: 'x', ninos: 'niños | Pequeños | Inventado' }, catNP).ninos.join() === 'Niños,Pequeños',
      'el sitio recibe los dos menús de niños, y se guardan solo los que están en el catálogo');
+  // La rotación de las cotizaciones del sitio (2026-11-25).
+  {
+    const R = await import('./rotacion.ts');
+    const cu = (usuario: string, nombre: string, rol = 'vendedor', activo = true) => ({ usuario, nombre, rol, activo });
+    const cuentas = [cu('carmen', 'Carmen Barros'), cu('jorge', 'Jorge Soto'), cu('ana', 'Ana Díaz'), cu('cris', 'Cristóbal Cornejo', 'gerente'),
+      cu('luis', 'Luis Vera', 'vendedor', false), cu('enc', 'Encargada', 'encargado')];
+    const f = (usuario: string, rotacionSitio = true, tipo = 'vendedor') => ({ usuario, tipo, rotacionSitio });
+    const fichas = [f('carmen'), f('jorge'), f('ana', false), f('cris'), f('luis'), f('enc'), f('S-0001', true, 'socio')];
+    const parte = R.participantesDeLaRotacion(fichas, cuentas).map((c) => c.nombre);
+    ok(parte.join() === 'Carmen Barros,Cristóbal Cornejo,Jorge Soto',
+       'participan los que tienen la casilla, con cuenta activa que cotiza, en orden de nombre; no un socio, ni una cuenta desactivada ni la que no cotiza');
+    const sitio = (creadoPor: string) => ({ origen: 'Sitio · Gran Premio', creadoPor });
+    const pick = (cot: { origen?: string; creadoPor: string }[], respaldo = '') =>
+      R.elegirVendedorDelSitio({ fichas, cuentas, cotizaciones: cot, respaldo })?.nombre ?? '';
+    ok(pick([]) === 'Carmen Barros', 'la primera cotización del sitio le toca al primero de la lista');
+    ok(pick([sitio('Carmen Barros')]) === 'Cristóbal Cornejo' && pick([sitio('Carmen Barros'), sitio('Cristóbal Cornejo')]) === 'Jorge Soto',
+       'cada cotización le toca al que sigue al de la anterior');
+    ok(pick([sitio('Jorge Soto')]) === 'Carmen Barros', 'al final de la lista vuelve al primero');
+    ok(pick([sitio('Jorge Soto'), { origen: '', creadoPor: 'Carmen Barros' }, { origen: 'Sitio', creadoPor: '' }]) === 'Carmen Barros',
+       'las cotizaciones de un vendedor a mano y las del sitio sin vendedor no mueven el turno');
+    ok(pick([sitio('Ana Díaz')]) === 'Carmen Barros', 'si la última fue de alguien que ya no participa, parte del primero');
+    ok(R.elegirVendedorDelSitio({ fichas: [f('carmen', false)], cuentas, cotizaciones: [], respaldo: 'Jorge Soto' })?.nombre === 'Jorge Soto'
+       && R.elegirVendedorDelSitio({ fichas: [f('carmen', false)], cuentas, cotizaciones: [], respaldo: '' }) === null
+       && R.elegirVendedorDelSitio({ fichas: [], cuentas, cotizaciones: [], respaldo: 'Luis Vera' }) === null,
+       'sin nadie en la rotación vale la cuenta de respaldo de Configuración, si está activa; y sin ninguna, nadie');
+    const V2 = await import('./vendedores.ts');
+    const enc2 = [...V2.ENCABEZADO_VENDEDORES];
+    const vuelta2 = V2.leerVendedoresDe([enc2, V2.filaVendedor({ ...V2.fichaVacia('ana', 'Ana'), rotacionSitio: true }, enc2),
+      V2.filaVendedor(V2.fichaVacia('luis', 'Luis'), enc2)]);
+    ok(vuelta2[0].rotacionSitio && !vuelta2[1].rotacionSitio, 'la ficha guarda si participa en la rotación del sitio');
+  }
   // El lugar exclusivo (2026-11-25): el arriendo a su precio estándar, sin el descuento de la promoción.
   {
     const conDesc = { ...gran, descuento: 10 };

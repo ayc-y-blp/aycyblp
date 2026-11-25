@@ -62,6 +62,7 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
   const [clave, setClave] = useState('');
   const [documento, setDocumento] = useState<Documento>(esVendedor ? 'boleta' : 'factura');
   const [incluido, setIncluido] = useState(true);
+  const [sinRetencion, setSinRetencion] = useState(false);
   const [factura, setFactura] = useState<DatosFactura>(facturaVacia());
   const [banco, setBanco] = useState<Banco>(bancoVacio());
   const [guardando, setGuardando] = useState(false);
@@ -74,6 +75,7 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
   const cambiarDoc = (c: CambioDocumento) => {
     if (c.documento) setDocumento(c.documento);
     if (c.incluido !== undefined) setIncluido(c.incluido);
+    if (c.sinRetencion !== undefined) setSinRetencion(c.sinRetencion);
     if (c.factura) setFactura(c.factura);
   };
 
@@ -85,7 +87,7 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
     try {
       const res = await fetch('/api/vendedores', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tipo, nombre: nombre.trim(), usuario: usuarioFinal, clave, documento, incluido, factura, banco })
+        body: JSON.stringify({ tipo, nombre: nombre.trim(), usuario: usuarioFinal, clave, documento, incluido, sinRetencion, factura, banco })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || d.error) { setError(d.error || 'No se pudo crear.'); return; }
@@ -167,7 +169,7 @@ export default function AgregarVendedor({ tipo, desdeCotizacion = false, onCerra
 
         <section className={`space-y-2 ${marcoGrupo()} p-3`}>
           <h3 className={TITULO_GRUPO}>2 · Con qué documento se le paga</h3>
-          <CamposDocumento documento={documento} incluido={incluido} factura={factura} onCambio={cambiarDoc} />
+          <CamposDocumento documento={documento} incluido={incluido} sinRetencion={sinRetencion} factura={factura} onCambio={cambiarDoc} />
         </section>
 
         <section className={`space-y-2 ${marcoGrupo()} p-3`}>

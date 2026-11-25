@@ -254,9 +254,10 @@ export default function ConfigEditor() {
             cliente desde el cotizador de promociones. Una cuenta que cotiza,
             elegida con el buscador (regla: una lista que crece). */}
         {campo('vendedorSitio', 'Las del sitio van a',
-          'Las cotizaciones que un cliente arma en la página de promociones quedan a nombre de esta ' +
-          'cuenta, y le aparecen en una ventana al entrar al panel. Sin nadie, quedan sin vendedor ' +
-          'y las ve la gerencia.',
+          'Las cotizaciones que un cliente arma en la página de promociones se reparten por turno ' +
+          'entre los vendedores con la casilla «Participa en la rotación» (en Vendedores). Esta ' +
+          'cuenta es el respaldo: recibe las del sitio solo si nadie participa. Sin nadie, quedan ' +
+          'sin vendedor y las ve la gerencia. Quien las recibe ve una ventana al entrar al panel.',
           eligiendoVendedor ? (
             <BuscarEnLista etiqueta="Buscar cuenta" vacia="No hay cuentas que coticen."
               elegido={config.vendedorSitio}

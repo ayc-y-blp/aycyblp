@@ -19,18 +19,19 @@ import { hoy } from '@/lib/fechas';
 
 const ENTRADA = 'min-h-[44px] w-full rounded-lg border-2 border-hueso/25 bg-tinta px-3 text-[16px] focus:border-oro focus:outline-none';
 
-export interface CambioDocumento { documento?: Documento; incluido?: boolean; factura?: DatosFactura }
+export interface CambioDocumento { documento?: Documento; incluido?: boolean; sinRetencion?: boolean; factura?: DatosFactura }
 
-export default function CamposDocumento({ documento, incluido, factura, onCambio }: {
-  documento: Documento; incluido: boolean; factura: DatosFactura;
+export default function CamposDocumento({ documento, incluido, sinRetencion = false, factura, onCambio }: {
+  documento: Documento; incluido: boolean; sinRetencion?: boolean; factura: DatosFactura;
   onCambio: (c: CambioDocumento) => void;
 }) {
-  const ej = desgloseDocumento(100000, { documento, incluido }, retencionDelAno(hoy()));
+  const ej = desgloseDocumento(100000, { documento, incluido, sinRetencion }, retencionDelAno(hoy()));
   const esFactura = documento === 'factura';
   const opciones = esFactura
     ? [[true, 'IVA incluido', 'Factura lo que gana, con el IVA adentro'], [false, 'Más IVA', 'Se le suma el 19% a lo que gana']] as const
-    : [[true, 'Retención incluida', 'Boletea lo que gana; se le transfiere menos la retención'],
-       [false, 'Retención aparte', 'Recibe lo que gana; boletea por más']] as const;
+    : [[false, 'Con retención', 'Recibe lo que gana, líquido; la boleta va por más, con la retención'],
+       [true, 'Sin retención', 'Recibe lo que gana, líquido; la boleta va por lo mismo']] as const;
+  const actual = esFactura ? incluido : sinRetencion;
   const falta = faltaParaFacturar({ documento, factura });
   const campo = (k: keyof DatosFactura, v: string) => onCambio({ factura: { ...factura, [k]: v } });
   return (
@@ -49,13 +50,13 @@ export default function CamposDocumento({ documento, incluido, factura, onCambio
       </div>
 
       <div>
-        <p className="text-[15px] font-bold">Lo que gana según su trato…</p>
+        <p className="text-[15px] font-bold">{esFactura ? 'Lo que gana según su trato…' : 'Lo que gana es líquido: lo que recibe'}</p>
         <div className="mt-1.5 grid gap-2 sm:grid-cols-2" role="group" aria-label={esFactura ? 'IVA' : 'Retención'}>
           {opciones.map(([v, rotulo, detalle]) => (
-            <button key={rotulo} type="button" aria-pressed={incluido === v} onClick={() => onCambio({ incluido: v })}
-              className={`tecla flex min-h-[56px] flex-col items-start justify-center rounded-xl border-2 px-3 py-2 text-left ${incluido === v
+            <button key={rotulo} type="button" aria-pressed={actual === v} onClick={() => onCambio(esFactura ? { incluido: v } : { sinRetencion: v })}
+              className={`tecla flex min-h-[56px] flex-col items-start justify-center rounded-xl border-2 px-3 py-2 text-left ${actual === v
                 ? 'border-oro bg-oro/15' : 'border-hueso/20 hover:border-oro/60'}`}>
-              <span className={`text-[15px] font-bold ${incluido === v ? 'text-oro' : ''}`}>{incluido === v ? '✓ ' : ''}{rotulo}</span>
+              <span className={`text-[15px] font-bold ${actual === v ? 'text-oro' : ''}`}>{actual === v ? '✓ ' : ''}{rotulo}</span>
               <span className="text-[13px] text-hueso/75">{detalle}</span>
             </button>
           ))}
@@ -68,7 +69,9 @@ export default function CamposDocumento({ documento, incluido, factura, onCambio
             Si gana {enPesos(100000)},{' '}
             {esFactura
               ? <>factura {enPesos(ej.enDocumento)} (neto {enPesos(ej.neto)} + IVA {tasaEnTexto(ej.tasa)} {enPesos(ej.impuesto)}) y se le transfieren {enPesos(ej.aTransferir)}.</>
-              : <>boletea {enPesos(ej.enDocumento)}, se retienen {enPesos(ej.impuesto)} ({tasaEnTexto(ej.tasa)}) y se le transfieren {enPesos(ej.aTransferir)}.</>}
+              : sinRetencion
+                ? <>se le transfieren {enPesos(ej.aTransferir)} y boletea {enPesos(ej.enDocumento)}, sin retención.</>
+                : <>se le transfieren {enPesos(ej.aTransferir)} y boletea {enPesos(ej.enDocumento)}: se retienen {enPesos(ej.impuesto)} ({tasaEnTexto(ej.tasa)}).</>}
           </AyudaCorta>
         </p>
       </div>

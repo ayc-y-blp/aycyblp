@@ -390,9 +390,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'recibe, y el botón para marcarla cuando llegue.',
       'Para exigir las boletas, aprieta 🧾 Sin boleta: quedan solo los que '
       + 'ganaron algo en el periodo y no la han mandado.',
-      'Vendedores y socios se pagan según su documento: con la retención '
-      + 'incluida se transfiere el bruto menos la retención; con factura más '
-      + 'IVA, el total con IVA. Su caja lo dice.',
+      'Vendedores y socios se pagan según su documento: con boleta, lo que '
+      + 'ganan es líquido, se les transfiere eso y la boleta va por más, con la '
+      + 'retención (o por lo mismo, si la ficha dice sin retención); con '
+      + 'factura más IVA, el total con IVA. Su caja lo dice.',
       'La lista va en orden: arriba quien tiene plata en el periodo, después '
       + 'a quien le falta marcar si vino y al final quien no tiene nada que '
       + 'pagar. Sin marcar deja solo a los que les falta marcar.',
@@ -1276,6 +1277,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Son dos comisiones separadas. El socio cobra su propia comisión, completa, según su trato. Aparte, el vendedor cobra este % de su propia comisión.',
       'Ejemplo: 60 personas, neto $3.000.000. El socio (10%) cobra $300.000. El vendedor (3%) cobraría $90.000; con socio al 50% cobra $45.000. En total se pagan $345.000.',
       'No es el 50% de lo que gana el socio, ni sale de su comisión.'
+    ]
+  },
+  vendRotacion: {
+    titulo: 'Rotación de las cotizaciones del sitio',
+    texto: [
+      'Las cotizaciones que un cliente arma en la página de promociones se reparten por turno entre los vendedores que tienen marcada esta casilla.',
+      'Le toca a quien sigue al que recibió la última, en orden de nombre. Quien desmarca la casilla, o cuya cuenta se desactiva, sale de la rotación.',
+      'Sin nadie marcado, quedan a nombre de la cuenta de Configuración → Las del sitio van a.'
     ]
   },
   vendBono: {

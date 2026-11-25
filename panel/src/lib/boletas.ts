@@ -101,16 +101,20 @@ export type Documento = 'boleta' | 'factura';
 export interface ComoSeDocumenta {
   documento: Documento;
   /**
-   * **Si lo que gana ya trae el impuesto.** Con boleta, *retención
-   * incluida*: lo que gana es el bruto, y se le transfiere el bruto menos la
-   * retención. Con factura, *IVA incluido*: lo que gana es el total de la
-   * factura. Si va **aparte**, con boleta lo que gana es el neto y el bruto
-   * se calcula hacia arriba (así el equipo), y con factura se le suma el IVA.
-   * De partida, **incluido** para vendedores y socios (lo decidió el cliente,
-   * *"por ahora… incluyendo el IVA… y que sea incluida la retención"*), y
-   * editable en cada ficha.
+   * **Solo con factura** (desde el 2026-11-25; con boleta, mira `sinRetencion`): si lo que
+   * gana ya trae el IVA. *IVA incluido*: lo que gana es el total de la factura. Si va
+   * **aparte**, se le suma el IVA. De partida, **incluido** para vendedores y socios (lo
+   * decidió el cliente, *"por ahora… incluyendo el IVA"*), y editable en cada ficha.
    */
   incluido: boolean;
+  /**
+   * **Solo con boleta** (2026-11-25, lo pidió el cliente: *"cuando se ingresa un sueldo, tiene que
+   * ser líquido… solo tiene que haber la opción de boletear con retención o no"*). Con boleta, lo
+   * que gana es **siempre el líquido**, lo que se le transfiere: la boleta va por más, con la
+   * retención. `sinRetencion` es la excepción: la boleta va por lo mismo que gana, sin retención.
+   * Con boleta, `incluido` ya no cuenta.
+   */
+  sinRetencion?: boolean;
 }
 
 /** El equipo y los extras: boleta, y lo que calcula el panel es el neto. */
@@ -122,6 +126,8 @@ export const IVA_CENTESIMAS = 1900;
 export interface Desglose {
   documento: Documento;
   incluido: boolean;
+  /** Boleta sin retención: la boleta va por lo mismo que se le transfiere. */
+  sinRetencion: boolean;
   /** Lo que se escribe en el documento: el bruto de la boleta, o el total de la factura con IVA. */
   enDocumento: number;
   /** La retención de la boleta (la paga la empresa en el F29), o el IVA de la factura. */
@@ -142,7 +148,7 @@ export interface Desglose {
  */
 export function desgloseDocumento(monto: number, como: ComoSeDocumenta, retencion: number): Desglose {
   const m = Math.max(0, Math.round(monto));
-  const base = { documento: como.documento, incluido: como.incluido };
+  const base = { documento: como.documento, incluido: como.incluido, sinRetencion: false };
   if (como.documento === 'factura') {
     if (como.incluido) {
       const neto = Math.round((m * 10000) / (10000 + IVA_CENTESIMAS));
@@ -151,12 +157,13 @@ export function desgloseDocumento(monto: number, como: ComoSeDocumenta, retencio
     const iva = Math.round((m * IVA_CENTESIMAS) / 10000);
     return { ...base, enDocumento: m + iva, impuesto: iva, neto: m, aTransferir: m + iva, tasa: IVA_CENTESIMAS };
   }
-  if (como.incluido) {
-    const ret = retencionDe(m, retencion);
-    return { ...base, enDocumento: m, impuesto: ret, neto: m - ret, aTransferir: m - ret, tasa: retencion };
+  // **Con boleta, lo que gana es el líquido** (2026-11-25): se le transfiere eso, y la boleta va
+  // por más (con la retención) o por lo mismo (sin retención).
+  if (como.sinRetencion) {
+    return { ...base, incluido: false, sinRetencion: true, enDocumento: m, impuesto: 0, neto: m, aTransferir: m, tasa: retencion };
   }
   const bruto = brutoParaNeto(m, retencion);
-  return { ...base, enDocumento: bruto, impuesto: bruto - m, neto: m, aTransferir: m, tasa: retencion };
+  return { ...base, incluido: false, enDocumento: bruto, impuesto: bruto - m, neto: m, aTransferir: m, tasa: retencion };
 }
 
 /**
@@ -294,7 +301,7 @@ export function cuentaBoleta(
   }
   const diferencias: CuentaBoleta['diferencias'] = [];
   for (const [b, suma] of asignado) {
-    if (!como.incluido && b.neto !== null && b.desde >= desde && b.hasta <= hasta && suma > b.neto) {
+    if ((como.documento === 'boleta' || !como.incluido) && b.neto !== null && b.desde >= desde && b.hasta <= hasta && suma > b.neto) {
       diferencias.push({ boleta: b, dice: b.neto, suma });
     }
   }

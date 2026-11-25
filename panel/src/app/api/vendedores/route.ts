@@ -37,6 +37,7 @@ function pagoDelCuerpo(b: Record<string, unknown>, antes: FichaVendedor): Partia
   const x: Partial<FichaVendedor> = {};
   if (b.documento === 'boleta' || b.documento === 'factura') x.documento = b.documento;
   if (typeof b.incluido === 'boolean') x.incluido = b.incluido;
+  if (typeof b.sinRetencion === 'boolean') x.sinRetencion = b.sinRetencion;
   const f = b.factura as Record<string, unknown> | undefined;
   if (f && typeof f === 'object') {
     x.factura = { ...facturaVacia(), ...antes.factura,
@@ -192,7 +193,7 @@ export const PATCH = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES], async functio
     const pedido = normalizar(String(b.usuario ?? ''));
     const socio = fichas.find((f) => f.tipo === 'socio' && normalizar(f.usuario) === pedido);
     const cuenta = socio ? { usuario: socio.usuario, nombre: socio.nombre }
-      : usuarios.find((u) => u.rol === ROL.vendedor && normalizar(u.usuario) === pedido);
+      : usuarios.find((u) => normalizar(u.usuario) === pedido && (u.rol === ROL.vendedor || (u.activo && puede(u.rol as Rol, 'presupuestos'))));
     if (!cuenta) return NextResponse.json({ error: 'Esa cuenta no es de un vendedor ni de un socio.' }, { status: 404 });
     const antes = socio ?? fichaDe(fichas, cuenta.usuario, cuenta.nombre);
     const c = b.cambios ?? {};
@@ -213,6 +214,7 @@ export const PATCH = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES], async functio
       ...(socio && c.activo !== undefined ? { activo: c.activo !== false } : {}),
       ...(c.etapa1Desde !== undefined ? { etapa1Desde: Math.max(1, monto(c.etapa1Desde)) } : {}),
       ...(!socio && c.conSocio !== undefined ? { conSocio: porcentaje(c.conSocio) } : {}),
+      ...(!socio && c.rotacionSitio !== undefined ? { rotacionSitio: c.rotacionSitio === true } : {}),
       ...(c.sueldoFijo !== undefined ? { sueldoFijo: monto(c.sueldoFijo) } : {}),
       ...(c.comisionPct !== undefined ? { comisionPct: porcentaje(c.comisionPct) } : {}),
       ...(c.montoEvento !== undefined ? { montoEvento: monto(c.montoEvento) } : {}),
@@ -223,7 +225,7 @@ export const PATCH = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES], async functio
       ...(c.bonoPuntos !== undefined ? { bonoPuntos: porcentaje(c.bonoPuntos) } : {}),
       ...(c.base !== undefined ? { base: c.base === 'total' ? 'total' : 'neto' } : {}),
       ...(c.banco && typeof c.banco === 'object' ? { banco: { ...bancoVacio(), ...antes.banco, ...c.banco } } : {}),
-      ...pagoDelCuerpo({ documento: c.documento, incluido: c.incluido, factura: c.factura }, antes),
+      ...pagoDelCuerpo({ documento: c.documento, incluido: c.incluido, sinRetencion: c.sinRetencion, factura: c.factura }, antes),
       // **Lo que guarda quien paga queda confirmado** (`plata.ts`): el trato
       // de un socio que agregó un vendedor deja de estar por confirmar.
       porConfirmar: ''
@@ -233,7 +235,7 @@ export const PATCH = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES], async functio
     const NOMBRES = { nombre: 'nombre', activo: 'activo', etapa1Desde: 'etapa 1 desde', conSocio: 'con socio cobra %',
       sueldoFijo: 'sueldo fijo', comisionPct: 'etapa 1 %', montoEvento: 'monto por evento', base: 'base',
       etapa2Desde: 'etapa 2 desde', etapa2Pct: 'etapa 2 %', etapa3Desde: 'etapa 3 desde', etapa3Pct: 'etapa 3 %',
-      bonoPuntos: 'bono premium', documento: 'documento', incluido: 'impuesto incluido' } as const;
+      bonoPuntos: 'bono premium', documento: 'documento', incluido: 'impuesto incluido', sinRetencion: 'sin retención', rotacionSitio: 'rotación del sitio' } as const;
     const dif = (Object.keys(NOMBRES) as (keyof typeof NOMBRES)[])
       .filter((k) => c[k] !== undefined && antes[k] !== nueva[k])
       .map((k) => `${NOMBRES[k]}: ${k === 'base' ? BASE_COMISION[antes.base] : antes[k]} → ${k === 'base' ? BASE_COMISION[nueva.base] : nueva[k]}`);

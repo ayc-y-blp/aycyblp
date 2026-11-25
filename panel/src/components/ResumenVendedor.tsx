@@ -328,6 +328,7 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
   const cambiarDocumento = (c: CambioDocumento) => {
     if (c.documento) cambiar('documento', c.documento);
     if (c.incluido !== undefined) cambiar('incluido', c.incluido);
+    if (c.sinRetencion !== undefined) cambiar('sinRetencion', c.sinRetencion);
     if (c.factura) cambiar('factura', c.factura);
   };
   const pagarEn = `/informe?${new URLSearchParams({ pagar: datos.nombre, desde: datos.desde, hasta: datos.hasta })}`;
@@ -486,7 +487,7 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                     <span className="block text-[13px] font-semibold uppercase tracking-widest text-hueso/65 sm:inline-block sm:w-[7.5rem] sm:text-[15px] sm:font-normal sm:normal-case sm:tracking-normal sm:text-hueso/70">Documento: </span>
                     <span className="inline-flex items-center gap-1 rounded-full border-2 border-oro/50 px-2 text-[14px] font-bold">
                       🧾 {f.documento === 'factura' ? 'Factura' : 'Boleta de honorarios'} · {f.documento === 'factura'
-                        ? (f.incluido ? 'IVA incluido' : 'más IVA') : (f.incluido ? 'retención incluida' : 'retención aparte')}
+                        ? (f.incluido ? 'IVA incluido' : 'más IVA') : (f.sinRetencion ? 'sin retención' : 'con retención')}
                     </span>
                     {f.documento === 'factura' && f.factura.razonSocial && <span className="text-hueso/75"> · {f.factura.razonSocial}</span>}
                     {faltaF.length > 0 && (
@@ -603,6 +604,16 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                       </div>
                     </div>
                   )}
+                  {!esSocio && (
+                    <div>
+                      <p className="flex items-center gap-1.5 text-[15px] font-bold">Cotizaciones del sitio <AyudaCorta tema="vendRotacion" /></p>
+                      <button type="button" aria-pressed={!!ficha.rotacionSitio} onClick={() => cambiar('rotacionSitio', !ficha.rotacionSitio)}
+                        className={`tecla mt-2 flex min-h-[44px] w-full items-center gap-2 rounded-xl border-2 px-3 py-2 text-left text-[15px] font-bold ${ficha.rotacionSitio
+                          ? 'border-oro bg-oro/15 text-oro' : 'border-hueso/20 hover:border-oro/60'}`}>
+                        <span aria-hidden>{ficha.rotacionSitio ? '☑' : '☐'}</span> Participa en la rotación
+                      </button>
+                    </div>
+                  )}
                   <div className={`grid gap-3 ${esSocio ? '' : 'sm:grid-cols-2'}`}>
                     <label className="block text-[15px] font-bold">
                       <span className="flex items-center gap-1.5">Monto por evento ganado ($) <AyudaCorta tema="vendMontoEvento" /></span>
@@ -677,7 +688,7 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                   </p>
                   <AvisoGuardado estado={estado} error={falla} onReintentar={() => fichas.reintentar(datos.usuario)} />
                 </div>
-                <CamposDocumento documento={ficha.documento} incluido={ficha.incluido} factura={ficha.factura} onCambio={cambiarDocumento} />
+                <CamposDocumento documento={ficha.documento} incluido={ficha.incluido} sinRetencion={ficha.sinRetencion} factura={ficha.factura} onCambio={cambiarDocumento} />
                 <div className="flex justify-end">
                   <button type="button" className="boton !min-h-[44px] !text-[15px]" onClick={() => { void fichas.forzar(); setVentana(''); }}>Listo</button>
                 </div>
