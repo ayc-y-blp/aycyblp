@@ -602,13 +602,11 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                         <Paso etiqueta="Con socio cobra" valor={ficha.conSocio ?? CON_SOCIO_DEFECTO} paso={5} sufijo="% de su comisión"
                           onCambio={(v) => cambiar('conSocio', Math.min(100, v))} />
                       </div>
-                    </div>
-                  )}
-                  {!esSocio && (
-                    <div>
-                      <p className="flex items-center gap-1.5 text-[15px] font-bold">Cotizaciones del sitio <AyudaCorta tema="vendRotacion" /></p>
+                      {/* La rotación de las cotizaciones del sitio (2026-11-25), en el mismo bloque:
+                          una celda más en la rejilla del trato descuadraba el monto por evento y el sueldo. */}
+                      <p className="mt-2 flex items-center gap-1.5 text-[15px] font-bold">Cotizaciones del sitio <AyudaCorta tema="vendRotacion" /></p>
                       <button type="button" aria-pressed={!!ficha.rotacionSitio} onClick={() => cambiar('rotacionSitio', !ficha.rotacionSitio)}
-                        className={`tecla mt-2 flex min-h-[44px] w-full items-center gap-2 rounded-xl border-2 px-3 py-2 text-left text-[15px] font-bold ${ficha.rotacionSitio
+                        className={`tecla mt-1.5 flex min-h-[40px] w-full items-center gap-2 rounded-xl border-2 px-3 py-1.5 text-left text-[15px] font-bold ${ficha.rotacionSitio
                           ? 'border-oro bg-oro/15 text-oro' : 'border-hueso/20 hover:border-oro/60'}`}>
                         <span aria-hidden>{ficha.rotacionSitio ? '☑' : '☐'}</span> Participa en la rotación
                       </button>
