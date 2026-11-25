@@ -439,7 +439,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'en una cotización va aparte del total y no paga comisión.',
       '*Qué incluye* y *Bebestibles* son lo que propone ese producto para la '
       + 'cotización y el contrato. En blanco va el texto del sitio, que se ve de '
-      + 'muestra; escritos, lo reemplazan: así se arma un menú especial con su '
+      + 'muestra y llena el campo al apretar adentro, para cambiarlo desde ahí; '
+      + 'escritos, lo reemplazan: así se arma un menú especial con su '
       + 'propio detalle. Cada campo cambia solo su parte. Se copian a la cotización '
       + 'al agregar el producto, y ahí se pueden cambiar solo para esa: cambiarlos '
       + 'acá no toca las cotizaciones que ya lo tienen.',
@@ -1543,7 +1544,9 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Qué incluye',
     texto: [
       'Lo que sale en la cotización y en el contrato, en «Qué incluye», para este producto. '
-      + 'En blanco va el texto del sitio, que se ve de muestra en el campo.',
+      + 'En blanco va el texto del sitio, que se ve de muestra en el campo. Al apretar adentro, el '
+      + 'campo se llena con ese texto para que lo cambies desde ahí; si sales sin cambiarlo, vuelve a '
+      + 'quedar en blanco y sigue al sitio.',
       'En un menú de adulto, lo que escribas reemplaza el menú de la casa (entrada, plato principal, '
       + 'acompañamientos y postre): sirve para un menú especial. Un renglón por parte, como '
       + '«Entrada: ceviche de reineta», se lee en dos columnas.',
@@ -1570,8 +1573,9 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Bebestibles',
     texto: [
       'Los bebestibles de este menú, en la cotización y el contrato. Reemplazan los del sitio; '
-      + 'en blanco van los de siempre. Se pueden cambiar solo los bebestibles y dejar el menú de la '
-      + 'casa, o al revés.',
+      + 'en blanco van los de siempre. Al apretar adentro, el campo se llena con los de siempre para '
+      + 'cambiarlos desde ahí; sin cambios, vuelve a blanco. Se pueden cambiar solo los bebestibles y '
+      + 'dejar el menú de la casa, o al revés.',
       'También salen en el «?» del cotizador de promociones, en la página en español.'
     ]
   },

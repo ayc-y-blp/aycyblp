@@ -621,9 +621,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   día** (lo pidió el cliente con una foto); lo mismo en Clientes, la tarjeta
   *Recontactar* y el botón *🗒 Notas*. **Y la empresa del cliente al lado de
   su nombre** donde se muestra una cotización (`EmpresaCliente`, lo pidió el
-  cliente). Ningún permiso, columna ni lectura nueva. **En un PR, en preview
-  hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
+  cliente). Ningún permiso, columna ni lectura nueva. **PR #366, mergeado el
+  25-11-2026.** Ver `panel/CLAUDE.md`, "El recontacto y la
   última nota, en todas partes".
+- **PR #366, mergeado el 25-11-2026** con el *"mergea"* del cliente: el
+  recontacto, la última nota y la empresa del cliente, en todas partes (arriba).
+- **En *Productos*, *Qué incluye* y *Bebestibles* traen el texto del sitio al
+  apretar adentro** (25-11-2026, lo pidió el cliente): se trabaja desde esa
+  base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **En un PR,
+  en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "Qué incluye cada
+  producto, escrito en su ficha".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

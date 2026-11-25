@@ -37,7 +37,7 @@ import EmpresaNueva from './EmpresaNueva';
 import { datosEnFrase, type OtraEmpresa } from '@/lib/otrasEmpresas';
 import { usarSoloMira } from './SesionCliente';
 import { normalizar } from '@/lib/columnas';
-import { textoDelSitio, MENU_CASA_DEL_SITIO } from '@/lib/detalle';
+import { textoDelSitio, MENU_CASA_DEL_SITIO, textoDeSiempre, propioOVacio } from '@/lib/detalle';
 import { enPesos } from '@/lib/ocupacion';
 import { menusConocidos } from '@/lib/shopify';
 import type { Reserva } from '@/lib/tipos';
@@ -234,6 +234,31 @@ export default function MenusEditor() {
   const cambiar = (i: number, cambio: Partial<Editable>) => {
     setMenus(menus.map((m, k) => (k === i ? { ...m, ...cambio } : m)));
     setSucio(true);
+  };
+  /**
+   * **El texto del sitio, para trabajar desde ahí** (2026-11-25, lo pidió el
+   * cliente: *"cuando uno aprieta adentro del campo descripción, debería quedar
+   * el texto por defecto editable para que puedo trabajar desde esta base"*).
+   * Al entrar a *Qué incluye* o *Bebestibles* vacío, se llena con el texto de
+   * siempre (`textoDeSiempre()`); al salir, si quedó igual, vuelve a blanco
+   * (`propioOVacio()`), como en el 📝 de la cotización: en blanco sigue al
+   * sitio y el menú de la casa va arriba, en común. Ninguno de los dos marca
+   * la lista como cambiada: lo que cuenta es si quedó distinta de lo guardado.
+   */
+  const ponerTexto = (i: number, cambio: Partial<Editable>) => {
+    const lista = menus.map((m, k) => (k === i ? { ...m, ...cambio } : m));
+    setMenus(lista);
+    setSucio(JSON.stringify(lista) !== JSON.stringify(guardados));
+  };
+  const alEntrarTexto = (i: number, parte: 'descripcion' | 'bebestibles') => {
+    const m = menus[i];
+    const siempre = textoDeSiempre(m.nombre)[parte];
+    if (!m[parte].trim() && siempre) ponerTexto(i, { [parte]: siempre });
+  };
+  const alSalirTexto = (i: number, parte: 'descripcion' | 'bebestibles') => {
+    const m = menus[i];
+    const valor = propioOVacio(m.nombre, parte, m[parte]);
+    if (valor !== m[parte]) ponerTexto(i, { [parte]: valor });
   };
 
   /**
@@ -604,6 +629,7 @@ export default function MenusEditor() {
                           placeholder={muestraComida
                             ? `En blanco va el texto del sitio:\n${muestraComida}`
                             : 'En blanco, la cotización no lo detalla. Ej.: Entrada: … · Plato principal: …'}
+                          onFocus={() => alEntrarTexto(i, 'descripcion')} onBlur={() => alSalirTexto(i, 'descripcion')}
                           onChange={(e) => cambiar(i, { descripcion: e.target.value })} />
                       </Campo>
                       {esMenu && (
@@ -613,6 +639,7 @@ export default function MenusEditor() {
                             placeholder={delSitio?.casa
                               ? `En blanco va el texto del sitio:\n${delSitio.detalle}`
                               : 'En blanco, sin bebestibles aparte. Ej.: bebidas, jugos naturales y agua.'}
+                            onFocus={() => alEntrarTexto(i, 'bebestibles')} onBlur={() => alSalirTexto(i, 'bebestibles')}
                             onChange={(e) => cambiar(i, { bebestibles: e.target.value })} />
                         </Campo>
                       )}
