@@ -1310,3 +1310,46 @@ footer a:hover{ color: var(--ink); }
   .reserva-widget .reserva-paso{ font-size:1.1rem; }
   .reserva-paso .num{ width:30px; height:30px; font-size:1rem; }
 }
+
+/* ---------- El ? de cada producto y su caja (2026-11-25) ----------
+   La misma pieza en la reserva (site.css) y en el cotizador de promociones
+   (en su hoja propia): si cambia una, se cambia la otra. Regla de estilo del
+   cliente: "fácil, legible, usar muy bien distancias entre párrafos e info
+   clave, jugar con distintos tipos, cursivo… decente pero notable".
+   - El ?: un círculo dorado delineado de 24px, que se aprieta en 44px.
+     Abierto, relleno y con ✕: se cierra con el mismo botón.
+   - La caja: justo debajo de su opción, sin tapar nada. El rótulo en
+     mayúscula chica y dorada; el texto en la letra de siempre; lo que va sin
+     rótulo, en la cursiva de los precios. Lo propio del producto, después del
+     menú de la casa, con un respiro y una línea fina. */
+.detalle-nombre{ display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+.detalle-btn{
+  position:relative; flex:none; width:24px; height:24px; padding:0; margin:0 0 0 2px;
+  display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
+  border-radius:50%; border:1.5px solid var(--gold); background:transparent; color: var(--gold);
+  font-family: var(--sans); font-size:0.8rem; font-weight:700; line-height:1; cursor:pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+.detalle-btn::before{ content:""; position:absolute; inset:-10px; }
+.detalle-btn:hover, .detalle-btn[aria-expanded="true"]{ background: var(--gold); color: var(--sobre-oro, #1A1400); }
+.detalle-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+.detalle-caja{
+  margin:4px 0 2px; padding:12px 14px 12px 16px;
+  border-left:3px solid var(--gold); border-radius:0 6px 6px 0;
+  background: rgba(201,162,39,0.09);
+  font-family: var(--sans); font-size:0.9rem; line-height:1.5; color: var(--ink);
+  animation: detalle-entra .16s ease-out;
+}
+.detalle-caja p{ margin:0; }
+.detalle-caja p + p{ margin-top:6px; }
+.detalle-rotulo{
+  font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+  color: var(--gold); margin-right:4px;
+}
+.detalle-caja .detalle-suelto{ font-family: var(--serif); font-style:italic; font-size:1rem; color: var(--ink); }
+.detalle-caja .detalle-propio{ margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+@keyframes detalle-entra{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){ .detalle-caja{ animation:none; } }
+
+/* En la reserva el ? va en el renglón de la edad, con un poco de aire. */
+.reserva-fila .quien small .detalle-btn{ margin-left:8px; }

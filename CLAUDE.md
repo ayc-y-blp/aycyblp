@@ -249,6 +249,14 @@ más abajo; esto es la lista para revisar.
 - Fotografía real como protagonista, Fraunces y Work Sans, dorado sobre
   papel tibio de día —la vista que abre— y sobre negro de noche, sin signos
   de exclamación ni superlativos.
+- **Fácil de leer, con jerarquía** (regla del cliente, 2026-11-25: *"fácil,
+  legible, usar muy bien distancias entre párrafos e info clave, jugar con
+  distintos tipos, cursivo, tiene que ser decente pero notable"*). Un bloque de
+  información se arma con aire entre párrafos y con lo clave a la vista: el
+  rótulo chico, en mayúscula y dorado; el texto en Work Sans; lo que destaca o
+  va suelto, en la cursiva de Fraunces; y entre dos grupos, un respiro con una
+  línea fina. Sobrio, pero que se note. La caja del `?` de cada producto es el
+  ejemplo (`.detalle-caja`).
 - Cero JavaScript para interfaz: las cuatro excepciones están decididas y no
   sientan precedente.
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
@@ -1431,6 +1439,40 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   entre las secciones de un paso. **Lo mismo en los tres pasos de
   `reservas.html`** (`site.css`, al final), que son la misma pieza: el
   formulario mide 507px a 1262×573 (eran 500).
+- **El `?` de cada producto** (2026-11-25, lo pidió el cliente: *"en un pequeño
+  signo de interrogación debería mostrar los detalles de cada producto, menú,
+  bebestibles, corto, compacto pero con los detalles importantes"*, y *"llévalo
+  a las reservas… estiloso, no invasivo, muy fácil de salir… muy intuitivo"*).
+  - **Dónde**: al lado del nombre de cada menú y extra del cotizador (y de lo
+    que incluye), y en la reserva en el renglón de la edad de cada menú
+    (*Por adulto ?*), porque al lado del nombre se quedaba solo en un renglón
+    en el celular.
+  - **Cómo**: un círculo dorado de 24px que se aprieta en 44px. Abre una caja
+    corta **justo debajo de la opción**, sin tapar nada, y el `?` pasa a `✕`. Se
+    cierra con el mismo botón, con Escape, tocando fuera o abriendo otro: hay
+    una sola abierta. Apretarlo no elige el menú. En la reserva, al subir los
+    menús a A Brasas abiertas se cierra, y el `?` dice el menú de ese momento.
+  - **Qué dice**: en un menú de adulto, los cuatro tiempos en corto y sus
+    bebestibles (o el bar abierto); en niños y pequeños, su edad y su plato; en
+    un extra, su línea del sitio. Los textos son los del sitio, resumidos sin
+    agregar nada.
+  - **Los textos viven escondidos en la página** (`#detalles-productos`, al
+    final de `promociones.html` y de `reservas.html`), **no vienen del panel**:
+    así `traducir.py` los traduce con todo lo demás. Cada producto lleva los
+    nombres con que puede llegar del panel (`data-producto="once campesina|once
+    campestre|once"`); `data-casa` suma el menú de la casa. **Un texto propio
+    escrito en *Productos → Qué incluye* no sale acá**: el sitio manda.
+  - **La misma pieza en los dos archivos** (`botonDetalle()` en `cotizador.js`
+    y en `reserva.js`, y `.detalle-*` en el `<style>` de promociones y en
+    `site.css`): si cambia una, se cambia la otra. No es una quinta excepción de
+    JavaScript: vive dentro de las dos que ya estaban.
+  - **Medidas**: el cotizador cerrado, 500px a 1262×573 (era 479): con el `?`,
+    el precio de cada extra va bajo su nombre. La caja abierta suma lo suyo
+    mientras está abierta.
+  - **Ojo, una trampa que costó un rato**: un comentario que dice `<style>`
+    dentro del CSS de una página confunde a `traducir.py`, que deja de traducir
+    el resto de esa página sin decir por qué (avisa *llaves que ya no usa
+    ninguna página*).
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde

@@ -61,6 +61,7 @@
       calculando: 'Calculando…',
       minimo: 'Esta promoción es desde {n} personas.',
       anticipacion: 'Esta promoción se cotiza con al menos {n} días de anticipación: elige un día más adelante.',
+      queIncluye: 'Qué incluye', cerrarDetalle: 'Cerrar el detalle',
       conAnticipacion: 'Con al menos {n} días de anticipación: desde el {f}.', mesAnterior: 'Mes anterior', mesSiguiente: 'Mes siguiente',
       fecha: 'Elige un día desde mañana.',
       tomado: 'Ese día ya está tomado. Prueba con otro.',
@@ -98,6 +99,7 @@
       calculando: 'Calculating…',
       minimo: 'This offer starts at {n} people.',
       anticipacion: 'This offer needs at least {n} days\u2019 notice: choose a later date.',
+      queIncluye: 'What\u2019s included', cerrarDetalle: 'Close the details',
       conAnticipacion: 'At least {n} days in advance: from {f}.', mesAnterior: 'Previous month', mesSiguiente: 'Next month',
       fecha: 'Choose a date from tomorrow on.',
       tomado: 'That day is already booked. Try another one.',
@@ -135,6 +137,7 @@
       calculando: 'Calculando…',
       minimo: 'Esta promoção é a partir de {n} pessoas.',
       anticipacion: 'Esta promoção precisa de pelo menos {n} dias de antecedência: escolha uma data mais adiante.',
+      queIncluye: 'O que inclui', cerrarDetalle: 'Fechar o detalhe',
       conAnticipacion: 'Com pelo menos {n} dias de antecedência: a partir de {f}.', mesAnterior: 'Mês anterior', mesSiguiente: 'Próximo mês',
       fecha: 'Escolha um dia a partir de amanhã.',
       tomado: 'Esse dia já está reservado. Tente outro.',
@@ -294,6 +297,113 @@
   /* ---------- utilidades ---------- */
 
   function pesos(n) { return '$' + Math.round(n).toLocaleString(T.locale) + T.moneda; }
+  /**
+   * **El ? de cada producto** (2026-11-25, lo pidió el cliente: *"en un
+   * pequeño signo de interrogación debería mostrar los detalles de cada
+   * producto, menú, bebestibles, corto, compacto… estiloso, no invasivo, muy
+   * fácil de salir… muy intuitivo"*). La misma pieza en cotizador.js y en
+   * reserva.js: si cambia una, se cambia la otra.
+   *
+   * - Los textos están escondidos en la página (#detalles-productos), así que
+   *   se traducen con el resto. Si un producto no tiene detalle, no hay ?.
+   * - Al apretarlo, una caja corta justo debajo de esa opción, sin tapar
+   *   nada; el ? pasa a ✕. Se cierra con el mismo botón, con Escape, tocando
+   *   fuera o abriendo otro: hay una sola abierta a la vez.
+   */
+  var DETALLES = document.getElementById('detalles-productos');
+  var detalleAbierto = null;
+  function normalDetalle(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function detalleDeProducto(nombre) {
+    if (!DETALLES || !nombre) return null;
+    var n = normalDetalle(nombre), sinMenu = n.replace(/^menu (de )?/, '');
+    var todos = Array.prototype.slice.call(DETALLES.querySelectorAll('[data-producto]'));
+    var nombres = function (e) { return e.getAttribute('data-producto').split('|'); };
+    var exacto = todos.filter(function (e) { return nombres(e).some(function (a) { return a === n || a === sinMenu; }); });
+    if (exacto.length) return exacto[0];
+    // Un nombre dentro del otro, por palabras: "Desayuno" calza con "desayuno de campo".
+    var cerca = todos.filter(function (e) {
+      return nombres(e).some(function (a) {
+        return (' ' + sinMenu + ' ').indexOf(' ' + a + ' ') >= 0 || (' ' + a + ' ').indexOf(' ' + sinMenu + ' ') >= 0;
+      });
+    });
+    return cerca.length === 1 ? cerca[0] : null;
+  }
+  function cerrarDetalle(devolverFoco) {
+    if (!detalleAbierto) return;
+    var b = detalleAbierto.boton;
+    detalleAbierto.caja.remove();
+    b.setAttribute('aria-expanded', 'false'); b.textContent = '?';
+    b.setAttribute('aria-label', T.queIncluye + ' · ' + detalleAbierto.nombre);
+    detalleAbierto = null;
+    if (devolverFoco) b.focus();
+  }
+  /**
+   * El ? de un producto. `nombre()` dice cuál es hoy; `poner(caja)` la deja en
+   * su lugar; `etiqueta()`, si va, es como se lee (la fila de la reserva busca
+   * por su clave, "tradiciones", y se lee "Menú Tradiciones").
+   */
+  function botonDetalle(nombre, poner, etiqueta) {
+    var leer = etiqueta || nombre;
+    if (!detalleDeProducto(nombre())) return null;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'detalle-btn'; b.textContent = '?';
+    b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-label', T.queIncluye + ' · ' + leer());
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var eraEste = detalleAbierto && detalleAbierto.boton === b;
+      cerrarDetalle(false);
+      if (eraEste) return;
+      var d = detalleDeProducto(nombre());
+      if (!d) return;
+      var caja = document.createElement('div');
+      caja.className = 'detalle-caja';
+      caja.setAttribute('role', 'note');
+      var parrafos = [];
+      if (d.hasAttribute('data-casa')) {
+        var casa = DETALLES.querySelector('[data-casa-lineas]');
+        if (casa) parrafos = parrafos.concat(Array.prototype.slice.call(casa.querySelectorAll('p')));
+      }
+      var propios = Array.prototype.slice.call(d.querySelectorAll('p'));
+      parrafos.concat(propios).forEach(function (p, k) {
+        // "Entrada: …": el rótulo, chico y dorado, y el texto al lado. Una
+        // línea sin rótulo ("De 4 a 12 años") va en la cursiva de los precios.
+        var t = p.textContent, i = t.indexOf(': ');
+        var linea = document.createElement('p');
+        if (i > 0 && i < 28) {
+          var rot = document.createElement('span'); rot.className = 'detalle-rotulo'; rot.textContent = t.slice(0, i);
+          var txt = t.slice(i + 2);
+          linea.append(rot, document.createTextNode(' ' + txt.charAt(0).toUpperCase() + txt.slice(1)));
+        } else { linea.className = 'detalle-suelto'; linea.textContent = t; }
+        // Lo propio del producto, después del menú de la casa, con un respiro y una línea.
+        if (parrafos.length && k === parrafos.length) linea.classList.add('detalle-propio');
+        caja.appendChild(linea);
+      });
+      poner(caja);
+      b.setAttribute('aria-expanded', 'true'); b.textContent = '✕';
+      b.setAttribute('aria-label', T.cerrarDetalle + ' · ' + leer());
+      detalleAbierto = { boton: b, caja: caja, nombre: leer() };
+    });
+    return b;
+  }
+  document.addEventListener('click', function (e) {
+    if (detalleAbierto && !detalleAbierto.caja.contains(e.target) && e.target !== detalleAbierto.boton) cerrarDetalle(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && detalleAbierto) cerrarDetalle(true);
+  });
+
+  /** El nombre de un producto con su ? al lado, en un renglón que no los separa. */
+  function nombreConDetalle(nombre, poner) {
+    var n = el('span', 'detalle-nombre');
+    n.appendChild(el('strong', '', nombre));
+    var b = botonDetalle(function () { return nombre; }, poner);
+    if (b) n.appendChild(b);
+    return n;
+  }
   function el(tag, clase, texto) {
     var e = document.createElement(tag);
     if (clase) e.className = clase;
@@ -487,7 +597,8 @@
     var p2 = paso(3, T.paso2);
     if (promo.menus.length === 1) {
       var fijo = el('p', 'cot-fijo');
-      fijo.append(el('span', 'cot-rotulo', T.menuFijo), el('strong', '', promo.menus[0].nombre),
+      fijo.append(el('span', 'cot-rotulo', T.menuFijo),
+        nombreConDetalle(promo.menus[0].nombre, function (c) { fijo.after(c); }),
         el('span', 'cot-precio', precioDe(promo.menus[0])));
       p2.appendChild(fijo);
     } else {
@@ -496,7 +607,8 @@
         var o = el('label', 'cot-opcion');
         var r = el('input'); r.type = 'radio'; r.name = 'cot-menu-' + promo.sitio; r.value = m.nombre;
         r.addEventListener('change', function () { estado.menu = m.nombre; calcular(); });
-        var texto = el('span', 'cot-opcion-texto'); texto.append(el('strong', '', m.nombre), el('span', 'cot-precio', precioDe(m)));
+        var texto = el('span', 'cot-opcion-texto');
+        texto.append(nombreConDetalle(m.nombre, function (c) { o.after(c); }), el('span', 'cot-precio', precioDe(m)));
         o.append(r, texto); grupo.appendChild(o);
       });
       p2.appendChild(grupo);
@@ -504,7 +616,13 @@
     // Lo que incluye va en el paso de cuántos son, que tiene espacio: así el
     // del menú no crece y el cotizador cabe en una pantalla.
     if (promo.incluye.length) {
-      var inc = el('p', 'cot-incluye'); inc.append(el('span', 'cot-rotulo', T.incluye), document.createTextNode(promo.incluye.join(' · ')));
+      var inc = el('p', 'cot-incluye'); inc.appendChild(el('span', 'cot-rotulo', T.incluye));
+      promo.incluye.forEach(function (x, k) {
+        if (k) inc.appendChild(document.createTextNode(' · '));
+        var b = botonDetalle(function () { return x; }, function (c) { inc.after(c); });
+        var cosa = el('span', 'detalle-nombre', x); if (b) cosa.appendChild(b);
+        inc.appendChild(cosa);
+      });
       pc.appendChild(inc);
     }
     // **El lugar exclusivo** (2026-11-25): suma el arriendo del recinto a su
@@ -550,7 +668,7 @@
         var c = el('input'); c.type = 'checkbox'; c.value = s.nombre;
         // El nombre y su precio en un renglón, como los menús; quién lo cobra, debajo.
         var texto = el('span', 'cot-opcion-texto');
-        texto.append(el('strong', '', s.nombre), el('span', 'cot-precio', precioDe(s)));
+        texto.append(nombreConDetalle(s.nombre, function (cj) { o.after(cj); }), el('span', 'cot-precio', precioDe(s)));
         if (s.loCobra) texto.appendChild(el('span', 'cot-cobra', T.loCobra + ' ' + s.loCobra));
         o.append(c, texto); caja.appendChild(o);
         var fila = null;
