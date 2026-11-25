@@ -25,6 +25,9 @@
 1. **Proponer antes de aplicar lo que cambia el contenido o el diseño.** Sin
    preguntar: leer, buscar, medir con Playwright, sacar capturas en una
    carpeta temporal. Al proponer, decir qué archivos toca y qué efecto tiene.
+   **Una captura no es un sí**: si el cliente manda una foto o pregunta qué
+   pasó, se diagnostica y se propone —qué cambiaría y qué otras pantallas
+   toca— y no se edita nada hasta su sí explícito.
 2. **No inventar datos del negocio** (precios, horarios, direcciones,
    capacidades, nombres). Si falta, se pide; mejor un hueco visible que algo
    plausible y falso.

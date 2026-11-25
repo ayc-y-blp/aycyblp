@@ -1636,6 +1636,9 @@ misma pasada.
   Playwright, capturas en una carpeta temporal. **Con confirmación**:
   editar, commits, push, PR, todo lo que toque GitHub. Al proponer, decir qué
   archivos toca y qué efecto tiene.
+- **Una captura no es un sí** (25-11-2026): una foto o un *"¿qué pasó?"* se
+  contesta con el diagnóstico y una propuesta —qué archivos, qué otras
+  pantallas toca— y se espera el sí explícito antes de editar.
 - **No inventar datos del negocio** (precios, horarios, capacidades,
   direcciones): si falta, se pide; mejor un hueco visible que algo plausible
   y falso.

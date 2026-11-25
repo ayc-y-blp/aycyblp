@@ -190,9 +190,16 @@ function Tramos({ p, onCambio }: { p: Promocion; onCambio: (c: Partial<Promocion
  * en media tarjeta. Los nombres de una sección miden lo mismo: los valores
  * parten en la misma vertical.
  */
-function FilaSeccion({ rotulo, ayuda, children }: { rotulo: string; ayuda?: string; children: React.ReactNode }) {
+function FilaSeccion({ rotulo, ayuda, separada, children }: {
+  rotulo: string; ayuda?: string;
+  /** **Una línea fina arriba** (2026-11-25, lo pidió el cliente: *"aquí ayuda con
+   *  una mini separación entre adultos y niños"*): separa un grupo del anterior en
+   *  la misma sección, sin otro marco. */
+  separada?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-x-2">
+    <div className={`grid gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-x-2 ${separada ? 'border-t border-hueso/15 pt-2' : ''}`}>
       <p className="rotulo-ficha flex items-center">{rotulo}{ayuda && <AyudaCorta tema={ayuda} />}</p>
       <div className="min-w-0">{children}</div>
     </div>
@@ -407,7 +414,7 @@ export default function PromocionesEditor({ catalogo, soloMira }: { catalogo: Me
                         <FilaSeccion rotulo="Adultos">
                           <Elegir etiqueta="Menú de adultos" opciones={menus} elegidos={p.menus} onCambio={(v) => cambiar(i, { menus: v })} />
                         </FilaSeccion>
-                        <FilaSeccion rotulo="Niños">
+                        <FilaSeccion rotulo="Niños" separada>
                           <Elegir etiqueta="Menú de niños" opciones={menusNinos} elegidos={p.ninos}
                             onCambio={(v) => cambiar(i, { ninos: v })} />
                         </FilaSeccion>

@@ -16,6 +16,11 @@ Es el orden que se repite en cada cambio. Las reglas de fondo están en el
 - **Proponer** si el cambio es de contenido o de diseño: qué archivos toca y
   qué efecto tiene. Si el pedido es claro y chico, se hace y se dice qué
   lectura se tomó.
+- **Una captura no es un sí.** Si el cliente manda una foto o pregunta
+  *"¿qué pasó?"*, se diagnostica y se propone (qué cambiaría, qué archivos y
+  qué otras pantallas toca) y se espera su sí explícito antes de editar. Lo
+  de *"claro y chico, se hace"* vale solo cuando pidió el cambio con
+  palabras.
 - Si hay una pregunta que decide el cliente, una sola y con nombre y
   apellido.
 
