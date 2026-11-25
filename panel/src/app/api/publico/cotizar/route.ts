@@ -15,7 +15,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { nuevoToken } from '@/lib/equipo';
 import { puede, type Rol } from '@/lib/auth';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
-import { elegirVendedorDelSitio } from '@/lib/rotacion';
+import { elegirVendedorDelSitio, vendedorDelCliente } from '@/lib/rotacion';
 import { hoy } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import {
@@ -156,10 +156,12 @@ export const POST = conLecturas([...TANDA, HOJA_PRESUPUESTOS, HOJA_CLIENTES, HOJ
     // **Por turno** (2026-11-25): a quien sigue entre los vendedores que marcaron la rotación.
     // Sin ninguno, la cuenta de Configuración, si existe, está activa y cotiza. Si no, sin
     // vendedor: la ven la gerencia y el administrador.
-    const cuenta = elegirVendedorDelSitio({ fichas, cuentas, cotizaciones: presupuestos, respaldo: cfg.vendedorSitio });
+    const ya = fichaDelContacto(contacto, clientes);
+    // Quien ya cotizó vuelve con su vendedor; si no, el turno.
+    const cuenta = (ya && vendedorDelCliente(presupuestos.filter((p) => p.idCliente === ya.id), cuentas))
+      || elegirVendedorDelSitio({ fichas, cuentas, cotizaciones: presupuestos, respaldo: cfg.vendedorSitio });
     const vendedor = cuenta?.nombre ?? '';
     const ahora = ahoraEnChile();
-    const ya = fichaDelContacto(contacto, clientes);
     if (ya && delSitioHoy(presupuestos, ya.id, hoy()) >= TOPE_SITIO_DIA) {
       return NextResponse.json({ ok: false, codigo: 'tope' }, { status: 429, headers: SIN_CACHE });
     }

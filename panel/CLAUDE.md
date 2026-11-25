@@ -252,6 +252,15 @@ monto mínimo cotizable. Revisa esta misma lógica para el show también"*.
 - **La cotización del vendedor no cambia**: ahí el precio se negocia y rige el mínimo de siempre.
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**: el texto de los dos campos.
 
+## La fecha y hora de la reserva, en su tarjeta (2026-11-25)
+
+Lo pidió el cliente con una foto de la línea *🛒 Compró en Shopify* de una reserva en la página del día:
+*"podrías mostrar en este lugar la fecha y hora de la reserva también"*. Ahora dice *🛒 Compró en Shopify ·
+24 nov 2026 · 15:32* (o *✍ Anotó …* / *✍ Anotada a mano*, con su fecha y hora). Sale de la columna `Creada`,
+que ya traía el instante en que Shopify creó el pedido o en que se anotó a mano: `cuandoSeReservo()`
+(`lib/fechas.ts`, con pruebas) lo pasa a la hora de Chile. Una reserva sin ese dato (las importadas de antes) no
+muestra nada. **Lecturas de Google**: ninguna. **Ningún permiso ni columna nueva.** Ninguna ayuda lo describe.
+
 ## Con boleta, lo que gana es líquido (2026-11-25)
 
 Lo pidió el cliente con una foto de la tarjeta de Carmen Barros (sueldo fijo $550.000, *Pagarle
@@ -296,9 +305,11 @@ rotación"*.
   (ahora es el respaldo), y sin ninguna, queda sin vendedor y la ven quienes asignan.
 - **`PATCH /api/vendedores` acepta a cualquier cuenta activa que cotiza**, no solo al rol Vendedor:
   quien vende con otro rol (operaciones) aparece en la lista y puede tener su casilla.
-- **Qué no hace**: dos cotizaciones que llegan a la vez pueden caerle a la misma persona, y una
-  persona que cotiza dos veces seguidas le toca a dos vendedores distintos. Si molesta, se hace que
-  el mismo cliente vuelva con su vendedor.
+- **Un cliente que cotiza otra vez vuelve con su vendedor** (lo pidió el cliente el mismo día: *"si un
+  cliente cotiza dos veces, que caiga a un vendedor"*): `vendedorDelCliente()` mira las cotizaciones de
+  esa ficha (la que ya tiene ese teléfono o correo) y usa la cuenta de la más nueva, si sigue activa y
+  cotiza; una a nombre del administrador no cuenta. Sin cotización previa, el turno.
+- **Qué no hace**: dos cotizaciones que llegan a la vez pueden caerle a la misma persona.
 - **Lecturas de Google**: el `POST` de `/api/publico/cotizar` suma `Vendedores` a su tanda (una más
   por cotización que llega; el `GET` no cambia). **Ningún permiso cambió.** **Ayuda**: `vendRotacion` y
   el texto de *Las del sitio van a* en Configuración.

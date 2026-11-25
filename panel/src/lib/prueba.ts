@@ -7462,6 +7462,14 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catNP)[0]?.ninos.map((n) => n.nombre).join() === 'Niños,Pequeños'
      && PR.limpiarPromocion({ id: 'x', nombre: 'x', ninos: 'niños | Pequeños | Inventado' }, catNP).ninos.join() === 'Niños,Pequeños',
      'el sitio recibe los dos menús de niños, y se guardan solo los que están en el catálogo');
+  // Cuándo se hizo una reserva (2026-11-25).
+  {
+    const F = await import('./fechas.ts');
+    ok(F.cuandoSeReservo('2026-10-20T15:04:00-03:00') === '20 oct 2026 · 15:04',
+       'cuándo se reservó: la fecha y la hora en Chile, con el mes corto');
+    ok(F.cuandoSeReservo('2026-11-24T23:30:00Z') === '24 nov 2026 · 20:30' && F.cuandoSeReservo('') === '' && F.cuandoSeReservo('no es una fecha') === '',
+       'cuándo se reservó: un instante en UTC se pasa a la hora de Chile, y sin dato o ilegible queda vacío');
+  }
   // La rotación de las cotizaciones del sitio (2026-11-25).
   {
     const R = await import('./rotacion.ts');
@@ -7487,6 +7495,12 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
        && R.elegirVendedorDelSitio({ fichas: [f('carmen', false)], cuentas, cotizaciones: [], respaldo: '' }) === null
        && R.elegirVendedorDelSitio({ fichas: [], cuentas, cotizaciones: [], respaldo: 'Luis Vera' }) === null,
        'sin nadie en la rotación vale la cuenta de respaldo de Configuración, si está activa; y sin ninguna, nadie');
+    const delCli = (...q: string[]) => q.map((creadoPor) => ({ origen: 'Sitio', creadoPor }));
+    ok(R.vendedorDelCliente(delCli('Jorge Soto', 'Carmen Barros'), cuentas)?.nombre === 'Carmen Barros'
+       && R.vendedorDelCliente(delCli('Carmen Barros', 'Luis Vera'), cuentas)?.nombre === 'Carmen Barros'
+       && R.vendedorDelCliente(delCli('Admin'), [...cuentas, cu('admin', 'Admin', 'admin')]) === null
+       && R.vendedorDelCliente([], cuentas) === null,
+       'un cliente que cotiza otra vez vuelve con el vendedor de su cotización más nueva, si sigue activo; sin cuenta válida, nadie (le toca el turno)');
     const V2 = await import('./vendedores.ts');
     const enc2 = [...V2.ENCABEZADO_VENDEDORES];
     const vuelta2 = V2.leerVendedoresDe([enc2, V2.filaVendedor({ ...V2.fichaVacia('ana', 'Ana'), rotacionSitio: true }, enc2),

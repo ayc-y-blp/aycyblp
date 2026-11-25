@@ -54,3 +54,20 @@ export function elegirVendedorDelSitio(a: {
   const r = normalizar(a.respaldo);
   return (r && a.cuentas.find((c) => c.activo && normalizar(c.nombre) === r && puede(c.rol as Rol, 'presupuestos'))) || null;
 }
+
+/**
+ * **Un cliente que cotiza otra vez vuelve con su vendedor** (2026-11-25, lo pidió el cliente: *"si un
+ * cliente cotiza dos veces, que caiga a un vendedor"*): la cuenta de la cotización más nueva de ese
+ * cliente, si sigue activa y cotiza. Una cotización a nombre del administrador no cuenta (lo importado
+ * del CRM quedó a su nombre). Sin cotización previa o sin cuenta válida, nadie: le toca el turno.
+ */
+export function vendedorDelCliente(delCliente: Cotizacion[], cuentas: Cuenta[]): Cuenta | null {
+  for (let i = delCliente.length - 1; i >= 0; i--) {
+    const quien = normalizar(delCliente[i].creadoPor);
+    if (!quien) continue;
+    const c = cuentas.find((x) => x.activo && x.rol !== 'admin' && puede(x.rol as Rol, 'presupuestos')
+      && (normalizar(x.nombre) === quien || normalizar(x.usuario) === quien));
+    if (c) return c;
+  }
+  return null;
+}
