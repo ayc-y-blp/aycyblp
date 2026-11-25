@@ -61,10 +61,14 @@ export default function BuscarEnLista({ opciones, elegido = '', onElegir, onCerr
         {calzan.map((o) => (
           <li key={o.id}>
             <button type="button" onClick={() => onElegir(o.id)} aria-pressed={o.id === elegido}
-              className={`tecla flex min-h-[44px] w-full items-center justify-between gap-2 rounded-lg px-3 text-left hover:bg-oro/10
+              className={`tecla flex min-h-[44px] w-full flex-wrap items-center justify-between gap-x-2 rounded-lg px-3 text-left hover:bg-oro/10
                 ${o.id === elegido ? 'bg-oro/15 text-oro' : ''}`}>
-              <span className="min-w-0 break-words py-1 text-[15px] font-semibold leading-tight">{o.id === elegido ? '✓ ' : ''}{o.nombre}</span>
-              {o.detalle && <span className="shrink-0 text-[13px] text-hueso/65">{o.detalle}</span>}
+              {/* **El nombre tiene un ancho mínimo y el detalle baja de renglón**
+                  (2026-11-25, lo marcó el cliente con una foto de Configuración →
+                  «Las del sitio van a»): en una columna angosta, el detalle (el rol)
+                  no se achicaba y el nombre quedaba de una letra por renglón. */}
+              <span className="min-w-[8rem] flex-1 break-words py-1 text-[15px] font-semibold leading-tight">{o.id === elegido ? '✓ ' : ''}{o.nombre}</span>
+              {o.detalle && <span className="max-w-full pb-1 text-[13px] text-hueso/65">{o.detalle}</span>}
             </button>
           </li>
         ))}

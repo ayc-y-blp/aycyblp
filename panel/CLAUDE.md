@@ -229,6 +229,20 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El buscador, en una columna angosta (2026-11-25)
+
+Lo marcó el cliente con una foto de *Configuración → Las del sitio van a*: el
+nombre de la cuenta salía **una letra por renglón** (*C r i s t o b a l…*). En
+esa columna angosta, el detalle de cada opción (*Encargado de operaciones*) no
+se achicaba y se quedaba con todo el ancho.
+
+- **`BuscarEnLista`**, la pieza de todas las listas con buscador: el nombre
+  tiene un ancho mínimo (8rem) y ocupa lo que sobra, y **el detalle baja a un
+  segundo renglón** cuando no cabe al lado. Con ancho, todo sigue en una línea
+  como antes. Llega solo a todas las pantallas que la usan.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  describe cómo se dibuja la lista.
+
 ## El lugar exclusivo: dos precios estándar y el show a su precio (2026-11-25, segunda pasada)
 
 Lo marcó el cliente con una foto del cotizador, un sábado con el lugar exclusivo: la casilla decía
