@@ -371,6 +371,23 @@ export const ESCENAS = {
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
   },
+  // **✉ ¿La mandaste?, desde la lista** (2026-11-25): la pastilla de una lista
+  // sin confirmar abre la pregunta sin abrir la cotización. Como Daniela, que
+  // hizo la de Marisol Cáceres; la ventana que avisa al entrar se cierra antes.
+  'v-confirmar-envio': () => comoVendedora(async () => {
+    await ir('/presupuestos'); await clic(p.getByRole('button', { name: 'Después' }));
+    await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
+    await clic(p.locator('button:visible[aria-label="¿Le mandaste la cotización a Marisol Cáceres?"]'));
+  }),
+  // **Y al abrirla** (2026-11-25): la misma pregunta sale sola.
+  'v-pregunta-al-abrir': () => comoVendedora(async () => {
+    await ir('/presupuestos'); await clic(p.getByRole('button', { name: 'Después' }));
+    await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
+    await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
+    await p.getByRole('dialog', { name: '¿La mandaste?' }).waitFor();
+  }),
   // **¿Se cayó?** (2026-11-22): la ventanita de *✕ Se cayó…*, abierta desde
   // la fila de la lista, que es la misma que se abre en la cotización.
   'v-se-cayo': async () => {
@@ -574,6 +591,18 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
       const h = await revisarFilaFija(p);
       console.log(`  ${h.length ? 'FALLA ' : 'ok     '} cotizaciones a ${ancho}px: los botones fijos${h.length ? '\n           · ' + h.join('\n           · ') : ', en una fila'}`);
       if (h.length) fallas.push(`cotizaciones a ${ancho}px · botones fijos`);
+      // **Las nuevas del sitio y lo sin confirmar** (2026-11-25): Daniela
+      // tiene una de cada una, así que su Cotizaciones y su Clientes traen el
+      // bloque *🆕 Nuevas del sitio*, la sección *🆕 Nuevos* y la marca ✉.
+      if (ancho !== ANCHO) return;
+      for (const [nombre, ruta] of [['cotizaciones-vendedora', '/presupuestos'], ['clientes-vendedora', '/clientes']]) {
+        await ir(ruta);
+        const cerrar = p.getByRole('button', { name: 'Después' });
+        if (await cerrar.count()) await clic(cerrar);
+        const e = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
+        console.log(`  ${e.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${e.length ? '\n           · ' + e.join('\n           · ') : ''}`);
+        if (e.length) fallas.push(`espacio · ${nombre}`);
+      }
     });
   }
   await p.setViewportSize({ width: ANCHO, height: ALTO });

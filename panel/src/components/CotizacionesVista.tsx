@@ -19,10 +19,15 @@
  *   con tarjetas de resumen, filtros y buscador. Ver `ListaCotizaciones`.
  */
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
+import { PastillaEnvio } from './ConfirmarEnvio';
+import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
+import { ahoraEnChile } from '@/lib/bitacora';
 import type { AvisoSitio } from '@/lib/promociones';
+import type { AvisoSinConfirmar } from '@/lib/envio';
 import { porCoordinar } from '@/lib/presupuestos';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import AyudaCorta from './AyudaCorta';
+import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import Ayuda from './Ayuda';
 import { usarSoloMira } from './SesionCliente';
 import { Aviso } from './CalendarView';
@@ -59,7 +64,7 @@ import AvisoSobrecupo, { type SobrecupoCorto } from './AvisoSobrecupo';
 import Pendientes, { FilaPendiente } from './Pendientes';
 import AvisoFijo from './AvisoFijo';
 import { BotonMias, BotonTodos } from './BotonMias';
-import { Pastilla, PastillaCotizado, PastillaContacto } from './Pastilla';
+import { Pastilla, PastillaCotizado, PastillaContacto, PastillaNueva } from './Pastilla';
 import ListaCotizaciones from './ListaCotizaciones';
 import EmpresaCliente from './EmpresaCliente';
 import { veElEquipo, type ContextoLista } from '@/lib/listaCotizaciones';
@@ -70,6 +75,8 @@ type Datos = DatosCotizar & {
   avisosLeidos?: string[];
   /** Las cotizaciones del sitio que esta cuenta no ha visto (2026-11-23). */
   delSitio?: AvisoSitio[];
+  /** Las listas que esta cuenta no ha confirmado como mandadas (2026-11-25, `lib/envio.ts`). */
+  sinConfirmar?: AvisoSinConfirmar[];
   cobros?: { presupuesto: string; monto: number; revisadoPor?: string; concepto?: string }[];
   /** Los días que se pasaron del cupo (2026-11-12). Ver `AvisoSobrecupo`. */
   sobrecupo?: SobrecupoCorto[];
@@ -199,6 +206,8 @@ export default function CotizacionesVista() {
    * para mirar no gasta una lectura.
    */
   const [versionOcupacion, setVersionOcupacion] = useState(0);
+  /** Volver a pedir las cotizaciones y la ocupación: algo cambió de estado (una se confirmó como mandada). */
+  const recargarTodo = () => { void cargar(); setVersionOcupacion((v) => v + 1); };
   const huboCambios = useRef(false);
   useEffect(() => {
     if (!datos) return;
@@ -299,6 +308,13 @@ export default function CotizacionesVista() {
   // La última de cada grupo: la primera de `ordenarNotas()` que se ve de él.
   const ultimaPorGrupo = new Map<string, Nota>();
   for (const n of ordenarNotas(notasVisibles)) if (!ultimaPorGrupo.has(n.presupuesto)) ultimaPorGrupo.set(n.presupuesto, n);
+  /** **🆕 Nuevas del sitio** (2026-11-25, `lib/envio.ts`): las que esperan el primer contacto, la última que llegó primero. */
+  const nuevas = agrupar(datos.presupuestos)
+    .filter((p) => esNuevaDelSitio(p, notasPorGrupo.get(grupoDe(p)) ?? 0, hoy)
+      && esNuevaPara(p, datos.usuario, puede(datos.rol as Rol, 'asignarVendedor')))
+    .sort((a, b) => (b.creado ?? '').localeCompare(a.creado ?? ''));
+  /** La hora de ahora en Chile, para *llegó hace 2 h*. */
+  const ahora = ahoraEnChile();
   const anotadasHoy = new Set(notasVisibles.filter((n) => n.quien === datos.usuario && n.cuando.slice(0, 10) === hoy)
     .map((n) => n.presupuesto)).size;
   /** La agenda dibujada, con los botones de cada fila: la misma en la Lista y en *Tus pendientes*. */
@@ -309,6 +325,7 @@ export default function CotizacionesVista() {
       puedeAnotar={(p) => alternativasDe(p, datos.presupuestos).some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor))}
       onAbrir={(p, paso) => setAbierta({ p, paso: paso ?? 4 })}
       onNotas={(p) => setAnotando(p)}
+      marcaEnvio={(p) => marcaEnvio(p)}
       onCambio={() => void cargar()} />
   );
   const vencidas = propias.filter((p) => vencidoSinCerrar(p, hoy));
@@ -377,8 +394,22 @@ export default function CotizacionesVista() {
    */
   const puedeCaerse = (p: Presupuesto) => !soloMira && enCarrera(p)
     && puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor);
+  /**
+   * **✉ ¿La mandaste?** (2026-11-25, `lib/envio.ts`): la marca de un grupo
+   * listo que nadie ha confirmado como mandado. A su vendedor se le aprieta y
+   * pregunta; quien ve al equipo (la gerencia, pagos y el administrador) la ve
+   * como aviso. Los demás vendedores, nada: no es suya.
+   */
+  const marcaEnvio = (p: Presupuesto) => {
+    const x = porConfirmarDelGrupo(alternativasDe(p, datos.presupuestos), datos.lineas, hoy);
+    if (!x) return null;
+    const suya = esSuya(datos.usuario, x.creadoPor);
+    if (!suya && !veElEquipo(datos.rol)) return null;
+    return <PastillaEnvio id={x.id} cliente={x.cliente || p.cliente} pregunta={suya && !soloMira} onListo={recargarTodo} />;
+  };
   const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => {
     const caerse = puedeCaerse(p);
+    const envio = marcaEnvio(p);
     const botonCaer = (donde: string) => (
       <button type="button" onClick={() => setCayendo(p)} aria-label={`Se cayó la cotización de ${p.cliente || 'sin cliente'}`}
         className={`boton relative z-10 shrink-0 !min-h-[40px] !border-2 !border-rojo-fuerte/50 !px-2.5 !text-[14px]
@@ -412,7 +443,8 @@ export default function CotizacionesVista() {
             y *Sin fecha*. En el celular, donde la fila se dobla, va en su
             renglón, a la izquierda: así todas las filas con pastilla quedan
             parejas (el total, debajo). */}
-        <span className={`flex flex-1 lg:justify-center ${recontactoDe(p, hoy) ? 'max-lg:basis-full' : ''}`}>
+        <span className={`flex flex-1 flex-wrap items-center gap-2 lg:justify-center ${recontactoDe(p, hoy) || envio ? 'max-lg:basis-full' : ''}`}>
+          {envio}
           <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
         </span>
         {caerse && botonCaer('hidden lg:inline-flex')}
@@ -437,9 +469,23 @@ export default function CotizacionesVista() {
   };
 
   // ---- El calendario: semanas desde la en curso, con los días que importan.
-  /** Lo que esta cuenta ve en la tarjeta de un día: lo mandado, una ganada, o lo suyo sin mandar. */
+  /**
+   * **Las listas de los demás que nadie ha confirmado como mandadas**
+   * (2026-11-25, lo pidió el cliente: *"sí quiero ver las sin mandar"*):
+   * para quien ve al equipo (la gerencia, pagos y el administrador), con *De
+   * todos*. No son gente posible —eso sigue siendo solo lo mandado—: es una
+   * marca, *✉ N sin confirmar el envío*, para saber que hay algo detenido.
+   */
+  const gruposSinConfirmarDeOtros = new Set(veElEquipo(datos.rol) && !soloMias
+    ? agrupar(visibles).filter((p) => {
+      const x = porConfirmarDelGrupo(alternativasDe(p, datos.presupuestos), datos.lineas, hoy);
+      return !!x && !esSuya(datos.usuario, x.creadoPor);
+    }).map(grupoDe)
+    : []);
+  /** Lo que esta cuenta ve en la tarjeta de un día: lo mandado, una ganada, lo suyo sin mandar o lo listo de otros sin confirmar. */
   const seVeEnLaTarjeta = (p: Presupuesto) => estadoDe(p) === ESTADO_PRESUPUESTO.aceptado || !!p.idReserva
-    || cuentaEnElCalendario(p, hoy) || (cuentaComoPosible(p, hoy) && esSuya(datos.usuario, p.creadoPor));
+    || cuentaEnElCalendario(p, hoy) || (cuentaComoPosible(p, hoy) && esSuya(datos.usuario, p.creadoPor))
+    || gruposSinConfirmarDeOtros.has(grupoDe(p));
   const inicio = semanaDe(hoy);
   // *Lo que viene*: desde esta semana, `semanas` hacia adelante. Una semana o
   // un mes: sus semanas, y del mes solo sus días.
@@ -489,10 +535,11 @@ export default function CotizacionesVista() {
      */
     const mandadas = vivas.filter((p) => cuentaEnElCalendario(p, hoy));
     const sinMandarMias = vivas.filter((p) => !cuentaEnElCalendario(p, hoy) && esSuya(datos.usuario, p.creadoPor)).length;
+    const sinConfirmarOtros = vivas.filter((p) => gruposSinConfirmarDeOtros.has(grupoDe(p))).length;
     const ganadas = delDia.filter((p) => estadoDe(p) === ESTADO_PRESUPUESTO.aceptado).length;
     const porSeguirDia = delDia.filter((p) => seguirIds.has(grupoDe(p))).length;
     const posibles = mandadas.reduce((n, p) => n + gente(p), 0);
-    const nadaQueMostrar = !mandadas.length && !ganadas && !sinMandarMias && !porSeguirDia;
+    const nadaQueMostrar = !mandadas.length && !ganadas && !sinMandarMias && !sinConfirmarOtros && !porSeguirDia;
     const palabra = palabraDelDia(estadoDelDia.get(f));
     const occ = ocupacion.get(f);
     const abiertaEsta = diaAbierto === f;
@@ -539,6 +586,11 @@ export default function CotizacionesVista() {
             {sinMandarMias > 0 && (
               <Pastilla tipo="propio" title="Solo tú lo ves: candidatos y borradores tuyos para este día, todavía sin mandar">
                 ✎ {sinMandarMias} tuya{sinMandarMias === 1 ? '' : 's'} sin mandar
+              </Pastilla>
+            )}
+            {sinConfirmarOtros > 0 && (
+              <Pastilla tipo="alerta" title="Listas de otros vendedores que todavía no confirman como mandadas: no cuentan como gente posible">
+                ✉ {sinConfirmarOtros} sin confirmar el envío
               </Pastilla>
             )}
             {nadaQueMostrar && (
@@ -589,6 +641,7 @@ export default function CotizacionesVista() {
           siempre). Antes iba dentro de la banda, y al cerrarlo la banda
           quedaba y parecía que no se había cerrado. Ver `AvisoFijo`. */}
       <AvisoCotizacionesSitio key={(datos.delSitio ?? []).map((a) => a.id).join()} avisos={datos.delSitio ?? []}
+        sinConfirmar={datos.sinConfirmar ?? []} onCambio={recargarTodo}
         onAbrir={(id) => { const p = datos.presupuestos.find((x) => x.id === id); if (p) setAbierta({ p }); }} />
       <AvisoFijo clave="cotizaciones-cupo" delServidor={datos.avisosLeidos} className="-mt-2 mb-4 lg:mb-3">
         Lo cotizado no ocupa cupo: recién al marcarla ganada se vuelve reserva.
@@ -739,6 +792,35 @@ export default function CotizacionesVista() {
         }] : [])
       ]} />
       </div>
+
+      {/* **🆕 Nuevas del sitio** (2026-11-25, lo pidió el cliente: *"necesito
+          que estos se destacan… una tercera sección arriba en clientes y
+          cotizaciones que muestra NUEVOS para que al tiro pueden empezar el
+          seguimiento"*): las cotizaciones del sitio sin ningún contacto
+          anotado (`esNuevaDelSitio()`), de esta cuenta o, sin vendedor, de
+          quien asigna. Arriba del calendario, de *Sin fecha* y de la Lista;
+          salen con la primera nota. Sin ninguna, no se dibuja. */}
+      {nuevas.length > 0 && (
+        <section className={`mb-4 lg:mb-3 ${marcoGrupo('rosa')} p-3`} aria-label="Nuevas del sitio">
+          <p className={`${TITULO_GRUPO} mb-2 flex items-center gap-2`}>
+            🆕 Nuevas del sitio · {nuevas.length} <AyudaCorta tema="nuevasDelSitio" />
+          </p>
+          <ul className="space-y-1.5">
+            {nuevas.map((p) => fila(p, true, (
+              <>
+                <PastillaNueva promo={promoDelOrigen(p.origen)} creado={p.creado ?? ''} ahora={ahora} />
+                {!String(p.creadoPor ?? '').trim() && <span className="font-semibold text-ambar-texto">sin vendedor</span>}
+                {!soloMira && alternativasDe(p, datos.presupuestos).some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor)) && (
+                  <button type="button" onClick={() => setAnotando(p)}
+                    className="boton relative z-10 min-h-[40px] !border-oro font-semibold">
+                    📝 Anotar<span className="hidden lg:inline"> el primer contacto</span>
+                  </button>
+                )}
+              </>
+            )))}
+          </ul>
+        </section>
+      )}
 
       {vista === 'calendario' && (
         <div className="space-y-4 lg:space-y-3">

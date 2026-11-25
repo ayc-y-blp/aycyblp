@@ -11,10 +11,13 @@ import { limpiarCliente, faltaEnCliente, parecidos } from '@/lib/clientes';
 import { folioDe, estadoVisible, totalDe, lineasDe } from '@/lib/presupuestos';
 import { grupoDe } from '@/lib/cotizar';
 import { hoy } from '@/lib/fechas';
-import { puede } from '@/lib/auth';
+import { puede, esSuya } from '@/lib/auth';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import { HOJA_NOTAS, notasVisibles, notasDelCrm, puedeVerNotas, type Nota } from '@/lib/notas';
 import { recontactoDe } from '@/lib/agenda';
+import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
+import { esDelSitio } from '@/lib/promociones';
+import { veElEquipo } from '@/lib/listaCotizaciones';
 import { vendedoresParaAsignar, estaAbierta, clientesPorVendedor } from '@/lib/asignar';
 import type { Cliente } from '@/lib/clientes';
 import { alcanceDeContacto, recortarCliente, clientePropio, estaTapado } from '@/lib/privacidad';
@@ -81,10 +84,32 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       recontactar: string;
       /** Si esta cuenta lee y escribe las notas de esa cotización (`puedeVerNotas()`). */
       anota: boolean;
+      /**
+       * **✉ ¿La mandaste?** (2026-11-25, `lib/envio.ts`): `pregunta` si está
+       * lista sin confirmar y es de esta cuenta; `aviso` si es de otro y esta
+       * cuenta ve al equipo; vacío si no.
+       */
+      envio: '' | 'pregunta' | 'aviso';
+      /** **🆕 Nueva del sitio** (2026-11-25): sin ningún contacto anotado, y de esta cuenta. */
+      nueva: boolean;
+      /** La promoción que la trajo y cuándo llegó, para la pastilla *🆕 Nueva*. */
+      promo: string;
+      creado: string;
     }[]> = {};
+    // Las notas, una vez: para las de cada cliente y para saber qué cotización
+    // del sitio no tiene todavía un contacto anotado. `Notas` va en la tanda.
+    const notasLeidas = verPresupuestos ? await leerNotas().catch(() => []) : [];
     if (verPresupuestos) {
       const lineas = await leerLineasPresupuesto().catch(() => []);
       const h = hoy();
+      const notasDelGrupo = new Map<string, number>();
+      for (const n of notasLeidas) notasDelGrupo.set(n.presupuesto, (notasDelGrupo.get(n.presupuesto) ?? 0) + 1);
+      const asigna = puede(quien.rol, 'asignarVendedor');
+      const veEquipo = veElEquipo(quien.rol);
+      const porGrupo = new Map<string, typeof presupuestos>();
+      for (const p of presupuestos) porGrupo.set(grupoDe(p), [...(porGrupo.get(grupoDe(p)) ?? []), p]);
+      const porConfirmar = new Set([...porGrupo.values()]
+        .map((alts) => porConfirmarDelGrupo(alts, lineas, h)?.id).filter((x): x is string => !!x));
       // **El recontacto y las notas, también en la ficha del cliente**
       // (2026-11-25, lo pidió el cliente). Un grupo de alternativas es una
       // sola conversación: se anota si alguna es de esta cuenta.
@@ -95,7 +120,10 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
         (historial[p.idCliente] ??= []).push({
           id: p.id, folio: folioDe(p), fecha: p.fecha, periodo: p.periodo,
           estado: estadoVisible(p, h), total: totalDe(lineasDe(lineas, p.id), p.descuento),
-          grupo: grupoDe(p), recontactar: recontactoDe(p, h), anota: anotaEn.has(grupoDe(p))
+          grupo: grupoDe(p), recontactar: recontactoDe(p, h), anota: anotaEn.has(grupoDe(p)),
+          envio: !porConfirmar.has(p.id) ? '' : esSuya(quien.usuario, p.creadoPor) ? 'pregunta' : veEquipo ? 'aviso' : '',
+          nueva: esNuevaDelSitio(p, notasDelGrupo.get(grupoDe(p)) ?? 0, h) && esNuevaPara(p, quien.usuario, asigna),
+          promo: esDelSitio(p) ? promoDelOrigen(p.origen) : '', creado: p.creado ?? ''
         });
       }
       for (const k of Object.keys(historial)) {
@@ -108,7 +136,7 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
     const notasPorCliente: Record<string, Omit<Nota, 'fila'>[]> = {};
     if (verPresupuestos) {
       const clienteDe = new Map(presupuestos.map((p) => [grupoDe(p), p.idCliente ?? '']));
-      for (const n of notasVisibles([...notasDelCrm(presupuestos), ...await leerNotas().catch(() => [])],
+      for (const n of notasVisibles([...notasDelCrm(presupuestos), ...notasLeidas],
         presupuestos, quien.rol, quien.usuario)) {
         const c = n.cliente || clienteDe.get(n.presupuesto) || '';
         if (!c) continue;
@@ -125,6 +153,8 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       cotizaciones,
       historial,
       hoy: hoy(),
+      // La hora de ahora, para *llegó hace 2 h* de las nuevas del sitio (2026-11-25).
+      ahora: ahoraEnChile(),
       usuario: quien.usuario,
       notas: notasPorCliente,
       sinFicha: verPresupuestos ? presupuestos.filter((p) => !p.idCliente).length : 0,

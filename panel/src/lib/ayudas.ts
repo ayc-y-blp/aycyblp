@@ -288,8 +288,17 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'hoy y las cotizaciones prometidas que falta mandar. La agenda entera está en 📋 Lista → 🗓 Agenda. '
       + 'Cada cotización tiene sus 🗒 Notas: qué conversaron y cuándo volver a contactarlo (las ven solo su '
       + 'vendedor y la gerencia).',
+      '🆕 Nuevas del sitio, arriba: las que llegaron por la página de promociones y '
+      + 'todavía no tienen ningún contacto anotado. Contáctalo y anótalo con '
+      + '📝 Anotar el primer contacto: con la primera nota sale de ahí.',
+      'Solo lo mandado cuenta como gente posible en los calendarios. Una cotización '
+      + 'lista (con cliente y total) que no figura como mandada lleva ✉ ¿La mandaste?: '
+      + 'apriétalo y contéstalo. El panel también lo pregunta al abrirla y al entrar, '
+      + 'hasta que lo confirmes.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
-      + 'con De todos, también los días abiertos, para cotizar en uno vacío.',
+      + 'con De todos, también los días abiertos, para cotizar en uno vacío. La '
+      + 'gerencia, pagos y el administrador ven además ✉ N sin confirmar el envío: '
+      + 'las listas de otros vendedores que todavía no confirman que las mandaron.',
       'Lo que viene · Semana · Mes, en el marco dorado del calendario: Lo que '
       + 'viene muestra desde esta semana, como siempre; Semana y Mes, con ◀ ▶, '
       + 'van también a las que pasaron, para revisar lo que se cotizó y se '
@@ -316,7 +325,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Productos: agrégalos con los botones. Cada línea tiene su precio y su '
       + 'descuento; abajo va el descuento sobre el total y el IVA.',
       'Envío: en qué va, documento, condiciones de pago y los pagos; desde ahí '
-      + 'se manda por WhatsApp o correo. Contrato: sus datos y condiciones, y '
+      + 'se manda por WhatsApp, o por correo (✉️ Copiar correo copia su dirección, '
+      + 'y 📋 Copiar link el link). Al volver te pregunta si la mandaste. Contrato: sus datos y condiciones, y '
       + 'se manda igual. Si el cliente '
       + 'acepta, “Ver el contrato”, imprímelo y fírmenlo en dos ejemplares.',
       'Sube la foto o el PDF del contrato firmado, anota el anticipo y '
@@ -477,9 +487,14 @@ export const AYUDAS: Record<string, Ayuda> = {
       '*Míos* muestra los clientes que creaste o a los que les cotizaste; '
       + '*Todos*, la lista entera. Si todavía no tienes ninguno, parte en *Todos*. '
       + 'El buscador busca dentro de lo que estés mirando.',
-      'La lista va en dos partes: arriba, 📞 Por contactar, los clientes con un '
+      'Arriba de todo, 🆕 Nuevos: los que mandaron una cotización por la página de '
+      + 'promociones y todavía no tienen ningún contacto anotado, el último que llegó '
+      + 'primero. Salen de ahí con la primera nota (📝 Anotar).',
+      'Después, 📞 Por contactar, los clientes con un '
       + 'día elegido para volver a contactarlos, el más cercano primero; abajo, '
-      + 'los demás, de la A a la Z. El botón 📞 Por contactar deja solo los de arriba. Ese día sale en su línea, en ámbar '
+      + 'los demás, de la A a la Z. El botón 📞 Por contactar deja solo los de arriba. '
+      + 'Una cotización lista que todavía no figura como mandada lleva ✉ ¿La mandaste?: '
+      + 'apriétalo y contéstalo. Ese día sale en su línea, en ámbar '
       + 'hasta ese día y en rojo desde ese día. Al abrir la ficha ves la última nota y, en '
       + 'cada cotización, su próximo contacto y 📝 Anotar: la misma ventanita de la '
       + 'cotización, con qué conversaron y cuándo volver a contactarlo. Si tiene '
@@ -1035,7 +1050,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   mandarContrato: {
     titulo: 'Mandar el contrato',
     texto: [
-      'WhatsApp y Correo abren el mensaje con el link del contrato. Al volver te pregunto si lo mandaste.',
+      'WhatsApp abre el mensaje con el link del contrato; ✉️ Copiar correo copia la dirección del cliente, para escribirle desde tu correo con el link (📋 Copiar link). Al volver te pregunto si lo mandaste.',
       'Si no vuelve firmado, te lo recuerdo arriba de Cotizaciones. Se sube el firmado y listo.'
     ]
   },
@@ -1297,6 +1312,22 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Cada una lleva su pastilla 📞 en su primera fila, al centro: en ámbar hasta ese día y en rojo desde ese día. La tarjeta se pone roja si alguna ya llegó a su día.'
     ]
   },
+  nuevasDelSitio: {
+    titulo: '🆕 Nuevas del sitio',
+    texto: [
+      'Las cotizaciones que llegaron por el cotizador de la página de promociones y que todavía no tienen ningún contacto anotado. Al cliente ya le llegaron con su total.',
+      'Contáctalo cuanto antes y anótalo con 📝 Anotar el primer contacto (llamé, le escribí por WhatsApp): con la primera nota sale de acá y sigue como cualquier otra, con su día de recontacto.',
+      'Cada una es tuya, o, si llegó sin vendedor, de quien asigna (la gerencia, pagos y el administrador). En Clientes salen arriba, en 🆕 Nuevos.'
+    ]
+  },
+  confirmarEnvio: {
+    titulo: '✉ ¿La mandaste?',
+    texto: [
+      'Una cotización lista —con cliente y total— que todavía no figura como mandada. Solo lo mandado cuenta como gente posible en los calendarios.',
+      'Si ya se la mandaste (por WhatsApp, por correo, con el PDF o con el link), apriétala y contesta ✓ Sí, la mandé: pasa a Enviada y desde hoy corre su vigencia.',
+      'El panel también lo pregunta al volver de WhatsApp, del correo o de Ver el documento, al abrir la cotización y al entrar al panel, hasta que lo confirmes. A la gerencia, pagos y el administrador les sale como aviso: ✉ sin confirmar el envío.'
+    ]
+  },
   listaPorCobrar: {
     titulo: 'Por cobrar',
     texto: [
@@ -1397,7 +1428,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   seguimiento: {
     titulo: 'Seguimiento y envío',
     texto: [
-      'WhatsApp y Correo abren el mensaje con el link y tu nombre, listo para mandar: en el celular se abre la aplicación y en el computador WhatsApp Web, directo en el chat. Al volver al panel te pregunta si la mandaste y la pasa a Enviada. Desde ahí corre la vigencia y aparece como posible en el calendario de reservas.',
+      'WhatsApp abre el mensaje con el link y tu nombre, listo para mandar: en el celular se abre la aplicación y en el computador WhatsApp Web, directo en el chat. ✉️ Copiar correo copia la dirección del cliente, para escribirle desde tu correo con el link (📋 Copiar link).',
+      'Al volver al panel —también después de Ver el documento— te pregunta si la mandaste y la pasa a Enviada. Desde ahí corre la vigencia y aparece como posible en el calendario de reservas. Si queda lista sin confirmar, el panel te lo vuelve a preguntar al abrirla y al entrar, y la marca con ✉ ¿La mandaste? en las listas.',
       'Después te recuerda preguntarle al cliente: en tu agenda (arriba, en Tus pendientes, y en 📋 Lista → 🗓 Agenda).',
       'Si venció, "↻ Renovar la vigencia" le da los días de Configuración desde hoy, sin pasar del día antes del evento. La primera vez la renueva el vendedor; la segunda se pide con "✋ Pedir condiciones especiales…".'
     ]

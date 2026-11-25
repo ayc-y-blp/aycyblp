@@ -655,6 +655,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   mide. **PR #370, mergeado el 25-11-2026** con el *"sí, hazlo y mergea"* del
   cliente; `verificar.sh` dio 15 de 15 después. Ver `panel/CLAUDE.md`,
   "Cotizaciones: los botones de arriba no se bajan".
+- **Confirmar el envío y las nuevas del sitio** (25-11-2026, lo pidió el cliente
+  con la foto de la N° 693616, lista y en borrador): *Ver el documento* también
+  pregunta *¿La mandaste?*; la pregunta sale al abrir una lista sin confirmar y
+  en la ventana al entrar; la marca *✉ ¿La mandaste?* en las listas, la Agenda y
+  Clientes; y, para la gerencia, pagos y el administrador, *✉ N sin confirmar el
+  envío* en el calendario de Cotizaciones. Arriba de Cotizaciones y de Clientes,
+  *🆕 Nuevas del sitio* / *🆕 Nuevos*: las del sitio sin ningún contacto
+  anotado. En el paso 4, *✉️ Copiar correo* copia la dirección. **En un PR, en
+  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "Confirmar el envío y
+  las nuevas del sitio".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

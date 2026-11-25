@@ -183,7 +183,9 @@ revisan antes de cada cambio en esta carpeta.
   | La promoción aplicada a una cotización y cómo elegirla | `AplicarPromocion` (*🎁 Promoción…*) y la pastilla *🎁 nombre −N%* al lado del descuento sobre el total (paso Productos) |
 | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total con *💬 Escribirle* (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa*, con los datos de la empresa, en `TablaCotizacion` (la cotización y el contrato) |
 | Una otra empresa y sus datos | `OtrasEmpresasEditor` (*Productos → 🤝 Otras empresas*), con `datosEnFrase()` / `datosDe()` de `lib/otrasEmpresas.ts` |
-  | Las cotizaciones del sitio que la cuenta no ha visto | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
+  | Las cotizaciones del sitio que la cuenta no ha visto, y las listas que no ha confirmado como mandadas | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
+  | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` y `PreguntaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes); en el calendario, la pastilla *✉ N sin confirmar el envío* |
+  | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
 - **La ayuda siempre al día** (regla del cliente, 2026-11-13; está también
@@ -231,6 +233,90 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Confirmar el envío y las nuevas del sitio (2026-11-25)
+
+Lo pidió el cliente en dos mensajes del mismo día. Con la foto de la N° 693616,
+lista y en *Borrador*: *"¿por qué no aparece esta cotización como posible
+cotización en el calendario (ni reservas, ni cotizaciones) si el vendedor ya
+vio el documento? Hay que reforzar el proceso de que tiene que confirmar si
+envió la cotización, con popups y aviso dentro del sistema cuando uno pasa por
+esta cotización por vendedor"*. Y de las del sitio: *"necesito que estos se
+destacan… una tercera sección arriba en clientes y cotizaciones que muestra
+NUEVOS para que al tiro pueden empezar el seguimiento"*. Dijo *"sí, hazlas las
+dos, y sí quiero ver las sin mandar"*, y sumó: *"en paso 4 envío, el botón
+correo solo copie la dirección de correo"*.
+
+**Por qué no salía**: solo lo mandado (*Enviada*, *En negociación*) cuenta como
+gente posible en los calendarios (decidido el 2026-11-11). El panel preguntaba
+*¿La mandaste?* solo al volver de WhatsApp, del correo o de *Copiar link*. *Ver
+el documento* no preguntaba, y una cotización mandada desde ahí (el PDF, la
+dirección del documento), o con *Todavía no*, quedaba en borrador sin que nada
+lo recordara. La veía solo su vendedor, como *✎ 1 tuya sin mandar*.
+
+**Lista sin confirmar** (`lib/envio.ts`, puro y con pruebas): un borrador con
+cliente y total, de un evento que no pasó (`faltaConfirmarEnvio()`); en un
+grupo, ninguna alternativa mandada (`porConfirmarDelGrupo()`). Un candidato sin
+productos no está listo.
+
+- ***Ver el documento* pregunta al volver**, como WhatsApp y el correo
+  (`mandar('ver')`). WhatsApp pregunta igual a los 3 s si no se fue; el correo
+  y el documento esperan a que vuelva.
+- **Al abrir una lista sin confirmar, la pregunta sale sola** —a quien la creó,
+  con lo que tenía al abrirla (una que se está armando no pregunta a la
+  mitad)—, con la línea *Está lista y todavía no figura como mandada*. Sale
+  cada vez que la abre, hasta que diga que sí.
+- **✉ ¿La mandaste?** (`PastillaEnvio` en `components/ConfirmarEnvio.tsx`): a
+  su vendedor, un botón ámbar de 36px que abre la misma pregunta sin abrir la
+  cotización (`PreguntaEnvio`, `marcarMandada()`: `seguimiento: 'enviada'`, la
+  llamada de siempre). En la primera fila de cada cotización de la Lista, del
+  día del calendario y de *Sin fecha* (al centro, antes del 📞), en la Agenda
+  (*✍ Por redactar*) y en Clientes (la tarjeta cerrada y cada cotización de la
+  ficha). **A la gerencia, pagos y el administrador** les sale como aviso,
+  *✉ sin confirmar el envío*; los demás vendedores no la ven.
+- **Al entrar** (portada y Cotizaciones), la ventana de las cotizaciones del
+  sitio suma un segundo grupo, ámbar: ***Listas que no figuran como
+  mandadas***, cada una con *✓ Sí, la mandé* y *Abrir →* (`avisosSinConfirmar()`,
+  que mandan `/api/ocupacion` y `/api/presupuestos` como `sinConfirmar`). Se
+  muestran cinco; las demás están en la Agenda y en la Lista. No hay
+  *Entendido* para ellas: lo que las saca es confirmar. Mide 451px a 1280×650.
+- **Lo que pidió el cliente: ver las sin mandar.** En el calendario de
+  Cotizaciones, con *De todos*, quien ve al equipo ve en la tarjeta del día
+  ***✉ N sin confirmar el envío*** (las listas de otros vendedores), y el día
+  sale aunque no esté abierto. **No son gente posible**: eso sigue siendo solo
+  lo mandado. El calendario de Reservas no cambia.
+
+**El correo copia la dirección**: en el paso 4 y en el contrato, ***✉️ Copiar
+correo*** copia la dirección del cliente (antes abría el programa de correo
+con el mensaje armado) y pregunta al volver. La ventana de la pregunta ofrece
+*✉️ Copiar el correo* y *📋 Copiar el link*.
+
+**🆕 Nuevas del sitio** (`esNuevaDelSitio()`, `esNuevaPara()`): una cotización
+del sitio, en carrera, no vencida y **sin ninguna nota**. Es de su vendedor; la
+que llegó sin vendedor, de quien asigna. **Sale con la primera nota** (*📝
+Anotar*); *Entendido* en la ventana del sitio no la saca.
+
+- **Cotizaciones**: un bloque rosado ***🆕 Nuevas del sitio · N*** arriba del
+  calendario, de *Sin fecha* y de la Lista, con cada una en su fila de siempre,
+  la pastilla ***🆕 Nueva · Gran Premio · hace 4 h*** (`PastillaNueva`) y
+  ***📝 Anotar el primer contacto*** (*📝 Anotar* en el celular). Sin ninguna, no
+  se dibuja.
+- **Clientes**: una tercera sección arriba de todo, ***🆕 Nuevos · N***, la que
+  llegó último primero, con la misma pastilla. Un cliente va en una sola
+  sección; con *📞 Por contactar* apretado, los nuevos van ahí.
+  `/api/clientes` manda en el historial `envio`, `nueva`, `promo` y `creado`, y
+  `ahora`.
+
+- **Lecturas de Google**: ninguna más (todo sale de lo que esas rutas ya
+  leían; `/api/clientes` lee `Notas` una sola vez). **Ningún permiso ni columna
+  nueva.**
+- **Ayuda**: el `?` de Cotizaciones y el de Clientes, *Seguimiento y envío*,
+  *Mandar el contrato* y dos nuevos, `nuevasDelSitio` y `confirmarEnvio`. Las
+  fotos `ven-envio`, `pag-cobros` y `ger-cobros` se rehicieron (*✉️ Copiar
+  correo*).
+- **Ventanas**: `v-confirmar-envio` y `v-pregunta-al-abrir` (263px); la prueba
+  de espacio mira además Cotizaciones y Clientes como Daniela, que tiene una
+  nueva y una sin confirmar.
 
 ## Cotizaciones: los botones de arriba no se bajan (2026-11-25)
 

@@ -24,7 +24,8 @@ import CambiarVendedor from './CambiarVendedor';
 import EditarCliente, { CLIENTE_VACIO, CamposCliente } from './EditarCliente';
 import NotasCotizacion, { HistorialNotas } from './NotasCotizacion';
 import { UltimaNota } from './LoConversado';
-import { PastillaContacto } from './Pastilla';
+import { PastillaContacto, PastillaNueva } from './Pastilla';
+import { PastillaEnvio } from './ConfirmarEnvio';
 import { ordenarNotas, type Nota } from '@/lib/notas';
 import { avisar } from './AvisoFlotante';
 import {
@@ -43,6 +44,12 @@ interface EnHistorial {
   recontactar?: string;
   /** Si esta cuenta anota en esa cotización (su vendedor o la gerencia). */
   anota?: boolean;
+  /** ✉ Lista sin confirmar el envío (2026-11-25): `pregunta` a su vendedor, `aviso` a quien ve al equipo. */
+  envio?: '' | 'pregunta' | 'aviso';
+  /** 🆕 Nueva del sitio, sin contacto anotado (2026-11-25), con su promoción y cuándo llegó. */
+  nueva?: boolean;
+  promo?: string;
+  creado?: string;
 }
 
 /** Las cotizaciones (grupos) con notas, la de la nota más nueva primero. */
@@ -55,6 +62,13 @@ const folioDelGrupo = (h: EnHistorial[] = [], grupo: string) =>
 /** El recontacto más cercano de un cliente, entre sus cotizaciones, o `''`. */
 const primerRecontacto = (h: EnHistorial[] = []) =>
   h.map((x) => x.recontactar ?? '').filter(Boolean).sort()[0] ?? '';
+
+/** **La nueva del sitio más reciente de un cliente** (2026-11-25), si tiene. */
+const nuevaDe = (h: EnHistorial[] = []) =>
+  h.filter((x) => x.nueva).sort((a, b) => (b.creado ?? '').localeCompare(a.creado ?? ''))[0];
+
+/** **La lista sin confirmar de un cliente** (2026-11-25): primero la suya, que se pregunta. */
+const envioDe = (h: EnHistorial[] = []) => h.find((x) => x.envio === 'pregunta') ?? h.find((x) => x.envio === 'aviso');
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -116,6 +130,8 @@ export default function ClientesEditor() {
   const [vendedor, setVendedor] = useState('');
   const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   const [hoyDia, setHoyDia] = useState('');
+  /** La hora de ahora en Chile (2026-11-25), para *llegó hace 2 h*. */
+  const [ahora, setAhora] = useState('');
   const [usuario, setUsuario] = useState('');
   /** La ventanita de las notas abierta desde la ficha: de qué cotización y de quién. */
   const [anotando, setAnotando] = useState<{ h: EnHistorial; nombre: string; empresa: string; telefono: string; correo: string } | null>(null);
@@ -141,6 +157,7 @@ export default function ClientesEditor() {
     setCotizaciones(d.cotizaciones ?? {});
     setHistorial(d.historial ?? {});
     setHoyDia(d.hoy ?? '');
+    setAhora(d.ahora ?? '');
     setUsuario(d.usuario ?? '');
     setNotas(d.notas ?? {});
     setSinFicha(d.sinFicha ?? 0);
@@ -169,21 +186,40 @@ export default function ClientesEditor() {
    * contactos alfabéticamente"*): arriba *📞 Por contactar*, por el día más
    * cercano de sus cotizaciones (`primerRecontacto()`), y abajo *Los demás*,
    * de la A a la Z. Con *📞 Por contactar* apretado, solo la primera.
+   *
+   * **Y una tercera, arriba de todo: *🆕 Nuevos*** (2026-11-25, lo pidió el
+   * cliente: *"una tercera sección arriba en clientes y cotizaciones que
+   * muestra NUEVOS para que al tiro pueden empezar el seguimiento"*): los que
+   * tienen una cotización del sitio sin ningún contacto anotado
+   * (`esNuevaDelSitio()`), la que llegó último primero. Salen de ahí con la
+   * primera nota. Un cliente va en una sola sección.
    */
-  const { conDia, resto } = useMemo(() => {
+  const { nuevos, conDia, resto } = useMemo(() => {
     const lista = buscarClientes(deQuien, busqueda);
+    const llego = (c: Cliente) => nuevaDe(historial[c.id])?.creado ?? '';
+    const nuevos = porContactar ? [] : lista.filter((c) => !!nuevaDe(historial[c.id]))
+      .sort((a, b) => llego(b).localeCompare(llego(a)) || porNombreCliente(a, b));
+    const enNuevos = new Set(nuevos.map((c) => c.id));
     const dia = (c: Cliente) => primerRecontacto(historial[c.id]);
+    const sigue = lista.filter((c) => !enNuevos.has(c.id));
     return {
-      conDia: lista.filter(dia).sort((a, b) => dia(a).localeCompare(dia(b)) || porNombreCliente(a, b)),
-      resto: porContactar ? [] : lista.filter((c) => !dia(c)).sort(porNombreCliente)
+      nuevos,
+      conDia: sigue.filter(dia).sort((a, b) => dia(a).localeCompare(dia(b)) || porNombreCliente(a, b)),
+      resto: porContactar ? [] : sigue.filter((c) => !dia(c)).sort(porNombreCliente)
     };
   }, [deQuien, busqueda, porContactar, historial]);
-  const visibles = useMemo(() => [...conDia, ...resto], [conDia, resto]);
-  /** Con las dos secciones, cada una con su rótulo; si hay una sola, sin rótulo. */
-  const secciones = conDia.length && resto.length
-    ? [{ clave: 'dia', titulo: `📞 Por contactar · ${conDia.length}`, lista: conDia },
-       { clave: 'resto', titulo: `Los demás · ${resto.length}`, lista: resto }]
-    : [{ clave: 'todos', titulo: '', lista: visibles }];
+  const visibles = useMemo(() => [...nuevos, ...conDia, ...resto], [nuevos, conDia, resto]);
+  /**
+   * Cada sección con su rótulo si hay más de una; *🆕 Nuevos* lo lleva
+   * siempre, aunque esté sola: es lo que se destaca.
+   */
+  const conAlgo = [
+    { clave: 'nuevos', titulo: `🆕 Nuevos · ${nuevos.length}`, lista: nuevos, nuevos: true },
+    { clave: 'dia', titulo: `📞 Por contactar · ${conDia.length}`, lista: conDia, nuevos: false },
+    { clave: 'resto', titulo: `Los demás · ${resto.length}`, lista: resto, nuevos: false }
+  ].filter((x) => x.lista.length);
+  const secciones = conAlgo.length > 1 || nuevos.length ? conAlgo
+    : [{ clave: 'todos', titulo: '', lista: visibles, nuevos: false }];
 
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!clientes) return <p className="text-hueso/50">Cargando…</p>;
@@ -369,7 +405,9 @@ export default function ClientesEditor() {
         <div key={sec.clave} className={k > 0 ? 'mt-5' : ''}>
         {/* El rótulo de los grupos de la Agenda (*Hoy · Próximos días*). */}
         {sec.titulo && (
-          <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">{sec.titulo}</p>
+          <p className={`mb-1.5 text-[13px] font-semibold uppercase tracking-wider ${sec.nuevos ? 'text-rosa-texto' : 'text-hueso/60'}`}>
+            {sec.titulo}
+          </p>
         )}
         <ul className={LISTA_TARJETAS}>
           {sec.lista.map((c) => {
@@ -393,7 +431,17 @@ export default function ClientesEditor() {
                     )}
                     {/* El recontacto más cercano, también con la ficha cerrada. */}
                     <PastillaContacto fecha={primerRecontacto(historial[c.id])} hoy={hoyDia} />
+                    {/* 🆕 La del sitio sin contacto anotado (2026-11-25). */}
+                    {nuevaDe(historial[c.id]) && (
+                      <PastillaNueva promo={nuevaDe(historial[c.id])!.promo ?? ''} creado={nuevaDe(historial[c.id])!.creado ?? ''} ahora={ahora} />
+                    )}
                   </button>
+                  {/* ✉ Una lista sin confirmar (2026-11-25): fuera del botón que
+                      abre la ficha, porque a su vendedor se le aprieta. */}
+                  {envioDe(historial[c.id]) && (
+                    <PastillaEnvio id={envioDe(historial[c.id])!.id} cliente={c.nombre}
+                      pregunta={envioDe(historial[c.id])!.envio === 'pregunta' && !soloMiraCotizar} onListo={() => void cargar()} />
+                  )}
                   {n === 0 && !soloMira && !c.contactoTapado && (
                     <button onClick={() => void borrar(c)}
                       className="boton shrink-0 hover:border-rojo-fuerte hover:text-rojo-texto"
@@ -485,12 +533,18 @@ export default function ClientesEditor() {
                                     {h.fecha ? <FechaDia fecha={h.fecha} tamano="aviso" conAno /> : h.periodo}
                                   </span>
                                   <PastillaContacto fecha={h.recontactar ?? ''} hoy={hoyDia} />
+                                  {h.nueva && <PastillaNueva promo={h.promo ?? ''} creado={h.creado ?? ''} ahora={ahora} />}
+                                  {h.envio === 'aviso' && <PastillaEnvio id={h.id} cliente={c.nombre} pregunta={false} onListo={() => void cargar()} />}
                                   <span className="flex-1" />
                                   <strong className="text-[15px]">{enPesos(h.total)}</strong>
                                 </a>
                                 {/* **📝 Anotar, desde la ficha** (2026-11-25): la
                                     misma ventanita de la cotización —qué
                                     conversaron y cuándo volver a contactarlo—. */}
+                                {h.envio === 'pregunta' && !soloMiraCotizar && (
+                                  <PastillaEnvio id={h.id} cliente={c.nombre} pregunta onListo={() => void cargar()}
+                                    className="!min-h-[48px] self-center" />
+                                )}
                                 {h.anota && !soloMiraCotizar && (
                                   <button type="button" onClick={() => setAnotando({ h, nombre: c.nombre, empresa: c.empresa ?? '', telefono: c.telefono ?? '', correo: c.correo ?? '' })}
                                     className="boton min-h-[48px] shrink-0 !border-oro font-semibold">📝 Anotar</button>
