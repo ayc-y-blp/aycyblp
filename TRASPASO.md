@@ -616,8 +616,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   última va en el botón *🗒 Notas* de la cotización, en la Agenda y en la ficha
   del cliente, que suma *📝 Anotar* en cada cotización y las notas filtrables
   por cotización; y en *Anotar*, elegir *Llamada* llama, *WhatsApp* abre el
-  chat y *Correo* copia el correo. Ningún permiso, columna ni lectura nueva. **En un PR, en
-  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
+  chat y *Correo* copia el correo. **La pastilla 📞 va en la primera fila de
+  cada cotización de la lista, al centro, ámbar hasta el día y roja desde el
+  día** (lo pidió el cliente con una foto); lo mismo en Clientes, la tarjeta
+  *Recontactar* y el botón *🗒 Notas*. Ningún permiso, columna ni lectura
+  nueva. **En un PR, en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
   última nota, en todas partes".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).

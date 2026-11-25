@@ -405,9 +405,10 @@ export default function CotizacionesVista() {
             (2026-11-25, lo pidió el cliente: *"deja el contactar el 26 en
             primera fila, centrado"*): el hueco entre la fecha y los valores
             lo ocupa la pastilla. La misma en la lista, el día del calendario
-            y *Sin fecha*. En el celular, donde la fila se dobla, va a la
-            izquierda de su renglón. */}
-        <span className="flex flex-1 lg:justify-center">
+            y *Sin fecha*. En el celular, donde la fila se dobla, va en su
+            renglón, a la izquierda: así todas las filas con pastilla quedan
+            parejas (el total, debajo). */}
+        <span className={`flex flex-1 lg:justify-center ${recontactoDe(p, hoy) ? 'max-lg:basis-full' : ''}`}>
           <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
         </span>
         {caerse && botonCaer('hidden lg:inline-flex')}

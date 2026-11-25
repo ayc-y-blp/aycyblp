@@ -282,7 +282,8 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
   contactar el 26 en primera fila, centrado"*), entre la fecha y los valores:
   la pone `fila()` de `CotizacionesVista`, así que sale igual en la Lista, en
   el día del calendario y en *Sin fecha*. En el celular, donde la fila se
-  dobla, va a la izquierda de su renglón.
+  dobla, va en su propio renglón, a la izquierda, y el total debajo: así las
+  filas con pastilla quedan parejas.
 - **Las notas, de la más nueva a la más vieja, y con la misma hora, la anotada
   después** (`ordenarNotas()`, `ultimaNota()` en `lib/notas.ts`): la que viene
   después en la lista, que es la que se anotó después. A la pantalla las notas
