@@ -1473,6 +1473,12 @@ solo en `promociones.html`). La mitad del panel —las promociones en
     dentro del CSS de una página confunde a `traducir.py`, que deja de traducir
     el resto de esa página sin decir por qué (avisa *llaves que ya no usa
     ninguna página*).
+- **El cotizador, con fondo propio** (2026-11-25, lo pidió el cliente: *"se tiene
+  que notar más el cotizador, cámbiale el fondo a un tono decente"*): el dorado
+  de la marca al 13% sobre el fondo de la página —de día un beige tibio, de noche
+  un café oscuro— y una sombra suave; de día los pasos van en blanco encima. De
+  paso se arregló que el precio de un extra se partía en tres renglones: la regla
+  que lo deja bajo el nombre la pisaba otra que va más abajo en la hoja.
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde

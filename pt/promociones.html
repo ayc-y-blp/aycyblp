@@ -425,7 +425,13 @@
      boleta y, al apretar "Quiero esta cotización", los datos y el envío. En
      el computador van lado a lado, para que quepa en una pantalla. El cálculo lo hace el panel, con las reglas del
      vendedor. Teclas de 44px y letra de 13px o más (regla PlayStation). */
-  .cot{ margin-top:26px; border:2px solid var(--gold); background: var(--bg-panel); padding:14px 18px 16px; }
+  /* **Un fondo propio, que se note** (2026-11-25, lo pidió el cliente: *"se tiene
+     que notar más el cotizador, cámbiale el fondo a un tono decente"*): el dorado
+     de la marca, muy suave, sobre el fondo de la página —de día un beige tibio, de
+     noche un café oscuro—, con una sombra que lo despega. Los pasos van encima,
+     claros: blancos de día. */
+  .cot{ margin-top:26px; border:2px solid var(--gold); background: color-mix(in srgb, var(--gold) 13%, var(--bg)); padding:14px 18px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+  html[data-tema="dia"] .cot .cot-paso{ background: var(--bg-raise, #fff); }
   .cot-cabeza{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 18px; }
   .cot-titulo{ font-family: var(--serif); font-size: clamp(1.35rem,2.4vw,1.7rem); font-weight:600; margin:0; }
   .cot-bajada{ color: var(--ink-dim); font-size:0.95rem; margin:0; }
@@ -473,7 +479,7 @@
     .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-numero{ width:50px; }
     .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-rotulo{ min-width:0; }
     /* Con el ?, el precio de un extra va bajo su nombre: al lado se partía en tres renglones. */
-    .cot-extra .cot-opcion-texto{ grid-template-columns:1fr; gap:2px 0; }
+    .cot .cot-extra .cot-opcion-texto{ grid-template-columns:1fr; gap:2px 0; }
   }
   .cot-cal .cal-mes{ flex:1; text-align:center; white-space:nowrap; }
   /* ---------- El ? de cada producto y su caja (2026-11-25) ----------

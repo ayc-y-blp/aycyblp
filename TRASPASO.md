@@ -565,6 +565,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   tocando fuera. Los textos están escondidos en la página, para que se
   traduzcan. Y **regla nueva de estilo del sitio: fácil de leer, con
   jerarquía** (sección 9). Ver `CLAUDE.md`, "El cotizador de promociones".
+- **El cotizador con fondo propio** (25-11-2026, lo pidió el cliente): dorado
+  suave de día y de noche, con los pasos claros encima. Ver `CLAUDE.md`, "El
+  cotizador de promociones".
 - **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un
