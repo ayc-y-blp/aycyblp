@@ -210,9 +210,16 @@ async function PaginaDeLaEmpresa({ params }: { params: { token: string } }) {
 }
 
 /**
- * Una alternativa en la hoja: su tabla, sus condiciones y sus notas. Con
- * varias lleva su letra y su total arriba, para que el cliente pueda decir
- * "la B" sin tener que sumar nada.
+ * Una alternativa en la hoja: su tabla y sus condiciones. Con varias lleva su
+ * letra y su total arriba, para que el cliente pueda decir "la B" sin tener
+ * que sumar nada.
+ *
+ * **Las *Notas internas* no salen acá** (2026-11-25, lo marcó el cliente con
+ * una foto: *"la cotización no tiene que contener la nota del CRM… eso es
+ * interno"*). El campo se llama *Notas internas* en el panel, pero esta hoja
+ * —la del link, el WhatsApp y el PDF— lo imprimía al final; con el importador
+ * del CRM, que deja ahí su resumen, salía en todas las importadas. Una prueba
+ * de `lib/prueba.ts` fija que esta página no lo vuelva a mostrar.
  */
 function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios, empresas }: {
   p: Presupuesto; letra: string; lineas: LineaPresupuesto[]; cfg: Config; distintaFecha: boolean;
@@ -285,11 +292,6 @@ function Alternativa({ p, letra, lineas, cfg, distintaFecha, propios, empresas }
         </div>
       )}
 
-      {p.notas && (
-        <p className="mt-5 rounded border border-hueso/15 bg-panel p-3 text-sm">
-          {p.notas}
-        </p>
-      )}
     </div>
   );
 }

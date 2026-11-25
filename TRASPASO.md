@@ -628,15 +628,22 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   recontacto, la última nota y la empresa del cliente, en todas partes (arriba).
 - **En *Productos*, *Qué incluye* y *Bebestibles* traen el texto del sitio al
   apretar adentro** (25-11-2026, lo pidió el cliente): se trabaja desde esa
-  base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **En un PR,
-  en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "Qué incluye cada
-  producto, escrito en su ficha".
+  base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **PR #367,
+  mergeado el 25-11-2026** con el *"mergea"* del cliente, junto con lo de abajo.
+  Ver `panel/CLAUDE.md`, "Qué incluye cada producto, escrito en su ficha".
 - **Clientes: *👤 Por vendedor…*** (25-11-2026, lo pidió el cliente): pagos, la
   gerencia y el administrador filtran los clientes de un vendedor. En el mismo
   PR que lo del texto de *Productos*. Ver `panel/CLAUDE.md`, "Clientes:
   filtrar por vendedor". **Solo esos tres** (lo confirmó el cliente: operaciones
   no). En el mismo PR, **la frase del recontacto en la Agenda y en *Lo
   conversado*, ámbar hasta el día y roja desde el día**, como la pastilla 📞.
+- **Arreglo urgente (25-11-2026): las *Notas internas* ya no salen en la
+  cotización del cliente.** La hoja del link las imprimía, y con el importador
+  del CRM salía su resumen en todas las importadas. Lo marcó el cliente con una
+  foto y dijo *"sí, hazlo y luego mergea"*. Una prueba lo fija. Ver
+  `panel/CLAUDE.md`, "Las *Notas internas* no salen en la cotización del
+  cliente". **Clientes en dos secciones** (pedido el mismo día) quedó en su
+  propio PR, esperando el *"mergea"*.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

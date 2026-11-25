@@ -253,6 +253,30 @@ vendedor en clientes"*.
 - **Ayuda**: el `?` de Clientes. **Ventanas**: la pantalla
   `clientes-por-vendedor` entra en la prueba de espacio.
 
+## Las *Notas internas* no salen en la cotización del cliente (2026-11-25, arreglo urgente)
+
+Lo marcó el cliente con una foto de una cotización importada del CRM: *"la
+cotización no tiene que contener la nota del CRM… ¿en qué momento se te
+ocurrió poner las notas del CRM a la cotización? En ningún lado. Eso es
+interno"*. Dijo *"sí, hazlo y luego mergea"*.
+
+- **Qué pasaba**: el campo `Notas` de `Presupuestos` se llama ***Notas
+  internas*** en el paso 2 de cotizar, pero la hoja del cliente
+  (`/presupuesto/<token>`: el link, el WhatsApp y el PDF) lo imprimía al final.
+  Estaba así al menos desde el 12-11; se notó cuando el importador del CRM (PR
+  #293, 22-11) dejó ahí su resumen (*Del CRM (…): etapa…*) en todas las
+  cotizaciones importadas. Cualquier cosa que un vendedor escribiera ahí
+  también la veía el cliente.
+- **Qué hace ahora**: la hoja del cliente no muestra ese campo. En el panel
+  sigue igual: *Notas internas* en la cotización y lo del CRM como la primera
+  nota de *🗒 Notas*. El contrato nunca lo mostró. La hoja se arma al abrirla,
+  así que un link ya enviado deja de mostrarlo sin mandarlo de nuevo.
+- **Una prueba lo fija** (`lib/prueba.ts`): falla si la página del cliente
+  vuelve a leer las notas de la cotización. **Si algún día hace falta una
+  nota para el cliente, va en otro campo**, con su nombre, no en este.
+- **Ninguna lectura, permiso ni columna nueva.** Ninguna ayuda decía que esa
+  nota le llegaba al cliente.
+
 ## La empresa del cliente, al lado de su nombre (2026-11-25)
 
 Lo pidió el cliente: *"y donde mostramos cotizaciones y mostramos el nombre del
