@@ -21,6 +21,11 @@ estilo.
   (`#8A6B12`) para que contraste. Sobre una foto el texto sigue claro.
 - Los colores viven como variables (`--bg`, `--ink`, `--gold`, `--line`…) en
   una sola hoja de tema; se usan las variables, no valores a mano.
+- **Fácil de leer, con jerarquía** (regla del cliente: *"fácil, legible, usar
+  muy bien distancias entre párrafos e info clave, jugar con distintos tipos,
+  cursivo… decente pero notable"*): aire entre párrafos; el rótulo chico, en
+  mayúscula y dorado; el texto en la sans; lo que destaca o va suelto, en la
+  cursiva de la serif; una línea fina entre dos grupos.
 - **Voz**: español de Chile, tuteo, comercial pero sobrio. **Sin signos de
   exclamación ni superlativos.**
 

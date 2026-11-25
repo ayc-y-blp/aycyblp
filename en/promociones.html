@@ -472,8 +472,49 @@
        más angosto para que quepan el nombre y las dos teclas de 44px. */
     .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-numero{ width:50px; }
     .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-rotulo{ min-width:0; }
+    /* Con el ?, el precio de un extra va bajo su nombre: al lado se partía en tres renglones. */
+    .cot-extra .cot-opcion-texto{ grid-template-columns:1fr; gap:2px 0; }
   }
   .cot-cal .cal-mes{ flex:1; text-align:center; white-space:nowrap; }
+  /* ---------- El ? de cada producto y su caja (2026-11-25) ----------
+     La misma pieza en la reserva (site.css) y en el cotizador de promociones
+     (en su hoja propia): si cambia una, se cambia la otra. Regla de estilo del
+     cliente: "fácil, legible, usar muy bien distancias entre párrafos e info
+     clave, jugar con distintos tipos, cursivo… decente pero notable".
+     - El ?: un círculo dorado delineado de 24px, que se aprieta en 44px.
+       Abierto, relleno y con ✕: se cierra con el mismo botón.
+     - La caja: justo debajo de su opción, sin tapar nada. El rótulo en
+       mayúscula chica y dorada; el texto en la letra de siempre; lo que va sin
+       rótulo, en la cursiva de los precios. Lo propio del producto, después del
+       menú de la casa, con un respiro y una línea fina. */
+  .detalle-nombre{ display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+  .detalle-btn{
+    position:relative; flex:none; width:24px; height:24px; padding:0; margin:0 0 0 2px;
+    display:inline-flex; align-items:center; justify-content:center; vertical-align:middle;
+    border-radius:50%; border:1.5px solid var(--gold); background:transparent; color: var(--gold);
+    font-family: var(--sans); font-size:0.8rem; font-weight:700; line-height:1; cursor:pointer;
+    transition: background-color .12s ease, color .12s ease;
+  }
+  .detalle-btn::before{ content:""; position:absolute; inset:-10px; }
+  .detalle-btn:hover, .detalle-btn[aria-expanded="true"]{ background: var(--gold); color: var(--sobre-oro, #1A1400); }
+  .detalle-btn:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+  .detalle-caja{
+    margin:4px 0 2px; padding:12px 14px 12px 16px;
+    border-left:3px solid var(--gold); border-radius:0 6px 6px 0;
+    background: rgba(201,162,39,0.09);
+    font-family: var(--sans); font-size:0.9rem; line-height:1.5; color: var(--ink);
+    animation: detalle-entra .16s ease-out;
+  }
+  .detalle-caja p{ margin:0; }
+  .detalle-caja p + p{ margin-top:6px; }
+  .detalle-rotulo{
+    font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    color: var(--gold); margin-right:4px;
+  }
+  .detalle-caja .detalle-suelto{ font-family: var(--serif); font-style:italic; font-size:1rem; color: var(--ink); }
+  .detalle-caja .detalle-propio{ margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  @keyframes detalle-entra{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .detalle-caja{ animation:none; } }
   /* En la columna de la cotización, el botón en una línea: partido en dos sumaba 40px. */
   @media (min-width: 1200px){ .cot-quiero, .cot-enviar{ letter-spacing:0.04em; padding-left:10px; padding-right:10px; } }
   .cot-contador{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -981,7 +1022,7 @@
 <link rel="stylesheet" href="../assets/css/tema.css?v=8bedec7b">
 <script src="../assets/js/tema.js?v=9398876b"></script>
 <script src="../assets/js/idioma.js?v=30e2a7c2" defer></script>
-<script src="../assets/js/cotizador.js?v=0d8fdc1d" defer></script>
+<script src="../assets/js/cotizador.js?v=dfa4e73e" defer></script>
 </head>
 <body>
   <div class="topbar">
@@ -1742,5 +1783,33 @@
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.7.9-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.5l.4-.5c.1-.1.2-.3.2-.4 0-.1 0-.3 0-.4-.1-.1-.5-1.3-.7-1.8-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.2 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .1 1.4.1.4-.1 1.4-.6 1.6-1.1.2-.5.2-.9.1-1.1-.1-.1-.2-.2-.4-.3z"/></svg>
   </a>
 
+<!-- **Qué incluye cada producto** (2026-11-25, lo pidió el cliente: "en un
+     pequeño signo de interrogación debería mostrar los detalles de cada
+     producto, menú, bebestibles, corto, compacto"). Escondido: lo lee el JS
+     para el ? de cada menú y extra. Va en la página y no viene del panel
+     para que se traduzca con el resto (traducir.py). data-producto: los
+     nombres con que puede llegar, sin tildes ni "Menú". data-casa: lleva el
+     menú de cuatro tiempos. Los textos salen del sitio, en corto. -->
+<div id="detalles-productos" hidden>
+  <div data-casa-lineas>
+    <p>Starter: country platter, with sopaipillas, pan amasado and homemade pebre.</p>
+    <p>Main course: 300 g over charcoal and wood, your choice: flank steak, salmon, sirloin, lamb, picanha, pork ribs or chicken.</p>
+    <p>Sides: 2 of your choice.</p>
+    <p>Dessert: 1 of your choice.</p>
+  </div>
+  <div data-producto="tradiciones" data-casa><p>Drinks: 1 of your choice: soft drink, fresh juice, beer or pisco sour.</p></div>
+  <div data-producto="a brasas abiertas|brasas" data-casa><p>Open bar: soft drinks, fresh juices, beers, pisco sour, sangria, reserve wine, spritz and more, as you like.</p></div>
+  <div data-producto="ninos|menu de ninos"><p>Ages 4 to 12.</p><p>Main course: 150 g of chicken, ribs or picanha.</p><p>Sides: 2 of your choice. Dessert: 1 of your choice.</p><p>Drink: 1 soft drink or fresh juice.</p></div>
+  <div data-producto="pequenos|menu de pequenos"><p>Ages 0 to 3.</p><p>Main course: 150 g of chicken or picanha, with rice or fries, and salad.</p></div>
+  <div data-producto="lo pirque" data-casa><p>Drinks: 2 of your choice: soft drinks, fresh juices, beers, pisco sour, sangria, reserve wine, spritz and more.</p></div>
+  <div data-producto="sommelier" data-casa><p>Open bar: soft drinks, fresh juices, beers, pisco sour, sangria, reserve wine, spritz and more, as you like.</p><p>A sommelier guides the lunch and shares the pairings.</p></div>
+  <div data-producto="show ecuestre|show"><p>Chilean horses, huaso tradition and folk dancing.</p></div>
+  <div data-producto="desayuno de campo|desayuno"><p>Pan amasado, scrambled eggs, ham and cheese sandwiches, freshly ground coffee, tea, fresh orange juice, fruit salad and a muffin.</p></div>
+  <div data-producto="once campesina|once campestre|once"><p>The same spread as the country breakfast, served as an afternoon tea.</p><p>Pan amasado, scrambled eggs, ham and cheese sandwiches, freshly ground coffee, tea, fresh orange juice, fruit salad and a muffin.</p></div>
+  <div data-producto="coaching con caballos"><p>Leadership, communication and teamwork with the Fundación Caballos y Personas.</p></div>
+  <div data-producto="taller de queso"><p>Each participant makes and takes home their own cheeses, with a paired tasting at the end.</p></div>
+  <div data-producto="karting"><p>Speed and teamwork, well suited to corporate team building.</p></div>
+  <div data-producto="taller de asado|clase de parrilla"><p>Grilling techniques alongside expert asadores, to strengthen team bonds.</p></div>
+</div>
 </body>
 </html>

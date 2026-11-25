@@ -138,6 +138,7 @@
   // el lang del <html>. Si se agrega un idioma alla, se agrega una fila.
   var TEXTOS = {
     es: {
+      queIncluye: 'Qué incluye', cerrarDetalle: 'Cerrar el detalle',
       mesAnterior: 'Mes anterior',
       mesSiguiente: 'Mes siguiente',
       cargando: 'Buscando fechas disponibles\u2026',
@@ -168,6 +169,7 @@
       ahorras: 'Ahorras {m}'
     },
     en: {
+      queIncluye: 'What\u2019s included', cerrarDetalle: 'Close the details',
       mesAnterior: 'Previous month',
       mesSiguiente: 'Next month',
       cargando: 'Looking for available dates\u2026',
@@ -193,6 +195,7 @@
       ahorras: 'You save {m}'
     },
     pt: {
+      queIncluye: 'O que inclui', cerrarDetalle: 'Fechar o detalhe',
       mesAnterior: 'Mês anterior',
       mesSiguiente: 'Mês seguinte',
       cargando: 'Procurando datas disponíveis\u2026',
@@ -221,6 +224,105 @@
 
   var idioma = (document.documentElement.lang || 'es').slice(0, 2);
   var T = TEXTOS[idioma] || TEXTOS.es;
+
+  /**
+   * **El ? de cada producto** (2026-11-25, lo pidió el cliente: *"en un
+   * pequeño signo de interrogación debería mostrar los detalles de cada
+   * producto, menú, bebestibles, corto, compacto… estiloso, no invasivo, muy
+   * fácil de salir… muy intuitivo"*). La misma pieza en cotizador.js y en
+   * reserva.js: si cambia una, se cambia la otra.
+   *
+   * - Los textos están escondidos en la página (#detalles-productos), así que
+   *   se traducen con el resto. Si un producto no tiene detalle, no hay ?.
+   * - Al apretarlo, una caja corta justo debajo de esa opción, sin tapar
+   *   nada; el ? pasa a ✕. Se cierra con el mismo botón, con Escape, tocando
+   *   fuera o abriendo otro: hay una sola abierta a la vez.
+   */
+  var DETALLES = document.getElementById('detalles-productos');
+  var detalleAbierto = null;
+  function normalDetalle(t) {
+    return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function detalleDeProducto(nombre) {
+    if (!DETALLES || !nombre) return null;
+    var n = normalDetalle(nombre), sinMenu = n.replace(/^menu (de )?/, '');
+    var todos = Array.prototype.slice.call(DETALLES.querySelectorAll('[data-producto]'));
+    var nombres = function (e) { return e.getAttribute('data-producto').split('|'); };
+    var exacto = todos.filter(function (e) { return nombres(e).some(function (a) { return a === n || a === sinMenu; }); });
+    if (exacto.length) return exacto[0];
+    // Un nombre dentro del otro, por palabras: "Desayuno" calza con "desayuno de campo".
+    var cerca = todos.filter(function (e) {
+      return nombres(e).some(function (a) {
+        return (' ' + sinMenu + ' ').indexOf(' ' + a + ' ') >= 0 || (' ' + a + ' ').indexOf(' ' + sinMenu + ' ') >= 0;
+      });
+    });
+    return cerca.length === 1 ? cerca[0] : null;
+  }
+  function cerrarDetalle(devolverFoco) {
+    if (!detalleAbierto) return;
+    var b = detalleAbierto.boton;
+    detalleAbierto.caja.remove();
+    b.setAttribute('aria-expanded', 'false'); b.textContent = '?';
+    b.setAttribute('aria-label', T.queIncluye + ' · ' + detalleAbierto.nombre);
+    detalleAbierto = null;
+    if (devolverFoco) b.focus();
+  }
+  /**
+   * El ? de un producto. `nombre()` dice cuál es hoy; `poner(caja)` la deja en
+   * su lugar; `etiqueta()`, si va, es como se lee (la fila de la reserva busca
+   * por su clave, "tradiciones", y se lee "Menú Tradiciones").
+   */
+  function botonDetalle(nombre, poner, etiqueta) {
+    var leer = etiqueta || nombre;
+    if (!detalleDeProducto(nombre())) return null;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'detalle-btn'; b.textContent = '?';
+    b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-label', T.queIncluye + ' · ' + leer());
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var eraEste = detalleAbierto && detalleAbierto.boton === b;
+      cerrarDetalle(false);
+      if (eraEste) return;
+      var d = detalleDeProducto(nombre());
+      if (!d) return;
+      var caja = document.createElement('div');
+      caja.className = 'detalle-caja';
+      caja.setAttribute('role', 'note');
+      var parrafos = [];
+      if (d.hasAttribute('data-casa')) {
+        var casa = DETALLES.querySelector('[data-casa-lineas]');
+        if (casa) parrafos = parrafos.concat(Array.prototype.slice.call(casa.querySelectorAll('p')));
+      }
+      var propios = Array.prototype.slice.call(d.querySelectorAll('p'));
+      parrafos.concat(propios).forEach(function (p, k) {
+        // "Entrada: …": el rótulo, chico y dorado, y el texto al lado. Una
+        // línea sin rótulo ("De 4 a 12 años") va en la cursiva de los precios.
+        var t = p.textContent, i = t.indexOf(': ');
+        var linea = document.createElement('p');
+        if (i > 0 && i < 28) {
+          var rot = document.createElement('span'); rot.className = 'detalle-rotulo'; rot.textContent = t.slice(0, i);
+          var txt = t.slice(i + 2);
+          linea.append(rot, document.createTextNode(' ' + txt.charAt(0).toUpperCase() + txt.slice(1)));
+        } else { linea.className = 'detalle-suelto'; linea.textContent = t; }
+        // Lo propio del producto, después del menú de la casa, con un respiro y una línea.
+        if (parrafos.length && k === parrafos.length) linea.classList.add('detalle-propio');
+        caja.appendChild(linea);
+      });
+      poner(caja);
+      b.setAttribute('aria-expanded', 'true'); b.textContent = '✕';
+      b.setAttribute('aria-label', T.cerrarDetalle + ' · ' + leer());
+      detalleAbierto = { boton: b, caja: caja, nombre: leer() };
+    });
+    return b;
+  }
+  document.addEventListener('click', function (e) {
+    if (detalleAbierto && !detalleAbierto.caja.contains(e.target) && e.target !== detalleAbierto.boton) cerrarDetalle(false);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && detalleAbierto) cerrarDetalle(true);
+  });
 
   // Las dos etapas del aviso de cupo (2026-11-06, lo pidió el cliente):
   //   pocos   — naranjo, desde el umbral de la planilla (aviso_pocos_lugares),
@@ -972,6 +1074,23 @@
   // Marcar la casilla no cambia ninguna cantidad, pero si el menu: hay que
   // repintar el nombre, el precio de la fila y los dos totales.
   if (upgrade) upgrade.addEventListener('change', recalcular);
+  // El ? de cada menú, al lado de su nombre. La fila de adultos cambia de menú
+  // con la casilla: el ? dice el de ese momento, y al cambiar se cierra.
+  opciones.forEach(function (op) {
+    var fila = op.titulo ? op.titulo.closest('.reserva-fila') : null;
+    if (!fila) return;
+    var menu = function () {
+      var alto = fila.getAttribute('data-menu-alta');
+      return (alto && subido() ? alto : fila.getAttribute('data-menu')) || '';
+    };
+    var b = botonDetalle(menu, function (c) { fila.after(c); }, function () { return nombreDe(op); });
+    if (!b) return;
+    // Va en el renglón de la edad ("Por adulto ?"): al lado del nombre, en el
+    // celular el ? quedaba solo en un renglón con los nombres largos.
+    var chico = op.titulo.querySelector('small');
+    (chico || op.titulo).appendChild(b);
+  });
+  if (upgrade) upgrade.addEventListener('change', function () { cerrarDetalle(false); });
   // Cada botón se queda con su modalidad en el closure, igual que los
   // pasos del contador: un bucle que compartiera la variable dejaría a
   // los dos mandando la última.

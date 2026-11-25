@@ -559,6 +559,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   aprietan), y los títulos y marcos de los pasos más marcados, también en
   `reservas.html`. En el notebook del cliente el cotizador pasa del margen
   seguro por 25 a 70px. Ver `CLAUDE.md`, "El cotizador de promociones".
+- **El `?` de cada producto, en el cotizador y en la reserva** (25-11-2026, lo
+  pidió el cliente): abre debajo una caja corta con los cuatro tiempos y los
+  bebestibles, o la línea del extra; se cierra con el mismo botón, Escape o
+  tocando fuera. Los textos están escondidos en la página, para que se
+  traduzcan. Y **regla nueva de estilo del sitio: fácil de leer, con
+  jerarquía** (sección 9). Ver `CLAUDE.md`, "El cotizador de promociones".
 - **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un
@@ -1752,6 +1758,9 @@ misma pasada.
 - Fotografía real como protagonista (solo fotos del negocio, sin stock),
   **Fraunces** y **Work Sans**, dorado sobre papel tibio de día y sobre negro
   de noche, **sin signos de exclamación ni superlativos**.
+- **Fácil de leer, con jerarquía** (25-11-2026): aire entre párrafos, lo clave
+  a la vista (rótulo chico dorado, texto en Work Sans, lo suelto en cursiva
+  Fraunces, una línea fina entre grupos); sobrio pero notable.
 - **Cero JavaScript para interfaz** (las cuatro excepciones no sientan
   precedente).
 - **Lo que edita el cliente vive en un solo lugar**: los precios en
