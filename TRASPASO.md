@@ -577,6 +577,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   promoción del panel, en tarjetas, y *hasta −N% por grupo* bajo el precio;
   *Se puede sumar* sale del panel. Ver `CLAUDE.md`, "El cotizador de
   promociones".
+- **La foto nueva del castillo inflable, en Actividades** (25-11-2026, lo
+  pidió el cliente); las otras fotos que mandó esperan dónde van. Ver
+  `CLAUDE.md`, "La foto del castillo inflable en Actividades".
 - **El cotizador con fondo propio** (25-11-2026, lo pidió el cliente): dorado
   suave de día y de noche, con los pasos claros encima. Ver `CLAUDE.md`, "El
   cotizador de promociones".
