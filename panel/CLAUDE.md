@@ -395,6 +395,14 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
 - **Clientes, *📞 Por contactar***, al lado de *Míos / Todos*: solo los que
   tienen un recontacto, el más cercano primero. Se aprieta para filtrar y otra
   vez para soltar.
+- **Clientes, en dos secciones** (lo pidió el cliente el mismo día: *"primero,
+  los clientes que tienen para contactar… según su fecha… y el resto de mis
+  contactos alfabéticamente"*): arriba ***📞 Por contactar · N***, por el día
+  más cercano de sus cotizaciones (`primerRecontacto()`), y abajo ***Los demás
+  · N***, de la A a la Z. El rótulo es el de los grupos de la Agenda. Con una
+  sola sección, sin rótulo. Sigue a *Míos / Todos*, *👤 Por vendedor…* y el
+  buscador. **La Lista de Cotizaciones con *Recontactar*** ya iba por el día de
+  recontacto (`ordenarPorRecontacto()`); solo dos del mismo día van por nombre.
 - **El medio también contacta** (lo pidió el cliente el mismo día, con una
   foto de la ventanita: *"cuando uno aprieta correo o WhatsApp, se debería
   copiar el correo o abrir el WhatsApp… y llamar debería llamar"*): en

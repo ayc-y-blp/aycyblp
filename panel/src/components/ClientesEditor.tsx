@@ -163,12 +163,27 @@ export default function ClientesEditor() {
   [clientes, soloMios, sonMios, vendedor, delVendedor]);
   const nombreVendedor = (u: string) => vendedores?.find((v) => v.usuario === u)?.nombre || u;
   const conRecontacto = deQuien.filter((c) => primerRecontacto(historial[c.id])).length;
-  const visibles = useMemo(() => {
-    const lista = [...buscarClientes(porContactar ? deQuien.filter((c) => primerRecontacto(historial[c.id])) : deQuien, busqueda)];
-    return porContactar
-      ? lista.sort((a, b) => primerRecontacto(historial[a.id]).localeCompare(primerRecontacto(historial[b.id])) || porNombreCliente(a, b))
-      : lista.sort(porNombreCliente);
+  /**
+   * **Dos secciones** (2026-11-25, lo pidió el cliente: *"primero, los clientes
+   * que tienen para contactar… ordenarlos según su fecha… y el resto de mis
+   * contactos alfabéticamente"*): arriba *📞 Por contactar*, por el día más
+   * cercano de sus cotizaciones (`primerRecontacto()`), y abajo *Los demás*,
+   * de la A a la Z. Con *📞 Por contactar* apretado, solo la primera.
+   */
+  const { conDia, resto } = useMemo(() => {
+    const lista = buscarClientes(deQuien, busqueda);
+    const dia = (c: Cliente) => primerRecontacto(historial[c.id]);
+    return {
+      conDia: lista.filter(dia).sort((a, b) => dia(a).localeCompare(dia(b)) || porNombreCliente(a, b)),
+      resto: porContactar ? [] : lista.filter((c) => !dia(c)).sort(porNombreCliente)
+    };
   }, [deQuien, busqueda, porContactar, historial]);
+  const visibles = useMemo(() => [...conDia, ...resto], [conDia, resto]);
+  /** Con las dos secciones, cada una con su rótulo; si hay una sola, sin rótulo. */
+  const secciones = conDia.length && resto.length
+    ? [{ clave: 'dia', titulo: `📞 Por contactar · ${conDia.length}`, lista: conDia },
+       { clave: 'resto', titulo: `Los demás · ${resto.length}`, lista: resto }]
+    : [{ clave: 'todos', titulo: '', lista: visibles }];
 
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!clientes) return <p className="text-hueso/50">Cargando…</p>;
@@ -350,8 +365,14 @@ export default function ClientesEditor() {
               : soloMios ? `Ninguno de los tuyos calza con “${busqueda}”. Mira en Todos.` : `Nadie calza con “${busqueda}”.`}
         </p>
       ) : (
+        <div>{secciones.map((sec, k) => (
+        <div key={sec.clave} className={k > 0 ? 'mt-5' : ''}>
+        {/* El rótulo de los grupos de la Agenda (*Hoy · Próximos días*). */}
+        {sec.titulo && (
+          <p className="mb-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">{sec.titulo}</p>
+        )}
         <ul className={LISTA_TARJETAS}>
-          {visibles.map((c) => {
+          {sec.lista.map((c) => {
             const n = cotizaciones[c.id] ?? 0;
             const abiertaEsta = abierta === c.id;
             return (
@@ -502,6 +523,8 @@ export default function ClientesEditor() {
             );
           })}
         </ul>
+        </div>
+        ))}</div>
       )}
       {anotando && (
         <NotasCotizacion
