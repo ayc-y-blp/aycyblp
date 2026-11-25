@@ -553,6 +553,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **El catálogo de Productos se filtra por tipo** (25-11-2026): *Menú · Extra ·
   Arriendo · Show* arriba de la lista. Ver `panel/CLAUDE.md`. **Y regla nueva:
   el link de prueba, siempre**, con las capturas (sección 9).
+- **El cotizador de promociones: la fecha en un calendario y los títulos más
+  marcados** (25-11-2026, lo pidió el cliente): cuatro pasos (*¿Qué día?* primero,
+  con un calendario como el de la reserva, donde los días antes del plazo no se
+  aprietan), y los títulos y marcos de los pasos más marcados, también en
+  `reservas.html`. En el notebook del cliente el cotizador pasa del margen
+  seguro por 25 a 70px. Ver `CLAUDE.md`, "El cotizador de promociones".
 - **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un

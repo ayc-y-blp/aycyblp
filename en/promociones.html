@@ -430,11 +430,52 @@
   .cot-titulo{ font-family: var(--serif); font-size: clamp(1.35rem,2.4vw,1.7rem); font-weight:600; margin:0; }
   .cot-bajada{ color: var(--ink-dim); font-size:0.95rem; margin:0; }
   .cot-pasos{ display:grid; gap:12px; margin-top:10px; }
-  @media (min-width: 1000px){ .cot-pasos{ grid-template-columns: 0.85fr 1.05fr 1.3fr; align-items:stretch; } }
-  .cot-paso{ border:1px solid var(--line); background: var(--bg); padding:10px 14px 14px; display:flex; flex-direction:column; gap:10px; }
-  .cot-paso-titulo{ display:flex; align-items:center; gap:10px; margin:0; font-weight:600; font-size:1rem; padding-bottom:6px; border-bottom:1px solid var(--line); }
-  .cot-num{ display:inline-flex; flex:none; width:28px; height:28px; border-radius:50%; align-items:center; justify-content:center; border:1.5px solid var(--gold); color: var(--gold); font-size:0.9rem; font-weight:700; }
-  .cot-rotulo{ display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color: var(--ink-dim); margin-bottom:6px; }
+  /* Cuatro pasos (2026-11-25): el día pasó a su propio paso, con su
+     calendario. Lado a lado desde 1200px; de a dos en una pantalla mediana;
+     uno debajo del otro en el celular. */
+  @media (min-width: 760px){ .cot-pasos{ grid-template-columns: repeat(2, minmax(0,1fr)); align-items:stretch; } }
+  @media (min-width: 1200px){ .cot-pasos{ grid-template-columns: minmax(0,1.05fr) repeat(3, minmax(0,1fr)); } }
+  /* **Los títulos y las secciones, más marcados** (2026-11-25, lo pidió el
+     cliente: *"títulos y secciones se tienen que destacar y diferenciar un poco
+     más"*). El título del paso en la serif, con una línea dorada debajo; el
+     marco del paso dorado suave, más marcado que lo de adentro; los rótulos en
+     dorado, y una línea fina entre las secciones de un paso. Lo mismo en los
+     pasos de la reserva (site.css). */
+  .cot-paso{ border:2px solid color-mix(in srgb, var(--gold) 40%, var(--line)); background: var(--bg); padding:10px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+  .cot-paso-titulo{ display:flex; align-items:center; gap:10px; margin:0; font-family: var(--serif); font-weight:600; font-size:1.15rem; padding-bottom:8px; border-bottom:2px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+  .cot-num{ display:inline-flex; flex:none; width:30px; height:30px; border-radius:50%; align-items:center; justify-content:center; border:2px solid var(--gold); color: var(--gold); font-family: var(--sans); font-size:0.95rem; font-weight:700; }
+  .cot-rotulo{ display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color: var(--gold); margin-bottom:6px; }
+  .cot-rotulo-suelto, .cot-incluye{ padding-top:10px; border-top:1px solid var(--line); }
+  /* El calendario: la forma del de la reserva (site.css, .cal-*). */
+  .cot-cal .cal-cab{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+  .cot-cal .cal-mes{ font-size:0.95rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color: var(--ink); }
+  .cot-cal .cal-nav{ width:40px; height:40px; flex:none; display:flex; align-items:center; justify-content:center; background: var(--bg-panel); color: var(--ink); cursor:pointer; border:1px solid var(--gold-soft, rgba(201,162,39,0.45)); border-radius:6px; font-size:1.3rem; line-height:1; }
+  .cot-cal .cal-nav:hover:not(:disabled){ background: var(--gold-wash, rgba(201,162,39,0.12)); border-color: var(--gold); }
+  .cot-cal .cal-nav:disabled{ opacity:0.3; cursor:default; border-color: var(--line); }
+  .cot-cal .cal-grilla{ display:grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap:4px; }
+  .cot-cal .cal-wd{ text-align:center; padding:0 0 2px; font-size:0.8rem; font-weight:600; text-transform:uppercase; color: var(--ink-dim); }
+  .cot-cal .cal-dia{ height:40px; min-width:0; display:flex; align-items:center; justify-content:center; border:1.5px solid transparent; border-radius:8px; font-family: var(--sans); font-size:1rem; padding:0; background:none; color: var(--ink); }
+  .cot-cal .cal-dia.vacio{ border:0; }
+  .cot-cal .cal-dia.cerrado{ color: var(--ink-faint); font-weight:400; }
+  .cot-cal .cal-dia.abierto{ background: rgba(201,162,39,0.16); border-color: var(--gold); font-weight:700; cursor:pointer; }
+  .cot-cal .cal-dia.abierto:hover{ background: rgba(201,162,39,0.30); }
+  .cot-cal .cal-dia.abierto:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+  .cot-cal .cal-dia.abierto.elegido, .cot-cal .cal-dia.abierto.elegido:hover{ background: var(--gold); border-color: var(--gold); color:#1A1400; font-weight:800; box-shadow: 0 0 0 3px var(--gold-soft, rgba(201,162,39,0.45)); }
+  .cot-cal .cal-dia.hoy{ text-decoration: underline; text-decoration-thickness:2px; text-underline-offset:4px; }
+  /* En el computador, las casillas miden lo que deja la pantalla, como en la reserva. */
+  @media (min-width: 1200px){
+    .cot-cal .cal-dia{ height: clamp(32px, calc((var(--alto-util) - 250px) / 6.4), 40px); }
+    /* Con cuatro pasos, el cotizador toma el ancho de la pantalla (con su
+       margen seguro), no el de la columna del texto: así cada paso tiene ancho. */
+    .cot{ margin-left: calc(50% - min(50vw - 34px, 720px)); margin-right: calc(50% - min(50vw - 34px, 720px)); }
+    /* En la columna de cuántos son, cada contador en su fila: el número un poco
+       más angosto para que quepan el nombre y las dos teclas de 44px. */
+    .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-numero{ width:50px; }
+    .cot-pasos > .cot-paso:nth-child(2) > .cot-contador .cot-rotulo{ min-width:0; }
+  }
+  .cot-cal .cal-mes{ flex:1; text-align:center; white-space:nowrap; }
+  /* En la columna de la cotización, el botón en una línea: partido en dos sumaba 40px. */
+  @media (min-width: 1200px){ .cot-quiero, .cot-enviar{ letter-spacing:0.04em; padding-left:10px; padding-right:10px; } }
   .cot-contador{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .cot-contador .cot-rotulo{ margin:0; }
   .cot-teclas{ display:flex; align-items:center; gap:6px; }
@@ -442,7 +483,7 @@
   .cot-numero{ width:68px; height:44px; text-align:center; font: inherit; font-size:1.1rem; font-weight:700; border:1px solid var(--line); background: var(--bg); color: var(--ink); border-radius:2px; }
   .cot-campo{ display:block; width:100%; min-height:44px; padding:8px 10px; border:1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size:1rem; border-radius:2px; }
   .cot-dia, .cot-etiqueta{ display:block; }
-  .cot-plazo{ display:block; margin-top:4px; font-size:0.85rem; color: var(--ink-dim); }
+  .cot-plazo{ margin:0; font-size:0.88rem; color: var(--ink-dim); }
   .cot-opciones{ display:grid; gap:8px; }
   .cot-opcion{ display:flex; gap:10px; align-items:center; min-height:44px; padding:6px 12px; border:1px solid var(--line); cursor:pointer; border-radius:2px; }
   .cot-opcion:has(input:checked){ border-color: var(--gold); background: rgba(201,162,39,0.10); }
@@ -940,7 +981,7 @@
 <link rel="stylesheet" href="../assets/css/tema.css?v=8bedec7b">
 <script src="../assets/js/tema.js?v=9398876b"></script>
 <script src="../assets/js/idioma.js?v=30e2a7c2" defer></script>
-<script src="../assets/js/cotizador.js?v=2e4ceccf" defer></script>
+<script src="../assets/js/cotizador.js?v=0d8fdc1d" defer></script>
 </head>
 <body>
   <div class="topbar">
