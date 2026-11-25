@@ -7505,11 +7505,11 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
     ok(exSab.ok && exSab.exclusivo && !exSab.exclusivoGratis && exSab.descuentoEnLineas
        && exSab.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 2500000 && l.descuento === 0)
        && exSab.lineas.some((l) => l.concepto === 'Brasas' && l.descuento === 10)
-       && exSab.cuentas.subtotal === 3340000 && exSab.cuentas.descuento === 84000 && exSab.cuentas.neto === 3256000
-       && exSab.cuentas.total === 3874640 && exSab.cuentas.neto + exSab.cuentas.iva === exSab.cuentas.total,
-       'con el lugar exclusivo un sábado, el arriendo va a su precio estándar ($2.500.000 + IVA) y el 10% solo baja el menú');
-    ok(exSab.ok && sinEx.ok && exSab.cuentas.total - Math.round(2500000 * 1.19) === sinEx.cuentas.total,
-       'el descuento por línea es el mismo del total: lo único que cambia es el arriendo, que se suma entero');
+       && exSab.cuentas.subtotal === 3640000 && exSab.cuentas.descuento === 84000 && exSab.cuentas.neto === 3556000
+       && exSab.cuentas.total === 4231640 && exSab.cuentas.neto + exSab.cuentas.iva === exSab.cuentas.total,
+       'con el lugar exclusivo un sábado, el arriendo ($2.500.000) y el show ($300.000) van a su precio y el 10% solo baja el menú');
+    ok(exSab.ok && sinEx.ok && exSab.cuentas.total - Math.round(2500000 * 1.19) - Math.round(300000 * 1.19) === sinEx.cuentas.total,
+       'el descuento por línea es el mismo del total: lo único que cambia es el arriendo y el show, que se suman enteros');
     // Lo que se guarda es lo que vio el cliente: el descuento va en las líneas y la cotización queda marcada exclusiva.
     if (exSab.ok) {
       const PPx = await import('./presupuestos.ts');
@@ -7529,9 +7529,22 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
        'de lunes a viernes, el lugar exclusivo usa el número de Configuración; sin él, el precio del catálogo');
     ok(sabCon.ok && sabCon.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 2500000),
        'el sábado el arriendo sigue siendo el del catálogo aunque Configuración tenga precio de semana');
-    ok(PR.precioArriendoEstandar(cat.find((m) => m.nombre === 'Arriendo del recinto')!, '2026-12-05', 1500000) === 2500000
-       && PR.precioArriendoEstandar(cat.find((m) => m.nombre === 'Arriendo del recinto')!, '2026-12-04', 1500000) === 1500000,
-       'precioArriendoEstandar: viernes con el de semana, sábado con el del catálogo');
+    const arr = cat.find((m) => m.nombre === 'Arriendo del recinto')!;
+    const dos = { semana: 1500000, finde: 2500000 };
+    ok(PR.precioArriendoEstandar(arr, '2026-12-05', dos) === 2500000 && PR.precioArriendoEstandar(arr, '2026-12-04', dos) === 1500000
+       && PR.precioArriendoEstandar(arr, '2026-12-08', dos, true) === 2500000 && PR.precioArriendoEstandar(arr, '2026-12-08', {}, false) === 2500000,
+       'precioArriendoEstandar: el sábado y un día público, con el de fin de semana; de lunes a viernes, con el de semana; sin números, el del catálogo');
+    // El caso del cliente (2026-11-25): el catálogo tiene $1.500.000 y un mínimo de $2.000.000: el sábado exclusivo debe cobrar el nominal de $2.500.000, no el mínimo.
+    const catBajo = cat.map((m) => (m.nombre === 'Arriendo del recinto' ? { ...m, precioCotizacion: 1500000 } : m));
+    const sabNominal = PR.cotizarPromocion(conDesc, { ...pide, exclusivo: true },
+      { ...ctx, catalogo: catBajo, arriendoFinde: 2500000, arriendoSemana: 1500000 });
+    ok(sabNominal.ok && sabNominal.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 2500000),
+       'un sábado con el lugar exclusivo cobra el arriendo nominal de fin de semana ($2.500.000), no el mínimo ni el precio de semana');
+    // El show con el lugar exclusivo en un día público: ya no va incluido, se cobra a su precio.
+    const showCat = cat.find((m) => m.tipo === 'Show');
+    ok(!!showCat && sabNominal.ok && sabNominal.lineas.some((l) => l.concepto === showCat!.nombre && l.precio === (showCat!.precioCotizacion || 0) && l.precio > 0)
+       && sinEx.ok && sinEx.lineas.some((l) => l.concepto === showCat!.nombre && l.precio === 0),
+       'con el lugar exclusivo en un día público el show se cobra a su precio; sin él, sigue incluido');
     // De lunes a viernes, la promoción que perdona el arriendo lo perdona también acá.
     const combEx = PR.cotizarPromocion(combate, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], exclusivo: true, fecha: '2026-12-01' }, ctx);
     ok(combEx.ok && combEx.exclusivoGratis && !combEx.exclusivo && !combEx.descuentoEnLineas && combEx.lineas.length === 1

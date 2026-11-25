@@ -404,11 +404,16 @@ export default function ConfigEditor() {
           'arriendoExclusivoHasta2', 'arriendoExclusivoMinimo2')}
         </>)}
         {grupo('Eventos exclusivos', <>
+        {campo('arriendoFinde', 'Arriendo sábado y domingo',
+          'El precio estándar del arriendo del recinto en un día público (sábado, domingo o feriado ' +
+          'abierto): el que ve y paga el cliente en el cotizador del sitio al marcar «Quiero el lugar ' +
+          'exclusivo». Va en los mismos términos que el producto Arriendo de Productos (más IVA o IVA ' +
+          'incluido). En 0, vale el precio de ese producto.',
+          numerico('arriendoFinde', config.arriendoFinde, (n) => ({ arriendoFinde: n }), { min: 0, max: 1000000000, unidad: '$' }))}
         {campo('arriendoSemana', 'Arriendo de lunes a viernes',
           'El precio estándar del arriendo del recinto un día de semana, el que ve el cliente en el ' +
           'cotizador del sitio al marcar «Quiero el lugar exclusivo». Va en los mismos términos que ' +
-          'el producto Arriendo de Productos (más IVA o IVA incluido). Los fines de semana vale el ' +
-          'precio de ese producto. En 0, vale su precio todos los días.',
+          'el producto Arriendo de Productos (más IVA o IVA incluido). En 0, vale el precio de ese producto.',
           numerico('arriendoSemana', config.arriendoSemana, (n) => ({ arriendoSemana: n }), { min: 0, max: 1000000000, unidad: '$' }))}
         {campo('exclusivoDias', 'Liberar un día con reservas',
           'Hasta cuántos días antes del evento se puede pedir liberar un día que ya tiene ' +

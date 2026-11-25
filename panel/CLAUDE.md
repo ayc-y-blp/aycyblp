@@ -229,6 +229,29 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El lugar exclusivo: dos precios estándar y el show a su precio (2026-11-25, segunda pasada)
+
+Lo marcó el cliente con una foto del cotizador, un sábado con el lugar exclusivo: la casilla decía
+$1.500.000 y la boleta cobraba el arriendo a $2.000.000 y el show *incluido*. *"Si elijo un día público,
+sábado… el arriendo es 2,5 millones. Y de lunes a viernes, 1,5 millones… cobras el arriendo nominal, no el
+monto mínimo cotizable. Revisa esta misma lógica para el show también"*.
+
+- **Dos números en *Configuración → Extras y arriendo → Eventos exclusivos***: *Arriendo sábado y
+  domingo* (`arriendoFinde`, **$2.500.000**) y *Arriendo de lunes a viernes* (`arriendoSemana`,
+  **$1.500.000**), los dos que el sitio anuncia. **Parten con esos valores**, sin que haya que
+  escribirlos; en 0, vale el precio del producto Arriendo del catálogo. Mismos términos de IVA que el
+  producto. Antes el estándar era siempre el del catálogo, que en producción tiene $1.500.000: un sábado
+  quedaba bajo el mínimo de Configuración y la cuenta subía a ese mínimo ($2.000.000).
+- **`precioArriendoEstandar(arriendo, fecha, {semana, finde}, publico)`**: sábado, domingo o un día
+  público (feriado abierto) → el de fin de semana; lunes a viernes → el de semana. La misma cuenta del
+  cotizador y del sitio, que recibe `arriendoSemana` y `arriendoFinde` y cambia el precio de la casilla
+  según el día elegido.
+- **El show, con el lugar exclusivo en un día público, ya no va incluido**: el grupo se lleva todo el
+  recinto, así que el show se cobra a su precio del catálogo (sin descuento, como el arriendo). Sin lugar
+  exclusivo, sigue incluido en un día público. La respuesta ya no dice *día público* en ese caso.
+- **La cotización del vendedor no cambia**: ahí el precio se negocia y rige el mínimo de siempre.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**: el texto de los dos campos.
+
 ## Con boleta, lo que gana es líquido (2026-11-25)
 
 Lo pidió el cliente con una foto de la tarjeta de Carmen Barros (sueldo fijo $550.000, *Pagarle

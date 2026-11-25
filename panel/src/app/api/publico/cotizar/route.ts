@@ -86,7 +86,7 @@ async function cotizar(e: Eleccion & { promo: string }) {
   const promo = promos.find((p) => p.sitio === e.promo && p.activa);
   const ctx: ContextoCotizar = {
     catalogo: menus, fechas, diasAbiertos: cfg.diasAbiertos, hoy: hoy(),
-    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg), fechasSinExclusivo: cfg.fechasSinExclusivo, arriendoSemana: cfg.arriendoSemana,
+    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg), fechasSinExclusivo: cfg.fechasSinExclusivo, arriendoSemana: cfg.arriendoSemana, arriendoFinde: cfg.arriendoFinde,
     reservasDelDia: (f) => reservas.filter((r) => r.fecha === f && ocupaLugar(r)).length
   };
   return { promo, cfg, r: cotizarPromocion(promo, e, ctx) };

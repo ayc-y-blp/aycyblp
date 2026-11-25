@@ -26,7 +26,7 @@
 import { normalizar, indices, ESTADO_DIA } from './columnas.ts';
 import { TIPO_PRODUCTO, COBRO, IVA_PRECIO, MONEDA, precioParaCotizar, canonizar, textosDelProducto, type Menu } from './menus.ts';
 import {
-  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, arriendoDe as arriendoDelCatalogo, personasParaMinimos, lineaDeProducto,
+  prepararLineas, productoDe, esDiaPublico, arriendoDelDia, arriendoDe as arriendoDelCatalogo, showDe, personasParaMinimos, lineaDeProducto,
   type ReglaShow, type ReglaArriendo
 } from './cotizar.ts';
 import {
@@ -507,6 +507,8 @@ export interface ContextoCotizar {
   fechasSinExclusivo?: string[];
   /** El arriendo estándar de lunes a viernes de Configuración; 0 o sin dato, el del catálogo. */
   arriendoSemana?: number;
+  /** El arriendo estándar de un día público (fin de semana, feriado abierto); 0 o sin dato, el del catálogo. */
+  arriendoFinde?: number;
 }
 
 /**
@@ -625,13 +627,28 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
     const a = arriendoDelCatalogo(ctx.catalogo);
     if (!a || a.moneda === MONEDA.uf || !(precioParaCotizar(a) > 0)) return { ok: false, codigo: 'sinPrecio' };
     entrantes.push({
-      presupuesto: '', concepto: a.nombre, cantidad: 1, precio: precioArriendoEstandar(a, e.fecha, ctx.arriendoSemana), personas: 0,
+      presupuesto: '', concepto: a.nombre, cantidad: 1, personas: 0,
+      precio: precioArriendoEstandar(a, e.fecha, { semana: ctx.arriendoSemana, finde: ctx.arriendoFinde }, publico),
       ivaIncluido: a.iva !== IVA_PRECIO.mas, ...textosDelProducto(a)
     });
   }
+  // **Con el lugar exclusivo, el día deja de ser público para ese grupo** (2026-11-25: *"revisa esta
+  // misma lógica para el show… cobras el nominal"*): el show ya no va incluido, se cobra a su precio
+  // del catálogo, igual que el arriendo cobra el suyo. Sin lugar exclusivo, todo como siempre.
+  const publicoParaElGrupo = publico && !quiereExclusivo;
+  if (quiereExclusivo && publico) {
+    const sh = showDe(ctx.catalogo);
+    if (sh && sh.moneda !== MONEDA.uf && precioParaCotizar(sh) > 0
+        && !entrantes.some((x) => normalizar(x.concepto) === normalizar(sh.nombre))) {
+      entrantes.push({
+        presupuesto: '', concepto: sh.nombre, cantidad: 1, precio: precioParaCotizar(sh), personas: 0,
+        ivaIncluido: sh.iva !== IVA_PRECIO.mas, ...textosDelProducto(sh)
+      });
+    }
+  }
   const arriendo = sinArriendo ? null : arriendoDelDia(ctx.reglaArriendo, e.fecha, ctx.fechas,
     ctx.diasAbiertos, quiereExclusivo, ctx.reservasDelDia(e.fecha));
-  const lineas = prepararLineas(entrantes, ctx.catalogo, invitados, publico, 0, ctx.reglaShow, arriendo);
+  const lineas = prepararLineas(entrantes, ctx.catalogo, invitados, publicoParaElGrupo, 0, ctx.reglaShow, arriendo);
   const minimo = arriendo ? arriendo(personasParaMinimos(lineas, invitados)) : null;
   // El descuento del tramo que alcanza el grupo (2026-11-24).
   const descuento = descuentoPara(promo, invitados);
@@ -660,7 +677,7 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
     ok: true, lineas: lineasFinales, invitados, descuento, cuentas,
     otras: otrasEmpresas(lineasFinales),
     porPersona: invitados > 0 ? Math.round(cuentas.total / invitados) : 0,
-    publico, arriendo: minimo?.minimo ?? 0,
+    publico: publicoParaElGrupo, arriendo: minimo?.minimo ?? 0,
     exclusivo, exclusivoGratis: quiereExclusivo && sinArriendo, descuentoEnLineas
   };
 }
@@ -699,19 +716,24 @@ export interface PromocionSitio {
    * precio. Es el del catálogo, el mismo con que se cotiza.
    */
   arriendo: ProductoSitio | null;
-  /** El precio estándar de lunes a viernes (Configuración); 0, el de `arriendo` todos los días. */
+  /** El precio estándar de lunes a viernes (Configuración); 0, el de `arriendo`. */
   arriendoSemana: number;
+  /** El precio estándar de un día público, sábado o domingo (Configuración); 0, el de `arriendo`. */
+  arriendoFinde: number;
   /** Si la promoción nunca cobra arriendo (*Sin arriendo*): el lugar exclusivo va incluido. */
   arriendoIncluido: boolean;
 }
 
 /**
- * **El precio estándar del arriendo ese día** (2026-11-25): el del catálogo, salvo de lunes a
- * viernes con el número de Configuración puesto. Es la misma cuenta del cotizador y del sitio.
+ * **El precio estándar del arriendo ese día** (2026-11-25, lo pidió el cliente: *"si elijo un día
+ * público… el arriendo es 2,5 millones; de lunes a viernes, 1,5 millones"*): el de un día público
+ * —sábado, domingo o un feriado abierto— y el de lunes a viernes salen de Configuración; con el
+ * número en 0, el del catálogo. Es la misma cuenta del cotizador y del sitio.
  */
-export function precioArriendoEstandar(a: Menu, fecha: string, semana?: number): number {
+export function precioArriendoEstandar(a: Menu, fecha: string, p: { semana?: number; finde?: number } = {}, publico = false): number {
   const d = new Date(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)) - 1, Number(fecha.slice(8, 10))).getDay();
-  return semana && semana > 0 && d >= 1 && d <= 5 ? Math.round(semana) : precioParaCotizar(a);
+  const n = publico || d === 0 || d === 6 ? p.finde : p.semana;
+  return n && n > 0 ? Math.round(n) : precioParaCotizar(a);
 }
 
 const paraSitio = (m: Menu): ProductoSitio => ({
@@ -725,7 +747,7 @@ const paraSitio = (m: Menu): ProductoSitio => ({
  * su bloque se queda con el botón de WhatsApp, en vez de un cotizador que no
  * puede cotizar.
  */
-export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], arriendoSemana = 0): PromocionSitio[] {
+export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], arriendo: { semana?: number; finde?: number } = {}): PromocionSitio[] {
   const salida: PromocionSitio[] = [];
   for (const p of promos) {
     if (!p.activa || !p.sitio || !p.cotizador) continue;
@@ -749,7 +771,8 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], ar
       anticipacion: p.anticipacion,
       arriendo: arriendoCat && arriendoCat.moneda !== MONEDA.uf && precioParaCotizar(arriendoCat) > 0
         ? paraSitio(arriendoCat) : null,
-      arriendoSemana: arriendoCat && arriendoSemana > 0 ? Math.round(arriendoSemana) : 0,
+      arriendoSemana: arriendoCat && (arriendo.semana ?? 0) > 0 ? Math.round(arriendo.semana!) : 0,
+      arriendoFinde: arriendoCat && (arriendo.finde ?? 0) > 0 ? Math.round(arriendo.finde!) : 0,
       arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca
     });
   }

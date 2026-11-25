@@ -450,9 +450,11 @@
       var precioExclusivo = function () {
         if (promo.arriendoIncluido) return T.incluido;
         var p = promo.arriendo.precio;
-        if (promo.arriendoSemana > 0 && estado.fecha) {
+        if (estado.fecha) {
+          // Sábado y domingo, el precio de un día público; de lunes a viernes, el de semana.
           var d = new Date(estado.fecha + 'T12:00:00').getDay();
-          if (d >= 1 && d <= 5) p = promo.arriendoSemana;
+          if (d >= 1 && d <= 5) { if (promo.arriendoSemana > 0) p = promo.arriendoSemana; }
+          else if (promo.arriendoFinde > 0) p = promo.arriendoFinde;
         }
         return T.exclusivoPrecio.replace('{m}', pesos(p) + (promo.arriendo.masIva ? ' ' + T.masIva : ''));
       };
