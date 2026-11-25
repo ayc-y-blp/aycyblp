@@ -33,6 +33,7 @@ import { menusDe } from '@/lib/shopify';
 import { fechaEnZona, hoy, esFecha } from '@/lib/fechas';
 import type { Reserva } from '@/lib/tipos';
 import type { FilaEst, DiaEst } from '@/lib/estadisticas';
+import { anotadaPorError } from '@/lib/caida';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +81,10 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_MENUS, HOJA_PRE
       veEquipo ? leerExtras().catch(() => []) : Promise.resolve([]),
       veEquipo ? leerPuestos().catch(() => []) : Promise.resolve([])
     ]);
-    const filas = reservas.filter((r) => esFecha(r.fecha)).map((r) => filaDe(r, menus, deCot.has(r.id)));
+    // **Anotada por error no es una cancelación** (2026-11-25, `lib/caida.ts`):
+    // no entra en las estadísticas, ni como reserva ni como caída.
+    const filas = reservas.filter((r) => esFecha(r.fecha) && !anotadaPorError(r))
+      .map((r) => filaDe(r, menus, deCot.has(r.id)));
     const dias: DiaEst[] = fechas.map((f) => ({
       fecha: f.fecha, cupo: f.capacidad, abierto: !estaCerrado(f.estado) && f.capacidad > 0
     }));

@@ -118,7 +118,7 @@ export const PANTALLAS = [
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
-  ['dia', '/dia/2026-11-14'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
+  ['dia', '/dia/2026-11-14'], ['dia-con-caidas', '/dia/2026-11-22'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
   ['bitacora', '/bitacora'],
   // La caja chica (2026-11-23, `caja.ts`).
   ['caja', '/caja'],
@@ -236,7 +236,13 @@ export const ESCENAS = {
     await ir('/dia/2026-11-07'); await clic(p.locator('main button[aria-expanded]', { hasText: 'Familia Toro' }));
     await clic(boton(/^✎ Editar$/)); await clic(ventana().getByRole('button', { name: 'Agregar uno de Tradiciones' }));
   },
-  'v-reserva-borrar-dia-cerrado': async () => { await ir('/dia/2026-11-07'); await abrirPrimera(); await clic(boton('Borrar', true)); },
+  // Borrar es del administrador y solo en una anotada a mano (2026-11-25): la de Familia Toro.
+  'v-reserva-borrar-dia-cerrado': async () => {
+    await ir('/dia/2026-11-07'); await clic(p.locator('main button[aria-expanded]', { hasText: 'Familia Toro' }));
+    await clic(boton('Borrar', true));
+  },
+  // *✕ Se cayó…* de una reserva (2026-11-25, `lib/caida.ts`): la de Shopify, con su aviso.
+  'v-reserva-se-cayo': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); await clic(boton(/^✕ Se cayó…$/)); },
   'v-fecha-nueva': async () => { await ir('/'); await clic(boton('Agregar fecha')); },
   'v-fecha-editar': async () => { await ir('/'); await clic(boton(/Editar/)); },
   // El equipo y los extras de un día.

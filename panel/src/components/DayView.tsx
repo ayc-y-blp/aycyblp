@@ -52,6 +52,8 @@ import Clima, { usePronostico } from './Clima';
 import { puede, puedeVer, puedeTocarReserva, esSuya, type Rol } from '@/lib/auth';
 import EquipoDialogo from './EquipoDialogo';
 import BloqueLiberar from './BloqueLiberar';
+import SeCayo from './SeCayo';
+import { MOTIVOS_CAIDA } from '@/lib/caida';
 import { esExclusivo, exclusividadDe } from '@/lib/exclusivo';
 import ExtrasDialogo from './ExtrasDialogo';
 import { estaCerrado, cierreDe, type Cierre } from '@/lib/cierres';
@@ -270,6 +272,10 @@ export default function DayView(
   const [borrando, setBorrando] = useState<Reserva | null>(null);
   const [borrarConfirmado, setBorrarConfirmado] = useState(false);
   const [borrandoYa, setBorrandoYa] = useState(false);
+  /** *✕ Se cayó…* (2026-11-25, `lib/caida.ts`): la reserva que se está dando por caída. */
+  const [cayendo, setCayendo] = useState<Reserva | null>(null);
+  /** Si el grupo *Se cayeron* está abierto: cerrado de partida, porque ya no vienen. */
+  const [verCaidas, setVerCaidas] = useState(false);
   const [errorBorrar, setErrorBorrar] = useState('');
   const [creando, setCreando] = useState(false);
   /** El ganado del socio que se está pasando al panel, si hay alguno. */
@@ -312,7 +318,7 @@ export default function DayView(
   async function resolverAviso(r: Reserva) {
     const res = await fetch(`/api/reservas/${r.fila}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ avisoRecepcion: '' })
+      body: JSON.stringify({ id: r.id, avisoRecepcion: '' })
     });
     const d = await res.json().catch(() => ({}));
     if (d.error) setError(d.error); else cargar();
@@ -440,6 +446,9 @@ export default function DayView(
     if (filtro === 'pagadas') return ocupaLugar(r) && !faltaCobrar(r);
     return true;
   }), [delDia, filtro, soloMias, deDonde, deCotizacionIds, cotizado, origen, usuario]); // eslint-disable-line react-hooks/exhaustive-deps
+  // **Las que se cayeron, aparte** (2026-11-25): al final, en su grupo plegado.
+  const enPie = visibles.filter(ocupaLugar);
+  const caidas = visibles.filter((r) => !ocupaLugar(r));
 
   const personas = visibles.filter(ocupaLugar)
     .reduce((s, r) => s + personasEnLaMesa(r), 0);
@@ -552,7 +561,7 @@ export default function DayView(
     const res = await fetch(`/api/reservas/${r.fila}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        asistencia: a, ...(a === ASISTENCIA.vino ? {} : { llegaron: null }),
+        id: r.id, asistencia: a, ...(a === ASISTENCIA.vino ? {} : { llegaron: null }),
         ...(cambios ? { correccion: { motivo: textoDeCambios(cambios) } } : {})
       })
     });
@@ -576,7 +585,7 @@ export default function DayView(
   }
   async function mandarBorrado(r: Reserva, cambios?: string[]) {
     setBorrandoYa(true);
-    const res = await fetch(`/api/reservas/${r.fila}`, {
+    const res = await fetch(`/api/reservas/${r.fila}?id=${encodeURIComponent(r.id)}`, {
       method: 'DELETE',
       ...(cambios ? { headers: { 'content-type': 'application/json' },
                       body: JSON.stringify({ correccion: { motivo: textoDeCambios(cambios) } }) } : {})
@@ -586,6 +595,46 @@ export default function DayView(
     if (d.error) { if (cambios) setErrorBorrar(d.error); else alert(d.error); return; }
     setBorrando(null);
     cargar();
+  }
+
+  /**
+   * *✕ Se cayó…* (2026-11-25): manda el motivo. En un día cerrado el servidor
+   * lo toma como corrección, con su línea en la bitácora.
+   */
+  async function mandarCaida(r: Reserva, motivo: string): Promise<string | null> {
+    const res = await fetch('/api/reservas/cayo', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fila: r.fila, id: r.id, motivo })
+    });
+    const d = await res.json().catch(() => ({ error: 'No se pudo guardar.' }));
+    if (!res.ok || d.error) return d.error || 'No se pudo guardar.';
+    setCayendo(null); setReservaAbierta('');
+    void cargar();
+    return null;
+  }
+  /** *↺ No, sí viene*: la devuelve, y vuelve a ocupar su lugar. Toma cupo: se confirma. */
+  async function volverAPoner(r: Reserva) {
+    if (!confirm(`¿${r.nombre || 'Esta reserva'} sí viene? Vuelve a la lista y ocupa sus ${r.personas} lugares.`)) return;
+    const res = await fetch('/api/reservas/cayo', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fila: r.fila, id: r.id, deshacer: true })
+    });
+    const d = await res.json().catch(() => ({ error: 'No se pudo guardar.' }));
+    if (!res.ok || d.error) { avisar(d.error || 'No se pudo guardar.', 'atencion'); return; }
+    avisar(`${r.nombre || 'La reserva'} vuelve a la lista`);
+    void cargar();
+  }
+  /** *🧹 Limpiar la fila de más* de un pedido repetido: queda una, la que el panel lee. */
+  async function limpiarRepetida(r: Reserva) {
+    if (!confirm(`¿Borrar ${r.duplicadas === 2 ? 'la fila de más' : 'las filas de más'} del pedido ${r.id}? `
+      + 'La reserva queda, con todo lo que se le anotó.')) return;
+    const res = await fetch('/api/reservas/repetidas', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: r.id })
+    });
+    const d = await res.json().catch(() => ({ error: 'No se pudo borrar.' }));
+    if (!res.ok || d.error) { avisar(d.error || 'No se pudo borrar.', 'atencion'); return; }
+    avisar('Listo: el pedido quedó una sola vez en la planilla');
+    void cargar();
   }
 
   if (error) return <Aviso error={error} />;
@@ -644,6 +693,351 @@ export default function DayView(
   const cuantas = (rs: Reserva[]) => `${rs.length} reserva${rs.length === 1 ? '' : 's'}`;
   /** Las reservas de este día con un aviso de la recepción sin resolver. */
   const conAviso = delDia.filter((r) => (r.avisoRecepcion ?? '').trim());
+
+  /**
+   * **La tarjeta de una reserva** (2026-11-25): la misma para las que siguen en
+   * pie y para las que se cayeron, que van en su grupo plegado al final.
+   */
+  const tarjetaDeReserva = (r: Reserva) => {
+    // **El mismo pedido anotado dos veces en la planilla.** El panel
+    // ya lo cuenta una sola vez —ver `leerReservasDe()`— así que esto
+    // no cambia ningún total: avisa, para que alguien borre la fila
+    // de más.
+    const repetida = (r.duplicadas ?? 1) > 1;
+    /**
+     * Si esta cuenta puede tocar **esta** reserva: para los roles de
+     * siempre es todas; un vendedor solo las que anotó él. La regla
+     * vive en `auth.ts` y la comprueba la ruta.
+     */
+    const mia = puedeTocarReserva(rol as Rol, usuario, r.anotadaPor);
+    // **Una reserva que nació de una cotización se edita en la
+    // cotización** (2026-11-10). El servidor dice de cuál viene aunque
+    // la lista de cotizaciones no haya llegado.
+    const deCotizacion = cotizado?.presupuestos.find((p) => p.idReserva === r.id);
+    const idCotizacion = deCotizacion?.id ?? deCotizacionIds[r.id] ?? '';
+    const folio = origen.folio[r.id] || (deCotizacion ? folioDe(deCotizacion) : '');
+    const abierta = reservaAbierta === r.id;
+    const libera = !ocupaLugar(r);
+    const pago = iconoPago(r);
+    const aviso = (r.avisoRecepcion ?? '').trim();
+    return (
+      <li key={r.fila} id={`reserva-${r.fila}`}
+        className={`scroll-mt-24 overflow-hidden transition-colors ${
+        marcoTarjeta(abierta, aviso ? 'rojo' : 'normal', true)} ${
+        libera ? 'opacity-80' : ''} ${destello === r.fila ? 'destello' : ''}`}>
+        {/* La línea cerrada: quién, su número, cómo va el pago (solo
+            el ícono) y cuánta gente. Lo que no puede quedar escondido
+            —un aviso de la recepción, un pedido repetido— lleva su
+            marca también acá. */}
+        {/* **Quién vino, en la línea** (2026-11-24, lo pidió el cliente:
+            *"también colapsado… vino o no vino, a partir de las 13
+            horas"*): al lado de la línea en el computador, debajo en
+            el celular; se ve cerrada y abierta. */}
+        <div className={`flex flex-wrap items-center lg:flex-nowrap ${abierta ? 'bg-oro/10' : ''}`}>
+        <button type="button" aria-expanded={abierta}
+          onClick={() => setReservaAbierta(abierta ? '' : r.id)}
+          className={`tecla flex min-h-[56px] w-full min-w-0 items-center gap-3 px-3 py-2 text-left lg:w-auto lg:flex-1
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oro
+                      ${abierta ? '' : 'hover:bg-hueso/5'}`}>
+          <SignoAbrir abierta={abierta} />
+          <span className="min-w-0 flex-1">
+            <span className={`block break-words text-[16px] font-bold leading-tight ${libera ? 'line-through' : ''}`}>
+              {r.nombre || <span className="text-hueso/50">sin nombre</span>}
+            </span>
+            {/* **≠ Acordado** (2026-11-20): viene de una cotización con
+                precios negociados; se cierra con esos, no con la carta. */}
+            <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-hueso/65">
+              <span className="truncate">{idCotizacion ? `Cotización N° ${folio}` : r.id}</span>
+              <MarcaAcordado ingreso={r.ingreso} />
+            </span>
+          </span>
+          {repetida && (
+            <span title="Pedido repetido en la planilla" className="shrink-0 text-[15px] font-bold
+              text-ambar-texto">⚠</span>
+          )}
+          {estaRectificada(r) && (
+            <span title={porAprobar(r) ? 'Rectificada · descuento por aprobar' : 'Rectificada'}
+              className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-[13px] font-bold ${porAprobar(r)
+                ? 'border-ambar-fuerte/60 bg-ambar/10 text-ambar-texto' : 'border-cielo-fuerte/50 bg-cielo/10 text-cielo-texto'}`}>
+              {porAprobar(r) ? '⏳' : '✎'}
+            </span>
+          )}
+          <span title={pago.palabra} aria-label={pago.palabra}
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2
+                        text-[14px] font-bold ${pago.clase}`}>{pago.icono}</span>
+          <span className="w-[4.5rem] shrink-0 text-right text-[18px] font-bold tabular-nums">
+            {personasEnLaMesa(r)}
+            <span className="ml-1 text-[13px] font-normal text-hueso/65">pers.</span>
+          </span>
+        </button>
+        {puedeAsistencia && !libera && (
+          <div className="w-full px-3 pb-2 lg:w-auto lg:py-2 lg:pl-0">
+            <BotonesAsistencia nombre={r.nombre} asistencia={r.asistencia ?? ''} ocupado={asisGuardando}
+              onMarcar={(a) => marcarAsistencia(r, a)} />
+          </div>
+        )}
+        </div>
+
+        {/* **El aviso de la recepción, a la vista sin abrirla**
+            (2026-11-11; desde el 2026-11-13 fuera del detalle y en
+            rojo suave), con *✓ Resuelto* a mano. Al resolverlo la
+            reserva vuelve a verse como las demás. */}
+        {aviso && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-rojo-fuerte/30 px-3 py-2">
+            <p className="min-w-[12rem] flex-1 text-[15px] font-semibold text-rojo-texto">
+              📣 {(() => { const { hora, texto } = partirAviso(aviso); return hora ? `${hora} · ${texto}` : texto; })()}
+            </p>
+            {mia && !idCotizacion && (
+              <button type="button" className="boton min-h-[40px]" onClick={() => setEditando(r)}>
+                Editar la reserva
+              </button>
+            )}
+            {puede(rol as Rol, 'asistencia') && (
+              <button type="button" className="boton min-h-[44px] !border-verde-fuerte !font-semibold text-verde-texto"
+                onClick={() => void resolverAviso(r)}>✓ Resuelto</button>
+            )}
+          </div>
+        )}
+
+        {abierta && (
+          <div className="space-y-3 border-t-2 border-oro/30 p-3">
+            {/* En el teléfono: personas y pago arriba, menú y asistencia
+                a todo el ancho. **Cuatro azulejos, la misma forma que los de arriba de la
+                página** (2026-11-12, lo pidió el cliente: la versión
+                en columnas no seguía la regla PlayStation). El dato
+                grande arriba y qué es debajo. */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className={`${AZULEJO} order-1`}>
+                <span className="text-[30px] font-bold leading-none tabular-nums">{personasEnLaMesa(r)}</span>
+                <span className={ROTULO_AZULEJO}>personas</span>
+                {personasEnLaMesa(r) !== r.personas && (
+                  <span className="text-[13px] text-hueso/65">reservó <s>{r.personas}</s></span>
+                )}
+                {cuantosAgregados(r.agregados) > 0 && (
+                  <span className="text-[13px] font-semibold text-cielo-texto">+{cuantosAgregados(r.agregados)} en la mesa</span>
+                )}
+                {r.llegaron != null && r.llegaron !== personasEnLaMesa(r) && (
+                  <span className="mt-1 text-[13px] font-semibold text-ambar-texto">llegaron {r.llegaron}</span>
+                )}
+              </div>
+              <div className={`${AZULEJO} order-3 col-span-2 sm:order-2 sm:col-span-1`}>
+                <span className="space-y-0.5 text-[16px] font-bold leading-snug">
+                  {lineasDeMenu(menuEfectivo(r)).map((m) => <span key={m} className="block">{m}</span>)}
+                </span>
+                <span className={ROTULO_AZULEJO}>menú</span>
+              </div>
+              <div className={`${AZULEJO} order-2 sm:order-3`}>
+                <PastillaPago r={sinNotaDeCotizacion(r, !!idCotizacion)} deCotizacion={!!idCotizacion}
+                  sinOrigen={!!idCotizacion} />
+                <span className={ROTULO_AZULEJO}>pago</span>
+              </div>
+              <div className={`${AZULEJO} order-4 col-span-2 sm:col-span-1`}>
+                {/* Se lee: se marca en la línea de arriba (2026-11-24). */}
+                <span className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full
+                                  border-2 px-2.5 py-0.5 text-[14px] font-bold ${
+                  r.asistencia === VINO.si ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
+                  : r.asistencia === VINO.no ? 'border-rojo-fuerte/60 bg-rojo/10 text-rojo-texto'
+                  : 'border-hueso/25 text-hueso/70'}`}>
+                  {r.asistencia === VINO.si ? '✓ Vino'
+                    : r.asistencia === VINO.no ? '✕ No vino' : '○ Sin marcar'}
+                </span>
+                <span className={ROTULO_AZULEJO}>asistencia</span>
+              </div>
+            </div>
+
+            {/* **Lo acordado y lo que pasó, lado a lado** (2026-11-24,
+                lo pidió el cliente: *"al lado de la información que
+                viene desde la cotización, agregar el mismo campo, pero
+                para ingresar la realidad… el total de Fudo, pagó
+                diferencia por transferencia, efectivo o tarjeta"*): en
+                el computador, cómo ingresarla en Fudo a la izquierda y
+                la mesa —el valor final y cómo pagó lo que faltaba— a la
+                derecha. En el celular, una debajo de la otra. Son las
+                mismas piezas de la Recepción. */}
+            {(() => {
+              const conMesa = ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
+                && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0);
+              if (!ocupaLugar(r)) return null;
+              return (
+                <div className={conMesa ? 'space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3 lg:space-y-0' : ''}>
+                  <IngresoFudo ingreso={r.ingreso} />
+                  {conMesa && (
+                    <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
+                      cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* **La rectificación del día** (2026-11-12): qué cambió,
+                quién, cuándo y por qué; el descuento por aprobar con
+                sus dos botones para quien puede aprobar. */}
+            {estaRectificada(r) && (
+              <div className={`rounded-xl border-2 p-3 ${porAprobar(r)
+                ? 'border-ambar-fuerte/60 bg-ambar/10' : 'border-cielo-fuerte/50 bg-cielo/5'}`}>
+                <p className="text-[15px] font-bold">✎ Rectificada · {resumenRectificacion(r)}</p>
+                <p className="mt-0.5 text-[14px] text-hueso/80">{r.rectificacion}</p>
+                {menuEfectivo(r) !== r.menu && (
+                  <p className="text-[13px] text-hueso/65">Reservó: {r.menu}</p>
+                )}
+                {porAprobar(r) && (
+                  <p className="mt-1 text-[14px] font-semibold text-ambar-texto">
+                    ⏳ El descuento de {r.descuento}% está por aprobar: en Fudo no se ingresa todavía.
+                  </p>
+                )}
+                {!porAprobar(r) && r.aprobacion && (
+                  <p className={`mt-1 text-[13px] font-semibold ${rechazado(r) ? 'text-rojo-texto' : 'text-verde-texto'}`}>
+                    {rechazado(r) ? '✕' : '✓'} Descuento {r.aprobacion}
+                  </p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {porAprobar(r) && puedeAprobarDescuentos && (
+                    <>
+                      <button type="button" className="boton min-h-[44px] !border-verde-fuerte bg-verde/10 font-bold text-verde-texto"
+                        onClick={() => void aprobarDescuento(r, true)}>✓ Aprobar {r.descuento}%</button>
+                      <button type="button" className="boton min-h-[44px] !border-rojo-fuerte/60 text-rojo-texto"
+                        onClick={() => void aprobarDescuento(r, false)}>✕ Rechazar</button>
+                    </>
+                  )}
+                  {(puedeAprobarDescuentos || esSuya(usuario, String(r.rectificacion).split(' · ')[1] ?? '')) && (
+                    <button type="button" className="boton min-h-[44px]" onClick={() => void deshacerRectificacion(r)}>
+                      Deshacer la rectificación
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {repetida && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-ambar/60 bg-ambar/10 px-3 py-2">
+                <p className="min-w-[14rem] flex-1 text-[14px] font-semibold text-ambar-texto">
+                  ⚠ Este pedido está {r.duplicadas} veces en la planilla. El panel lo cuenta una sola vez.
+                </p>
+                {/* **Se limpia desde acá** (2026-11-25): la reserva queda, con
+                    todo lo que se le anotó; se va la copia. */}
+                {puede(rol as Rol, 'reservas') && (
+                  <button type="button" onClick={() => void limpiarRepetida(r)}
+                    className="boton min-h-[40px] !border-ambar-fuerte/70 font-semibold text-ambar-texto">
+                    🧹 Limpiar la fila de más
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* **El contacto son botones**: llamar, WhatsApp y correo,
+                con el dato a la vista. Es lo que se hace con él. */}
+            {/* **Un contacto tapado no se ofrece** (2026-11-13,
+                `privacidad.ts`): el servidor lo mandó como
+                `···· 5678`, así que no hay a quién llamar ni
+                escribir. Se dice quién lo tiene. */}
+            {r.contactoTapado && (
+              <p className="flex items-center gap-1.5 rounded-lg border border-hueso/15 px-3 py-2 text-[14px] text-hueso/70">
+                🔒 {r.telefono || 'Contacto reservado'} <AyudaCorta tema="contactoTapado" />
+              </p>
+            )}
+            {!r.contactoTapado && (r.telefono || r.email) && (
+              <div className="flex flex-wrap gap-2">
+                {r.telefono && (
+                  <a href={`tel:${String(r.telefono).replace(/\s+/g, '')}`} className="tecla boton min-h-[44px]">
+                    📞 {r.telefono}
+                  </a>
+                )}
+                {/* **Al tiro y firmado** (2026-11-13): el chat se abre
+                    directo, con *Hola Camila, te escribe Tomás de …
+                    por tu reserva del …* ya escrito. */}
+                <BotonWhatsApp enlace={enlaceWhatsApp(r.telefono,
+                  mensajeDeReserva(r.nombre, usuario, empresa, enPalabras(r.fecha)))} />
+                {r.email && (
+                  <a href={`mailto:${r.email}`} className="tecla boton min-h-[44px] max-w-full truncate">
+                    ✉ {r.email}
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* **El pie: de quién es y qué se hace con ella.** A la
+                izquierda quién la vendió o la anotó (2026-11-12, lo
+                pidió el cliente: el encargado tiene que saber con
+                quién hablar); a la derecha, la acción. La reserva de
+                otro se ve y no se toca: en vez de botones apagados va
+                a quién pedírselo. */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hueso/10 pt-3">
+              <span className="text-[14px] text-hueso/75">
+                {idCotizacion ? (
+                  <>🤝 Vendió <strong className="text-hueso">
+                    {origen.vendedor[r.id] || deCotizacion?.creadoPor || 'sin vendedor'}</strong></>
+                ) : r.anotadaPor ? (
+                  <>✍ Anotó <strong className="text-hueso">{r.anotadaPor}</strong></>
+                ) : /^\d+$/.test(r.id) ? <>🛒 Compró en Shopify</> : <>✍ Anotada a mano</>}
+                {cuandoSeReservo(r.creada) && <span className="text-hueso/70"> · {cuandoSeReservo(r.creada)}</span>}
+              </span>
+              <div className="flex flex-wrap justify-end gap-2">
+                {idCotizacion ? (
+                  <a href={`/presupuestos?abrir=${encodeURIComponent(idCotizacion)}`}
+                    className="tecla boton boton-relleno min-h-[44px] whitespace-nowrap">
+                    Abrir la cotización N° {folio} →
+                  </a>
+                ) : mia && r.liberada ? (
+                  // Se cayó por cupo: lo que queda es avisarle.
+                  <AvisarCaida r={r} />
+                ) : mia ? (
+                  <>
+                    {/* **✕ Se cayó…, y Borrar solo para el administrador**
+                        (2026-11-25, lo decidió el cliente: *"deja borrar
+                        para el administrador, por el caso que se ingresó
+                        dos veces por error"*). Borrar, solo en una anotada a
+                        mano: una de Shopify volvería sola. */}
+                    {ocupaLugar(r) ? (
+                      <button type="button" onClick={() => setCayendo(r)}
+                        disabled={diaCerrado && !puedeCorregir}
+                        className="boton min-h-[44px] !border-2 !border-rojo-fuerte/70 font-semibold text-rojo-texto">
+                        ✕ Se cayó…
+                      </button>
+                    ) : (r.cayo || (esManual(r.id) && liberaCupo(r.estadoPago))) ? (
+                      <button type="button" onClick={() => void volverAPoner(r)}
+                        disabled={diaCerrado && !puedeCorregir}
+                        className="boton min-h-[44px] !border-2">
+                        ↺ No, sí viene
+                      </button>
+                    ) : null}
+                    {rol === 'admin' && esManual(r.id) && (
+                      <button onClick={() => borrar(r)}
+                        disabled={diaCerrado && !puedeCorregir}
+                        className="boton min-h-[44px] hover:border-rojo-fuerte hover:text-rojo-texto">
+                        Borrar
+                      </button>
+                    )}
+                    <button onClick={() => { setCreando(false); setEditando(r); }}
+                      disabled={diaCerrado && !puedeCorregir}
+                      className="boton boton-relleno min-h-[44px]">✎ Editar</button>
+                  </>
+                ) : !puedeRectificar ? (
+                  <span className="text-[14px] text-hueso/65">
+                    {!conReservas ? '' : 'No la anotaste tú: pídeselo a quien la anotó.'}
+                  </span>
+                ) : null}
+                {/* **Rectificar** (2026-11-12): desde la apertura del
+                    día, cualquier reserva. Antes, la de otro la cambia
+                    quien la anotó, y se dice desde qué hora. */}
+                {puedeRectificar && ocupaLugar(r) && (
+                  infoDia.abierto && (!diaCerrado || puedeCorregir) ? (
+                    <button type="button" onClick={() => setRectificando(r)}
+                      className={`boton min-h-[44px] ${!mia && !idCotizacion ? 'boton-relleno' : '!border-oro text-oro'}`}>
+                      ✎ {estaRectificada(r) ? 'Rectificar de nuevo' : 'Rectificar'}
+                    </button>
+                  ) : !mia && !idCotizacion ? (
+                    <span className="text-[14px] text-hueso/70">
+                      Se rectifica desde las <strong>{infoDia.apertura || 'la apertura'}</strong> del día.
+                      Antes la cambia quien la anotó.
+                    </span>
+                  ) : null
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </li>
+    );
+  };
 
   return (
     <FirmaWhatsApp value={{ quien: usuario, empresa }}>
@@ -1261,328 +1655,41 @@ export default function DayView(
       {visibles.length === 0 ? (
         <p className="mt-8 text-hueso/50">No hay reservas para este filtro.</p>
       ) : (
-        /* **Cada reserva es una línea que se abre** (2026-11-12, lo pidió el
+        <>
+        {/* **Cada reserva es una línea que se abre** (2026-11-12, lo pidió el
            cliente): cerrada dice solo quién es, su número y cuánta gente;
            apretándola aparece todo lo demás —contacto, menú, pago, Fudo,
            asistencia y lo que se hace con ella—. Una abierta a la vez, igual
            que las fichas de `/equipo` y las líneas del informe. Reemplaza a
            la tabla de siete columnas, que en un teléfono había que correr de
            lado. Lo que no puede quedar escondido —un aviso de la recepción,
-           un pedido repetido— lleva su marca también en la línea cerrada. */
-        <ul className={`mt-5 ${LISTA_TARJETAS}`}>
-          {visibles.map((r) => {
-            // **El mismo pedido anotado dos veces en la planilla.** El panel
-            // ya lo cuenta una sola vez —ver `leerReservasDe()`— así que esto
-            // no cambia ningún total: avisa, para que alguien borre la fila
-            // de más.
-            const repetida = (r.duplicadas ?? 1) > 1;
-            /**
-             * Si esta cuenta puede tocar **esta** reserva: para los roles de
-             * siempre es todas; un vendedor solo las que anotó él. La regla
-             * vive en `auth.ts` y la comprueba la ruta.
-             */
-            const mia = puedeTocarReserva(rol as Rol, usuario, r.anotadaPor);
-            // **Una reserva que nació de una cotización se edita en la
-            // cotización** (2026-11-10). El servidor dice de cuál viene aunque
-            // la lista de cotizaciones no haya llegado.
-            const deCotizacion = cotizado?.presupuestos.find((p) => p.idReserva === r.id);
-            const idCotizacion = deCotizacion?.id ?? deCotizacionIds[r.id] ?? '';
-            const folio = origen.folio[r.id] || (deCotizacion ? folioDe(deCotizacion) : '');
-            const abierta = reservaAbierta === r.id;
-            const libera = !ocupaLugar(r);
-            const pago = iconoPago(r);
-            const aviso = (r.avisoRecepcion ?? '').trim();
-            return (
-              <li key={r.fila} id={`reserva-${r.fila}`}
-                className={`scroll-mt-24 overflow-hidden transition-colors ${
-                marcoTarjeta(abierta, aviso ? 'rojo' : 'normal', true)} ${
-                libera ? 'opacity-50' : ''} ${destello === r.fila ? 'destello' : ''}`}>
-                {/* La línea cerrada: quién, su número, cómo va el pago (solo
-                    el ícono) y cuánta gente. Lo que no puede quedar escondido
-                    —un aviso de la recepción, un pedido repetido— lleva su
-                    marca también acá. */}
-                {/* **Quién vino, en la línea** (2026-11-24, lo pidió el cliente:
-                    *"también colapsado… vino o no vino, a partir de las 13
-                    horas"*): al lado de la línea en el computador, debajo en
-                    el celular; se ve cerrada y abierta. */}
-                <div className={`flex flex-wrap items-center lg:flex-nowrap ${abierta ? 'bg-oro/10' : ''}`}>
-                <button type="button" aria-expanded={abierta}
-                  onClick={() => setReservaAbierta(abierta ? '' : r.id)}
-                  className={`tecla flex min-h-[56px] w-full min-w-0 items-center gap-3 px-3 py-2 text-left lg:w-auto lg:flex-1
-                              focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oro
-                              ${abierta ? '' : 'hover:bg-hueso/5'}`}>
-                  <SignoAbrir abierta={abierta} />
-                  <span className="min-w-0 flex-1">
-                    <span className={`block break-words text-[16px] font-bold leading-tight ${libera ? 'line-through' : ''}`}>
-                      {r.nombre || <span className="text-hueso/50">sin nombre</span>}
-                    </span>
-                    {/* **≠ Acordado** (2026-11-20): viene de una cotización con
-                        precios negociados; se cierra con esos, no con la carta. */}
-                    <span className="flex min-w-0 items-center gap-1.5 text-[13px] text-hueso/65">
-                      <span className="truncate">{idCotizacion ? `Cotización N° ${folio}` : r.id}</span>
-                      <MarcaAcordado ingreso={r.ingreso} />
-                    </span>
-                  </span>
-                  {repetida && (
-                    <span title="Pedido repetido en la planilla" className="shrink-0 text-[15px] font-bold
-                      text-ambar-texto">⚠</span>
-                  )}
-                  {estaRectificada(r) && (
-                    <span title={porAprobar(r) ? 'Rectificada · descuento por aprobar' : 'Rectificada'}
-                      className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-[13px] font-bold ${porAprobar(r)
-                        ? 'border-ambar-fuerte/60 bg-ambar/10 text-ambar-texto' : 'border-cielo-fuerte/50 bg-cielo/10 text-cielo-texto'}`}>
-                      {porAprobar(r) ? '⏳' : '✎'}
-                    </span>
-                  )}
-                  <span title={pago.palabra} aria-label={pago.palabra}
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2
-                                text-[14px] font-bold ${pago.clase}`}>{pago.icono}</span>
-                  <span className="w-[4.5rem] shrink-0 text-right text-[18px] font-bold tabular-nums">
-                    {personasEnLaMesa(r)}
-                    <span className="ml-1 text-[13px] font-normal text-hueso/65">pers.</span>
-                  </span>
-                </button>
-                {puedeAsistencia && !libera && (
-                  <div className="w-full px-3 pb-2 lg:w-auto lg:py-2 lg:pl-0">
-                    <BotonesAsistencia nombre={r.nombre} asistencia={r.asistencia ?? ''} ocupado={asisGuardando}
-                      onMarcar={(a) => marcarAsistencia(r, a)} />
-                  </div>
-                )}
-                </div>
-
-                {/* **El aviso de la recepción, a la vista sin abrirla**
-                    (2026-11-11; desde el 2026-11-13 fuera del detalle y en
-                    rojo suave), con *✓ Resuelto* a mano. Al resolverlo la
-                    reserva vuelve a verse como las demás. */}
-                {aviso && (
-                  <div className="flex flex-wrap items-center gap-2 border-t border-rojo-fuerte/30 px-3 py-2">
-                    <p className="min-w-[12rem] flex-1 text-[15px] font-semibold text-rojo-texto">
-                      📣 {(() => { const { hora, texto } = partirAviso(aviso); return hora ? `${hora} · ${texto}` : texto; })()}
-                    </p>
-                    {mia && !idCotizacion && (
-                      <button type="button" className="boton min-h-[40px]" onClick={() => setEditando(r)}>
-                        Editar la reserva
-                      </button>
-                    )}
-                    {puede(rol as Rol, 'asistencia') && (
-                      <button type="button" className="boton min-h-[44px] !border-verde-fuerte !font-semibold text-verde-texto"
-                        onClick={() => void resolverAviso(r)}>✓ Resuelto</button>
-                    )}
-                  </div>
-                )}
-
-                {abierta && (
-                  <div className="space-y-3 border-t-2 border-oro/30 p-3">
-                    {/* En el teléfono: personas y pago arriba, menú y asistencia
-                        a todo el ancho. **Cuatro azulejos, la misma forma que los de arriba de la
-                        página** (2026-11-12, lo pidió el cliente: la versión
-                        en columnas no seguía la regla PlayStation). El dato
-                        grande arriba y qué es debajo. */}
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      <div className={`${AZULEJO} order-1`}>
-                        <span className="text-[30px] font-bold leading-none tabular-nums">{personasEnLaMesa(r)}</span>
-                        <span className={ROTULO_AZULEJO}>personas</span>
-                        {personasEnLaMesa(r) !== r.personas && (
-                          <span className="text-[13px] text-hueso/65">reservó <s>{r.personas}</s></span>
-                        )}
-                        {cuantosAgregados(r.agregados) > 0 && (
-                          <span className="text-[13px] font-semibold text-cielo-texto">+{cuantosAgregados(r.agregados)} en la mesa</span>
-                        )}
-                        {r.llegaron != null && r.llegaron !== personasEnLaMesa(r) && (
-                          <span className="mt-1 text-[13px] font-semibold text-ambar-texto">llegaron {r.llegaron}</span>
-                        )}
-                      </div>
-                      <div className={`${AZULEJO} order-3 col-span-2 sm:order-2 sm:col-span-1`}>
-                        <span className="space-y-0.5 text-[16px] font-bold leading-snug">
-                          {lineasDeMenu(menuEfectivo(r)).map((m) => <span key={m} className="block">{m}</span>)}
-                        </span>
-                        <span className={ROTULO_AZULEJO}>menú</span>
-                      </div>
-                      <div className={`${AZULEJO} order-2 sm:order-3`}>
-                        <PastillaPago r={sinNotaDeCotizacion(r, !!idCotizacion)} deCotizacion={!!idCotizacion}
-                          sinOrigen={!!idCotizacion} />
-                        <span className={ROTULO_AZULEJO}>pago</span>
-                      </div>
-                      <div className={`${AZULEJO} order-4 col-span-2 sm:col-span-1`}>
-                        {/* Se lee: se marca en la línea de arriba (2026-11-24). */}
-                        <span className={`inline-flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full
-                                          border-2 px-2.5 py-0.5 text-[14px] font-bold ${
-                          r.asistencia === VINO.si ? 'border-verde-fuerte/60 bg-verde/10 text-verde-texto'
-                          : r.asistencia === VINO.no ? 'border-rojo-fuerte/60 bg-rojo/10 text-rojo-texto'
-                          : 'border-hueso/25 text-hueso/70'}`}>
-                          {r.asistencia === VINO.si ? '✓ Vino'
-                            : r.asistencia === VINO.no ? '✕ No vino' : '○ Sin marcar'}
-                        </span>
-                        <span className={ROTULO_AZULEJO}>asistencia</span>
-                      </div>
-                    </div>
-
-                    {/* **Lo acordado y lo que pasó, lado a lado** (2026-11-24,
-                        lo pidió el cliente: *"al lado de la información que
-                        viene desde la cotización, agregar el mismo campo, pero
-                        para ingresar la realidad… el total de Fudo, pagó
-                        diferencia por transferencia, efectivo o tarjeta"*): en
-                        el computador, cómo ingresarla en Fudo a la izquierda y
-                        la mesa —el valor final y cómo pagó lo que faltaba— a la
-                        derecha. En el celular, una debajo de la otra. Son las
-                        mismas piezas de la Recepción. */}
-                    {(() => {
-                      const conMesa = ocupaLugar(r) && r.asistencia !== ASISTENCIA.noVino
-                        && (puedeMesa || r.valorFinal != null || cuantosAgregados(r.agregados) > 0);
-                      if (!ocupaLugar(r)) return null;
-                      return (
-                        <div className={conMesa ? 'space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-3 lg:space-y-0' : ''}>
-                          <IngresoFudo ingreso={r.ingreso} />
-                          {conMesa && (
-                            <MesaReserva r={r} opciones={opcionesDe(r)} editable={puedeMesa} onGuardado={() => void cargar()} acordado={r.ingreso?.acordado}
-                              cobrar={puede(rol as Rol, 'caja')} revisado={!!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)} />
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    {/* **La rectificación del día** (2026-11-12): qué cambió,
-                        quién, cuándo y por qué; el descuento por aprobar con
-                        sus dos botones para quien puede aprobar. */}
-                    {estaRectificada(r) && (
-                      <div className={`rounded-xl border-2 p-3 ${porAprobar(r)
-                        ? 'border-ambar-fuerte/60 bg-ambar/10' : 'border-cielo-fuerte/50 bg-cielo/5'}`}>
-                        <p className="text-[15px] font-bold">✎ Rectificada · {resumenRectificacion(r)}</p>
-                        <p className="mt-0.5 text-[14px] text-hueso/80">{r.rectificacion}</p>
-                        {menuEfectivo(r) !== r.menu && (
-                          <p className="text-[13px] text-hueso/65">Reservó: {r.menu}</p>
-                        )}
-                        {porAprobar(r) && (
-                          <p className="mt-1 text-[14px] font-semibold text-ambar-texto">
-                            ⏳ El descuento de {r.descuento}% está por aprobar: en Fudo no se ingresa todavía.
-                          </p>
-                        )}
-                        {!porAprobar(r) && r.aprobacion && (
-                          <p className={`mt-1 text-[13px] font-semibold ${rechazado(r) ? 'text-rojo-texto' : 'text-verde-texto'}`}>
-                            {rechazado(r) ? '✕' : '✓'} Descuento {r.aprobacion}
-                          </p>
-                        )}
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {porAprobar(r) && puedeAprobarDescuentos && (
-                            <>
-                              <button type="button" className="boton min-h-[44px] !border-verde-fuerte bg-verde/10 font-bold text-verde-texto"
-                                onClick={() => void aprobarDescuento(r, true)}>✓ Aprobar {r.descuento}%</button>
-                              <button type="button" className="boton min-h-[44px] !border-rojo-fuerte/60 text-rojo-texto"
-                                onClick={() => void aprobarDescuento(r, false)}>✕ Rechazar</button>
-                            </>
-                          )}
-                          {(puedeAprobarDescuentos || esSuya(usuario, String(r.rectificacion).split(' · ')[1] ?? '')) && (
-                            <button type="button" className="boton min-h-[44px]" onClick={() => void deshacerRectificacion(r)}>
-                              Deshacer la rectificación
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {repetida && (
-                      <p className="rounded-lg border-2 border-ambar/60 bg-ambar/10 px-3 py-2 text-[14px]
-                                    font-semibold text-ambar-texto">
-                        ⚠ Este pedido está {r.duplicadas} veces en la planilla. El panel lo cuenta una
-                        sola vez; conviene borrar la fila de más.
-                      </p>
-                    )}
-
-                    {/* **El contacto son botones**: llamar, WhatsApp y correo,
-                        con el dato a la vista. Es lo que se hace con él. */}
-                    {/* **Un contacto tapado no se ofrece** (2026-11-13,
-                        `privacidad.ts`): el servidor lo mandó como
-                        `···· 5678`, así que no hay a quién llamar ni
-                        escribir. Se dice quién lo tiene. */}
-                    {r.contactoTapado && (
-                      <p className="flex items-center gap-1.5 rounded-lg border border-hueso/15 px-3 py-2 text-[14px] text-hueso/70">
-                        🔒 {r.telefono || 'Contacto reservado'} <AyudaCorta tema="contactoTapado" />
-                      </p>
-                    )}
-                    {!r.contactoTapado && (r.telefono || r.email) && (
-                      <div className="flex flex-wrap gap-2">
-                        {r.telefono && (
-                          <a href={`tel:${String(r.telefono).replace(/\s+/g, '')}`} className="tecla boton min-h-[44px]">
-                            📞 {r.telefono}
-                          </a>
-                        )}
-                        {/* **Al tiro y firmado** (2026-11-13): el chat se abre
-                            directo, con *Hola Camila, te escribe Tomás de …
-                            por tu reserva del …* ya escrito. */}
-                        <BotonWhatsApp enlace={enlaceWhatsApp(r.telefono,
-                          mensajeDeReserva(r.nombre, usuario, empresa, enPalabras(r.fecha)))} />
-                        {r.email && (
-                          <a href={`mailto:${r.email}`} className="tecla boton min-h-[44px] max-w-full truncate">
-                            ✉ {r.email}
-                          </a>
-                        )}
-                      </div>
-                    )}
-
-                    {/* **El pie: de quién es y qué se hace con ella.** A la
-                        izquierda quién la vendió o la anotó (2026-11-12, lo
-                        pidió el cliente: el encargado tiene que saber con
-                        quién hablar); a la derecha, la acción. La reserva de
-                        otro se ve y no se toca: en vez de botones apagados va
-                        a quién pedírselo. */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hueso/10 pt-3">
-                      <span className="text-[14px] text-hueso/75">
-                        {idCotizacion ? (
-                          <>🤝 Vendió <strong className="text-hueso">
-                            {origen.vendedor[r.id] || deCotizacion?.creadoPor || 'sin vendedor'}</strong></>
-                        ) : r.anotadaPor ? (
-                          <>✍ Anotó <strong className="text-hueso">{r.anotadaPor}</strong></>
-                        ) : /^\d+$/.test(r.id) ? <>🛒 Compró en Shopify</> : <>✍ Anotada a mano</>}
-                        {cuandoSeReservo(r.creada) && <span className="text-hueso/70"> · {cuandoSeReservo(r.creada)}</span>}
-                      </span>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {idCotizacion ? (
-                          <a href={`/presupuestos?abrir=${encodeURIComponent(idCotizacion)}`}
-                            className="tecla boton boton-relleno min-h-[44px] whitespace-nowrap">
-                            Abrir la cotización N° {folio} →
-                          </a>
-                        ) : mia && r.liberada ? (
-                          // Se cayó por cupo: lo que queda es avisarle.
-                          <AvisarCaida r={r} />
-                        ) : mia ? (
-                          <>
-                            <button onClick={() => { setCreando(false); setEditando(r); }}
-                              disabled={diaCerrado && !puedeCorregir}
-                              className="boton boton-relleno min-h-[44px]">✎ Editar</button>
-                            <button onClick={() => borrar(r)}
-                              disabled={diaCerrado && !puedeCorregir}
-                              className="boton min-h-[44px] hover:border-rojo-fuerte hover:text-rojo-texto">
-                              Borrar
-                            </button>
-                          </>
-                        ) : !puedeRectificar ? (
-                          <span className="text-[14px] text-hueso/65">
-                            {!conReservas ? '' : 'No la anotaste tú: pídeselo a quien la anotó.'}
-                          </span>
-                        ) : null}
-                        {/* **Rectificar** (2026-11-12): desde la apertura del
-                            día, cualquier reserva. Antes, la de otro la cambia
-                            quien la anotó, y se dice desde qué hora. */}
-                        {puedeRectificar && ocupaLugar(r) && (
-                          infoDia.abierto && (!diaCerrado || puedeCorregir) ? (
-                            <button type="button" onClick={() => setRectificando(r)}
-                              className={`boton min-h-[44px] ${!mia && !idCotizacion ? 'boton-relleno' : '!border-oro text-oro'}`}>
-                              ✎ {estaRectificada(r) ? 'Rectificar de nuevo' : 'Rectificar'}
-                            </button>
-                          ) : !mia && !idCotizacion ? (
-                            <span className="text-[14px] text-hueso/70">
-                              Se rectifica desde las <strong>{infoDia.apertura || 'la apertura'}</strong> del día.
-                              Antes la cambia quien la anotó.
-                            </span>
-                          ) : null
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+           un pedido repetido— lleva su marca también en la línea cerrada. */}
+        {enPie.length > 0 ? (
+          <ul className={`mt-5 ${LISTA_TARJETAS}`}>
+            {enPie.map(tarjetaDeReserva)}
+          </ul>
+        ) : (
+          <p className="mt-5 text-hueso/50">Todas las de este filtro se cayeron.</p>
+        )}
+        {/* **Las que se cayeron, plegadas al final** (2026-11-25, lo pidió el
+            cliente: *"¿solo se cayó la reserva la elimina de la lista y
+            cupos?"*). Ya no ocupan lugar: salen de la lista y quedan acá, con
+            su motivo, para deshacerlo si vuelven. */}
+        {caidas.length > 0 && (
+          <div className="mt-4">
+            <button type="button" aria-expanded={verCaidas} onClick={() => setVerCaidas((v) => !v)}
+              className="tecla boton min-h-[44px] gap-2 !border-2">
+              <span aria-hidden>{verCaidas ? '▾' : '▸'}</span>
+              Se cayeron <span className="tabular-nums text-hueso/65">({caidas.length})</span>
+            </button>
+            {verCaidas && (
+              <ul className={`mt-3 ${LISTA_TARJETAS}`}>
+                {caidas.map(tarjetaDeReserva)}
+              </ul>
+            )}
+          </div>
+        )}
+        </>
       )}
 
       {rectificando && (
@@ -1609,6 +1716,27 @@ export default function DayView(
         );
       })()}
 
+      {cayendo && (
+        <SeCayo id={cayendo.id} cliente={cayendo.nombre} motivos={MOTIVOS_CAIDA}
+          titulo={`¿Se cayó la reserva de ${cayendo.nombre || 'este cliente'}?`}
+          listoDice={`Se cayó: ${cayendo.nombre || 'la reserva'} pasa a Se cayeron`}
+          mandar={(motivo) => mandarCaida(cayendo, motivo)}
+          onCerrar={() => setCayendo(null)} onListo={() => setCayendo(null)}
+          queDice={(
+            <div className="mt-3 space-y-1.5 text-[15px]">
+              <p>
+                Libera {cayendo.personas === 1 ? 'su lugar' : <>sus <b>{cayendo.personas}</b> lugares</>} y
+                pasa a <b>Se cayeron</b>, al final de la lista. Se deshace con <b>↺ No, sí viene</b>.{' '}
+                <AyudaCorta tema="seCayoReserva" />
+              </p>
+              {/^\d+$/.test(cayendo.id) && (
+                <p className="font-semibold text-ambar-texto">🛒 En Shopify el pedido sigue vivo: si no viene, cancélalo también allá.</p>
+              )}
+              {diaCerrado && <p className="text-hueso/80">El día está cerrado: esto lo corrige, y queda en la bitácora.</p>}
+            </div>
+          )} />
+      )}
+
       {borrando && (() => {
         const cambios = [cambioDeBorrarReserva({ ...borrando, menu: menuEfectivo(borrando), personas: personasEfectivas(borrando) })];
         return (
@@ -1633,6 +1761,8 @@ export default function DayView(
           catalogo={catalogo}
           reserva={editando}
           diaCerrado={diaCerrado}
+          onSeCayo={editando && ocupaLugar(editando) && !deCotizacionIds[editando.id]
+            ? () => { const r = editando; setEditando(null); setCayendo(r); } : undefined}
           desdeCRM={anotandoCRM
             ? { id: anotandoCRM.id, nombre: anotandoCRM.nombre,
                 personas: anotandoCRM.invitados }

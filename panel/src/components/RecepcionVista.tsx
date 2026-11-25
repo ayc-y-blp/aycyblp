@@ -47,7 +47,7 @@ import { enPalabras } from '@/lib/fechas';
 import { ASISTENCIA } from '@/lib/columnas';
 
 interface R {
-  fila: number; nombre: string; personas: number; menu: string;
+  fila: number; id?: string; nombre: string; personas: number; menu: string;
   asistencia: string; llegaron: number | null; avisoRecepcion: string;
   /** Cómo se ingresa en Fudo, armado por el servidor. */
   ingreso?: Ingreso | null;
@@ -117,7 +117,7 @@ export default function RecepcionVista() {
     try {
       const res = await fetch(`/api/reservas/${r.fila}`, {
         method: 'PATCH', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(cambios)
+        body: JSON.stringify({ ...cambios, id: r.id })
       });
       const j = await res.json().catch(() => ({}));
       if (j.error) { avisar(j.error, 'atencion'); cargar(); return; }

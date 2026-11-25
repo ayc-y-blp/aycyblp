@@ -112,10 +112,18 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'transferencia o tarjeta).',
       'Editar abre la reserva para corregir un teléfono, un menú o el estado '
       + 'del pago. Marcarla Pagada o Abonada le avisa al encargado de pagos, '
-      + 'que la revisa.',
-      'Con el día cerrado, editar o borrar una reserva es corregirlo: el panel '
-      + 'muestra la lista de lo que cambia, marcas la casilla que la confirma y '
-      + 'guardas. Esa lista queda en la bitácora, con tu nombre.',
+      + 'que la revisa. En una de Shopify, lo que cambies acá se queda: la '
+      + 'tienda ya no lo reescribe.',
+      'Si el cliente avisa que no viene, ✕ Se cayó… pide el motivo, libera su '
+      + 'lugar y la pasa a Se cayeron, plegado al final de la lista. ↺ No, sí '
+      + 'viene la devuelve. Borrar queda solo para el administrador, en una '
+      + 'reserva anotada a mano dos veces por error.',
+      'Si un pedido de Shopify quedó dos veces en la planilla, el aviso '
+      + 'naranjo trae 🧹 Limpiar la fila de más: queda una, con todo lo que se '
+      + 'le anotó.',
+      'Con el día cerrado, editar una reserva o darla por caída es '
+      + 'corregirlo: el panel muestra lo que cambia, lo confirmas y guardas. '
+      + 'Eso queda en la bitácora, con tu nombre.',
       'La mesa, en cada reserva abierta: quién se sumó en el día —con su menú '
       + 'o a la carta— y el valor final de la cuenta en Fudo. Se anota desde la '
       + 'hora de apertura. Arriba, Las mesas suma los valores finales del día y '
@@ -731,6 +739,38 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Son cotizaciones en curso para este día: no ocupan cupo todavía, así que los números de arriba no las cuentan.',
       'De cada cotización cuenta una sola alternativa, la de más gente.'
+    ]
+  },
+  // ---------- Reservas: se cayó y la ventana de editar (2026-11-25) ----------
+  seCayoReserva: {
+    titulo: 'Cuando una reserva se cae',
+    texto: [
+      'Libera su lugar para otra persona y pasa a "Se cayeron", al final de la lista del día. Queda quién la marcó, cuándo y por qué.',
+      'En una de Shopify el pedido sigue vivo en la tienda, y el panel no lo puede cancelar: si no viene, cancélalo también allá (el pedido → Más acciones → Cancelar).',
+      '"Anotada por error" no cuenta en las estadísticas de las que se cayeron.',
+      '"↺ No, sí viene" la devuelve a la lista.'
+    ]
+  },
+  pagoShopify: {
+    titulo: 'El pago de una reserva de Shopify',
+    texto: [
+      'Lo pone la tienda: pagada, por pagar, devuelta o cancelada. Acá no se cambia.',
+      'Lo que sí cambies acá —la fecha, los menús, el contacto, el monto— se queda: la tienda ya no lo reescribe.',
+      'Si no viene, "✕ Se cayó…", al pie de la ventana.'
+    ]
+  },
+  menusDeLaReserva: {
+    titulo: 'Los menús de una reserva',
+    texto: [
+      'Los nombres salen de las reservas que ya hay y de Productos.',
+      'Si falta uno, se agrega en Productos con el mismo nombre que tiene en Shopify: así los totales del día lo cuentan junto.'
+    ]
+  },
+  montoDeLaReserva: {
+    titulo: 'El monto de la reserva',
+    texto: [
+      'Se calcula con los precios de Productos: el de pagar por adelantado si está pagada, el del local si no.',
+      'Se puede corregir encima: un grupo con un acuerdo distinto se anota así. "Volver al calculado" lo deja como antes.'
     ]
   },
   contactoTapado: {

@@ -67,6 +67,8 @@ export function filaReserva(
   poner(i.cobroLocal, r.cobroLocal);
   poner(i.comprobanteCobro, r.comprobanteCobro);
   poner(i.cobroCerrado, r.cobroCerrado);
+  poner(i.cayo, r.cayo);
+  poner(i.cambiadoEnPanel, r.cambiadoEnPanel);
   return fila;
 }
 
@@ -118,6 +120,26 @@ export function buscarFilaPorId(
 }
 
 /**
+ * **La reserva que la pantalla está mirando, aunque su fila se haya movido**
+ * (2026-11-25). El panel escribe por número de fila. Si alguien borró una
+ * fila más arriba, las de abajo suben un lugar, y una pantalla abierta desde
+ * antes escribiría en la reserva de al lado sin que nadie se entere.
+ *
+ * Con el `id` que manda la pantalla: si la fila sigue siendo esa reserva, es
+ * esa; si no, se busca por su id. Sin `id` —una llamada de antes— se queda
+ * con la fila, como siempre.
+ */
+export function reservaDeLaFila<T extends { fila: number; id: string }>(
+  lista: T[], fila: number, id?: unknown
+): T | undefined {
+  const buscado = String(id ?? '').trim();
+  const enLaFila = lista.find((r) => r.fila === fila);
+  if (!buscado) return enLaFila;
+  if (enLaFila && String(enLaFila.id).trim() === buscado) return enLaFila;
+  return lista.find((r) => String(r.id).trim() === buscado);
+}
+
+/**
  * Las filas de la pestaña, ya como reservas. **Puro, para poder probarlo.**
  *
  * **Una fila cuyo `ID Orden` ya apareció se descarta**, y eso es lo único
@@ -163,6 +185,7 @@ export function leerReservasDe(filas: string[][]): Reserva[] {
       // Se queda la primera —la que ya tiene su `fila`, por la que se edita—
       // y esta solo suma al contador que después lo delata en pantalla.
       antes.duplicadas = (antes.duplicadas ?? 1) + 1;
+      antes.filasRepetidas = [...(antes.filasRepetidas ?? []), n + 1];
       continue;
     }
 
@@ -202,12 +225,32 @@ export function leerReservasDe(filas: string[][]): Reserva[] {
       cobroLocal: String(en(f, i.cobroLocal)),
       comprobanteCobro: String(en(f, i.comprobanteCobro)),
       cobroCerrado: String(en(f, i.cobroCerrado)),
+      cayo: String(en(f, i.cayo)),
+      cambiadoEnPanel: String(en(f, i.cambiadoEnPanel)),
       fila: n + 1                            // 1-based, y la 1 es el encabezado
     };
     salida.push(reserva);
     if (repetible) vistas.set(id.trim(), reserva);
   }
   return salida;
+}
+
+/**
+ * **Las filas de más de un pedido repetido** (2026-11-25): todas las que
+ * traen ese `ID Orden` menos la primera, que es la que el panel lee y edita
+ * (`leerReservasDe()`). Para limpiarlas desde el aviso, sin abrir la
+ * planilla. Una anotada a mano no se repite: su id es único.
+ */
+export function filasDeMas(filas: string[][], id: unknown): number[] {
+  const buscado = String(id ?? '').trim();
+  if (filas.length < 2 || !buscado || esManual(buscado)) return [];
+  const i = indices(filas[0], COL_RESERVAS);
+  if (i.id === -1) return [];
+  const todas: number[] = [];
+  for (let n = 1; n < filas.length; n++) {
+    if (String(filas[n]?.[i.id] ?? '').trim() === buscado) todas.push(n + 1);
+  }
+  return todas.slice(1);
 }
 
 /**

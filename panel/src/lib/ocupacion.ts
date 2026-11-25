@@ -45,6 +45,8 @@ export function semaforo(
  */
 export function ocupaLugar(r: Reserva): boolean {
   if (String(r.liberada ?? '').trim()) return false;
+  // **Se cayó** (2026-11-25, `lib/caida.ts`): su propia columna, por lo mismo.
+  if (String(r.cayo ?? '').trim()) return false;
   return !liberaCupo(r.estadoPago);
 }
 

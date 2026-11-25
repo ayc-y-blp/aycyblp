@@ -19,8 +19,9 @@ import { proximosFinesDeSemana, diaSemana, sumarDias, enPalabras, fechaEnZona,
 import { paraElSitio } from './publico.ts';
 import { aReserva, estadoDe, telefonoDe, emailDe, nombreDe, personasDe, menuDe,
          desglosarMenu, menusDe, menusConocidos, componerMenu, personasDeCuenta,
-         camposDeShopify,
+         camposDeShopify, camposQueCambian, marcaCambiado, camposCambiadosEn, puedeAnotarPedido,
          type PedidoShopify } from './shopify.ts';
+import * as Caida from './caida.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
@@ -88,7 +89,7 @@ import { hashDeClave, claveCalza, leerUsuariosDe, aFilasUsuarios,
 import { ahoraEnChile, filaBitacora, leerBitacoraDe, recortar,
          ENCABEZADO_BITACORA } from './bitacora.ts';
 import { cookieDe } from './sesion.ts';
-import { filaReserva, buscarFilaPorId, leerReservasDe, idsRepetidos }
+import { filaReserva, buscarFilaPorId, leerReservasDe, idsRepetidos, reservaDeLaFila, filasDeMas }
   from './filas.ts';
 import { firmaValida } from './firma.ts';
 import { eventoDe, idDeEvento } from './calendario.ts';
@@ -277,7 +278,7 @@ const bueno = ['ID Orden','Fecha Reserva','Nombre','Email','Teléfono','Menú',
                'Llegaron','Aviso recepción','Abonado','Se cayó por cupo',
                'Personas reales','Menú real','Descuento','Rectificación','Aprobación','Evento exclusivo',
                'Pago anotado','Pago revisado','Descuento revisado','Agregados','Valor final','Mesa cerrada',
-               'Cobrado en el local','Comprobante del cobro','Cobro cerrado'];
+               'Cobrado en el local','Comprobante del cobro','Cobro cerrado','Se cayó','Cambiado en el panel'];
 ok(faltantes(bueno, COL_RESERVAS).length === 0, 'el encabezado del encargo calza entero');
 ok(indices(bueno, COL_RESERVAS).tipoPago === 8, 'y cada campo sabe su columna');
 
@@ -7913,6 +7914,73 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(P.lunesDelPeriodo({ modo: 'mes', en: '2026-11' }).join() === '2026-10-26,2026-11-02,2026-11-09,2026-11-16,2026-11-23,2026-11-30'
      && P.lunesDelPeriodo(sem).join() === '2026-11-23',
      'los lunes de las semanas que toca un mes, también la que empieza en el anterior');
+}
+
+/* ---------- Pedidos repetidos, Se cayó y lo cambiado en el panel (2026-11-25) ---------- */
+{
+  // Un pedido recién hecho lo agrega solo el aviso de pedido nuevo: el
+  // actualizado llega casi junto y los dos lo anotaban.
+  const ahora = Date.parse('2026-11-25T15:00:00-03:00');
+  ok(puedeAnotarPedido('orders/create', '2026-11-25T14:59:50-03:00', ahora),
+     'el aviso de pedido nuevo siempre puede agregarlo');
+  ok(!puedeAnotarPedido('orders/updated', '2026-11-25T14:59:50-03:00', ahora)
+     && !puedeAnotarPedido('', '2026-11-25T14:55:00-03:00', ahora),
+     'el actualizado y la revisión de la mañana no agregan uno recién hecho');
+  ok(puedeAnotarPedido('orders/updated', '2026-11-25T14:40:00-03:00', ahora)
+     && puedeAnotarPedido('orders/updated', undefined, ahora),
+     'pasados 10 minutos (o sin fecha) cualquiera lo agrega: así se recupera un aviso perdido');
+
+  // Las filas de más de un pedido repetido: todas menos la primera.
+  const enc = ['ID Orden', 'Fecha Reserva', 'Nombre', 'Personas'];
+  const hoja = [enc, ['900', '2026-11-28', 'A', '2'], ['901', '2026-11-28', 'B', '3'],
+    ['900', '2026-11-28', 'A', '2'], ['900', '2026-11-28', 'A', '2']];
+  ok(filasDeMas(hoja, '900').join() === '4,5' && filasDeMas(hoja, '901').length === 0
+     && filasDeMas(hoja, 'MANUAL-1').length === 0,
+     'se borran las filas 4 y 5; la 2, la que el panel lee, se queda');
+  ok(leerReservasDe(hoja)[0].filasRepetidas?.join() === '4,5',
+     'la reserva que sobrevive sabe cuáles son sus copias');
+
+  // La fila que se movió: con el id se encuentra la reserva que se miraba.
+  const lista = [{ fila: 2, id: 'MANUAL-1' }, { fila: 3, id: '901' }];
+  ok(reservaDeLaFila(lista, 3, 'MANUAL-1')?.fila === 2,
+     'si alguien borró una fila arriba, se escribe en la que se estaba mirando, no en la de al lado');
+  ok(reservaDeLaFila(lista, 3, '901')?.fila === 3 && reservaDeLaFila(lista, 3)?.id === '901',
+     'si la fila sigue siendo esa, es esa; sin id, como siempre');
+  ok(reservaDeLaFila(lista, 2, '999') === undefined, 'una que ya no está, no se inventa');
+
+  // Lo cambiado en el panel se queda.
+  const antes = { fecha: '2026-11-29', nombre: 'Ismael Barros', email: 'ISMA@x.cl', telefono: '+56 9 9435 5442',
+    menu: '1 × Pequeños + 2 × Niños + 2 × Tradiciones', personas: 5, monto: 155000 };
+  ok(camposQueCambian(antes, { ...antes, email: 'isma@x.cl', telefono: '+56994355442',
+       menu: '2 × Tradiciones + 2 × Niños + 1 × Pequeños' }).length === 0,
+     'el formulario manda todo: el mismo correo, teléfono y menú en otro orden no cuentan como cambio');
+  ok(camposQueCambian(antes, { ...antes, fecha: '2026-12-06', menu: '3 × Tradiciones + 2 × Niños', personas: 5 }).join() === 'fecha,menu',
+     'cambiar la fecha y los menús sí');
+  const marca = marcaCambiado('menu · Ana · ayer', ['fecha'], 'Fernanda', '2026-11-25 10:31');
+  ok(marca === 'fecha|menu · Fernanda · 2026-11-25 10:31' && camposCambiadosEn(marca).join() === 'fecha,menu',
+     'la marca junta lo de antes con lo nuevo, y dice quién cambió lo último');
+  const dePedido = { id: '19075177152569', fecha: '2026-11-29', nombre: 'Ismael Barros', email: '', telefono: '',
+    menu: '2 × Tradiciones', personas: 2, monto: 98000, tipoPago: '', estadoPago: 'pending', creada: '',
+    asistencia: '', notaPago: '', eventoCRM: '', anotadaPor: '' } as Parameters<typeof camposDeShopify>[0];
+  const sinPanel = camposDeShopify({ ...dePedido, cayo: 'x', cambiadoEnPanel: 'y' });
+  const conPanel = camposDeShopify(dePedido, ['fecha', 'menu']);
+  ok(sinPanel.fecha === '2026-11-29' && !('cayo' in sinPanel) && !('cambiadoEnPanel' in sinPanel),
+     'la tienda nunca escribe Se cayó ni Cambiado en el panel');
+  ok(!('fecha' in conPanel) && !('menu' in conPanel) && conPanel.estadoPago === 'pending' && conPanel.nombre === 'Ismael Barros',
+     'lo que se cambió en el panel no lo reescribe; el pago lo sigue poniendo la tienda');
+
+  // Se cayó: su propia columna, que la tienda no toca.
+  const m = Caida.marcaCaida('2026-11-25 10:31', 'Fernanda', '  El cliente avisó  que no viene ');
+  ok(m === '2026-11-25 10:31 · Fernanda · El cliente avisó que no viene'
+     && Caida.partesCaida(m)?.motivo === 'El cliente avisó que no viene' && Caida.partesCaida('') === null,
+     'la marca dice cuándo, quién y por qué');
+  const r0 = { estadoPago: 'pending' } as unknown as Parameters<typeof ocupaLugar>[0];
+  ok(ocupaLugar(r0) && !ocupaLugar({ ...r0, cayo: m }),
+     'una que se cayó deja de ocupar su lugar aunque la tienda siga diciendo por pagar');
+  ok(Caida.anotadaPorError({ cayo: Caida.marcaCaida('x', 'y', Caida.POR_ERROR) }) && !Caida.anotadaPorError({ cayo: m }),
+     'anotada por error se distingue: no cuenta en las estadísticas');
+  ok(Caida.motivoValido(' ') === null && Caida.motivoValido('Precio') === 'Precio',
+     'sin motivo no se da por caída');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

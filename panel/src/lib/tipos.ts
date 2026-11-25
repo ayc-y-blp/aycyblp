@@ -36,6 +36,10 @@ export interface Reserva {
   cobroLocal?: string;
   comprobanteCobro?: string;
   cobroCerrado?: string;
+  /** Si se cayó: *"motivo · quién · cuándo"*. Ver `COL_RESERVAS.cayo` y `lib/caida.ts`. */
+  cayo?: string;
+  /** Lo cambiado en el panel de una de Shopify: ver `COL_RESERVAS.cambiadoEnPanel`. */
+  cambiadoEnPanel?: string;
   /**
    * **Cómo se ingresa en Fudo** (`comoIngresar()`). No es una columna: lo
    * arma el servidor al responder, para que la pantalla no tenga que
@@ -75,6 +79,11 @@ export interface Reserva {
    * pantalla pueda decirlo. Ver su comentario.
    */
   duplicadas?: number;
+  /**
+   * Las filas de más de ese mismo pedido (2026-11-25): para poder limpiarlas
+   * desde el aviso sin abrir la planilla. Ver `/api/reservas/repetidas`.
+   */
+  filasRepetidas?: number[];
   /**
    * El servidor tapó el contacto para esta cuenta (`recortarReserva()` en
    * `privacidad.ts`): el teléfono viene como `···· 5678` y sin correo. La

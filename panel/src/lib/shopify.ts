@@ -322,12 +322,97 @@ export function aReserva(p: PedidoShopify, menus?: Menu[]): Omit<Reserva, 'fila'
  * una persona —"pagó la diferencia en efectivo"— y un pedido que se
  * actualiza la borraría.
  */
-export function camposDeShopify(r: Omit<Reserva, 'fila'>): Partial<Reserva> {
+export function camposDeShopify(
+  r: Omit<Reserva, 'fila'>,
+  /**
+   * **Lo que una persona cambió en el panel** (2026-11-25): la fecha, los
+   * menús, el contacto… de esa reserva ya no los reescribe la tienda. Sale
+   * de la columna `Cambiado en el panel` (`camposCambiadosEn()`).
+   */
+  delPanel: readonly CampoDelPanel[] = []
+): Partial<Reserva> {
   const { asistencia, creada, notaPago, eventoCRM, anotadaPor, llegaron, avisoRecepcion, abonado, liberada,
           personasReales, menuReal, descuento, rectificacion, aprobacion, liberacion,
           pagoAnotado, pagoRevisado, descuentoRevisado, agregados, valorFinal, mesaCerrada,
-          cobroLocal, comprobanteCobro, cobroCerrado, ...resto } = r;
+          cobroLocal, comprobanteCobro, cobroCerrado, cayo, cambiadoEnPanel, ...resto } = r;
+  for (const k of delPanel) delete (resto as Record<string, unknown>)[k];
   return resto;
+}
+
+/**
+ * **Lo que se cambia en el panel se queda** (2026-11-25, lo encontramos con
+ * el cliente: *"ayer borré esta reserva y hoy reapareció"*). Una reserva de
+ * Shopify se reescribe con lo que dice la tienda cada vez que llega un aviso
+ * del pedido y en la revisión de cada mañana (los últimos 10 días). Hasta ese
+ * día, cambiarle la fecha o los menús en el panel duraba hasta la mañana
+ * siguiente, sin que nadie se enterara.
+ *
+ * Ahora la edición anota **qué campos cambió una persona** en `Cambiado en el
+ * panel`, y la tienda deja de escribir esos. El pago lo sigue poniendo la
+ * tienda: pagado, devuelto o cancelado son de allá.
+ */
+export const CAMPOS_DEL_PANEL = ['fecha', 'nombre', 'email', 'telefono', 'menu', 'personas', 'monto'] as const;
+export type CampoDelPanel = typeof CAMPOS_DEL_PANEL[number];
+
+/** Los campos que dice la marca *"fecha|menu · quién · cuándo"*. */
+export function camposCambiadosEn(marca: string | null | undefined): CampoDelPanel[] {
+  const lista = String(marca ?? '').split(' · ')[0].split('|').map((s) => s.trim());
+  return CAMPOS_DEL_PANEL.filter((c) => lista.includes(c));
+}
+
+/**
+ * Los campos que una edición cambia **de verdad**, comparados con cómo
+ * estaba. El formulario manda todo, así que se compara como se lee: el
+ * teléfono por sus dígitos, el correo sin mayúsculas, el menú por lo que
+ * trae y no por el orden en que lo escribió cada uno.
+ */
+export function camposQueCambian(antes: Partial<Reserva>, cambios: Partial<Reserva>): CampoDelPanel[] {
+  const numero = (v: unknown) => (v == null || String(v).trim() === '' ? '' : String(Number(v)));
+  const menu = (v: unknown) => desglosarMenu(String(v ?? ''))
+    .map(({ menu: m, cantidad }) => `${m.trim().toLowerCase()}=${cantidad}`).sort().join('|');
+  const igual: Record<CampoDelPanel, (a: unknown, b: unknown) => boolean> = {
+    fecha: (a, b) => String(a ?? '').slice(0, 10) === String(b ?? '').slice(0, 10),
+    nombre: (a, b) => String(a ?? '').replace(/\s+/g, ' ').trim() === String(b ?? '').replace(/\s+/g, ' ').trim(),
+    email: (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase(),
+    telefono: (a, b) => String(a ?? '').replace(/\D/g, '') === String(b ?? '').replace(/\D/g, ''),
+    menu: (a, b) => menu(a) === menu(b),
+    personas: (a, b) => numero(a) === numero(b),
+    monto: (a, b) => numero(a) === numero(b)
+  };
+  return CAMPOS_DEL_PANEL.filter((k) => cambios[k] !== undefined && !igual[k](antes[k], cambios[k]));
+}
+
+/** La marca que se guarda: los de antes más los nuevos, y quién y cuándo cambió el último. */
+export function marcaCambiado(antes: string | null | undefined, nuevos: readonly CampoDelPanel[],
+  quien: string, cuando: string): string {
+  const ya = camposCambiadosEn(antes);
+  const todos = CAMPOS_DEL_PANEL.filter((c) => ya.includes(c) || nuevos.includes(c));
+  return [todos.join('|'), quien || 'alguien', cuando].join(' · ');
+}
+
+/**
+ * **Quién puede agregar a la planilla un pedido que todavía no está**
+ * (2026-11-25, lo encontró el cliente: *"este pedido está 2 veces en la
+ * planilla… ¿por qué pasa esto?"*).
+ *
+ * Al comprar, Shopify manda *pedido nuevo* (`orders/create`) y *pedido
+ * actualizado* (`orders/updated`) casi juntos. Cada aviso lo atiende una
+ * copia distinta del panel; las dos miraban la planilla al mismo tiempo,
+ * ninguna lo encontraba y **las dos lo agregaban**. La planilla no tiene un
+ * candado que lo impida.
+ *
+ * Ahora un pedido recién hecho **lo agrega solo el aviso de pedido nuevo**.
+ * Los demás —el actualizado, el cancelado y la revisión de la mañana— lo
+ * actualizan si ya está, y si no está lo dejan para el aviso nuevo. Pasados
+ * unos minutos, cualquiera lo agrega: así se recupera un aviso que se perdió.
+ */
+export const MINUTOS_PEDIDO_RECIENTE = 10;
+
+export function puedeAnotarPedido(tema: string, creadoEl: string | null | undefined, ahoraMs: number): boolean {
+  if (tema === 'orders/create') return true;
+  const t = Date.parse(String(creadoEl ?? ''));
+  if (!Number.isFinite(t)) return true;
+  return ahoraMs - t >= MINUTOS_PEDIDO_RECIENTE * 60_000;
 }
 
 /**

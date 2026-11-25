@@ -21,7 +21,7 @@ import { conLecturas } from '@/lib/sheets';
 import { exigir } from '@/lib/permisos';
 import { iguales } from '@/lib/auth';
 import { pedidosDesde, configurado } from '@/lib/admin';
-import { aReserva } from '@/lib/shopify';
+import { aReserva, puedeAnotarPedido } from '@/lib/shopify';
 import { guardarPedido, leerMenus, leerConfig } from '@/lib/datos';
 import { eventoDe, idDeEvento } from '@/lib/calendario';
 import { guardarEvento, borrarEvento, hayCalendario } from '@/lib/google-calendar';
@@ -66,7 +66,8 @@ export const GET = conLecturas([], async function GET(req: Request) {
       pedidosDesde(desde), leerMenus(), leerConfig()
     ]);
 
-    let creadas = 0, actualizadas = 0, ignorados = 0, omitidas = 0;
+    let creadas = 0, actualizadas = 0, ignorados = 0, omitidas = 0, recientes = 0;
+    const ahora = Date.now();
     const fallidos: string[] = [];
 
     for (const p of pedidos) {
@@ -76,7 +77,11 @@ export const GET = conLecturas([], async function GET(req: Request) {
         // En serie y no en paralelo: son dos escritores sobre la misma
         // planilla —esto y el webhook— y la API de Sheets no da bloqueo.
         // Veinte escrituras simultáneas se pisan entre ellas.
-        const que = await guardarPedido(reserva);
+        // **Uno recién hecho lo agrega el aviso de pedido nuevo** (2026-11-25,
+        // `puedeAnotarPedido()`): si esta revisión cae justo cuando alguien
+        // compra, no lo anota por segunda vez.
+        const { que, guardada } = await guardarPedido(reserva, { crear: puedeAnotarPedido('', p.created_at, ahora) });
+        if (que === 'esperaNuevo') { recientes++; continue; }
         // Cancelado o devuelto y sin anotar: no se anota, y no tiene evento
         // que crear ni que borrar (ver `guardarPedido()`).
         if (que === 'omitida') { omitidas++; continue; }
@@ -88,8 +93,10 @@ export const GET = conLecturas([], async function GET(req: Request) {
         // aparecía, y la reconciliación no reconciliaba del todo.
         if (hayCalendario()) {
           try {
-            if (ocupaLugar(reserva as Reserva)) {
-              await guardarEvento(eventoDe(reserva, cfg.horaApertura, cfg.horaCierre));
+            // Con lo del panel adentro (`guardada`): si se cayó allá, fuera.
+            const final = guardada ?? reserva;
+            if (ocupaLugar(final as Reserva)) {
+              await guardarEvento(eventoDe(final, cfg.horaApertura, cfg.horaCierre));
             } else {
               await borrarEvento(idDeEvento(reserva.id));
             }
@@ -106,7 +113,7 @@ export const GET = conLecturas([], async function GET(req: Request) {
       }
     }
 
-    const resumen = { revisados: pedidos.length, creadas, actualizadas, ignorados, omitidas, fallidos };
+    const resumen = { revisados: pedidos.length, creadas, actualizadas, ignorados, omitidas, recientes, fallidos };
     console.log('[sincronizar]', JSON.stringify(resumen));
     return NextResponse.json(resumen);
   } catch (e) {

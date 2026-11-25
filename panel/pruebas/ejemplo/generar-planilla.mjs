@@ -362,6 +362,12 @@ for (const [fecha, nombre, menu, personas, monto, estadoPago] of futuro) {
     telefono: '+56 9 8' + String(100 + RES.length).padStart(3, '0') + ' ' + String(4400 + RES.length * 7).slice(-4),
     menu, personas, monto, tipoPago: estadoPago === 'paid' ? 'Pago directo' : 'Solo reserva', estadoPago, creada: '2026-11-1' + (RES.length % 3) + ' 1' + (RES.length % 9) + ':2' + (RES.length % 6) });
 }
+// **Una que se cayó y un pedido repetido** (2026-11-25): para ver *Se cayeron*
+// y *🧹 Limpiar la fila de más* el domingo 22. Ninguna cambia lo que cuenta el día.
+deShopify({ fecha: '2026-11-22', nombre: 'Ismael Barros', email: 'ibarros@ejemplo.cl', telefono: '+56 9 8120 4521',
+  menu: '2 × Tradiciones + 2 × Niños + 1 × Pequeños', personas: 5, monto: 155000, tipoPago: 'Solo reserva', estadoPago: 'pending',
+  creada: '2026-11-12 16:13', cayo: '2026-11-13 10:31 · Tomás Herrera · El cliente avisó que no viene' });
+RES.push({ ...RES.find((r) => r.nombre === 'Familia Aravena') });
 // Las reservas de las cotizaciones ganadas.
 reserva({ id: 'MANUAL-1761670000001', fecha: '2026-11-21', nombre: 'Patricia Vidal', email: 'patricia.vidal@ejemplo.cl',
   telefono: '+56 9 7234 5678', menu: '48 × Tradiciones + 12 × Niños', personas: 60, monto: 2640000, estadoPago: 'paid',

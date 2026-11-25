@@ -61,7 +61,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CI
       abierta: yaAbrio(fecha, apertura, ahoraEnChile()),
       cerrado: diaCerrado(cierres, fecha),
       reservas: reservas.filter((r) => r.fecha === fecha && ocupaLugar(r)).map((r) => ({
-        fila: r.fila, nombre: r.nombre, personas: r.personas, menu: r.menu,
+        fila: r.fila, id: r.id, nombre: r.nombre, personas: r.personas, menu: r.menu,
         asistencia: r.asistencia, llegaron: r.llegaron ?? null,
         avisoRecepcion: r.avisoRecepcion ?? '',
         ingreso: comoIngresar(r, menus, deCot.has(r.id), acordados.get(r.id)),
