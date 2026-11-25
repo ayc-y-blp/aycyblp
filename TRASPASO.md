@@ -652,7 +652,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   cliente con una foto del computador de un vendedor: *📋 Lista* había bajado sola
   a una segunda fila). Si *Tus pendientes* no caben al lado, bajan enteros y los
   botones fijos se quedan en su fila; una prueba nueva (`revisarFilaFija()`) lo
-  mide. El cliente dijo *"sí, hazlo y mergea"*. Ver `panel/CLAUDE.md`,
+  mide. **PR #370, mergeado el 25-11-2026** con el *"sí, hazlo y mergea"* del
+  cliente; `verificar.sh` dio 15 de 15 después. Ver `panel/CLAUDE.md`,
   "Cotizaciones: los botones de arriba no se bajan".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
