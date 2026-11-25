@@ -82,7 +82,9 @@ export const COL_VENDEDORES = {
    * confirma (2026-11-20): *cuándo · quién*, como el `Por confirmar` de
    * `Trabajadores`. Vacío: confirmado.
    */
-  porConfirmar: 'Por confirmar'
+  porConfirmar: 'Por confirmar',
+  /** `Sí` si participa en la rotación de las cotizaciones del sitio (2026-11-25). En blanco, no. */
+  rotacion: 'Rotación del sitio'
 } as const;
 export const ENCABEZADO_VENDEDORES = Object.values(COL_VENDEDORES);
 
@@ -142,6 +144,10 @@ export interface FichaVendedor {
   documento: Documento;
   /** Si lo que gana ya trae la retención o el IVA. De partida, sí. */
   incluido: boolean;
+  /** Con boleta: sin retención (2026-11-25). De partida, no: lo que gana es líquido y la boleta lleva la retención. */
+  sinRetencion: boolean;
+  /** Si recibe por turno las cotizaciones que llegan del sitio (`lib/rotacion.ts`). */
+  rotacionSitio: boolean;
   /** Los datos de la factura, si factura. */
   factura: DatosFactura;
   /** Si el trato espera la confirmación de pagos: *cuándo · quién*. Vacío, confirmado. */
@@ -163,8 +169,8 @@ export function faltaParaFacturar(f: Pick<FichaVendedor, 'documento' | 'factura'
 }
 
 /** Cómo se documenta el pago de esta ficha, para `desgloseDocumento()`. */
-export const comoDe = (f: Pick<FichaVendedor, 'documento' | 'incluido'>): ComoSeDocumenta =>
-  ({ documento: f.documento, incluido: f.incluido });
+export const comoDe = (f: Pick<FichaVendedor, 'documento' | 'incluido' | 'sinRetencion'>): ComoSeDocumenta =>
+  ({ documento: f.documento, incluido: f.incluido, sinRetencion: f.sinRetencion });
 
 /** Los cortes de los socios comerciales: de ahí parten las etapas 2 y 3. */
 export const CORTES_SOCIOS = { etapa2: 55, etapa3: 77 } as const;
@@ -174,7 +180,7 @@ export const fichaVacia = (usuario: string, nombre = ''): FichaVendedor => ({
   sueldoFijo: 0, comisionPct: 0,
   etapa2Desde: CORTES_SOCIOS.etapa2, etapa2Pct: 0, etapa3Desde: CORTES_SOCIOS.etapa3, etapa3Pct: 0, bonoPuntos: 0,
   montoEvento: 0, base: 'neto', banco: bancoVacio(),
-  documento: 'boleta', incluido: true, factura: facturaVacia(), porConfirmar: '', fila: 0
+  documento: 'boleta', incluido: true, sinRetencion: false, rotacionSitio: false, factura: facturaVacia(), porConfirmar: '', fila: 0
 });
 
 /**
@@ -247,6 +253,8 @@ export function leerVendedoresDe(filas: string[][]): FichaVendedor[] {
       : /boleta/i.test(en(f, i.documento)) ? 'boleta' as const
       : tipoDe(en(f, i.tipoFicha)) === 'socio' ? 'factura' as const : 'boleta' as const,
     incluido: !/aparte/i.test(en(f, i.impuesto)),
+    sinRetencion: /sin retenci/i.test(en(f, i.impuesto)),
+    rotacionSitio: /^(s[ií]|x|1|true)/i.test(en(f, i.rotacion).trim()),
     factura: { razonSocial: en(f, i.razonSocial).trim(), rut: en(f, i.rutFactura).trim(),
       giro: en(f, i.giro).trim(), direccion: en(f, i.direccion).trim() },
     porConfirmar: en(f, i.porConfirmar).trim(),
@@ -275,7 +283,10 @@ export function filaVendedor(v: FichaVendedor, enc: string[]): string[] {
   poner(i.tipo, v.banco.tipo); poner(i.numero, v.banco.numero); poner(i.correo, v.banco.correo);
   poner(i.nota, v.banco.nota);
   poner(i.documento, v.documento === 'factura' ? 'Factura' : 'Boleta');
-  poner(i.impuesto, v.incluido ? 'Incluido' : 'Aparte');
+  // Con boleta, la columna dice si lleva retención (2026-11-25); con factura, si el IVA va incluido.
+  poner(i.impuesto, v.documento === 'boleta' ? (v.sinRetencion ? 'Sin retención' : 'Con retención')
+    : (v.incluido ? 'Incluido' : 'Aparte'));
+  poner(i.rotacion, v.rotacionSitio ? 'Sí' : '');
   poner(i.razonSocial, v.factura.razonSocial); poner(i.rutFactura, v.factura.rut);
   poner(i.giro, v.factura.giro); poner(i.direccion, v.factura.direccion);
   poner(i.porConfirmar, v.porConfirmar);

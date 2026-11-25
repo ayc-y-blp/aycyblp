@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import {
   leerMenus, leerPromociones, leerConfig, leerFechas, leerReservas, leerPresupuestos, leerClientes,
-  leerUsuarios, crearCliente, guardarPresupuesto, guardarLineas, anotar
+  leerUsuarios, leerVendedores, crearCliente, guardarPresupuesto, guardarLineas, anotar
 } from '@/lib/datos';
 import { HOJA_MENUS } from '@/lib/menus';
 import { HOJA_CONFIG } from '@/lib/config';
@@ -14,6 +14,8 @@ import { reglaShowDe, reglaArriendoDe } from '@/lib/cotizar';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { nuevoToken } from '@/lib/equipo';
 import { puede, type Rol } from '@/lib/auth';
+import { HOJA_VENDEDORES } from '@/lib/vendedores';
+import { elegirVendedorDelSitio, vendedorDelCliente } from '@/lib/rotacion';
 import { hoy } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
 import {
@@ -84,7 +86,7 @@ async function cotizar(e: Eleccion & { promo: string }) {
   const promo = promos.find((p) => p.sitio === e.promo && p.activa);
   const ctx: ContextoCotizar = {
     catalogo: menus, fechas, diasAbiertos: cfg.diasAbiertos, hoy: hoy(),
-    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg), fechasSinExclusivo: cfg.fechasSinExclusivo, arriendoSemana: cfg.arriendoSemana,
+    reglaShow: reglaShowDe(cfg), reglaArriendo: reglaArriendoDe(cfg), fechasSinExclusivo: cfg.fechasSinExclusivo, arriendoSemana: cfg.arriendoSemana, arriendoFinde: cfg.arriendoFinde,
     reservasDelDia: (f) => reservas.filter((r) => r.fecha === f && ocupaLugar(r)).length
   };
   return { promo, cfg, r: cotizarPromocion(promo, e, ctx) };
@@ -128,7 +130,7 @@ export const GET = conLecturas(TANDA, async function GET(req: Request) {
   }
 });
 
-export const POST = conLecturas([...TANDA, HOJA_PRESUPUESTOS, HOJA_CLIENTES, HOJA_USUARIOS], async function POST(req: Request) {
+export const POST = conLecturas([...TANDA, HOJA_PRESUPUESTOS, HOJA_CLIENTES, HOJA_USUARIOS, HOJA_VENDEDORES], async function POST(req: Request) {
   try {
     const cuerpo = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
     // El campo trampa: una persona no lo ve, un robot lo llena.
@@ -148,16 +150,18 @@ export const POST = conLecturas([...TANDA, HOJA_PRESUPUESTOS, HOJA_CLIENTES, HOJ
       return NextResponse.json({ ...respuesta(r), prueba: true, numero: 'PRUEBA' }, { headers: SIN_CACHE });
     }
 
-    const [clientes, presupuestos, cuentas] = await Promise.all([
-      leerClientes(), leerPresupuestos(), leerUsuarios().catch(() => [])
+    const [clientes, presupuestos, cuentas, fichas] = await Promise.all([
+      leerClientes(), leerPresupuestos(), leerUsuarios().catch(() => []), leerVendedores().catch(() => [])
     ]);
-    // La cuenta de Configuración, si existe, está activa y cotiza. Si no, sin
+    // **Por turno** (2026-11-25): a quien sigue entre los vendedores que marcaron la rotación.
+    // Sin ninguno, la cuenta de Configuración, si existe, está activa y cotiza. Si no, sin
     // vendedor: la ven la gerencia y el administrador.
-    const cuenta = cuentas.find((u) => u.activo && normalizar(u.nombre) === normalizar(cfg.vendedorSitio)
-      && puede(u.rol as Rol, 'presupuestos'));
+    const ya = fichaDelContacto(contacto, clientes);
+    // Quien ya cotizó vuelve con su vendedor; si no, el turno.
+    const cuenta = (ya && vendedorDelCliente(presupuestos.filter((p) => p.idCliente === ya.id), cuentas))
+      || elegirVendedorDelSitio({ fichas, cuentas, cotizaciones: presupuestos, respaldo: cfg.vendedorSitio });
     const vendedor = cuenta?.nombre ?? '';
     const ahora = ahoraEnChile();
-    const ya = fichaDelContacto(contacto, clientes);
     if (ya && delSitioHoy(presupuestos, ya.id, hoy()) >= TOPE_SITIO_DIA) {
       return NextResponse.json({ ok: false, codigo: 'tope' }, { status: 429, headers: SIN_CACHE });
     }

@@ -173,6 +173,12 @@ export interface Config {
    */
   arriendoSemana: number;
   /**
+   * **El arriendo estándar de un día público** (2026-11-25): sábado, domingo o feriado abierto. Es el
+   * que ve y paga quien marca *Quiero el lugar exclusivo* en el cotizador del sitio. En 0, el precio
+   * del producto Arriendo del catálogo.
+   */
+  arriendoFinde: number;
+  /**
    * **Los días en que no se arrienda en exclusiva** (2026-11-23): Día de la
    * Madre, del Padre, Fiestas Patrias. El público deja más que cualquier
    * arriendo, así que el vendedor no puede marcar *exclusivo*; decide quien
@@ -266,7 +272,9 @@ export const POR_DEFECTO: Config = {
   arriendoExclusivoMinimo1: 1000000,
   arriendoExclusivoHasta2: 37,
   arriendoExclusivoMinimo2: 600000,
-  arriendoSemana: 0,
+  // Los dos precios que el sitio anuncia y el cliente confirmó el 2026-11-25.
+  arriendoSemana: 1500000,
+  arriendoFinde: 2500000,
   fechasSinExclusivo: [],
   driveComprobantes: '',
   empresa: EMPRESA_VACIA
@@ -310,6 +318,7 @@ export const CLAVES = {
   arriendoExclusivoHasta2: 'arriendo_exclusivo_hasta_2',
   arriendoExclusivoMinimo2: 'arriendo_exclusivo_minimo_2',
   arriendoSemana: 'arriendo_semana',
+  arriendoFinde: 'arriendo_finde',
   fechasSinExclusivo: 'fechas_sin_exclusivo',
   driveComprobantes: 'drive_comprobantes',
   empresaNombre: 'empresa_nombre',
@@ -491,6 +500,7 @@ export function leerConfigDe(filas: string[][]): Config {
     arriendoExclusivoHasta2: numero(v(CLAVES.arriendoExclusivoHasta2), POR_DEFECTO.arriendoExclusivoHasta2, 0, 100000),
     arriendoExclusivoMinimo2: numero(v(CLAVES.arriendoExclusivoMinimo2), POR_DEFECTO.arriendoExclusivoMinimo2, 0, 1000000000),
     arriendoSemana: numero(v(CLAVES.arriendoSemana), POR_DEFECTO.arriendoSemana, 0, 1000000000),
+    arriendoFinde: numero(v(CLAVES.arriendoFinde), POR_DEFECTO.arriendoFinde, 0, 1000000000),
     fechasSinExclusivo: aFechas(v(CLAVES.fechasSinExclusivo)),
     driveComprobantes: idDeDrive(v(CLAVES.driveComprobantes)),
     empresa: {
@@ -547,6 +557,7 @@ export function aFilasConfig(c: Config): string[][] {
     [CLAVES.arriendoExclusivoHasta2, String(c.arriendoExclusivoHasta2)],
     [CLAVES.arriendoExclusivoMinimo2, String(c.arriendoExclusivoMinimo2)],
     [CLAVES.arriendoSemana, String(c.arriendoSemana)],
+    [CLAVES.arriendoFinde, String(c.arriendoFinde)],
     [CLAVES.fechasSinExclusivo, c.fechasSinExclusivo.join(', ')],
     [CLAVES.driveComprobantes, c.driveComprobantes],
     [CLAVES.empresaNombre, c.empresa.nombre],

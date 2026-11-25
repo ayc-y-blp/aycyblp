@@ -89,7 +89,7 @@ export const GET = conLecturas([HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_TRABAJADORES
           return {
             nombre, usuario: u.usuario,
             ficha: { sueldoFijo: f.sueldoFijo, comisionPct: f.comisionPct, montoEvento: f.montoEvento, base: f.base,
-                     documento: f.documento, incluido: f.incluido },
+                     documento: f.documento, incluido: f.incluido, sinRetencion: f.sinRetencion },
             ventas: ventasDe(u.usuario, conNombre, lineas, cobros, f, menus, u.nombre).map((v) => ({ ...v, folio: folioDe({ id: v.grupo }) })),
             tipo: 'vendedor'
           };
@@ -100,7 +100,7 @@ export const GET = conLecturas([HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_TRABAJADORES
         vendedores.push({
           nombre: f.nombre || f.usuario, usuario: f.usuario, tipo: 'socio',
           ficha: { sueldoFijo: 0, comisionPct: f.comisionPct, montoEvento: f.montoEvento, base: f.base,
-                   documento: f.documento, incluido: f.incluido },
+                   documento: f.documento, incluido: f.incluido, sinRetencion: f.sinRetencion },
           ventas: ventasDe(f.usuario, conNombre, lineas, cobros, f, menus).map((v) => ({ ...v, folio: folioDe({ id: v.grupo }) }))
         });
       }

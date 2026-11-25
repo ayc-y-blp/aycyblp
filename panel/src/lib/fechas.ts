@@ -213,3 +213,17 @@ export function rangoEnPalabras(fechas: Fecha[]): string {
   if (mes(a) === mes(b)) return `${dia(a)} – ${dia(b)} de ${mes(a)}`;
   return `${dia(a)} de ${mes(a)} – ${dia(b)} de ${mes(b)}`;
 }
+
+/**
+ * **Cuándo se hizo una reserva**, en hora de Chile (2026-11-25, lo pidió el cliente: *"mostrar en este
+ * lugar la fecha y hora de la reserva también"*): `24 nov 2026 · 15:32`. Parte de `Creada`, que trae
+ * el instante en que Shopify creó el pedido o en que se anotó a mano. Vacío si no hay o no se lee.
+ */
+export function cuandoSeReservo(iso: string): string {
+  const t = new Date(String(iso ?? '').trim());
+  if (!String(iso ?? '').trim() || Number.isNaN(t.getTime())) return '';
+  const p = Object.fromEntries(new Intl.DateTimeFormat('es-CL', {
+    timeZone: ZONA, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(t).map((x) => [x.type, x.value]));
+  return `${p.day} ${String(p.month).replace('.', '')} ${p.year} · ${p.hour}:${p.minute}`;
+}

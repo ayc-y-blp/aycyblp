@@ -229,6 +229,91 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El lugar exclusivo: dos precios estándar y el show a su precio (2026-11-25, segunda pasada)
+
+Lo marcó el cliente con una foto del cotizador, un sábado con el lugar exclusivo: la casilla decía
+$1.500.000 y la boleta cobraba el arriendo a $2.000.000 y el show *incluido*. *"Si elijo un día público,
+sábado… el arriendo es 2,5 millones. Y de lunes a viernes, 1,5 millones… cobras el arriendo nominal, no el
+monto mínimo cotizable. Revisa esta misma lógica para el show también"*.
+
+- **Dos números en *Configuración → Extras y arriendo → Eventos exclusivos***: *Arriendo sábado y
+  domingo* (`arriendoFinde`, **$2.500.000**) y *Arriendo de lunes a viernes* (`arriendoSemana`,
+  **$1.500.000**), los dos que el sitio anuncia. **Parten con esos valores**, sin que haya que
+  escribirlos; en 0, vale el precio del producto Arriendo del catálogo. Mismos términos de IVA que el
+  producto. Antes el estándar era siempre el del catálogo, que en producción tiene $1.500.000: un sábado
+  quedaba bajo el mínimo de Configuración y la cuenta subía a ese mínimo ($2.000.000).
+- **`precioArriendoEstandar(arriendo, fecha, {semana, finde}, publico)`**: sábado, domingo o un día
+  público (feriado abierto) → el de fin de semana; lunes a viernes → el de semana. La misma cuenta del
+  cotizador y del sitio, que recibe `arriendoSemana` y `arriendoFinde` y cambia el precio de la casilla
+  según el día elegido.
+- **El show, con el lugar exclusivo en un día público, ya no va incluido**: el grupo se lleva todo el
+  recinto, así que el show se cobra a su precio del catálogo (sin descuento, como el arriendo). Sin lugar
+  exclusivo, sigue incluido en un día público. La respuesta ya no dice *día público* en ese caso.
+- **La cotización del vendedor no cambia**: ahí el precio se negocia y rige el mínimo de siempre.
+- **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**: el texto de los dos campos.
+
+## La fecha y hora de la reserva, en su tarjeta (2026-11-25)
+
+Lo pidió el cliente con una foto de la línea *🛒 Compró en Shopify* de una reserva en la página del día:
+*"podrías mostrar en este lugar la fecha y hora de la reserva también"*. Ahora dice *🛒 Compró en Shopify ·
+24 nov 2026 · 15:32* (o *✍ Anotó …* / *✍ Anotada a mano*, con su fecha y hora). Sale de la columna `Creada`,
+que ya traía el instante en que Shopify creó el pedido o en que se anotó a mano: `cuandoSeReservo()`
+(`lib/fechas.ts`, con pruebas) lo pasa a la hora de Chile. Una reserva sin ese dato (las importadas de antes) no
+muestra nada. **Lecturas de Google**: ninguna. **Ningún permiso ni columna nueva.** Ninguna ayuda lo describe.
+
+## Con boleta, lo que gana es líquido (2026-11-25)
+
+Lo pidió el cliente con una foto de la tarjeta de Carmen Barros (sueldo fijo $550.000, *Pagarle
+$466.125*): *"cuando se ingresa un sueldo, tiene que ser líquido… lo que recibe el trabajador… y de
+ahí, si se aplica boleta, es líquido más retención… la Carmen tiene sueldo 550 líquido, entonces le
+tiene que llegar líquido y las comisiones se quedan como están"*. Por ahora solo la **boleta de
+honorarios**; la factura sigue con *IVA incluido / más IVA*.
+
+- **Con boleta, `desgloseDocumento()` siempre trata el monto como líquido**: se le transfiere eso y
+  la boleta va por más, con la retención del año (`brutoParaNeto()`). $550.000 → boleta $648.968,
+  retención $98.968, transferencia $550.000. **La ficha de antes que decía *Retención incluida* se lee
+  igual: con retención, líquido** (`incluido` ya no cuenta con boleta).
+- **La única opción es *Con retención* o *Sin retención*** (`ComoSeDocumenta.sinRetencion`): sin
+  retención, la boleta va por lo mismo que se le transfiere. En la ficha (`CamposDocumento`) dice
+  qué monto queda en la boleta con un ejemplo, y la caja `CajaBoleta` lo muestra: bruto, retención y
+  neto, o solo el monto si es sin retención.
+- **Se guarda en la columna `Impuesto` de `Vendedores`**: con boleta, *Con retención* / *Sin
+  retención*; con factura, *Incluido* / *Aparte*, como antes (`filaVendedor()`, `leerVendedoresDe()`).
+  Sin columna ni pestaña nueva.
+- **Las comisiones no cambian**: lo que cambia es lo que se le transfiere y lo que dice la boleta
+  (*Pagarle*, el Informe, el link personal, la caja de la boleta). El equipo y los extras ya eran así.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?` del Informe y los
+  textos de la ficha. **Las fotos de la ayuda de Vendedores y del Informe quedan por rehacer**: la
+  ficha ya no dice *retención incluida*.
+
+## La rotación de las cotizaciones del sitio (2026-11-25)
+
+Lo pidió el cliente: *"cuando caen estas cotizaciones desde el sistema… que asignas las ventas o las
+cotizaciones rotativamente a los vendedores que se ponen la casilla check y ellos participan en esta
+rotación"*.
+
+- **Casilla *Participa en la rotación*** (*Cotizaciones del sitio*) en la ficha de cada vendedor
+  (Vendedores), con su `?` (`vendRotacion`). Se guarda sola, como el resto del trato, con el permiso
+  `pagar` (pagos, gerencia y administrador). Columna nueva al final de `Vendedores`: **`Rotación del
+  sitio`** (*Sí* o en blanco). Un socio no participa.
+- **A quién le toca** (`lib/rotacion.ts`, pura y con pruebas): participan las cuentas con la
+  casilla, **activas y que pueden cotizar**, en orden de nombre. Cada cotización del sitio le toca
+  **al que sigue** al de la última cotización con `Origen` *Sitio · …* —sin guardar un contador: la
+  lista de cotizaciones es la única verdad—; al final de la lista vuelve al primero, y si la última
+  fue de alguien que ya no participa, parte del primero. Quien se desmarca o se desactiva sale solo.
+- **Sin nadie marcado, vale la cuenta de *Configuración → Las del sitio van a***, como antes
+  (ahora es el respaldo), y sin ninguna, queda sin vendedor y la ven quienes asignan.
+- **`PATCH /api/vendedores` acepta a cualquier cuenta activa que cotiza**, no solo al rol Vendedor:
+  quien vende con otro rol (operaciones) aparece en la lista y puede tener su casilla.
+- **Un cliente que cotiza otra vez vuelve con su vendedor** (lo pidió el cliente el mismo día: *"si un
+  cliente cotiza dos veces, que caiga a un vendedor"*): `vendedorDelCliente()` mira las cotizaciones de
+  esa ficha (la que ya tiene ese teléfono o correo) y usa la cuenta de la más nueva, si sigue activa y
+  cotiza; una a nombre del administrador no cuenta. Sin cotización previa, el turno.
+- **Qué no hace**: dos cotizaciones que llegan a la vez pueden caerle a la misma persona.
+- **Lecturas de Google**: el `POST` de `/api/publico/cotizar` suma `Vendedores` a su tanda (una más
+  por cotización que llega; el `GET` no cambia). **Ningún permiso cambió.** **Ayuda**: `vendRotacion` y
+  el texto de *Las del sitio van a* en Configuración.
+
 ## El calendario de Cotizaciones también va al pasado (2026-11-24)
 
 Lo pidió el cliente con una foto del marco de Reservas: *"aplícalo para

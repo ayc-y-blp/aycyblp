@@ -69,11 +69,11 @@ export default function CajaBoleta({ titulo, cuenta, tu = false, estado = true, 
           </span>
         )}
       </div>
-      {(factura || d.incluido) && (
+      {(factura || d.sinRetencion) && (
         <p className={`mt-0.5 text-[13px] text-hueso/70 ${ancho}`}>
           {factura
             ? (d.incluido ? 'Factura con el IVA incluido en lo que gana.' : 'Factura más IVA: el IVA va sobre lo que gana.')
-            : 'Boleta con la retención incluida en lo que gana.'}
+            : 'Boleta sin retención: va por lo mismo que gana.'}
         </p>
       )}
 
@@ -87,10 +87,12 @@ export default function CajaBoleta({ titulo, cuenta, tu = false, estado = true, 
           </dt>
           <dd className={`shrink-0 text-[24px] font-bold tabular-nums text-oro ${compacta ? 'lg:text-[20px]' : ''}`}>{enPesos(d.enDocumento)}</dd>
         </div>
+        {!d.sinRetencion && (
         <div className={`flex items-baseline justify-between gap-3 text-[14px] ${compacta ? 'lg:block' : ''}`}>
           <dt className="text-hueso/75">{factura ? 'IVA' : 'Retención'} {tasaEnTexto(d.tasa)}</dt>
           <dd className="shrink-0 tabular-nums text-hueso/80">{factura ? '' : '−'}{enPesos(d.impuesto)}</dd>
         </div>
+        )}
         <div className={`flex items-baseline justify-between gap-3 border-t border-hueso/15 pt-1.5 ${compacta ? 'lg:block lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0' : ''}`}>
           <dt className="min-w-0">
             <span className="text-[15px] font-bold">Neto</span>

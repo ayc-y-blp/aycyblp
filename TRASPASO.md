@@ -520,6 +520,17 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   el del catálogo): el cliente tiene que escribir $1.500.000 allí, igual que el
   sitio (ver `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`, "El lugar
   exclusivo en el cotizador").
+- **Con boleta, lo que gana es líquido** (25-11-2026, lo pidió el cliente con la
+  tarjeta de Carmen Barros: sueldo $550.000 líquido, se le transfieren $550.000 y
+  la boleta va por $648.968): la ficha pregunta solo *Con retención / Sin
+  retención* (la factura no cambia) y las comisiones quedan como estaban. Ver
+  `panel/CLAUDE.md`, "Con boleta, lo que gana es líquido". **Las fotos de la ayuda
+  de Vendedores e Informe quedan por rehacer.**
+- **La rotación de las cotizaciones del sitio** (25-11-2026, lo pidió el cliente):
+  casilla *Participa en la rotación* en cada vendedor; cada cotización del sitio le
+  toca al que sigue (`lib/rotacion.ts`); sin nadie marcado, vale *Las del sitio van
+  a*. Columna nueva `Rotación del sitio` en `Vendedores`. Ver `panel/CLAUDE.md`,
+  "La rotación de las cotizaciones del sitio".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

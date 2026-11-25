@@ -75,7 +75,7 @@ function tratoEnLineas(f: FichaVendedor): [string, string][] {
     lineas.push(['Se paga con', f.documento === 'factura'
       ? (f.incluido ? 'factura: lo que ganas ya incluye el IVA' : 'factura, más IVA')
       : f.documento === 'boleta'
-        ? (f.incluido ? 'boleta de honorarios: lo que ganas ya incluye la retención' : 'boleta de honorarios: la retención va encima de lo que ganas')
+        ? (f.sinRetencion ? 'boleta de honorarios sin retención: la boleta va por lo mismo que ganas' : 'boleta de honorarios: lo que ganas es líquido y la retención va encima, en la boleta')
         : 'sin documento']);
   }
   return lineas;

@@ -19,7 +19,7 @@ import BotonWhatsApp, { FirmaWhatsApp } from './BotonWhatsApp';
 import { pagoEnEspanol, liberaCupo } from '@/lib/pagos';
 import { menusDe, menusConocidos } from '@/lib/shopify';
 import { POR_DEFECTO_MENUS, paraReservar, type Menu } from '@/lib/menus';
-import { enPalabras } from '@/lib/fechas';
+import { enPalabras, cuandoSeReservo } from '@/lib/fechas';
 import { cuentaEnElCalendario, estadoVisible, lineasDe, totalDe, personasDe,
          folioDe, gentePosible, type Presupuesto, type LineaPresupuesto } from '@/lib/presupuestos';
 import { aCSV } from '@/lib/csv';
@@ -1532,6 +1532,7 @@ export default function DayView(
                         ) : r.anotadaPor ? (
                           <>✍ Anotó <strong className="text-hueso">{r.anotadaPor}</strong></>
                         ) : /^\d+$/.test(r.id) ? <>🛒 Compró en Shopify</> : <>✍ Anotada a mano</>}
+                        {cuandoSeReservo(r.creada) && <span className="text-hueso/70"> · {cuandoSeReservo(r.creada)}</span>}
                       </span>
                       <div className="flex flex-wrap justify-end gap-2">
                         {idCotizacion ? (

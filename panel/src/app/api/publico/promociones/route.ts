@@ -38,7 +38,7 @@ export const GET = conLecturas([HOJA_PROMOCIONES, HOJA_MENUS, HOJA_CONFIG], asyn
   try {
     const [promos, menus, cfg] = await Promise.all([leerPromociones(), leerMenus(), leerConfig()]);
     return NextResponse.json({
-      promociones: promocionesParaElSitio(promos, menus, cfg.arriendoSemana), bloques: bloquesDelSitio(promos)
+      promociones: promocionesParaElSitio(promos, menus, { semana: cfg.arriendoSemana, finde: cfg.arriendoFinde }), bloques: bloquesDelSitio(promos)
     }, { headers: CORS });
   } catch (e) {
     console.error('[publico/promociones]', e);
