@@ -477,8 +477,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       '*Míos* muestra los clientes que creaste o a los que les cotizaste; '
       + '*Todos*, la lista entera. Si todavía no tienes ninguno, parte en *Todos*. '
       + 'El buscador busca dentro de lo que estés mirando.',
-      '📞 Por contactar deja solo los clientes con un día elegido para volver a '
-      + 'contactarlos, el más cercano primero. Ese día sale en su línea, en ámbar '
+      'La lista va en dos partes: arriba, 📞 Por contactar, los clientes con un '
+      + 'día elegido para volver a contactarlos, el más cercano primero; abajo, '
+      + 'los demás, de la A a la Z. El botón 📞 Por contactar deja solo los de arriba. Ese día sale en su línea, en ámbar '
       + 'hasta ese día y en rojo desde ese día. Al abrir la ficha ves la última nota y, en '
       + 'cada cotización, su próximo contacto y 📝 Anotar: la misma ventanita de la '
       + 'cotización, con qué conversaron y cuándo volver a contactarlo. Si tiene '

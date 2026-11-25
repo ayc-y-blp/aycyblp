@@ -642,8 +642,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   del CRM salía su resumen en todas las importadas. Lo marcó el cliente con una
   foto y dijo *"sí, hazlo y luego mergea"*. Una prueba lo fija. Ver
   `panel/CLAUDE.md`, "Las *Notas internas* no salen en la cotización del
-  cliente". **Clientes en dos secciones** (pedido el mismo día) quedó en su
-  propio PR, esperando el *"mergea"*.
+  cliente". **PR #368, mergeado el 25-11-2026.**
+- **Clientes en dos secciones** (25-11-2026, lo pidió el cliente): arriba *📞 Por
+  contactar*, por el día de recontacto, y abajo *Los demás*, de la A a la Z. **En
+  un PR, en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y
+  la última nota, en todas partes".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
