@@ -232,6 +232,37 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Cotizaciones: los botones de arriba no se bajan (2026-11-25)
+
+Lo marcó el cliente con una foto del computador de un vendedor: *"mira, lista
+se pone en segunda fila en el compu de mi vendedor"*. Dijo *"sí, hazlo y
+mergea"*.
+
+- **Qué pasaba**: desde el 2026-11-21 la fila de arriba de Cotizaciones lleva,
+  en el computador, *+ Cotizar*, el periodo, *Tus pendientes*, *Mías / De
+  todos*, *Sin fecha* y *📋 Lista*, y se dobla si no cabe. Las pastillas de los
+  pendientes cambian de largo según el día y la cuenta: con una, *Lista* bajaba
+  sola bajo unos 1.260px; con dos, bajaban *Mías*, *De todos*, *Sin fecha* y
+  *Lista* en cualquier pantalla. La prueba de espacio no lo veía: la cuenta del
+  administrador del ejemplo tiene un solo pendiente corto, y lo que bajaba no
+  habría cabido arriba.
+- **Qué hace ahora**: los botones fijos (`data-fila="fija"`, en la fila
+  `data-fila="barra"`) se quedan siempre en la primera fila y en su lugar.
+  **Si los pendientes caben, van a su lado, como antes; si no, bajan enteros**
+  a su propia fila, justo debajo (después del aviso de sobrecupo, si lo hay, y
+  antes de la lista del pendiente abierto). Lo decide `Pendientes` con
+  `usarCabeEnLaFila()`: suma el ancho de los botones fijos, el de las pastillas
+  y los espacios, al dibujar y cuando cambia el ancho de la ventana. Mide el
+  ancho natural de cada pastilla, que no cambia arriba o abajo: no salta.
+- **Solo desde 1024px**: en el celular no cambia nada.
+- **Lo mide una prueba**: `revisarFilaFija()` (`pruebas/alineacion.mjs`) falla
+  si un botón fijo de una fila `data-fila="barra"` baja de renglón. Corre en
+  `npm run ventanas` como Daniela —la del ejemplo con dos pendientes— a 1280 y
+  a 1024px. **Una fila nueva con lo mismo** (botones fijos y algo que cambia de
+  largo) lleva las dos marcas y entra sola en la prueba si se suma ahí.
+- **Lecturas de Google**: ninguna. **Ningún permiso cambió.** Ninguna ayuda
+  dice dónde van los pendientes en la fila.
+
 ## Clientes: filtrar por vendedor (2026-11-25)
 
 Lo pidió el cliente: *"pagos, gerencia y admin deberían poder filtrar por

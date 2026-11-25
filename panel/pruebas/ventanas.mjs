@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -562,6 +562,21 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
     console.log(`  ${h.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${h.length ? '\n           · ' + h.join('\n           · ') : ''}`);
     if (h.length) fallas.push(`espacio · ${nombre}`);
   }
+}
+// **Los botones fijos de Cotizaciones no bajan** (2026-11-25): como Daniela,
+// que tiene dos pendientes —la fila más larga del ejemplo—, al ancho de la
+// prueba y a 1024, el computador más angosto.
+if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
+  for (const ancho of [...new Set([ANCHO, 1024])]) {
+    await p.setViewportSize({ width: ancho, height: ALTO });
+    await comoVendedora(async () => {
+      await ir('/presupuestos');
+      const h = await revisarFilaFija(p);
+      console.log(`  ${h.length ? 'FALLA ' : 'ok     '} cotizaciones a ${ancho}px: los botones fijos${h.length ? '\n           · ' + h.join('\n           · ') : ', en una fila'}`);
+      if (h.length) fallas.push(`cotizaciones a ${ancho}px · botones fijos`);
+    });
+  }
+  await p.setViewportSize({ width: ANCHO, height: ALTO });
 }
 await b.close();
 

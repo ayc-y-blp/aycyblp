@@ -599,17 +599,19 @@ export default function CotizacionesVista() {
           con el centro vacío). El aviso de sobrecupo y la lista de un
           pendiente abierto van debajo, a todo el ancho. En el celular, como
           siempre: `lg:contents` deshace la caja de los botones solo desde
-          1024px. */}
-      <div className="lg:mb-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
+          1024px. **Los botones fijos llevan `data-fila="fija"`** (2026-11-25):
+          si los pendientes no caben a su lado, bajan ellos y los botones se
+          quedan en esta fila (ver `Pendientes`). */}
+      <div data-fila="barra" className="lg:mb-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
       <div className="mb-4 flex flex-wrap gap-2 lg:contents">
         {!soloMira && (
-          <button type="button" onClick={() => setAbierta({ p: null })}
+          <button type="button" onClick={() => setAbierta({ p: null })} data-fila="fija"
             className="boton boton-relleno min-h-[48px] px-5 text-[15px] lg:order-1 lg:min-h-[44px]">+ Cotizar</button>
         )}
         {/* **El periodo del calendario** (2026-11-24): en la fila de los
             botones, donde en la Lista va *← Volver al calendario*. */}
         {vista === 'calendario' && (
-          <div className="w-full lg:order-2 lg:w-auto">
+          <div data-fila="fija" className="w-full lg:order-2 lg:w-auto">
             <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo}
               onModo={(clave) => setPeriodo(cambiarModo(periodo, clave, hoy))}
               titulo={tituloDelPeriodo(periodo)} onMover={(n) => setPeriodo(moverPeriodo(periodo, n))} />
@@ -618,7 +620,7 @@ export default function CotizacionesVista() {
         {/* En el computador, *Volver* va en esta fila (2026-11-22, la regla
             del espacio); en el celular sigue justo encima de la lista. */}
         {vista !== 'calendario' && (
-          <button type="button" onClick={() => setVista('calendario')}
+          <button type="button" onClick={() => setVista('calendario')} data-fila="fija"
             className="boton hidden min-h-[44px] !text-[15px] !font-semibold lg:order-2 lg:inline-flex">
             ← Volver al calendario
           </button>
@@ -627,7 +629,7 @@ export default function CotizacionesVista() {
         {/* El mismo *Mías* de todo el panel (`BotonMias`, 2026-11-13). **En
             la Lista, el vendedor ve lo suyo** (2026-11-17): ahí no va. */}
         {!(vista === 'lista' && !veElEquipo(datos.rol)) && (
-          <div className="flex items-center gap-2 lg:order-4" role="group" aria-label="De quién">
+          <div data-fila="fija" className="flex items-center gap-2 lg:order-4" role="group" aria-label="De quién">
             <BotonMias cuantas={agrupar(mias).length} elegido={soloMias} onClick={() => elegirDe('mias')} />
             <BotonTodos texto="De todos" cuantas={agrupar(datos.presupuestos).length} elegido={!soloMias}
               onClick={() => elegirDe('todos')} />
@@ -643,7 +645,7 @@ export default function CotizacionesVista() {
           ['sinFecha', `Sin fecha (${agrupar(sinFecha).filter((p) => cuentaComoPosible(p, hoy)).length})`],
           ['lista', '📋 Lista']
         ] as const).map(([k, texto]) => (
-          <button key={k} type="button" onClick={() => setVista(vista === k ? 'calendario' : k)} aria-pressed={vista === k}
+          <button key={k} type="button" data-fila="fija" onClick={() => setVista(vista === k ? 'calendario' : k)} aria-pressed={vista === k}
             className={`boton min-h-[48px] lg:order-4 lg:min-h-[44px] ${vista === k ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
             {texto}
           </button>
