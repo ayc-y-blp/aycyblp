@@ -572,6 +572,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   el texto del sitio, con la regla de la cotización; en inglés y portugués
   sigue el del sitio, traducido. La reserva no cambia. Ver `CLAUDE.md`, "El
   cotizador de promociones".
+- **El descuento por grupo en `promociones.html`** (25-11-2026, lo pidió el
+  cliente; frase *Mientras más son, menos paga cada uno*): los tramos de cada
+  promoción del panel, en tarjetas, y *hasta −N% por grupo* bajo el precio;
+  *Se puede sumar* sale del panel. Ver `CLAUDE.md`, "El cotizador de
+  promociones".
 - **El cotizador con fondo propio** (25-11-2026, lo pidió el cliente): dorado
   suave de día y de noche, con los pasos claros encima. Ver `CLAUDE.md`, "El
   cotizador de promociones".

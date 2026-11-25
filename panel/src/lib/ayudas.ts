@@ -1485,7 +1485,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Cada extra, una vez: No, Incluido (va siempre en la promoción) o Se suma (el cliente lo elige en el sitio).',
       'Incluido va para todo el grupo. Lo que se suma y va por persona, el cliente elige para cuántos: al marcarlo sale ¿Cuántos?, con el grupo entero, y lo baja (de 22, el karting para 15). Un monto fijo va una vez.',
-      'Lo que cobra otra empresa, como el karting, va aparte del total.'
+      'Lo que cobra otra empresa, como el karting, va aparte del total.',
+      'Lo que va en Se suma es lo que dice «Se puede sumar» en el bloque de la promoción en el sitio.'
     ]
   },
   promoShow: {
@@ -1501,7 +1502,9 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'El primer tramo dice desde cuántas personas se cotiza en el sitio y su descuento sobre el total.',
       '+ Otro tramo agrega un descuento mayor desde más gente: rige el tramo más alto que alcanza el grupo. '
       + 'Por ejemplo, 10% desde 22 y 15% desde 50: con 60 personas, el 15%.',
-      'Es la condición especial: la pone quien arma la promoción.'
+      'Es la condición especial: la pone quien arma la promoción.',
+      'En el sitio, los tramos salen en el bloque de la promoción como «Descuento por grupo», y '
+      + '«hasta −N% por grupo» bajo el precio.'
     ]
   },
   promoArriendo: {

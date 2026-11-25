@@ -7470,6 +7470,11 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
     const det = PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catTx)[0]?.detalles ?? {};
     ok(det['Niños']?.detalle === 'Nuggets con papas' && det['Niños']?.casa === false && !('Pequeños' in det),
        'el sitio recibe el texto propio de un producto, y nada de los que van en blanco');
+    const conTramos = PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo', minimo: 10, descuento: 5,
+      tramos: [{ desde: 22, descuento: 10 }, { desde: 55, descuento: 15 }] }], catTx)[0];
+    const sinDesc = PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo', descuento: 0, tramos: [] }], catTx)[0];
+    ok(conTramos?.tramos.map((t) => `${t.desde}:${t.descuento}`).join() === '10:5,22:10,55:15' && sinDesc?.tramos.length === 0,
+       'el sitio recibe los tramos de descuento por grupo, y ninguno si la promoción no descuenta');
   }
   // Cuándo se hizo una reserva (2026-11-25).
   {
