@@ -7462,6 +7462,14 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
   ok(PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catNP)[0]?.ninos.map((n) => n.nombre).join() === 'Niños,Pequeños'
      && PR.limpiarPromocion({ id: 'x', nombre: 'x', ninos: 'niños | Pequeños | Inventado' }, catNP).ninos.join() === 'Niños,Pequeños',
      'el sitio recibe los dos menús de niños, y se guardan solo los que están en el catálogo');
+  // El ? del cotizador con el texto escrito en Productos (2026-11-25).
+  {
+    const catTx = catNP.map((m) => m.nombre === 'Niños' ? { ...m, descripcion: 'Nuggets con papas' }
+      : m.nombre === 'Pequeños' ? { ...m, descripcion: '', bebestibles: '' } : m);
+    const det = PR.promocionesParaElSitio([{ ...campoNP, sitio: 'dia-de-campo' }], catTx)[0]?.detalles ?? {};
+    ok(det['Niños']?.detalle === 'Nuggets con papas' && det['Niños']?.casa === false && !('Pequeños' in det),
+       'el sitio recibe el texto propio de un producto, y nada de los que van en blanco');
+  }
   // Cuándo se hizo una reserva (2026-11-25).
   {
     const F = await import('./fechas.ts');

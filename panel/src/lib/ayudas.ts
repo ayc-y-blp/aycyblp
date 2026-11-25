@@ -1485,7 +1485,10 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       + 'acompañamientos y postre): sirve para un menú especial. Un renglón por parte, como '
       + '«Entrada: ceviche de reineta», se lee en dos columnas.',
       'Es la propuesta: se copia a cada cotización al agregar el producto. Cambiarlo acá no toca '
-      + 'las cotizaciones que ya lo tienen; en una cotización se cambia con el 📝 de su línea.'
+      + 'las cotizaciones que ya lo tienen; en una cotización se cambia con el 📝 de su línea.',
+      'También sale en el «?» del producto en el cotizador de promociones del sitio, en la página en '
+      + 'español: llega tal cual lo escribes, así que en inglés y portugués sigue el texto del sitio, '
+      + 'ya traducido. Puede tardar hasta 5 minutos en verse.'
     ]
   },
   textoDeLinea: {
@@ -1505,7 +1508,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       'Los bebestibles de este menú, en la cotización y el contrato. Reemplazan los del sitio; '
       + 'en blanco van los de siempre. Se pueden cambiar solo los bebestibles y dejar el menú de la '
-      + 'casa, o al revés.'
+      + 'casa, o al revés.',
+      'También salen en el «?» del cotizador de promociones, en la página en español.'
     ]
   },
   loCobra: {

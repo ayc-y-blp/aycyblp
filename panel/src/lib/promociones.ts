@@ -34,6 +34,7 @@ import {
   type LineaEntrante, type LineaPresupuesto, type Cuentas, type Presupuesto
 } from './presupuestos.ts';
 import { vigenciaHasta } from './condiciones.ts';
+import { detalleDe } from './detalle.ts';
 import type { Cliente } from './clientes.ts';
 import { diaSemana, sumarDias } from './fechas.ts';
 import type { FechaHabil } from './tipos.ts';
@@ -722,6 +723,14 @@ export interface PromocionSitio {
   arriendoFinde: number;
   /** Si la promoción nunca cobra arriendo (*Sin arriendo*): el lugar exclusivo va incluido. */
   arriendoIncluido: boolean;
+  /**
+   * **Lo que el cliente escribió en *Productos* para cada producto**
+   * (2026-11-25), por nombre: el texto del `?` del cotizador, con la misma
+   * regla de la cotización (`detalleDe()`). Solo los que tienen *Qué incluye*
+   * o *Bebestibles*: en blanco, el sitio usa su texto, ya traducido. `casa`
+   * dice si va con el menú de la casa arriba.
+   */
+  detalles: Record<string, { detalle: string; casa: boolean }>;
 }
 
 /**
@@ -740,6 +749,17 @@ const paraSitio = (m: Menu): ProductoSitio => ({
   nombre: m.nombre, precio: precioParaCotizar(m), masIva: m.iva === IVA_PRECIO.mas,
   fijo: m.cobro === COBRO.fijo, loCobra: m.loCobra
 });
+
+/** El `?` de cada producto con texto propio en *Productos* (ver `PromocionSitio.detalles`). */
+function detallesPropios(productos: Menu[]): Record<string, { detalle: string; casa: boolean }> {
+  const salida: Record<string, { detalle: string; casa: boolean }> = {};
+  for (const m of productos) {
+    if (!String(m.descripcion ?? '').trim() && !String(m.bebestibles ?? '').trim()) continue;
+    const d = detalleDe(m.nombre, { descripcion: m.descripcion, bebestibles: m.bebestibles });
+    if (d) salida[m.nombre] = d;
+  }
+  return salida;
+}
 
 /**
  * Las promociones activas, conectadas y **con el cotizador encendido**, como
@@ -773,7 +793,8 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], ar
         ? paraSitio(arriendoCat) : null,
       arriendoSemana: arriendoCat && (arriendo.semana ?? 0) > 0 ? Math.round(arriendo.semana!) : 0,
       arriendoFinde: arriendoCat && (arriendo.finde ?? 0) > 0 ? Math.round(arriendo.finde!) : 0,
-      arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca
+      arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca,
+      detalles: detallesPropios(todos as Menu[])
     });
   }
   return salida;
