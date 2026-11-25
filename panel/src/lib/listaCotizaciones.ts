@@ -25,11 +25,11 @@ import { grupoDe, alternativasDe, principalDe } from './cotizar.ts';
 import { normalizar } from './columnas.ts';
 import { ROL } from './auth.ts';
 import { esFecha, sumarDias, fechaEnZona, enCorto } from './fechas.ts';
-import { proximoContacto, cuandoEs, diasEntre } from './agenda.ts';
+import { proximoContacto, recontactoDe, cuandoEs, diasEntre } from './agenda.ts';
 
 /** Qué se muestra: los estados, y lo que piden las tarjetas. */
 export type FiltroLista = 'enCarrera' | 'esperando' | 'negociando' | 'ganadas' | 'cerradas' | 'todas'
-  | 'mandadas' | 'agenda' | 'porCobrar';
+  | 'mandadas' | 'agenda' | 'porCobrar' | 'recontactar';
 export type PorFecha = 'evento' | 'cotizada';
 /** Un rango de fechas, o `null`: todo. */
 export type Rango = { desde: string; hasta: string } | null;
@@ -119,6 +119,18 @@ export function enRango(p: Presupuesto, rango: Rango, porFecha: PorFecha): boole
   return periodoTocaRango(p.periodo ?? '', rango);
 }
 
+/**
+ * **Lo que viene** (2026-11-25, lo pidió el cliente: unas 20 cotizaciones de
+ * Carmen, importadas del CRM con su día, salían en la Agenda y no en la
+ * Lista, que abría en el mes en curso): el evento de hoy en adelante, en
+ * cualquier mes, y las que todavía no tienen día exacto. Es lo que abre la
+ * Lista, como los calendarios.
+ */
+export const LO_QUE_VIENE = 'viene';
+export function enLoQueViene(p: Pick<Presupuesto, 'fecha'>, hoy: string): boolean {
+  return esFecha(p.fecha) ? p.fecha >= hoy : true;
+}
+
 /** El rango de un mes (`AAAA-MM`) o de la semana que parte el lunes dado. */
 export function rangoDe(periodo: string): Rango {
   if (/^\d{4}-\d{2}$/.test(periodo)) {
@@ -144,6 +156,9 @@ export function pasaFiltro(p: Presupuesto, filtro: FiltroLista, ctx: ContextoLis
     // **La agenda** (2026-11-23): lo que toca hoy, de contactar o de mandar.
     case 'agenda': return tocaHoy(p, ctx);
     case 'porCobrar': return faltaCobrarDe(p, ctx) > 0;
+    // **📞 Recontactar** (2026-11-25): las que tienen un día elegido para
+    // volver a contactarlo, sin importar el periodo (`recontactoDe()`).
+    case 'recontactar': return !!recontactoDe(p, ctx.hoy);
   }
 }
 
@@ -228,13 +243,17 @@ export function ganadoPorMes(base: Presupuesto[], ctx: ContextoLista, n = 6): { 
 /** Cuántas hay en cada botón de estado. */
 export function cuentasPorFiltro(base: Presupuesto[], ctx: ContextoLista): Record<FiltroLista, number> {
   const filtros: FiltroLista[] = ['enCarrera', 'esperando', 'negociando', 'ganadas', 'cerradas', 'todas',
-    'mandadas', 'agenda', 'porCobrar'];
+    'mandadas', 'agenda', 'porCobrar', 'recontactar'];
   return Object.fromEntries(filtros.map((f) => [f, base.filter((p) => pasaFiltro(p, f, ctx)).length])) as Record<FiltroLista, number>;
 }
 
 const pesos = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
-export type Paso = { texto: string; tono: 'rojo' | 'ambar' | 'verde' | 'neutro' };
+export type Paso = {
+  texto: string; tono: 'rojo' | 'ambar' | 'verde' | 'neutro';
+  /** El día elegido para volver a contactarlo: la Lista lo dibuja como la pastilla 📞 (2026-11-25). */
+  contacto?: string;
+};
 
 /**
  * **El próximo paso de cada cotización**, en pocas palabras y con su tono:
@@ -251,9 +270,10 @@ export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
   if (c?.motivo === 'elegida') {
     const cuando = cuandoEs(c.fecha, ctx.hoy);
     const atraso = -diasEntre(ctx.hoy, c.fecha);
-    pasos.push(cuando === 'atrasado' ? { texto: `contactar: atrasado ${atraso} ${atraso === 1 ? 'día' : 'días'}`, tono: 'rojo' }
+    const paso: Paso = cuando === 'atrasado' ? { texto: `contactar: atrasado ${atraso} ${atraso === 1 ? 'día' : 'días'}`, tono: 'rojo' }
       : cuando === 'hoy' ? { texto: 'contactar hoy', tono: 'ambar' }
-        : { texto: `📞 contactar el ${enCorto(c.fecha)}`, tono: 'neutro' });
+        : { texto: `📞 contactar el ${enCorto(c.fecha)}`, tono: 'neutro' };
+    pasos.push({ ...paso, contacto: c.fecha });
   } else if (s?.motivo === 'contratoSinFirmar') pasos.push({ texto: `contrato sin volver hace ${s.dias} días`, tono: 'ambar' });
   else if (s?.motivo === 'eventoCerca') pasos.push({ texto: s.dias === 0 ? 'el evento es hoy y no se gana' : `evento en ${s.dias} ${s.dias === 1 ? 'día' : 'días'} sin ganar`, tono: 'rojo' });
   else if (s?.motivo === 'sinRespuesta') pasos.push({ texto: `sin respuesta hace ${s.dias} días`, tono: 'rojo' });
@@ -304,6 +324,21 @@ export function ordenarLista(lista: Presupuesto[], ctx: ContextoLista): Presupue
   return [...lista].sort((a, b) => fecha(a).localeCompare(fecha(b)) || urgencia(a) - urgencia(b)
     || String(a.cliente ?? '').localeCompare(String(b.cliente ?? ''), 'es', { sensitivity: 'base' })
     || String(a.id).localeCompare(String(b.id), 'es', { numeric: true }));
+}
+
+/**
+ * **La lista de *📞 Recontactar***: por el día elegido, lo atrasado primero,
+ * y con el mismo día, por cliente.
+ */
+export function ordenarPorRecontacto(lista: Presupuesto[], hoy: string): Presupuesto[] {
+  return [...lista].sort((a, b) => (recontactoDe(a, hoy) || '9999').localeCompare(recontactoDe(b, hoy) || '9999')
+    || String(a.cliente ?? '').localeCompare(String(b.cliente ?? ''), 'es', { sensitivity: 'base' }));
+}
+
+/** Cuántas tienen un recontacto, y de ellas cuántas tocan hoy y cuántas están atrasadas. */
+export function cuentasDeRecontacto(lista: Presupuesto[], hoy: string): { total: number; hoy: number; atrasadas: number } {
+  const dias = lista.map((p) => recontactoDe(p, hoy)).filter(Boolean) as string[];
+  return { total: dias.length, hoy: dias.filter((d) => d === hoy).length, atrasadas: dias.filter((d) => d < hoy).length };
 }
 
 /** Quiénes venden, sacado de las cotizaciones, con cuántas tiene cada uno. */

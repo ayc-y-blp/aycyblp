@@ -23,11 +23,15 @@ import Dialogo from './Dialogo';
 import AyudaCorta from './AyudaCorta';
 import ElegirFecha from './ElegirFecha';
 import FechaDia from './FechaDia';
-import { avisar } from './AvisoFlotante';
+import { avisar, copiarConAviso } from './AvisoFlotante';
+import { abrirWhatsApp } from './BotonWhatsApp';
+import { enlaceWhatsApp, saludoAlCliente, telefonoParaEnlace } from '@/lib/contacto';
+import { estaTapado } from '@/lib/privacidad';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
-import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, type Nota } from '@/lib/notas';
+import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, QUIEN_CRM, type Nota } from '@/lib/notas';
 import { esFecha, sumarDias, type Fecha } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
+import { nombreConEmpresa } from '@/lib/clientes';
 
 const ENTRADA = 'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] focus:border-oro focus:outline-none';
 
@@ -43,8 +47,11 @@ function guardarBorrador(grupo: string, texto: string) {
 }
 
 export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambio, onCerrar, onAnotado }: {
-  /** La cotización del grupo desde donde se abrió. */
-  p: Presupuesto;
+  /**
+   * La cotización del grupo desde donde se abrió: solo lo que la ventana usa,
+   * para que la abra también la ficha del cliente (2026-11-25).
+   */
+  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'> & Partial<Pick<Presupuesto, 'telefono' | 'email' | 'empresaCliente'>>;
   grupo: string;
   /** Las notas que esta cuenta puede leer (de todas sus cotizaciones). */
   notas: Nota[];
@@ -71,6 +78,32 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
   const cambiaFecha = proximo !== (p.recontactar ?? '');
   const puede = !!texto.trim() || cambiaFecha;
 
+  /**
+   * **El medio también contacta** (2026-11-25, lo pidió el cliente: *"cuando
+   * uno aprieta correo o WhatsApp, se debería copiar el correo o abrir el
+   * WhatsApp… y llamar debería llamar"*). Al elegirlo —no al soltarlo—:
+   * *Llamada* llama, *WhatsApp* abre el chat con el saludo de siempre y
+   * *Correo* copia el correo. *Reunión* solo se elige. Sin el dato en la
+   * ficha (o tapado, si es cliente de otro vendedor), lo dice.
+   */
+  const telefono = String(p.telefono ?? '').trim();
+  const correo = String(p.email ?? '').trim();
+  const tapado = (v: string) => !v || estaTapado(v);
+  function contactar(m: string) {
+    if (m === 'Llamada') {
+      if (tapado(telefono)) return avisar('No tiene teléfono en su ficha', 'atencion');
+      const n = telefonoParaEnlace(telefono);
+      window.open(`tel:${n ? `+${n}` : telefono.replace(/[^\d+]/g, '')}`, '_self');
+    } else if (m === 'WhatsApp') {
+      const w = tapado(telefono) ? '' : enlaceWhatsApp(telefono, saludoAlCliente(p.cliente, usuario));
+      if (!w) return avisar('No tiene un celular en su ficha para WhatsApp', 'atencion');
+      abrirWhatsApp(w);
+    } else if (m === 'Correo') {
+      if (tapado(correo)) return avisar('No tiene correo en su ficha', 'atencion');
+      copiarConAviso(correo, `Correo copiado: ${correo}`, 'Copia el correo:');
+    }
+  }
+
   async function anotar() {
     setEnviando(true); setError('');
     try {
@@ -93,7 +126,7 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
     // **En el computador, dos columnas** (2026-11-23): a la izquierda anotar,
     // a la derecha lo ya conversado. En una sola columna no cabía en
     // 1280×650 con dos notas. En el celular, una debajo de la otra.
-    <Dialogo titulo={`Notas · ${p.cliente || 'Sin cliente'}`} onCerrar={onCerrar} ancho="max-w-2xl lg:max-w-5xl">
+    <Dialogo titulo={`Notas · ${nombreConEmpresa(p.cliente || 'Sin cliente', p.empresaCliente)}`} onCerrar={onCerrar} ancho="max-w-2xl lg:max-w-5xl">
       <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
       <div>
       <div className={`mt-2 ${marcoGrupo('rosa')} p-3`}>
@@ -104,11 +137,16 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
             columna de la ventana no hay ancho para tenerlos al lado. */}
         <div className="space-y-3">
           <div>
-            <p className="rotulo-ficha mb-1">Medio</p>
+            {/* Lo que pasa al apretar, en la misma línea del nombre (2026-11-25). */}
+            <p className="rotulo-ficha mb-1">Medio
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-hueso/60">· llama, abre el WhatsApp o copia el correo</span>
+            </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Por dónde hablaron">
               {MEDIOS.map((m) => (
                 <button key={m.clave} type="button" aria-pressed={medio === m.clave}
-                  onClick={() => setMedio(medio === m.clave ? '' : m.clave)}
+                  title={m.clave === 'Llamada' ? 'Lo elige y llama' : m.clave === 'WhatsApp' ? 'Lo elige y abre el WhatsApp'
+                    : m.clave === 'Correo' ? 'Lo elige y copia el correo' : undefined}
+                  onClick={() => { if (medio !== m.clave) contactar(m.clave); setMedio(medio === m.clave ? '' : m.clave); }}
                   className={`boton min-h-[40px] px-3 !text-[14px] lg:min-h-[36px] ${medio === m.clave ? 'border-oro bg-oro/15 !font-semibold' : ''}`}>
                   <span aria-hidden>{m.icono}</span> {m.clave}
                 </button>
@@ -152,8 +190,13 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
  * hora, el medio y quién la escribió; su autor la corrige el mismo día.
  * La misma pieza en la ventana de notas y en la ficha del cliente.
  */
-export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todavía no hay notas.' }: {
+export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todavía no hay notas.', cotizacionDe }: {
   notas: Nota[]; hoy: Fecha; usuario: string; onCambio: () => void; vacio?: string;
+  /**
+   * De qué cotización es cada nota (*N° 420000*), para la ficha de un cliente
+   * con varias (2026-11-25). Sin esto, no se dice: en una cotización es obvio.
+   */
+  cotizacionDe?: (n: Nota) => string;
 }) {
   const [corrigiendo, setCorrigiendo] = useState<{ id: string; texto: string } | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -189,7 +232,8 @@ export function HistorialNotas({ notas, hoy, usuario, onCambio, vacio = 'Todaví
                   <span aria-hidden>{iconoDeMedio(n.medio)}</span>
                   <span className="tabular-nums">{n.cuando.slice(11, 16)}</span>
                   {n.medio && <span>{n.medio}</span>}
-                  <span>· <b className="text-hueso/85">{n.quien || '—'}</b></span>
+                  <span>· <b className="text-hueso/85">{n.quien === QUIEN_CRM ? 'Del CRM antiguo' : n.quien || '—'}</b></span>
+                  {cotizacionDe?.(n) && <span className="font-semibold text-hueso/80">· {cotizacionDe(n)}</span>}
                   <span className="flex-1" />
                   {sePuedeCorregir(n, usuario, hoy) && corrigiendo?.id !== n.id && (
                     <button type="button" className="boton min-h-[36px] !text-[13px]"

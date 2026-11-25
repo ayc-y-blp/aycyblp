@@ -18,6 +18,7 @@ import FechaDia from './FechaDia';
 import { TITULO_GRUPO, marcoGrupo, marcoTarjeta } from './TarjetaLista';
 import { enPesos } from '@/lib/ocupacion';
 import type { AvisoSitio } from '@/lib/promociones';
+import EmpresaCliente from './EmpresaCliente';
 
 async function marcar(ids: string[]) {
   await fetch('/api/presupuestos/sitio-visto', {
@@ -57,6 +58,7 @@ export default function AvisoCotizacionesSitio({ avisos, onAbrir }: {
             <li key={a.id} className={`${marcoTarjeta(false, 'normal', false, true)} flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2`}>
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-semibold">{a.cliente || 'Cliente del sitio'}
+                  <EmpresaCliente nombre={a.cliente} empresa={a.empresa} className="ml-2" />
                   <span className="ml-2 text-[14px] font-normal text-hueso/70">N° {a.folio}</span>
                 </p>
                 <p className="flex flex-wrap items-center gap-x-2 text-[14px] text-hueso/80">

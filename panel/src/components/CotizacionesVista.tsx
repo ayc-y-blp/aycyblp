@@ -47,8 +47,8 @@ import { faltaDevolver } from '@/lib/cancelacion';
 import { puede, puedeTocarPresupuesto, esSuya, ROL, type Rol } from '@/lib/auth';
 import Agenda from './Agenda';
 import NotasCotizacion from './NotasCotizacion';
-import { agendaDe, paraHoy, type ItemAgenda } from '@/lib/agenda';
-import { puedeVerNotas } from '@/lib/notas';
+import { agendaDe, paraHoy, recontactoDe, type ItemAgenda } from '@/lib/agenda';
+import { puedeVerNotas, ordenarNotas, type Nota } from '@/lib/notas';
 import type { Ocupacion } from '@/lib/tipos';
 import PuntoDia, { PuntoYPalabra } from './PuntoDia';
 import FechaDia, { MarcaAhora, MARCO_HOY } from './FechaDia';
@@ -59,8 +59,9 @@ import AvisoSobrecupo, { type SobrecupoCorto } from './AvisoSobrecupo';
 import Pendientes, { FilaPendiente } from './Pendientes';
 import AvisoFijo from './AvisoFijo';
 import { BotonMias, BotonTodos } from './BotonMias';
-import { Pastilla, PastillaCotizado } from './Pastilla';
+import { Pastilla, PastillaCotizado, PastillaContacto } from './Pastilla';
 import ListaCotizaciones from './ListaCotizaciones';
+import EmpresaCliente from './EmpresaCliente';
 import { veElEquipo, type ContextoLista } from '@/lib/listaCotizaciones';
 
 type Datos = DatosCotizar & {
@@ -295,11 +296,14 @@ export default function CotizacionesVista() {
   const notasVisibles = datos.notas ?? [];
   const notasPorGrupo = new Map<string, number>();
   for (const n of notasVisibles) notasPorGrupo.set(n.presupuesto, (notasPorGrupo.get(n.presupuesto) ?? 0) + 1);
+  // La última de cada grupo: la primera de `ordenarNotas()` que se ve de él.
+  const ultimaPorGrupo = new Map<string, Nota>();
+  for (const n of ordenarNotas(notasVisibles)) if (!ultimaPorGrupo.has(n.presupuesto)) ultimaPorGrupo.set(n.presupuesto, n);
   const anotadasHoy = new Set(notasVisibles.filter((n) => n.quien === datos.usuario && n.cuando.slice(0, 10) === hoy)
     .map((n) => n.presupuesto)).size;
   /** La agenda dibujada, con los botones de cada fila: la misma en la Lista y en *Tus pendientes*. */
   const verAgenda = (agenda: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }, soloHoy = false) => (
-    <Agenda agenda={agenda} hoy={hoy} todas={datos.presupuestos} notasPorGrupo={notasPorGrupo}
+    <Agenda agenda={agenda} hoy={hoy} todas={datos.presupuestos} notasPorGrupo={notasPorGrupo} ultimaPorGrupo={ultimaPorGrupo}
       soloHoy={soloHoy} anotadasHoy={anotadasHoy}
       puedeTocar={(p) => puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor)}
       puedeAnotar={(p) => alternativasDe(p, datos.presupuestos).some((a) => puedeVerNotas(datos.rol, datos.usuario, a.creadoPor))}
@@ -389,6 +393,9 @@ export default function CotizacionesVista() {
         <button type="button" onClick={() => setAbierta({ p })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
           className="abrir absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
         <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
+        {/* La empresa del cliente, al lado (2026-11-25): la misma pieza de
+            Clientes, Agenda, *Tus pendientes* y la página del día. */}
+        <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
         <PastillaEstado estado={estadoDe(p)} />
         {conFecha && (
           <span className="text-[14px] text-hueso/70">
@@ -398,7 +405,16 @@ export default function CotizacionesVista() {
             {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
           </span>
         )}
-        <span className="flex-1" />
+        {/* **📞 El próximo contacto, en la primera fila y al centro**
+            (2026-11-25, lo pidió el cliente: *"deja el contactar el 26 en
+            primera fila, centrado"*): el hueco entre la fecha y los valores
+            lo ocupa la pastilla. La misma en la lista, el día del calendario
+            y *Sin fecha*. En el celular, donde la fila se dobla, va en su
+            renglón, a la izquierda: así todas las filas con pastilla quedan
+            parejas (el total, debajo). */}
+        <span className={`flex flex-1 lg:justify-center ${recontactoDe(p, hoy) ? 'max-lg:basis-full' : ''}`}>
+          <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
+        </span>
         {caerse && botonCaer('hidden lg:inline-flex')}
         <span className="text-[14px] text-hueso/70">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
@@ -645,7 +661,7 @@ export default function CotizacionesVista() {
           texto: porDevolver.length === 1 ? '1 devolución por hacer' : `${porDevolver.length} devoluciones por hacer`,
           ayuda: 'Eventos cancelados con plata acordada para devolver. Ábrelo y anota la devolución al transferir.',
           lista: <div className="space-y-1.5">{porDevolver.map(({ p, falta }) => (
-            <FilaPendiente key={p.id} quien={p.cliente || 'Sin cliente'} dato={`devolver ${enPesos(falta)}`} rojo
+            <FilaPendiente key={p.id} quien={p.cliente || 'Sin cliente'} empresa={p.empresaCliente} dato={`devolver ${enPesos(falta)}`} rojo
               onAbrir={() => setAbierta({ p, paso: 4 })} />))}</div>
         }] : []),
         ...(avisos.saldo.length ? (() => {
@@ -656,7 +672,7 @@ export default function CotizacionesVista() {
             urgente: vencidos ? (vencidos === 1 ? '1 vencido' : `${vencidos} vencidos`) : undefined,
             lista: <div className="space-y-1.5">{avisos.saldo.map((a) => {
               const p = porId.get(a.id)!;
-              return <FilaPendiente key={a.id} quien={p.cliente} rojo={a.dias < 0}
+              return <FilaPendiente key={a.id} quien={p.cliente} empresa={p.empresaCliente} rojo={a.dias < 0}
                 dato={`${enPesos(a.monto)} · ${a.dias < 0 ? `venció hace ${-a.dias} ${a.dias === -1 ? 'día' : 'días'}`
                   : a.dias === 0 ? 'vence hoy' : a.dias === 1 ? 'vence mañana' : `vence en ${a.dias} días`}`}
                 onAbrir={() => setAbierta({ p })} />;
@@ -669,7 +685,7 @@ export default function CotizacionesVista() {
           ayuda: 'Comprueba que la plata llegó y márcalos revisados.',
           lista: <div className="space-y-1.5">{[...sinRevisar].map(([id, r]) => {
             const p = porId.get(id)!;
-            return <FilaPendiente key={id} quien={p.cliente}
+            return <FilaPendiente key={id} quien={p.cliente} empresa={p.empresaCliente}
               dato={`${r.n === 1 ? '1 cobro' : `${r.n} cobros`} · ${enPesos(r.monto)}`} onAbrir={() => setAbierta({ p })} />;
           })}</div>
         }] : []),
@@ -679,7 +695,7 @@ export default function CotizacionesVista() {
           ayuda: 'Ya pagaron el anticipo. Mientras no esté ganada, otro puede tomar ese día.',
           lista: <div className="space-y-1.5">{avisos.anticipoSinGanar.map((a) => {
             const p = porId.get(a.id)!;
-            return <FilaPendiente key={a.id} quien={p.cliente} dato={`pagó ${enPesos(a.monto)}`}
+            return <FilaPendiente key={a.id} quien={p.cliente} empresa={p.empresaCliente} dato={`pagó ${enPesos(a.monto)}`}
               onAbrir={() => setAbierta({ p, paso: 4 })} />;
           })}</div>
         }] : []),
@@ -699,7 +715,7 @@ export default function CotizacionesVista() {
           texto: pronto.length === 1 ? '1 vence pronto' : `${pronto.length} vencen pronto`,
           lista: <div className="space-y-1.5">{pronto.map((p) => {
             const n = diasParaVencer(p, hoy);
-            return <FilaPendiente key={p.id} quien={p.cliente}
+            return <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente}
               dato={n === 0 ? 'vence hoy' : n === 1 ? 'vence mañana' : `vence en ${n} días`} onAbrir={() => setAbierta({ p })} />;
           })}</div>
         }] : []),
@@ -708,7 +724,7 @@ export default function CotizacionesVista() {
           texto: porCoordinarMias.length === 1 ? '1 por coordinar con otra empresa' : `${porCoordinarMias.length} por coordinar con otras empresas`,
           ayuda: 'Llevan algo que cobra otra empresa, como el karting. Cuando lo tengas coordinado, márcalo con 🤝 Ya lo coordiné bajo el total de la cotización.',
           lista: <div className="space-y-1.5">{porCoordinarMias.map(({ p, faltan }) => (
-            <FilaPendiente key={p.id} quien={p.cliente}
+            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente}
               dato={faltan.map((f) => `${f.conceptos.join(', ')} · ${f.empresa}`).join(' · ')}
               onAbrir={() => setAbierta({ p, paso: 3 })} />))}</div>
         }] : []),
@@ -717,7 +733,7 @@ export default function CotizacionesVista() {
           texto: vencidas.length === 1 ? '1 venció sin cerrar' : `${vencidas.length} vencieron sin cerrar`,
           ayuda: 'Ya no cuentan como gente posible: márcalas perdidas o renueva la vigencia.',
           lista: <div className="space-y-1.5">{vencidas.map((p) => (
-            <FilaPendiente key={p.id} quien={p.cliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p })} />))}</div>
+            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p })} />))}</div>
         }] : [])
       ]} />
       </div>

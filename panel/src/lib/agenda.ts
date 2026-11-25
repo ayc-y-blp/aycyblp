@@ -63,8 +63,8 @@ export function diasEntre(desde: Fecha, hasta: Fecha): number {
 export function proximoContacto(p: Presupuesto, hoy: Fecha, cfg: Cfg): Contacto | null {
   if (CERRADAS.includes(estadoNormal(p.estado))) return null;
   if (esFecha(p.recontactar)) {
-    if (p.idReserva && esFecha(p.fecha) && p.fecha < hoy) return null;
-    return { fecha: p.recontactar!, motivo: 'elegida', dias: 0 };
+    const elegida = recontactoDe(p, hoy);
+    return elegida ? { fecha: elegida, motivo: 'elegida', dias: 0 } : null;
   }
   for (let i = 0; i <= HORIZONTE; i++) {
     const d = sumarDias(hoy, i);
@@ -72,6 +72,37 @@ export function proximoContacto(p: Presupuesto, hoy: Fecha, cfg: Cfg): Contacto 
     if (s) return { fecha: d, motivo: s.motivo, dias: s.dias };
   }
   return null;
+}
+
+/**
+ * **El día que el vendedor quedó en volver a contactarlo** (`Recontactar el`),
+ * si sigue valiendo, o `''`. Es lo que muestra la pastilla *📞* en la Lista,
+ * en la ficha del cliente y en la tarjeta *📞 Recontactar* (2026-11-25): no el
+ * recordatorio automático, solo el día elegido. Una perdida, no elegida o
+ * cancelada no lo tiene, ni una ganada cuyo evento ya pasó.
+ */
+export function recontactoDe(
+  p: Pick<Presupuesto, 'estado' | 'recontactar' | 'idReserva' | 'fecha'>, hoy: Fecha
+): Fecha | '' {
+  if (CERRADAS.includes(estadoNormal(p.estado))) return '';
+  if (!esFecha(p.recontactar)) return '';
+  if (p.idReserva && esFecha(p.fecha) && p.fecha < hoy) return '';
+  return p.recontactar as Fecha;
+}
+
+/**
+ * **Lo que dice la pastilla 📞** (2026-11-25): atrasado en rojo, hoy en ámbar
+ * y un día que viene en gris. Pura, para que la Lista, Clientes y la ventana
+ * digan lo mismo.
+ */
+export function textoContacto(fecha: Fecha, hoy: Fecha): { texto: string; cuando: Exclude<Cuando, 'sinPlazo'> } {
+  const cuando = cuandoEs(fecha, hoy);
+  if (cuando === 'atrasado') {
+    const n = -diasEntre(hoy, fecha);
+    return { texto: `Contactar: atrasado ${n} ${n === 1 ? 'día' : 'días'}`, cuando };
+  }
+  if (cuando === 'hoy') return { texto: 'Contactar hoy', cuando };
+  return { texto: `Contactar el ${enCorto(fecha)}`, cuando: 'proximo' };
 }
 
 /** Atrasado, hoy, en los próximos días, o sin plazo (un borrador sin fecha prometida). */

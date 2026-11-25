@@ -23,6 +23,7 @@ import { bancoVacio, sePuedeTransferir } from '@/lib/banco';
 import { normalizar } from '@/lib/columnas';
 import { esFecha, hoy } from '@/lib/fechas';
 import { rangoDelPeriodo } from '@/lib/equipo';
+import { nombreConEmpresa } from '@/lib/clientes';
 
 export const dynamic = 'force-dynamic';
 
@@ -154,7 +155,7 @@ export const GET = conLecturas([HOJA_USUARIOS, HOJA_VENDEDORES, HOJA_PRESUPUESTO
       const ya = enCurso.get(grupo);
       if (ya && ya.total >= b.total) continue;
       const com = comisionDe(ficha, b, !!p.socio);
-      enCurso.set(grupo, { id: p.id, folio: folioDe({ id: grupo }), cliente: p.cliente || 'sin nombre', fecha: p.fecha || p.periodo,
+      enCurso.set(grupo, { id: p.id, folio: folioDe({ id: grupo }), cliente: nombreConEmpresa(p.cliente || 'sin nombre', p.empresaCliente), fecha: p.fecha || p.periodo,
         estado: e, total: b.total, comision: com.monto, detalle: com.detalle });
     }
 

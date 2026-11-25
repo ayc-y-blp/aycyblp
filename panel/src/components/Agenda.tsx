@@ -16,6 +16,7 @@
 import { useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import SeCayo from './SeCayo';
+import { UltimaNota } from './LoConversado';
 import { avisar } from './AvisoFlotante';
 import { usarSoloMira } from './SesionCliente';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
@@ -24,6 +25,8 @@ import { fraseDe, paraHoy, type ItemAgenda } from '@/lib/agenda';
 import { ESTADO_PRESUPUESTO, estadoNormal, estadoVisible, estaMandada, folioDe, type Presupuesto } from '@/lib/presupuestos';
 import { alternativasDe, enCarrera, grupoDe } from '@/lib/cotizar';
 import { enCorto, esFecha, type Fecha } from '@/lib/fechas';
+import type { Nota } from '@/lib/notas';
+import EmpresaCliente from './EmpresaCliente';
 
 const TONO = { rojo: 'font-semibold text-rojo-texto', ambar: 'font-semibold text-ambar-texto', neutro: 'text-hueso/75' } as const;
 
@@ -34,6 +37,12 @@ export interface PropsAgenda {
   todas: Presupuesto[];
   /** Cuántas notas tiene cada grupo (solo las que esta cuenta lee). */
   notasPorGrupo: Map<string, number>;
+  /**
+   * **La última nota de cada grupo** (2026-11-25, lo pidió el cliente: *"se
+   * tiene que mostrar el último comentario… en todos lados"*): va bajo la
+   * frase, en un renglón, a quien lee las notas.
+   */
+  ultimaPorGrupo?: Map<string, Pick<Nota, 'cuando' | 'medio' | 'quien' | 'nota'>>;
   puedeTocar: (p: Presupuesto) => boolean;
   puedeAnotar: (p: Presupuesto) => boolean;
   onAbrir: (p: Presupuesto, paso?: number) => void;
@@ -119,7 +128,7 @@ export default function Agenda(props: PropsAgenda) {
 }
 
 /** Una fila de la agenda: quién, qué toca y los botones para hacerlo ahí mismo. */
-function FilaAgenda({ x, hoy, notasPorGrupo, puedeTocar, puedeAnotar, onAbrir, onNotas, onCambio, onCayo, soloHoy }:
+function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAnotar, onAbrir, onNotas, onCambio, onCayo, soloHoy }:
   PropsAgenda & { x: ItemAgenda; onCayo: (p: Presupuesto) => void }) {
   const soloMira = usarSoloMira('presupuestos');
   const [enviando, setEnviando] = useState(false);
@@ -128,6 +137,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, puedeTocar, puedeAnotar, onAbrir, o
   const toca = puedeTocar(p) && !soloMira;
   const anota = puedeAnotar(p) && !soloMira;
   const notas = notasPorGrupo.get(grupoDe(p)) ?? 0;
+  const ultima = ultimaPorGrupo?.get(grupoDe(p));
   const mandada = estaMandada(p.estado) && !p.idReserva;
 
   async function cambiar(cuerpo: Record<string, unknown>, aviso: string) {
@@ -150,6 +160,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, puedeTocar, puedeAnotar, onAbrir, o
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {soloHoy && <span aria-hidden>{x.tipo === 'redactar' ? '✍' : '📞'}</span>}
           <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
+          <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
           <span className="text-[13px] text-hueso/65">N° {folioDe(p)}</span>
           <PastillaEstado estado={estadoVisible(p, hoy)} />
           {notas > 0 && <span className="text-[13px] text-hueso/65">🗒 {notas}</span>}
@@ -161,6 +172,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, puedeTocar, puedeAnotar, onAbrir, o
           )}
         </span>
       </button>
+      {anota && ultima && <UltimaNota nota={ultima} compacta className="mt-1.5" />}
       {(toca || anota) && (
         <div className="mt-2 flex flex-wrap gap-2">
           {anota && (

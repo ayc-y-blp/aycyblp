@@ -61,6 +61,7 @@ import { planDelDia, costoDelDia, propinaDelDia, pagoDe, VINO, esPreparacion,
          faltantesDe, textoFaltantes, type Puesto, type Trabajador, type Turno } from '@/lib/equipo';
 import { extrasDelDia, costoExtrasDelDia, costoDeExtra,
          type Colaborador, type Extra } from '@/lib/extras';
+import EmpresaCliente from './EmpresaCliente';
 
 /**
  * El rótulo de cada fila del resumen.
@@ -1515,6 +1516,7 @@ export default function DayView(
                   {filas.map((f) => (
                     <li key={f.p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-[14px]">
                       <span className="font-semibold">{f.p.cliente || 'Sin cliente'}</span>
+                      <EmpresaCliente nombre={f.p.cliente} empresa={f.p.empresaCliente} />
                       <span className="text-hueso/70">
                         N° {folioDe({ id: grupoDe(f.p) })}
                         {' · '}{f.personas} personas

@@ -34,6 +34,7 @@ import { type Presupuesto, type LineaPresupuesto, ESTADO_PRESUPUESTO, estadoNorm
 import type { Menu } from './menus.ts';
 import type { Cobro } from './cobros.ts';
 import type { ComoSeDocumenta, Documento } from './boletas.ts';
+import { nombreConEmpresa } from './clientes.ts';
 
 export const HOJA_VENDEDORES = 'Vendedores';
 
@@ -352,6 +353,7 @@ export interface Venta {
   id: string;
   /** El grupo, para el número de la cotización. */
   grupo: string;
+  /** El nombre del cliente, con su empresa al lado si tiene (*Nombre · Empresa*, 2026-11-25). */
   cliente: string;
   fechaEvento: Fecha;
   total: number;
@@ -550,7 +552,7 @@ export function ventasDe(usuario: string, presupuestos: Presupuesto[], lineas: L
       const guardada = comisionCongelada(socio ? p.comisionSocio : p.comisionVendedor);
       const c = guardada ?? comisionDe(ficha, b, !!p.socio);
       return {
-        id: p.id, grupo: p.grupo || p.id, cliente: p.cliente || 'sin nombre', fechaEvento: p.fecha,
+        id: p.id, grupo: p.grupo || p.id, cliente: nombreConEmpresa(p.cliente || 'sin nombre', p.empresaCliente), fechaEvento: p.fecha,
         total: b.total, neto: b.neto, pagado, personas: b.personas,
         pagadaEl: pagadaRevisada,
         cancelada, comision: cancelada ? 0 : c.monto, detalle: cancelada ? 'cancelada: sin comisión' : c.detalle,

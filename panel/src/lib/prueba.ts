@@ -25,7 +25,7 @@ import * as Caida from './caida.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
-import { prepararLineas, esDiaPublico, clienteDe, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
+import { prepararLineas, esDiaPublico, clienteDe, conCliente, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
          alternativasDe, letraDe, principalDe, sigueViva, vivasDelGrupo, faltaElegir, paraElLink,
          ESTADOS_A_MANO, productoDe, showDe, reglaShowDe, showQuedaBajoMinimo, showBajoMinimoDe,
          reglaArriendoDe, minimoDeArriendo, esPublicoParaArriendo, arriendoQuedaBajoMinimo, arriendoDe } from './cotizar.ts';
@@ -44,7 +44,7 @@ import { pendientesDeAprobar, pendientesDeCupo, pendientesDeSobrecupo, juntarPen
 import { limiteSinAprobar, subeElCupo, marcaCupoPedido, cupoPedidoDe, cupoAlAprobar } from './cupo.ts';
 import { leerClientesDe, filaCliente, limpiarCliente, faltaEnCliente, parecidos,
          nuevoIdCliente, buscarClientes, migrarAClientes, ENCABEZADO_CLIENTES,
-         faltaParaFactura, type Cliente } from './clientes.ts';
+         faltaParaFactura, empresaAparte, nombreConEmpresa, type Cliente } from './clientes.ts';
 import { diaParaReservaManual, diaParaGanar, queLeHizo, deshacerDia, cupoParaGanar } from './dias.ts';
 import { valorSeguro } from './celdas.ts';
 import { tranquilidadDeCotizacion, devolucionSugerida, faltaDevolver, frasesCancelacion,
@@ -7986,6 +7986,86 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
      'anotada por error se distingue: no cuenta en las estadísticas');
   ok(Caida.motivoValido(' ') === null && Caida.motivoValido('Precio') === 'Precio',
      'sin motivo no se da por caída');
+}
+
+console.log('\nEl recontacto y la última nota, en todas partes (2026-11-25)');
+{
+  const A = await import('./agenda.ts');
+  const N = await import('./notas.ts');
+  const L = await import('./listaCotizaciones.ts');
+  const HOY = '2026-11-25';
+  const cot = (x: Record<string, unknown>) => ({ id: 'P', grupo: '', estado: 'Borrador', fecha: '2026-12-20', periodo: '',
+    creado: '2026-11-21 23:07', creadoPor: 'Carmen Barros', socio: '', idReserva: '', invitados: 0, validoHasta: '', enviada: '',
+    ultimoSeguimiento: '', descuento: 0, tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', cliente: 'X',
+    recontactar: '', redactarAntes: '', seguimientoDias: null, avisoEvento: null, notas: '', idCliente: 'C-1', ...x } as unknown as Presupuesto);
+
+  // La última nota: con la misma hora, la anotada después.
+  const iguales = [
+    { id: 'N-1', presupuesto: 'G', cuando: '2026-11-25 16:20', nota: 'hallo' },
+    { id: 'N-2', presupuesto: 'G', cuando: '2026-11-25 16:20', nota: 'hallo 2' },
+    { id: 'N-0', presupuesto: 'G', cuando: '2026-11-24 09:00', nota: 'ayer' }
+  ];
+  ok(N.ultimaNota(iguales, 'G')?.nota === 'hallo 2' && N.ordenarNotas(iguales).map((n) => n.nota).join() === 'hallo 2,hallo,ayer'
+     && N.notasPorDia(iguales)[0][1][0].nota === 'hallo 2',
+     'con la misma hora gana la que se anotó después (la de más abajo en la pestaña)');
+
+  // Lo que vino del CRM antiguo, como la primera nota.
+  const delCrm = N.notasDelCrm([
+    cot({ id: 'A', notas: 'Del CRM (20-11-2026): etapa Contactado · llegó por Marketing/Redes. (CRM-0067-a)' }),
+    cot({ id: 'B', grupo: 'A', notas: 'Del CRM (20-11-2026): la B repite' }),
+    cot({ id: 'C', notas: 'Una nota escrita a mano' })
+  ]);
+  ok(delCrm.length === 1 && delCrm[0].presupuesto === 'A' && delCrm[0].cuando === '2026-11-20'
+     && delCrm[0].quien === N.QUIEN_CRM && delCrm[0].nota === 'etapa Contactado · llegó por Marketing/Redes.' && delCrm[0].cliente === 'C-1',
+     'el texto del CRM es una nota por grupo, con su día, sin el encabezado ni la marca del importador; lo escrito a mano no');
+  const conCrm = [...delCrm, { ...iguales[1], presupuesto: 'A', cliente: '', quien: 'brasas', medio: '', fila: 3 }];
+  ok(N.ordenarNotas(conCrm)[0].nota === 'hallo 2' && N.ordenarNotas(conCrm).at(-1)?.quien === N.QUIEN_CRM
+     && !N.sePuedeCorregir(delCrm[0], 'brasas', '2026-11-20'),
+     'la del CRM queda como la más vieja, y no la corrige nadie');
+
+  // El recontacto elegido: lo que dice la pastilla 📞.
+  ok(A.recontactoDe(cot({ recontactar: '2026-11-24' }), HOY) === '2026-11-24'
+     && A.recontactoDe(cot({ estado: 'Perdida', recontactar: '2026-11-24' }), HOY) === ''
+     && A.recontactoDe(cot({ estado: 'Ganada', idReserva: 'R', fecha: '2026-11-20', recontactar: '2026-11-26' }), HOY) === ''
+     && A.recontactoDe(cot({}), HOY) === '',
+     'el recontacto es el día elegido, salvo en una perdida o en una ganada cuyo evento ya pasó');
+  ok(A.textoContacto('2026-11-22', HOY).texto === 'Contactar: atrasado 3 días' && A.textoContacto('2026-11-22', HOY).cuando === 'atrasado'
+     && A.textoContacto(HOY, HOY).texto === 'Contactar hoy'
+     && A.textoContacto('2026-12-02', HOY).texto === 'Contactar el mié 2 dic',
+     'la pastilla dice atrasado, hoy o el día');
+
+  // La Lista: Lo que viene y 📞 Recontactar.
+  const lista = [
+    cot({ id: 'D1', fecha: '2027-01-15', cliente: 'Enero' }),
+    cot({ id: 'D2', fecha: '2026-11-20', cliente: 'Pasada' }),
+    cot({ id: 'D3', fecha: '', periodo: 'marzo', cliente: 'Sin día' }),
+    cot({ id: 'D4', fecha: HOY, cliente: 'Hoy', recontactar: '2026-11-28' }),
+    cot({ id: 'D5', fecha: '2027-02-01', cliente: 'Atrasada', recontactar: '2026-11-23' })
+  ];
+  ok(lista.filter((p) => L.enLoQueViene(p, HOY)).map((p) => p.id).join() === 'D1,D3,D4,D5',
+     'Lo que viene: de hoy en adelante, de cualquier mes, y las que no tienen día');
+  const ctx = { hoy: HOY, todas: lista, cobros: [], lineas: [], ganadaEl: {}, seguimiento: { seguimientoDias: 5, avisoEvento: 14 } };
+  const conDia = lista.filter((p) => L.pasaFiltro(p, 'recontactar', ctx));
+  ok(L.ordenarPorRecontacto(conDia, HOY).map((p) => p.id).join() === 'D5,D4'
+     && L.cuentasDeRecontacto(lista, HOY).total === 2 && L.cuentasDeRecontacto(lista, HOY).atrasadas === 1,
+     '📞 Recontactar: las que tienen un día, la atrasada primero');
+  ok(L.proximosPasos(lista[4], ctx)[0]?.contacto === '2026-11-23',
+     'el día elegido llega a la fila de la lista para dibujarlo como pastilla');
+}
+
+console.log('\nLa empresa del cliente, al lado de su nombre (2026-11-25)');
+{
+  ok(empresaAparte('Ignacia Rojas', 'Constructora Maipo') === 'Constructora Maipo'
+     && nombreConEmpresa('Ignacia Rojas', 'Constructora Maipo') === 'Ignacia Rojas · Constructora Maipo',
+     'la empresa va al lado del nombre');
+  ok(empresaAparte('Viña Santa Rita', 'viña santa rita ') === '' && nombreConEmpresa('Viña Santa Rita', 'VIÑA SANTA RITA') === 'Viña Santa Rita',
+     'si la empresa es el mismo nombre, no se repite');
+  ok(empresaAparte('Ana Soto', '') === '' && nombreConEmpresa('Ana Soto', undefined) === 'Ana Soto',
+     'sin empresa, solo el nombre');
+  const fichas = [{ id: 'C-0009', nombre: 'Ana Soto', correo: 'ana@x.cl', telefono: '+56 9 1234 5678',
+    empresa: 'Andes SpA' }] as unknown as Cliente[];
+  const p = { id: 'P-1', idCliente: 'C-0009', cliente: '', email: '', telefono: '' } as unknown as import('./presupuestos.ts').Presupuesto;
+  ok(conCliente(p, fichas).empresaCliente === 'Andes SpA', 'la cotización trae la empresa de la ficha del cliente');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
