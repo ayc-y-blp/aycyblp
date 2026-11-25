@@ -297,8 +297,9 @@ honorarios**; la factura sigue con *IVA incluido / más IVA*.
 - **Las comisiones no cambian**: lo que cambia es lo que se le transfiere y lo que dice la boleta
   (*Pagarle*, el Informe, el link personal, la caja de la boleta). El equipo y los extras ya eran así.
 - **Lecturas de Google**: ninguna. **Ningún permiso cambió.** **Ayuda**: el `?` del Informe y los
-  textos de la ficha. **Las fotos de la ayuda de Vendedores y del Informe quedan por rehacer**: la
-  ficha ya no dice *retención incluida*.
+  textos de la ficha. **Las fotos de la ayuda de Vendedores y del Informe se rehicieron el mismo día**
+  (`ven-resumen`, `pag-vendedores`, `ger-vendedores`, `pag-informe`, `ger-informe`, `ope-informe`,
+  `pag-pagar`, `ger-pagar`): la ficha ya no dice *retención incluida*.
 
 ## La rotación de las cotizaciones del sitio (2026-11-25)
 

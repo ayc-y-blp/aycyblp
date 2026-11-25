@@ -525,7 +525,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   la boleta va por $648.968): la ficha pregunta solo *Con retención / Sin
   retención* (la factura no cambia) y las comisiones quedan como estaban. Ver
   `panel/CLAUDE.md`, "Con boleta, lo que gana es líquido". **Las fotos de la ayuda
-  de Vendedores e Informe quedan por rehacer.**
+  de Vendedores e Informe se rehicieron el mismo día.**
 - **La rotación de las cotizaciones del sitio** (25-11-2026, lo pidió el cliente):
   casilla *Participa en la rotación* en cada vendedor; cada cotización del sitio le
   toca al que sigue (`lib/rotacion.ts`); sin nadie marcado, vale *Las del sitio van
