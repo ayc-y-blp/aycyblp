@@ -34,6 +34,16 @@ más abajo; esto es la lista para revisar.
 **Siempre**
 - Proponer antes de aplicar. No inventar datos del negocio. Español de
   Chile, tuteo, sobrio.
+- **Una captura no es un sí** (regla del cliente, 2026-11-25: *"nunca más
+  hagas cambios de esta magnitud en el sitio sin preguntarme
+  explícitamente"*). Cuando el cliente manda una foto o pregunta *"¿qué
+  pasó ahí?"*, se diagnostica y **se propone**: qué se ve mal, qué se
+  cambiaría, en qué archivos y **qué otras pantallas toca** (una pieza
+  compartida llega a todas). **No se edita nada hasta su sí explícito.** La
+  excepción de *"si el pedido es claro y chico, se hace"* vale solo cuando
+  él pidió el cambio con palabras, no cuando mostró un problema. Nació de
+  un arreglo a `BuscarEnLista` que se aplicó sin preguntar a partir de una
+  captura.
 - Cada cambio deja escrito en este archivo —o en `panel/CLAUDE.md`— qué
   cambió y por qué.
 - **Mostrar sin preguntar** (regla del cliente, 2026-11-12): todo cambio
