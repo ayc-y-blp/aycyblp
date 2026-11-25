@@ -644,9 +644,16 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `panel/CLAUDE.md`, "Las *Notas internas* no salen en la cotización del
   cliente". **PR #368, mergeado el 25-11-2026.**
 - **Clientes en dos secciones** (25-11-2026, lo pidió el cliente): arriba *📞 Por
-  contactar*, por el día de recontacto, y abajo *Los demás*, de la A a la Z. **En
-  un PR, en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y
+  contactar*, por el día de recontacto, y abajo *Los demás*, de la A a la Z. **PR
+  #369, mergeado el 25-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio
+  15 de 15 después. Ver `panel/CLAUDE.md`, "El recontacto y
   la última nota, en todas partes".
+- **Cotizaciones: los botones de arriba no se bajan** (25-11-2026, lo marcó el
+  cliente con una foto del computador de un vendedor: *📋 Lista* había bajado sola
+  a una segunda fila). Si *Tus pendientes* no caben al lado, bajan enteros y los
+  botones fijos se quedan en su fila; una prueba nueva (`revisarFilaFija()`) lo
+  mide. El cliente dijo *"sí, hazlo y mergea"*. Ver `panel/CLAUDE.md`,
+  "Cotizaciones: los botones de arriba no se bajan".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

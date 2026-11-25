@@ -194,6 +194,31 @@ export async function revisarLineaDeLaFecha(page) {
 }
 
 /**
+ * **Los botones fijos de una fila no bajan** (2026-11-25, lo marcó el cliente
+ * con una foto del computador de un vendedor: en Cotizaciones, *📋 Lista*
+ * había bajado sola a una segunda fila, porque las pastillas de *Tus
+ * pendientes* —que cambian de largo según el día— no cabían). Una fila con
+ * `data-fila="barra"` marca sus botones fijos con `data-fila="fija"`: tienen
+ * que quedar todos en el mismo renglón. Lo que no cabe es lo que cambia, y
+ * baja entero (ver `Pendientes`).
+ */
+export async function revisarFilaFija(page) {
+  return page.evaluate(() => {
+    const malas = [];
+    for (const fila of document.querySelectorAll('[data-fila="barra"]')) {
+      const fijos = [...fila.querySelectorAll('[data-fila="fija"]')].filter((x) => x.offsetWidth > 0);
+      if (fijos.length < 2) continue;
+      const arriba = Math.min(...fijos.map((x) => x.getBoundingClientRect().top));
+      for (const x of fijos) {
+        const bajo = x.getBoundingClientRect().top - arriba;
+        if (bajo > 12) malas.push(`«${(x.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30)}» bajó ${Math.round(bajo)}px a otra fila`);
+      }
+    }
+    return malas;
+  });
+}
+
+/**
  * **El espacio se usa bien** (2026-11-22, regla del cliente: *"hay mucho
  * espacio libre… que lo anotas también como regla para que no te tengo que
  * acordar todo el rato de aprovechar bien los espacios"*). Mira lo que se ve

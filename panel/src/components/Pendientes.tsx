@@ -12,7 +12,7 @@
  * - **La lista son filas cortas** (`FilaPendiente`): quién, lo que importa y
  *   *Abrir →*.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import AyudaCorta from './AyudaCorta';
 import EmpresaCliente from './EmpresaCliente';
 
@@ -52,16 +52,29 @@ const CAJA: Record<TonoPendiente, string> = {
  * `lg:flex lg:flex-wrap`— y la lista que se abre, debajo, a todo el ancho.
  * La caja de esta pieza desaparece (`lg:contents`) y sus dos partes pasan a
  * ser de esa fila. En el celular no cambia nada.
+ *
+ * **Si no caben, bajan enteras a su propia fila** (2026-11-25, lo marcó el
+ * cliente con una foto del computador de un vendedor: *📋 Lista* había bajado
+ * sola a una segunda fila). Las pastillas cambian de largo según el día; con
+ * una fila que se dobla, lo que iba después de ellas —*Mías*, *Sin fecha*,
+ * *Lista*— bajaba, y con dos pastillas bajaba en cualquier pantalla. Ahora la
+ * fila marca `data-fila="barra"` y sus botones fijos `data-fila="fija"`:
+ * `usarCabeEnLaFila()` suma sus anchos con el de las pastillas y, si no caben,
+ * las pastillas pasan debajo, a todo el ancho, y los botones fijos no se
+ * mueven de su lugar.
  */
 export default function Pendientes({ items, titulo = 'Pendientes', enFila = false }: {
   items: Pendiente[]; titulo?: string; enFila?: boolean;
 }) {
   const [abierta, setAbierta] = useState('');
+  const grupo = useRef<HTMLDivElement>(null);
+  const abajo = usarCabeEnLaFila(grupo, enFila && items.length > 0);
   if (!items.length) return null;
   const abiertaItem = items.find((x) => x.clave === abierta);
   return (
     <div className={`mb-4 ${enFila ? 'lg:contents' : 'lg:mb-3'}`}>
-      <div className={`flex flex-wrap items-center gap-2 ${enFila ? 'lg:order-2' : ''}`} role="group" aria-label={titulo}>
+      <div ref={grupo} className={`flex flex-wrap items-center gap-2 ${enFila ? (abajo ? 'lg:order-5 lg:basis-full' : 'lg:order-2') : ''}`}
+        role="group" aria-label={titulo}>
         <span className="text-[13px] font-semibold uppercase tracking-widest text-hueso/65">{titulo}</span>
         {items.map((x) => (
           <button key={x.clave} type="button" aria-expanded={abierta === x.clave}
@@ -88,6 +101,43 @@ export default function Pendientes({ items, titulo = 'Pendientes', enFila = fals
       )}
     </div>
   );
+}
+
+/**
+ * ¿Caben las pastillas en la fila de botones? Suma el ancho de los botones
+ * fijos de la fila (`data-fila="fija"`), el de las pastillas y los espacios
+ * entre ellos (la fila va con `gap-2`: 8px) y lo compara con el ancho de la
+ * fila. **Mide el ancho natural de cada pastilla**, que es el mismo esté arriba
+ * o abajo: por eso no salta de un lado a otro. Solo desde 1024px, que es donde
+ * la fila existe.
+ */
+function usarCabeEnLaFila(grupo: RefObject<HTMLDivElement | null>, activo: boolean): boolean {
+  const [abajo, setAbajo] = useState(false);
+  const medir = useRef<() => void>(() => {});
+  medir.current = () => {
+    const g = grupo.current;
+    const fila = g?.closest<HTMLElement>('[data-fila="barra"]');
+    if (!activo || !g || !fila || !window.matchMedia('(min-width: 1024px)').matches) { setAbajo(false); return; }
+    const ESPACIO = 8;
+    const fijos = [...fila.querySelectorAll<HTMLElement>('[data-fila="fija"]')].filter((x) => x.offsetWidth > 0);
+    const partes = [...g.children].map((x) => (x as HTMLElement).offsetWidth);
+    const pastillas = partes.reduce((a, b) => a + b, 0) + ESPACIO * Math.max(0, partes.length - 1);
+    const botones = fijos.reduce((a, x) => a + x.offsetWidth, 0);
+    // Los botones, el espacio que empuja a la derecha y las pastillas: n + 2
+    // piezas, n + 1 espacios.
+    setAbajo(botones + pastillas + ESPACIO * (fijos.length + 1) > fila.clientWidth);
+  };
+  // Después de cada dibujo: cambian las pastillas, *Mías 4* pasa a *Mías 12*…
+  useEffect(() => { medir.current(); });
+  // Y cuando cambia el ancho de la ventana.
+  useEffect(() => {
+    const fila = grupo.current?.closest('[data-fila="barra"]');
+    if (!activo || !fila || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => medir.current());
+    ro.observe(fila);
+    return () => ro.disconnect();
+  }, [activo, grupo]);
+  return abajo;
 }
 
 /** Una fila corta de una lista de pendientes: quién, el dato y *Abrir →*. */
