@@ -1077,6 +1077,18 @@ en cuatro lugares**: la tarjeta de *Actividades adicionales* de
 promociones y dossier (regla en el `<style>` de cada uno). Como cambiaron
 socios y dossier, se rehicieron sus PDF.
 
+### La foto del castillo inflable en Actividades (2026-11-25)
+
+Lo pidió el cliente con fotos nuevas: *"puedes usar la de los dos castillos
+inflables para actividades"*. La tarjeta *Castillo inflable* de
+`actividades.html` lleva ahora `imgs3/castillo-inflable-juegos.jpg` (niños
+jugando en el pasto con el inflable de fondo; 800×1199, sacada de la imagen
+que mandó al chat). **Solo en Actividades**: la de siempre
+(`castillo-inflable.jpg`) sigue en la portada, la reserva y los tres
+landings, porque el cliente nombró Actividades. Las demás fotos que mandó
+ese día (karting, el aniversario con el logo de un cliente, la parrilla, el
+niño a caballo) esperan sus instrucciones.
+
 ### El título de los bloques foto + texto, más grande en el computador (2026-11-23)
 
 Lo pidió el cliente sobre *El show ecuestre*: *"agranda un poco el título
