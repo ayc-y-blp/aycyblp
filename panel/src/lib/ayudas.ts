@@ -1453,7 +1453,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       + 'Las otras dos lo perdonan: siempre, o solo de lunes a viernes.',
       'Un día que abrimos al público no lleva arriendo, y ahí el show va incluido.',
       'Si el cliente marca *Quiero el lugar exclusivo* en el cotizador del sitio, se suma el arriendo del recinto a su '
-      + 'precio estándar, el del producto de tipo Arriendo de *Productos*, y sin el descuento de la promoción: ese '
+      + 'precio estándar, el del producto de tipo Arriendo de *Productos* (de lunes a viernes, el de Configuración → *Arriendo de lunes a viernes*, si está puesto), y sin el descuento de la promoción: ese '
       + 'lo conversa después el vendedor. Si la promoción perdona el arriendo ese día, va incluido. La cotización llega '
       + 'marcada exclusiva.'
     ]

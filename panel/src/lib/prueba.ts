@@ -7478,6 +7478,19 @@ console.log('\nLa agenda del vendedor y sus notas (2026-11-23)');
          && PPx.cuentasDe(exSab.lineas, pres.descuento).total === exSab.cuentas.total,
          'la cotización que llega al vendedor sale marcada exclusiva, sin descuento sobre el total, y con el mismo total del sitio');
     }
+    // El precio estándar de lunes a viernes sale de Configuración (2026-11-25); el fin de semana, del catálogo.
+    const martes = { ...pide, exclusivo: true, fecha: '2026-12-01' };
+    const mSin = PR.cotizarPromocion(conDesc, martes, ctx);
+    const mCon = PR.cotizarPromocion(conDesc, martes, { ...ctx, arriendoSemana: 1500000 });
+    const sabCon = PR.cotizarPromocion(conDesc, { ...pide, exclusivo: true }, { ...ctx, arriendoSemana: 1500000 });
+    ok(mSin.ok && mCon.ok && mSin.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 2500000)
+       && mCon.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 1500000 && l.descuento === 0),
+       'de lunes a viernes, el lugar exclusivo usa el número de Configuración; sin él, el precio del catálogo');
+    ok(sabCon.ok && sabCon.lineas.some((l) => l.concepto === 'Arriendo del recinto' && l.precio === 2500000),
+       'el sábado el arriendo sigue siendo el del catálogo aunque Configuración tenga precio de semana');
+    ok(PR.precioArriendoEstandar(cat.find((m) => m.nombre === 'Arriendo del recinto')!, '2026-12-05', 1500000) === 2500000
+       && PR.precioArriendoEstandar(cat.find((m) => m.nombre === 'Arriendo del recinto')!, '2026-12-04', 1500000) === 1500000,
+       'precioArriendoEstandar: viernes con el de semana, sábado con el del catálogo');
     // De lunes a viernes, la promoción que perdona el arriendo lo perdona también acá.
     const combEx = PR.cotizarPromocion(combate, { adultos: 12, ninos: 0, menu: 'Lo Pirque', suma: [], exclusivo: true, fecha: '2026-12-01' }, ctx);
     ok(combEx.ok && combEx.exclusivoGratis && !combEx.exclusivo && !combEx.descuentoEnLineas && combEx.lineas.length === 1

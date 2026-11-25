@@ -444,9 +444,21 @@
       var exO = el('label', 'cot-opcion');
       var exC = el('input'); exC.type = 'checkbox';
       var exTexto = el('span', 'cot-opcion-texto');
-      exTexto.append(el('strong', '', T.exclusivo),
-        el('span', 'cot-precio', promo.arriendoIncluido ? T.incluido
-          : T.exclusivoPrecio.replace('{m}', pesos(promo.arriendo.precio) + (promo.arriendo.masIva ? ' ' + T.masIva : ''))));
+      var exPrecio = el('span', 'cot-precio');
+      // El precio estándar depende del día: de lunes a viernes puede ser otro
+      // (Configuración → arriendoSemana). Se reescribe al cambiar la fecha.
+      var precioExclusivo = function () {
+        if (promo.arriendoIncluido) return T.incluido;
+        var p = promo.arriendo.precio;
+        if (promo.arriendoSemana > 0 && estado.fecha) {
+          var d = new Date(estado.fecha + 'T12:00:00').getDay();
+          if (d >= 1 && d <= 5) p = promo.arriendoSemana;
+        }
+        return T.exclusivoPrecio.replace('{m}', pesos(p) + (promo.arriendo.masIva ? ' ' + T.masIva : ''));
+      };
+      exPrecio.textContent = precioExclusivo();
+      fecha.addEventListener('change', function () { exPrecio.textContent = precioExclusivo(); });
+      exTexto.append(el('strong', '', T.exclusivo), exPrecio);
       exO.append(exC, exTexto); exCaja.appendChild(exO);
       exC.addEventListener('change', function () { estado.exclusivo = exC.checked; calcular(); });
       p1.appendChild(exCaja);

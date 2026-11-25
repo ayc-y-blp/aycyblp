@@ -1194,10 +1194,18 @@ hace seguimiento"*. Hasta ese día el cotizador **no preguntaba ¿exclusivo?**
   líneas salen **de lista** (el descuento es una fila aparte).
 - **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
   **Ayuda**: `promoArriendo` y `promoEnCotizacion`.
-- **Lo que queda abierto**: el precio estándar es el del único producto de
-  tipo Arriendo del catálogo. **El sitio anuncia $2.500.000 los fines de semana
-  y $1.500.000 de lunes a viernes**: si el estándar de un día de semana tiene
-  que ser otro, hace falta un segundo producto o un número en Configuración.
+- **El precio de lunes a viernes, en Configuración** (2026-11-25, lo pidió el
+  cliente: *"sí agrega número en configuración"*): *Configuración → Extras y
+  arriendo → Eventos exclusivos → **Arriendo de lunes a viernes*** (`arriendoSemana`,
+  clave `arriendo_semana`). El sitio anuncia $2.500.000 los fines de semana y
+  $1.500.000 de lunes a viernes: el producto Arriendo del catálogo tiene el
+  primero, y este número, el segundo. Va en los mismos términos del producto
+  (+ IVA o IVA incluido). **En 0, el del catálogo todos los días.** La cuenta es
+  `precioArriendoEstandar()` (`lib/promociones.ts`): la misma para lo que se
+  cotiza y para lo que el sitio muestra, que lo recibe como `arriendoSemana` en
+  `/api/publico/promociones` y cambia la etiqueta de la casilla según el día
+  elegido. Un `cotizador.js` de antes ignora el campo. **Lecturas de Google**:
+  `/api/publico/promociones` suma `Config` a su tanda (una más cada 5 minutos).
 - **Probado**: `npm run prueba` (el sábado con y sin lugar exclusivo, el
   descuento solo sobre el menú, el martes con la promoción que perdona el
   arriendo, el día sin exclusivo, la cotización que se guarda con el mismo total

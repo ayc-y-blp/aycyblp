@@ -505,6 +505,8 @@ export interface ContextoCotizar {
   hoy: string;
   /** Los días que no se arriendan en exclusiva (Configuración): el sitio tampoco los ofrece. */
   fechasSinExclusivo?: string[];
+  /** El arriendo estándar de lunes a viernes de Configuración; 0 o sin dato, el del catálogo. */
+  arriendoSemana?: number;
 }
 
 /**
@@ -623,7 +625,7 @@ export function cotizarPromocion(promo: Promocion | undefined, e: Eleccion, ctx:
     const a = arriendoDelCatalogo(ctx.catalogo);
     if (!a || a.moneda === MONEDA.uf || !(precioParaCotizar(a) > 0)) return { ok: false, codigo: 'sinPrecio' };
     entrantes.push({
-      presupuesto: '', concepto: a.nombre, cantidad: 1, precio: precioParaCotizar(a), personas: 0,
+      presupuesto: '', concepto: a.nombre, cantidad: 1, precio: precioArriendoEstandar(a, e.fecha, ctx.arriendoSemana), personas: 0,
       ivaIncluido: a.iva !== IVA_PRECIO.mas, ...textosDelProducto(a)
     });
   }
@@ -697,8 +699,19 @@ export interface PromocionSitio {
    * precio. Es el del catálogo, el mismo con que se cotiza.
    */
   arriendo: ProductoSitio | null;
+  /** El precio estándar de lunes a viernes (Configuración); 0, el de `arriendo` todos los días. */
+  arriendoSemana: number;
   /** Si la promoción nunca cobra arriendo (*Sin arriendo*): el lugar exclusivo va incluido. */
   arriendoIncluido: boolean;
+}
+
+/**
+ * **El precio estándar del arriendo ese día** (2026-11-25): el del catálogo, salvo de lunes a
+ * viernes con el número de Configuración puesto. Es la misma cuenta del cotizador y del sitio.
+ */
+export function precioArriendoEstandar(a: Menu, fecha: string, semana?: number): number {
+  const d = new Date(Number(fecha.slice(0, 4)), Number(fecha.slice(5, 7)) - 1, Number(fecha.slice(8, 10))).getDay();
+  return semana && semana > 0 && d >= 1 && d <= 5 ? Math.round(semana) : precioParaCotizar(a);
 }
 
 const paraSitio = (m: Menu): ProductoSitio => ({
@@ -712,7 +725,7 @@ const paraSitio = (m: Menu): ProductoSitio => ({
  * su bloque se queda con el botón de WhatsApp, en vez de un cotizador que no
  * puede cotizar.
  */
-export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): PromocionSitio[] {
+export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], arriendoSemana = 0): PromocionSitio[] {
   const salida: PromocionSitio[] = [];
   for (const p of promos) {
     if (!p.activa || !p.sitio || !p.cotizador) continue;
@@ -736,6 +749,7 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[]): P
       anticipacion: p.anticipacion,
       arriendo: arriendoCat && arriendoCat.moneda !== MONEDA.uf && precioParaCotizar(arriendoCat) > 0
         ? paraSitio(arriendoCat) : null,
+      arriendoSemana: arriendoCat && arriendoSemana > 0 ? Math.round(arriendoSemana) : 0,
       arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca
     });
   }

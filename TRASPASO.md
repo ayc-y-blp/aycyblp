@@ -515,10 +515,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   promoción** (que pasa a ir línea por línea, dejando afuera el arriendo), y la
   cotización llega marcada exclusiva. Toca el sitio (`cotizador.js`, en los tres
   idiomas) y el panel (`lib/promociones.ts`, la ruta pública y la pastilla de la
-  promoción). **En un PR, en preview hasta el *"mergea"*.** Queda por confirmar
-  con el cliente: el precio estándar de un día de semana (el sitio dice
-  $1.500.000) y a qué se refería con *"la retroencuesta"* en el mismo mensaje
-  (ver `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`, "El lugar
+  promoción). **En un PR, en preview hasta el *"mergea"*.** El precio de lunes a
+  viernes es un número en Configuración (*Arriendo de lunes a viernes*, en 0 vale
+  el del catálogo): el cliente tiene que escribir $1.500.000 allí, igual que el
+  sitio (ver `CLAUDE.md`, "El cotizador de promociones", y `panel/CLAUDE.md`, "El lugar
   exclusivo en el cotizador").
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
