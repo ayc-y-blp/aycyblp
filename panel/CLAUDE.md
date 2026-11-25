@@ -1197,6 +1197,12 @@ de la configuración"*.
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
   `promoMenu`, `promoSuma`, `promoCondicion` y uno nuevo, `promoShow`.
 
+- **Una línea fina entre *Adultos* y *Niños*** (2026-11-25, lo pidió el
+  cliente con una foto: *"aquí ayuda con una mini separación entre adultos y
+  niños"*): `FilaSeccion` con `separada`, la misma línea que separa los
+  renglones de *Extras*. Sin otro marco. La ficha sigue cabiendo: 629px a
+  1280×650.
+
 ### Se cotiza con las reglas del vendedor (`cotizarPromocion()`)
 
 La misma función para lo que ve el cliente y lo que se guarda: las líneas pasan
