@@ -125,6 +125,11 @@ export const PANTALLAS = [
     await p.locator('button:visible', { hasText: /^👥 Todos/ }).first().click().catch(() => {});
     await p.locator('button:visible', { hasText: /Por contactar/ }).first().click(); await p.waitForTimeout(300);
   }],
+  // **👤 Por vendedor…** (2026-11-25): Clientes filtrado por un vendedor.
+  ['clientes-por-vendedor', '/clientes', async (p) => {
+    await p.locator('button:visible', { hasText: /Por vendedor/ }).first().click(); await p.waitForTimeout(200);
+    await p.locator('button:visible', { hasText: /^Jorge/ }).first().click(); await p.waitForTimeout(300);
+  }],
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],

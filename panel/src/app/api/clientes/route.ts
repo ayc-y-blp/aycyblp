@@ -15,7 +15,7 @@ import { puede } from '@/lib/auth';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import { HOJA_NOTAS, notasVisibles, notasDelCrm, puedeVerNotas, type Nota } from '@/lib/notas';
 import { recontactoDe } from '@/lib/agenda';
-import { vendedoresParaAsignar, estaAbierta } from '@/lib/asignar';
+import { vendedoresParaAsignar, estaAbierta, clientesPorVendedor } from '@/lib/asignar';
 import type { Cliente } from '@/lib/clientes';
 import { alcanceDeContacto, recortarCliente, clientePropio, estaTapado } from '@/lib/privacidad';
 import { ahoraEnChile } from '@/lib/bitacora';
@@ -132,11 +132,17 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       // cuántas cotizaciones abiertas y ganadas tiene cada uno, para decirlo
       // antes de confirmar. Solo para quien puede cambiar el vendedor.
       // `Usuarios` va en la misma tanda: ninguna lectura más.
-      ...(puede(quien.rol, 'asignarVendedor') ? {
-        vendedores: vendedoresParaAsignar(await leerUsuarios()),
-        abiertas: contarPorCliente(presupuestos.filter(estaAbierta)),
-        ganadas: contarPorCliente(presupuestos.filter((p) => !!p.idReserva))
-      } : {})
+      ...(puede(quien.rol, 'asignarVendedor') ? await (async () => {
+        const vendedores = vendedoresParaAsignar(await leerUsuarios());
+        return {
+          vendedores,
+          abiertas: contarPorCliente(presupuestos.filter(estaAbierta)),
+          ganadas: contarPorCliente(presupuestos.filter((p) => !!p.idReserva)),
+          // **👤 Por vendedor…** (2026-11-25): los clientes de cada uno, para
+          // filtrar. Las mismas cuentas, de lo ya leído: ninguna lectura más.
+          porVendedor: clientesPorVendedor(vendedores, clientes, presupuestos)
+        };
+      })() : {})
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

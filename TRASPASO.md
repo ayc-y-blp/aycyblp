@@ -631,6 +631,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   base; si se sale sin cambiarlo, vuelve a blanco y sigue al sitio. **En un PR,
   en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "Qué incluye cada
   producto, escrito en su ficha".
+- **Clientes: *👤 Por vendedor…*** (25-11-2026, lo pidió el cliente): pagos, la
+  gerencia y el administrador filtran los clientes de un vendedor. En el mismo
+  PR que lo del texto de *Productos*. Ver `panel/CLAUDE.md`, "Clientes:
+  filtrar por vendedor".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

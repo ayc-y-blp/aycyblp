@@ -486,7 +486,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'N° de cada una), y con Todas cada nota dice de qué cotización es.',
       'La gerencia, el encargado de pagos y el administrador pueden cambiar '
       + 'el vendedor de un cliente: al abrir su ficha, *Vendedor: … · Cambiar…*. '
-      + 'Lo mismo en una cotización, en el paso Evento.'
+      + 'Lo mismo en una cotización, en el paso Evento.',
+      'Ellos tienen además 👤 Por vendedor…: eliges un vendedor en el buscador y '
+      + 'quedan solo sus clientes, los que creó o a los que les cotizó. Se suma a '
+      + '📞 Por contactar y al buscador; el ✕ del botón lo suelta.'
     ],
     pasos: [
       'Busca primero: por nombre, empresa, teléfono, correo o RUT.',

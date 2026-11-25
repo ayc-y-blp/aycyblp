@@ -8068,5 +8068,17 @@ console.log('\nLa empresa del cliente, al lado de su nombre (2026-11-25)');
   ok(conCliente(p, fichas).empresaCliente === 'Andes SpA', 'la cotización trae la empresa de la ficha del cliente');
 }
 
+console.log('\nClientes: filtrar por vendedor (2026-11-25)');
+{
+  const A = await import('./asignar.ts');
+  const vend = [{ usuario: 'jorge', nombre: 'Jorge' }, { usuario: 'daniela', nombre: 'Daniela Rojas' }, { usuario: 'nadie', nombre: 'Nadie' }];
+  const fichas = [{ id: 'C-1', creadoPor: 'Jorge' }, { id: 'C-2', creadoPor: 'Daniela Rojas' }, { id: 'C-3', creadoPor: 'admin' }];
+  const pres = [{ idCliente: 'C-3', creadoPor: 'daniela' }, { idCliente: 'C-1', creadoPor: 'Daniela Rojas' }];
+  const por = A.clientesPorVendedor(vend, fichas, pres);
+  ok(por.jorge.join() === 'C-1', 'los clientes que creó el vendedor, por su nombre');
+  ok(por.daniela.sort().join() === 'C-1,C-2,C-3', 'y los que tienen una cotización suya, por usuario o por nombre');
+  ok(por.nadie.length === 0, 'un vendedor sin clientes sale vacío');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

@@ -232,6 +232,27 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Clientes: filtrar por vendedor (2026-11-25)
+
+Lo pidió el cliente: *"pagos, gerencia y admin deberían poder filtrar por
+vendedor en clientes"*.
+
+- ***👤 Por vendedor…***, al lado de *Míos / Todos* y *📞 Por contactar*: la
+  misma pieza de Cotizaciones → *Lista*. Abre el buscador (`BuscarEnLista`) con
+  los vendedores que tienen clientes y cuántos; elegido, ***👤 Jorge 4 ✕*** lo
+  suelta. Se suma a *📞 Por contactar* y al buscador. *Míos* o *Todos* lo
+  sueltan también.
+- **Los clientes de un vendedor** son los que creó o a los que les cotizó —la
+  cuenta del filtro *Míos*, `clientePropio()`—, por su usuario o su nombre
+  (`clientesPorVendedor()` en `lib/asignar.ts`, con pruebas).
+- **Quién**: los que pueden cambiar el vendedor de un cliente
+  (`asignarVendedor`: pagos, la gerencia y el administrador). `/api/clientes`
+  manda `porVendedor` solo a ellos, junto con la lista de vendedores que ya les
+  mandaba; sin eso, el botón no sale. **Ningún permiso nuevo.**
+- **Lecturas de Google**: ninguna; sale de lo que la ruta ya leía.
+- **Ayuda**: el `?` de Clientes. **Ventanas**: la pantalla
+  `clientes-por-vendedor` entra en la prueba de espacio.
+
 ## La empresa del cliente, al lado de su nombre (2026-11-25)
 
 Lo pidió el cliente: *"y donde mostramos cotizaciones y mostramos el nombre del

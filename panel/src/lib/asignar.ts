@@ -30,6 +30,7 @@ import { ESTADO_PRESUPUESTO, estadoNormal, type Presupuesto } from './presupuest
 import { normalizar } from './columnas.ts';
 import type { Cliente } from './clientes.ts';
 import type { Usuario } from './usuarios.ts';
+import { clientePropio } from './privacidad.ts';
 
 export interface VendedorParaAsignar { usuario: string; nombre: string; rol?: string }
 
@@ -40,6 +41,23 @@ export interface VendedorParaAsignar { usuario: string; nombre: string; rol?: st
  * CRM tiene cuenta con otro rol, y no se le podía pasar un cliente. Los
  * vendedores van primero; después los demás, por nombre.
  */
+/**
+ * **Los clientes de cada vendedor** (2026-11-25, lo pidió el cliente: *"pagos,
+ * gerencia y admin deberían poder filtrar por vendedor en clientes"*): los que
+ * creó o a los que les cotizó —la misma cuenta del filtro *Míos*,
+ * `clientePropio()`—, por su usuario o por su nombre, que es lo que guardan
+ * `Creado por` de las fichas y las cotizaciones. Solo los ids.
+ */
+export function clientesPorVendedor(
+  vendedores: Pick<VendedorParaAsignar, 'usuario' | 'nombre'>[],
+  clientes: Pick<Cliente, 'id' | 'creadoPor'>[],
+  presupuestos: { idCliente?: string; creadoPor: string }[]
+): Record<string, string[]> {
+  return Object.fromEntries(vendedores.map((v) => [v.usuario, clientes
+    .filter((c) => clientePropio(c, v.usuario, presupuestos) || (!!v.nombre && clientePropio(c, v.nombre, presupuestos)))
+    .map((c) => c.id)]));
+}
+
 export function vendedoresParaAsignar(
   usuarios: Pick<Usuario, 'usuario' | 'nombre' | 'rol' | 'activo'>[]
 ): VendedorParaAsignar[] {
