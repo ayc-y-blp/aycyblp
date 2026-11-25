@@ -54,6 +54,11 @@ const SOLO_MEDIR = !!process.env.VENTANAS_ANCHO;
  * equipo del día, que crece con lo que tenga abierto o con las reservas.
  */
 export const NO_CABEN = {
+  // **El cotizador en su marco** (2026-11-25, lo pidió el cliente: *"en un marco
+  // y en un campo bien visible, que aquí estoy dentro de un configurador"*), y el
+  // link en su propia fila: 629 → 677px. Sin juntar el link con otra cosa —lo que
+  // pidió separar— no cabe.
+  'ficha-promocion': 677,
   // El formulario de un ajuste abierto dentro de la línea de una persona.
   'v-equipo-del-dia-con-ajuste': 839,
   // La cara de reservas es una lista: crece con las reservas del día.

@@ -545,6 +545,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
     `cultura/` y el skill `ritual-de-trabajo`.
   - **#354, una línea fina entre *Adultos* y *Niños*** en la ficha de una
     promoción (pedido con palabras). Ver `panel/CLAUDE.md`, "La ficha, ordenada".
+- **La ficha de una promoción: el link en su fila y el cotizador en su marco**
+  (25-11-2026, lo pidió el cliente): marco dorado *🧮 Cotizador* con Menús,
+  Condición, Extras, Fuera del local y Anticipación. Mide 677px en 1280×650, 27
+  más que la pantalla, anotado en `NO_CABEN`. Ver `panel/CLAUDE.md`, "La ficha,
+  ordenada".
 - **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un

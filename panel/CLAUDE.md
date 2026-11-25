@@ -1202,6 +1202,20 @@ de la configuración"*.
   niños"*): `FilaSeccion` con `separada`, la misma línea que separa los
   renglones de *Extras*. Sin otro marco. La ficha sigue cabiendo: 629px a
   1280×650.
+- **El link en su fila; el cotizador, en su marco** (2026-11-25, lo pidió el
+  cliente: *"cotizador y link tienen que separarse. El cotizador es el cuadro
+  donde se configura menús, extras, condición, fuera del local, la
+  anticipación… en un marco y en un campo bien visible, que aquí estoy dentro
+  de un configurador de la cotización"*). Arriba, lo de la página: *Nombre*,
+  *En el sitio* y *Link* (con *Copiar · EN · PT*). Debajo, un marco de grupo
+  dorado (`marcoGrupo('oro')`, `TITULO_GRUPO`) **🧮 Cotizador**, con
+  *⏳ Anticipación* y *En el sitio: Sí / No, solo WhatsApp* en su fila de título,
+  y adentro Menús, Condición, Extras y Fuera del local. La anticipación subió a
+  esa fila porque es de una línea y, como sección suelta, quedaba corrida
+  respecto de los tramos (`revisarAlineacion()`). La ayuda se partió en
+  `promoCotizador` (qué es el marco y el Sí/No) y `promoLink` (nueva).
+  **No cabe en 1280×650**: 677px (era 629), anotado en `NO_CABEN`. Recuperarlo
+  pediría juntar el link con otra fila, que es lo que el cliente pidió separar.
 
 ### Se cotiza con las reglas del vendedor (`cotizarPromocion()`)
 
