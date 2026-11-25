@@ -303,6 +303,7 @@
 
   /* ---------- utilidades ---------- */
 
+  function quitarTildes(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
   function pesos(n) { return '$' + Math.round(n).toLocaleString(T.locale) + T.moneda; }
   /**
    * **El ? de cada producto** (2026-11-25, lo pidió el cliente: *"en un
@@ -612,12 +613,21 @@
     }
     var extras = bloque && bloque.querySelector('.paquete-extras');
     if (extras && Array.isArray(promo.suma)) {
-      if (!promo.suma.length) extras.hidden = true;
+      // **Lo que la página ya dice que incluye no se repite en *Se puede sumar*** (2026-11-25,
+      // lo pidió el cliente: el Gran Premio incluye las carreras de karting, y en el panel el
+      // karting queda como *Se suma* porque no todos los que comen quieren andar). Es solo la
+      // frase del bloque: el cotizador sigue ofreciendo el extra con su *¿Cuántos?*.
+      var incluido = quitarTildes(Array.prototype.map.call(
+        bloque.querySelectorAll('.paquete-incluye li, .lede'), function (n) { return n.textContent; }).join(' '));
+      var porSumar = promo.suma.filter(function (x) {
+        return (' ' + incluido.replace(/[^a-z0-9]+/g, ' ') + ' ').indexOf(' ' + quitarTildes(x.nombre).replace(/[^a-z0-9]+/g, ' ').trim() + ' ') < 0;
+      });
+      if (!porSumar.length) extras.hidden = true;
       else {
         var rot = extras.querySelector('b');
         extras.textContent = '';
         if (rot) extras.append(rot, document.createTextNode(' '));
-        extras.appendChild(document.createTextNode(promo.suma.map(function (x) { return x.nombre; }).join(' · ')));
+        extras.appendChild(document.createTextNode(porSumar.map(function (x) { return x.nombre; }).join(' · ')));
       }
     }
 

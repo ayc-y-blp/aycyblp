@@ -1488,6 +1488,7 @@ solo en `promociones.html`). La mitad del panel —las promociones en
     dentro del CSS de una página confunde a `traducir.py`, que deja de traducir
     el resto de esa página sin decir por qué (avisa *llaves que ya no usa
     ninguna página*).
+- **Lo que la página ya incluye no se repite en *Se puede sumar*** (2026-11-25, lo pidió el cliente: *"solo sácalo de la frase se suma porque es promo de karting, pero la config queda con se suma porque tal vez no todos quieren andar en karting entre los que quieren comer"*). La frase del bloque (`.paquete-extras`) esconde los extras que el *Incluye* o la bajada de ese mismo bloque ya nombran —en el Gran Premio, el karting—. **Solo la frase**: en el panel el karting sigue como *Se suma*, y el cotizador lo ofrece con su *¿Cuántos?*. Lo decide `cotizador.js` comparando nombres sin tildes, palabra por palabra.
 - **El cotizador, con fondo propio** (2026-11-25, lo pidió el cliente: *"se tiene
   que notar más el cotizador, cámbiale el fondo a un tono decente"*): el dorado
   de la marca al 13% sobre el fondo de la página —de día un beige tibio, de noche
