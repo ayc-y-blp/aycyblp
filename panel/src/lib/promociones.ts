@@ -731,6 +731,13 @@ export interface PromocionSitio {
    * dice si va con el menú de la casa arriba.
    */
   detalles: Record<string, { detalle: string; casa: boolean }>;
+  /**
+   * **Los tramos de descuento por grupo** (2026-11-25, lo pidió el cliente:
+   * *"de forma simple y promocional mostramos los descuentos"*): el primero
+   * (`minimo`, `descuento`) y los de *Más tramos*, de menos a más gente, solo
+   * los que descuentan algo. El sitio los muestra como *Descuento por grupo*.
+   */
+  tramos: { desde: number; descuento: number }[];
 }
 
 /**
@@ -794,7 +801,9 @@ export function promocionesParaElSitio(promos: Promocion[], catalogo: Menu[], ar
       arriendoSemana: arriendoCat && (arriendo.semana ?? 0) > 0 ? Math.round(arriendo.semana!) : 0,
       arriendoFinde: arriendoCat && (arriendo.finde ?? 0) > 0 ? Math.round(arriendo.finde!) : 0,
       arriendoIncluido: p.arriendo === ARRIENDO_PROMO.nunca,
-      detalles: detallesPropios(todos as Menu[])
+      detalles: detallesPropios(todos as Menu[]),
+      tramos: [{ desde: Math.max(1, p.minimo), descuento: p.descuento }, ...(p.tramos ?? [])]
+        .filter((t) => t.descuento > 0)
     });
   }
   return salida;

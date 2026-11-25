@@ -1312,6 +1312,11 @@ de la configuración"*.
   Promoción…*), la escena mide 620.
 - **Lecturas de Google**: ninguna más. **Ningún permiso cambió.** **Ayuda**:
   `promoMenu`, `promoSuma`, `promoCondicion` y uno nuevo, `promoShow`.
+- **Los tramos y los extras se ven en el sitio** (2026-11-25, lo pidió el
+  cliente): `promocionesParaElSitio()` manda `tramos` —el primero y los de
+  *Más tramos*, solo con descuento— y `promociones.html` los muestra como
+  *Descuento por grupo*; *Se puede sumar* del bloque sale de `suma`. Ver
+  `CLAUDE.md` de la raíz, "El cotizador de promociones". Ninguna lectura más.
 
 - **Una línea fina entre *Adultos* y *Niños*** (2026-11-25, lo pidió el
   cliente con una foto: *"aquí ayuda con una mini separación entre adultos y

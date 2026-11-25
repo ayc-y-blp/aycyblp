@@ -77,6 +77,8 @@
       prueba: 'Versión de prueba: se calculó, pero no se mandó.',
       mensaje: 'Hola, cotizé {promo} en el sitio. N° {n}.',
       desde: 'desde', porPersonaIva: '+ IVA por persona', enAdelante: 'personas en adelante',
+      descGrupo: 'Descuento por grupo', descFrase: 'Mientras más son, menos paga cada uno.',
+      descDesde: 'desde {n} personas', descHasta: 'hasta −{d}% por grupo', descUno: '−{d}% por grupo',
       soloLink: 'solo con el link', noSale: 'no sale en el sitio',
       exclusivo: 'Quiero el lugar exclusivo', exclusivoPrecio: '{m} · precio estándar',
       arriendoEstandar: 'Arriendo a precio estándar, sin descuento de la promoción. Tu ejecutivo lo conversa contigo.',
@@ -115,6 +117,8 @@
       prueba: 'Test version: calculated, but not sent.',
       mensaje: 'Hi, I quoted {promo} on the website. No. {n}.',
       desde: 'from', porPersonaIva: '+ VAT per person', enAdelante: 'people and up',
+      descGrupo: 'Group discount', descFrase: 'The bigger the group, the less each person pays.',
+      descDesde: 'from {n} people', descHasta: 'up to −{d}% for groups', descUno: '−{d}% for groups',
       soloLink: 'link only', noSale: 'hidden on the site',
       exclusivo: 'I want the venue exclusively', exclusivoPrecio: '{m} · standard price',
       arriendoEstandar: 'Standard rental price, without the offer discount. Your executive goes over it with you.',
@@ -153,6 +157,8 @@
       prueba: 'Versão de teste: calculado, mas não enviado.',
       mensaje: 'Olá, fiz um orçamento de {promo} no site. Nº {n}.',
       desde: 'a partir de', porPersonaIva: '+ IVA por pessoa', enAdelante: 'pessoas ou mais',
+      descGrupo: 'Desconto por grupo', descFrase: 'Quanto maior o grupo, menos cada um paga.',
+      descDesde: 'a partir de {n} pessoas', descHasta: 'até −{d}% por grupo', descUno: '−{d}% por grupo',
       soloLink: 'só com o link', noSale: 'oculta no site',
       exclusivo: 'Quero o espaço exclusivo', exclusivoPrecio: '{m} · preço padrão',
       arriendoEstandar: 'Aluguel pelo preço padrão, sem o desconto da promoção. Seu executivo conversa com você.',
@@ -578,6 +584,41 @@
     if (datoMinimo) {
       datoMinimo.innerHTML = '';
       datoMinimo.append(el('b', '', String(promo.minimo)), el('span', '', T.enAdelante));
+    }
+
+    // **El descuento por grupo y lo que se puede sumar, del panel** (2026-11-25,
+    // lo pidió el cliente: *"de forma simple y promocional mostramos los
+    // descuentos… frase enganche"*, y que *Se puede sumar* salga del panel).
+    // Un panel de antes no manda `tramos`: el bloque queda como estaba.
+    if (bloque && Array.isArray(promo.tramos)) {
+      var cond = bloque.querySelector('.condicion-especial');
+      var tramos = promo.tramos.filter(function (t) { return t && t.descuento > 0; });
+      if (cond && tramos.length) {
+        var grupo = el('div', 'desc-grupo');
+        grupo.append(el('p', 'desc-grupo-rotulo', T.descGrupo), el('p', 'desc-grupo-frase', T.descFrase));
+        var fila = el('div', 'desc-tramos');
+        tramos.forEach(function (t, i) {
+          var c = el('div', 'desc-tramo' + (i === tramos.length - 1 && tramos.length > 1 ? ' mayor' : ''));
+          c.append(el('i', '', '−' + t.descuento + '%'), el('span', '', T.descDesde.replace('{n}', t.desde)));
+          fila.appendChild(c);
+        });
+        grupo.appendChild(fila);
+        cond.replaceWith(grupo);
+        if (datoPrecio && promo.desde > 0) {
+          var max = tramos[tramos.length - 1].descuento;
+          datoPrecio.appendChild(el('em', 'desc-hasta', (tramos.length > 1 ? T.descHasta : T.descUno).replace('{d}', max)));
+        }
+      } else if (cond) cond.hidden = true;
+    }
+    var extras = bloque && bloque.querySelector('.paquete-extras');
+    if (extras && Array.isArray(promo.suma)) {
+      if (!promo.suma.length) extras.hidden = true;
+      else {
+        var rot = extras.querySelector('b');
+        extras.textContent = '';
+        if (rot) extras.append(rot, document.createTextNode(' '));
+        extras.appendChild(document.createTextNode(promo.suma.map(function (x) { return x.nombre; }).join(' · ')));
+      }
     }
 
     var raiz = el('section', 'cot');

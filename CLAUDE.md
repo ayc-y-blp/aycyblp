@@ -1493,6 +1493,25 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   un café oscuro— y una sombra suave; de día los pasos van en blanco encima. De
   paso se arregló que el precio de un extra se partía en tres renglones: la regla
   que lo deja bajo el nombre la pisaba otra que va más abajo en la hoja.
+- **El descuento por grupo y lo que se puede sumar, del panel** (2026-11-25,
+  lo pidió el cliente: *"de forma simple y promocional mostramos los
+  descuentos… frase enganche"*; eligió la frase *Mientras más son, menos paga
+  cada uno* y que *Se puede sumar* también salga del panel).
+  - `/api/publico/promociones` manda `tramos` (el primero y los de *Más
+    tramos*, solo los que descuentan). Con tramos, `cotizador.js` cambia
+    *Condición especial · Por definir* por ***Descuento por grupo***: la frase
+    en cursiva y una tarjeta por tramo (*−10% desde 22 personas*), la mayor
+    con borde dorado; y suma bajo el precio la pastilla *hasta −20% por grupo*
+    (o *−11% por grupo* con uno solo). **Sin descuento, el recuadro se
+    esconde** en vez de decir *Por definir*.
+  - ***Se puede sumar*** dice los extras que la promoción tiene en *Se suma*
+    en el panel (con su nombre de *Productos*, en español); sin ninguno, la
+    línea se esconde.
+  - **Un panel de antes, sin JavaScript o sin respuesta**: el bloque queda
+    como estaba. Fin de año tiene su oferta propia arriba y no cambia.
+  - **En el celular, la tarjeta del precio va apilada**: *desde $41.597* no
+    cabía en la columna de 118px y se montaba sobre su texto, también antes
+    de este cambio.
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde
