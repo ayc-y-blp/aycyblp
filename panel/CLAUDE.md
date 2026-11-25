@@ -171,7 +171,9 @@ revisan antes de cada cambio en esta carpeta.
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
   | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
-  | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*) y `HistorialNotas` (la misma lista en la ficha del cliente) |
+  | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*, también desde la ficha del cliente) y `HistorialNotas` (la misma lista en la ficha del cliente, filtrable por cotización) |
+  | La última nota y el próximo contacto | `LoConversado` (paso 4 de cotizar) y `UltimaNota` (la ficha del cliente y la Agenda); dentro del botón *🗒 Notas* de la cotización, en un renglón |
+  | El día elegido para volver a contactarlo | `PastillaContacto` (📞, con `textoContacto()`): la Lista de cotizaciones y Clientes |
   | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
   | Lo ya pagado de una mesa, lo que falta y cómo pagó el resto | `CobroMesa`, dentro de `MesaReserva` (Recepción y la página del día) |
@@ -228,6 +230,109 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## El recontacto y la última nota, en todas partes (2026-11-25)
+
+Lo pidió el cliente: *"tener notas y el recontacto en la ficha de cliente
+también, se tiene que mostrar el último, no el primer comentario, en paso 2
+Evento y paso 4 Envío y en todos lados, y además tiene que llegar una
+notificación de recontacto en varios lugares… hay cotizaciones de Carmen que
+vinieron con fecha pero no se ven en la lista… necesitamos un cuadro como el
+de agenda para filtrar por recontactar"*. Eligió *Lo que viene* para la Lista
+y pidió *"agrega el comentario que viene del CRM antiguo como primer
+comentario"*; después, *"¿qué pasa si el cliente tiene dos cotizaciones
+vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
+
+**Por qué pasaba**:
+
+- **Las de Carmen no estaban perdidas**: la Lista abría en el mes en curso y
+  cuenta por la fecha del evento; lo importado del CRM tiene el evento en
+  diciembre, enero o más adelante. La Agenda no sigue al mes (*Por redactar*
+  trae todos los candidatos y borradores), por eso ahí sí salían.
+- **La última nota salía la primera**: `Cuándo` va al minuto, y dos notas del
+  mismo minuto (*hallo* y *hallo 2*, las dos 16:20) empataban; el orden de la
+  pestaña —la vieja primero— decidía.
+- **Lo del CRM no estaba en *🗒 Notas***: el importador lo dejó en *Notas
+  internas* (`Notas` de `Presupuestos`), con el encabezado *Del CRM
+  (20-11-2026):*, que se lee desde lo más viejo.
+
+**Qué hace ahora**:
+
+- **La Lista abre en *Lo que viene*** (`enLoQueViene()` en
+  `lib/listaCotizaciones.ts`): el evento de hoy en adelante, de cualquier mes,
+  y las que no tienen día. El marco es *Lo que viene · Semana · Mes · Todo*, en
+  el orden de los calendarios (desde el 2026-11-22 abría en *Mes*).
+- **La tarjeta *Recontactar*** (filtro `recontactar`, `ordenarPorRecontacto()`,
+  `cuentasDeRecontacto()`): todas las que tienen un día elegido para volver a
+  contactarlo (`Recontactar el`), **de cualquier fecha** —no sigue al periodo,
+  como la Agenda—, por ese día y lo atrasado primero. Su número se pone rojo
+  con alguna atrasada y ámbar con una de hoy. Son siete tarjetas en una fila
+  desde 1280px: para que *Tasa de cierre* no se doblara, `TarjetaNumero` bajó
+  el espaciado entre letras (*wider* → *wide*) y el margen desde 1280px (12 →
+  10px); el título va sin el 📞, que llevan las pastillas.
+- **La pastilla 📞** (`PastillaContacto`, `textoContacto()` y `recontactoDe()`
+  en `lib/agenda.ts`): *Contactar: atrasado 2 días* (borde grueso rojo),
+  *Contactar hoy* (borde grueso ámbar), *Contactar el mié 2 dic* (borde fino).
+  Solo el día elegido, no el recordatorio automático. Va en la fila de la
+  Lista, en la tarjeta cerrada de cada cliente (el más cercano de sus
+  cotizaciones) y en cada cotización de su ficha.
+- **Las notas, de la más nueva a la más vieja, y con la misma hora, la anotada
+  después** (`ordenarNotas()`, `ultimaNota()` en `lib/notas.ts`): la que viene
+  después en la lista, que es la que se anotó después. A la pantalla las notas
+  llegan sin `fila`, por eso va por la posición.
+- **Lo del CRM antiguo, como la primera nota** (`notasDelCrm()`): se arma al
+  leer, de *Notas internas* con el encabezado *Del CRM (…)*: una por grupo,
+  con el día del encabezado, sin hora, firmada *CRM antiguo* (se muestra *Del
+  CRM antiguo*) y sin la marca del importador. **No se escribe nada**; no se
+  corrige; si cambia *Notas internas*, cambia. La suman `/api/presupuestos` y
+  `/api/clientes` antes de `notasVisibles()`: la leen los mismos que leen las
+  notas.
+- **La última nota, en todas partes**:
+  - **En la cotización, dentro del botón *🗒 Notas***, en los cinco pasos, en
+    un renglón (entera al pasar el mouse), con el día del próximo contacto en
+    rojo o ámbar. Se probó como bloque en el paso 2 y no cabía en 1280×650 (661
+    a 745px, según la columna); dentro del botón, el paso 2 mide 580.
+  - **En el paso 4**, *Lo conversado*, que pasó a ser una pieza propia
+    (`LoConversado`, con `UltimaNota`).
+  - **En cada fila de la Agenda** (`ultimaPorGrupo`), en un renglón, para quien
+    lee las notas.
+  - **En la ficha del cliente**, en la fila de *Cotizaciones* (en el celular,
+    debajo), con su N° si tiene varias.
+- **En la ficha del cliente**: cada cotización con su pastilla 📞 y ***📝
+  Anotar***, que abre la misma ventanita de la cotización (`NotasCotizacion`,
+  que ahora pide solo `id`, `cliente`, `recontactar` y `fecha`). `/api/clientes`
+  manda en el historial `recontactar` (`recontactoDe()`) y `anota`
+  (`puedeVerNotas()` sobre el grupo), y `hoy` y `usuario`. Las notas en
+  *🗒 Notas* ya se pueden corregir desde ahí (antes iba sin usuario).
+- **Las notas de varias cotizaciones, filtrables**: con notas en dos o más,
+  *Todas · N° 420000 · N° 509127*, cada una con cuántas (botones: son pocas y
+  fijas); con *Todas*, cada nota dice de qué cotización es
+  (`HistorialNotas` con `cotizacionDe`).
+- **Clientes, *📞 Por contactar***, al lado de *Míos / Todos*: solo los que
+  tienen un recontacto, el más cercano primero. Se aprieta para filtrar y otra
+  vez para soltar.
+- **El medio también contacta** (lo pidió el cliente el mismo día, con una
+  foto de la ventanita: *"cuando uno aprieta correo o WhatsApp, se debería
+  copiar el correo o abrir el WhatsApp… y llamar debería llamar"*): en
+  *Anotar*, al elegir el medio, ***Llamada*** llama (`tel:+569…`),
+  ***WhatsApp*** abre el chat con el saludo de siempre (`abrirWhatsApp()`,
+  `saludoAlCliente()`) y ***Correo*** copia el correo (`copiarConAviso()`).
+  *Reunión* solo se elige. Al soltarlo no hace nada. Sin el dato en la ficha
+  —o tapado, si el cliente es de otro vendedor (`estaTapado()`)— lo dice. La
+  frase *· llama, abre el WhatsApp o copia el correo* va en la línea del
+  nombre: es lo que pasa al apretar. La ventana sigue en 478px.
+
+- **Lecturas de Google**: ninguna más. **Ningún permiso ni columna nueva.**
+- **Ayuda**: el `?` de Cotizaciones y el de Clientes, `notas`, `listaPorMes` y
+  uno nuevo, `listaRecontactar`. Las fotos que abren una cotización
+  (`ven-envio`, `pag-cobros`, `ger-cobros`) se rehicieron: el botón *🗒 Notas*
+  trae la última nota.
+- **Ventanas**: `ficha-cliente-recontacto` (607px) y `v-notas-desde-ficha`
+  (478px); las pantallas `cotizaciones-lista-recontactar` y
+  `clientes-por-contactar` entran en la prueba de espacio.
+- **El panel de ejemplo**: Gonzalo Contreras con una cotización del CRM antiguo
+  (enero de 2027, atrasado en su recontacto), dos notas del mismo minuto y una
+  en su otra cotización.
 
 ## Reservas de Shopify: no se repiten, *✕ Se cayó…* se queda y lo cambiado en el panel también (2026-11-25)
 

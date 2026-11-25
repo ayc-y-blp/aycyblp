@@ -606,6 +606,19 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   en Shopify. Ver `panel/CLAUDE.md`, "Reservas de Shopify: no se repiten…".
 - **Fotos nuevas** (25-11-2026, lo pidió el cliente): subió 10 fotos grandes; quedan achicadas en `assets/gallery/` y solo se usa la de la carne en la estaca, en la promoción *Combate de Parrillas*. Faltan 3 que no llegaron. Ver `CLAUDE.md`, "Seis promociones…".
 - **El karting ya no se repite en *Se puede sumar* del Gran Premio** (25-11-2026, lo pidió el cliente): la frase esconde lo que el *Incluye* del bloque ya dice; en el panel sigue como *Se suma* y el cotizador lo ofrece con *¿Cuántos?*. Ver `CLAUDE.md`, "El cotizador de promociones".
+- **El recontacto y la última nota, en todas partes** (25-11-2026, lo pidió el
+  cliente: unas 20 cotizaciones de Carmen importadas del CRM no salían en la
+  Lista —abría en el mes en curso y sus eventos son de diciembre en adelante—,
+  y la última nota no salía —dos del mismo minuto empataban—). La Lista abre en
+  *Lo que viene*; la tarjeta *Recontactar* muestra todas las que tienen un día
+  para volver a contactarlas; la pastilla 📞 va en la Lista y en Clientes (con
+  el filtro *📞 Por contactar*); lo del CRM antiguo es la primera nota; la
+  última va en el botón *🗒 Notas* de la cotización, en la Agenda y en la ficha
+  del cliente, que suma *📝 Anotar* en cada cotización y las notas filtrables
+  por cotización; y en *Anotar*, elegir *Llamada* llama, *WhatsApp* abre el
+  chat y *Correo* copia el correo. Ningún permiso, columna ni lectura nueva. **En un PR, en
+  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
+  última nota, en todas partes".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

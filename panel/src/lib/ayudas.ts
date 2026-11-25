@@ -1412,7 +1412,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Las leen solo el vendedor de la cotización y la gerencia. Una nota no se borra: quien la escribió la corrige el mismo día.',
       'El día que elijas aparece en tu agenda. Si no eliges uno, una cotización mandada te la recuerda sola a los días de Configuración.',
       'La última nota sale arriba, en el botón 🗒 Notas, en todos los pasos de la cotización. En el paso Envío ves además cuántos contactos van anotados (Contactos · N) y cuándo toca el próximo. La última también sale en la Agenda y en la ficha del cliente.',
-      'Lo que vino del CRM antiguo es la primera nota, firmada Del CRM antiguo.'
+      'Lo que vino del CRM antiguo es la primera nota, firmada Del CRM antiguo.',
+      'Al elegir el medio, Llamada llama al cliente, WhatsApp abre el chat con tu saludo y Correo copia su correo. Si no tiene ese dato en su ficha, te lo dice.'
     ]
   },
   redactarAntes: {

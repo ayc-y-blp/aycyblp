@@ -23,7 +23,10 @@ import Dialogo from './Dialogo';
 import AyudaCorta from './AyudaCorta';
 import ElegirFecha from './ElegirFecha';
 import FechaDia from './FechaDia';
-import { avisar } from './AvisoFlotante';
+import { avisar, copiarConAviso } from './AvisoFlotante';
+import { abrirWhatsApp } from './BotonWhatsApp';
+import { enlaceWhatsApp, saludoAlCliente, telefonoParaEnlace } from '@/lib/contacto';
+import { estaTapado } from '@/lib/privacidad';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, QUIEN_CRM, type Nota } from '@/lib/notas';
 import { esFecha, sumarDias, type Fecha } from '@/lib/fechas';
@@ -47,7 +50,7 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
    * La cotización del grupo desde donde se abrió: solo lo que la ventana usa,
    * para que la abra también la ficha del cliente (2026-11-25).
    */
-  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'>;
+  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'> & Partial<Pick<Presupuesto, 'telefono' | 'email'>>;
   grupo: string;
   /** Las notas que esta cuenta puede leer (de todas sus cotizaciones). */
   notas: Nota[];
@@ -73,6 +76,32 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
   const hasta = esFecha(p.fecha) && p.fecha > hoy ? sumarDias(p.fecha, -1) : undefined;
   const cambiaFecha = proximo !== (p.recontactar ?? '');
   const puede = !!texto.trim() || cambiaFecha;
+
+  /**
+   * **El medio también contacta** (2026-11-25, lo pidió el cliente: *"cuando
+   * uno aprieta correo o WhatsApp, se debería copiar el correo o abrir el
+   * WhatsApp… y llamar debería llamar"*). Al elegirlo —no al soltarlo—:
+   * *Llamada* llama, *WhatsApp* abre el chat con el saludo de siempre y
+   * *Correo* copia el correo. *Reunión* solo se elige. Sin el dato en la
+   * ficha (o tapado, si es cliente de otro vendedor), lo dice.
+   */
+  const telefono = String(p.telefono ?? '').trim();
+  const correo = String(p.email ?? '').trim();
+  const tapado = (v: string) => !v || estaTapado(v);
+  function contactar(m: string) {
+    if (m === 'Llamada') {
+      if (tapado(telefono)) return avisar('No tiene teléfono en su ficha', 'atencion');
+      const n = telefonoParaEnlace(telefono);
+      window.open(`tel:${n ? `+${n}` : telefono.replace(/[^\d+]/g, '')}`, '_self');
+    } else if (m === 'WhatsApp') {
+      const w = tapado(telefono) ? '' : enlaceWhatsApp(telefono, saludoAlCliente(p.cliente, usuario));
+      if (!w) return avisar('No tiene un celular en su ficha para WhatsApp', 'atencion');
+      abrirWhatsApp(w);
+    } else if (m === 'Correo') {
+      if (tapado(correo)) return avisar('No tiene correo en su ficha', 'atencion');
+      copiarConAviso(correo, `Correo copiado: ${correo}`, 'Copia el correo:');
+    }
+  }
 
   async function anotar() {
     setEnviando(true); setError('');
@@ -107,11 +136,16 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
             columna de la ventana no hay ancho para tenerlos al lado. */}
         <div className="space-y-3">
           <div>
-            <p className="rotulo-ficha mb-1">Medio</p>
+            {/* Lo que pasa al apretar, en la misma línea del nombre (2026-11-25). */}
+            <p className="rotulo-ficha mb-1">Medio
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-hueso/60">· llama, abre el WhatsApp o copia el correo</span>
+            </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label="Por dónde hablaron">
               {MEDIOS.map((m) => (
                 <button key={m.clave} type="button" aria-pressed={medio === m.clave}
-                  onClick={() => setMedio(medio === m.clave ? '' : m.clave)}
+                  title={m.clave === 'Llamada' ? 'Lo elige y llama' : m.clave === 'WhatsApp' ? 'Lo elige y abre el WhatsApp'
+                    : m.clave === 'Correo' ? 'Lo elige y copia el correo' : undefined}
+                  onClick={() => { if (medio !== m.clave) contactar(m.clave); setMedio(medio === m.clave ? '' : m.clave); }}
                   className={`boton min-h-[40px] px-3 !text-[14px] lg:min-h-[36px] ${medio === m.clave ? 'border-oro bg-oro/15 !font-semibold' : ''}`}>
                   <span aria-hidden>{m.icono}</span> {m.clave}
                 </button>
