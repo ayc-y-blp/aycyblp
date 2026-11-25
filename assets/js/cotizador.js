@@ -288,6 +288,7 @@
       aplicar(d && d.bloques && typeof d.bloques === 'object' ? d.bloques : (d && !d.error ? 'todo' : null));
       if (!cajas.length) return;
       (d.promociones || []).forEach(function (p) {
+        if (p.detalles && typeof p.detalles === 'object') Object.keys(p.detalles).forEach(function (k) { PROPIOS[k] = p.detalles[k]; });
         var caja = document.querySelector('.cotizador[data-promo="' + p.sitio + '"]');
         if (caja) montar(caja, p);
       });
@@ -316,8 +317,34 @@
     return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
   }
+  /**
+   * **Lo que el cliente escribió en Productos** (2026-11-25, lo pidió el
+   * cliente: el ? del karting mostraba el texto del sitio aunque tuviera su
+   * *Qué incluye*). El panel lo manda con la regla de la cotización
+   * (`detalleDe()`), y manda sobre el texto escondido. **Solo en español**:
+   * llega como se escribió y no se traduce, así que en inglés y portugués
+   * sigue el del sitio. Se arma igual que el escondido: un <p> por renglón y
+   * `data-casa` si va con el menú de la casa.
+   */
+  var PROPIOS = {};
+  function detallePropio(nombre) {
+    if (idioma !== 'es') return null;
+    var n = normalDetalle(nombre);
+    var clave = Object.keys(PROPIOS).filter(function (k) { return normalDetalle(k) === n; })[0];
+    if (!clave) return null;
+    var d = PROPIOS[clave], div = document.createElement('div');
+    if (d.casa) div.setAttribute('data-casa', '');
+    String(d.detalle || '').split('\n').forEach(function (t) {
+      if (!t.trim()) return;
+      var p = document.createElement('p'); p.textContent = t.trim(); div.appendChild(p);
+    });
+    return div.childNodes.length || d.casa ? div : null;
+  }
   function detalleDeProducto(nombre) {
-    if (!DETALLES || !nombre) return null;
+    if (!nombre) return null;
+    var propio = detallePropio(nombre);
+    if (propio) return propio;
+    if (!DETALLES) return null;
     var n = normalDetalle(nombre), sinMenu = n.replace(/^menu (de )?/, '');
     var todos = Array.prototype.slice.call(DETALLES.querySelectorAll('[data-producto]'));
     var nombres = function (e) { return e.getAttribute('data-producto').split('|'); };
@@ -364,7 +391,7 @@
       caja.setAttribute('role', 'note');
       var parrafos = [];
       if (d.hasAttribute('data-casa')) {
-        var casa = DETALLES.querySelector('[data-casa-lineas]');
+        var casa = DETALLES && DETALLES.querySelector('[data-casa-lineas]');
         if (casa) parrafos = parrafos.concat(Array.prototype.slice.call(casa.querySelectorAll('p')));
       }
       var propios = Array.prototype.slice.call(d.querySelectorAll('p'));

@@ -565,6 +565,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   tocando fuera. Los textos están escondidos en la página, para que se
   traduzcan. Y **regla nueva de estilo del sitio: fácil de leer, con
   jerarquía** (sección 9). Ver `CLAUDE.md`, "El cotizador de promociones".
+- **El `?` del cotizador muestra lo escrito en *Productos*** (25-11-2026, lo
+  preguntó el cliente con el karting; eligió las dos recomendaciones): en la
+  página en español, *Qué incluye* y *Bebestibles* de cada producto reemplazan
+  el texto del sitio, con la regla de la cotización; en inglés y portugués
+  sigue el del sitio, traducido. La reserva no cambia. Ver `CLAUDE.md`, "El
+  cotizador de promociones".
 - **El cotizador con fondo propio** (25-11-2026, lo pidió el cliente): dorado
   suave de día y de noche, con los pasos claros encima. Ver `CLAUDE.md`, "El
   cotizador de promociones".

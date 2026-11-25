@@ -1460,8 +1460,22 @@ solo en `promociones.html`). La mitad del panel —las promociones en
     final de `promociones.html` y de `reservas.html`), **no vienen del panel**:
     así `traducir.py` los traduce con todo lo demás. Cada producto lleva los
     nombres con que puede llegar del panel (`data-producto="once campesina|once
-    campestre|once"`); `data-casa` suma el menú de la casa. **Un texto propio
-    escrito en *Productos → Qué incluye* no sale acá**: el sitio manda.
+    campestre|once"`); `data-casa` suma el menú de la casa.
+  - **Lo escrito en *Productos* manda, en español** (cambió el 2026-11-25, lo
+    preguntó el cliente al ver el `?` del karting con el texto del sitio
+    aunque le había escrito su *Qué incluye*; eligió las dos recomendaciones).
+    `/api/publico/promociones` manda en cada promoción `detalles`: por nombre,
+    el texto de los productos que tienen *Qué incluye* o *Bebestibles*, con la
+    misma regla de la cotización (`detalleDe()`: en un menú de adulto, *Qué
+    incluye* reemplaza el menú de la casa y *Bebestibles* los del sitio). El
+    `?` del cotizador lo usa antes que el texto escondido
+    (`detallePropio()`). **Solo en la página en español**: llega como se
+    escribió y no se traduce, así que en inglés y portugués sigue el texto del
+    sitio. En blanco, o con un panel de antes que no manda `detalles`, el de
+    siempre. Tarda hasta 5 minutos en verse (la respuesta se guarda en
+    Vercel). **La reserva no cambia**: sus menús son fijos y ese texto
+    tendría que viajar en el contrato de las fechas, que se mantiene chico a
+    propósito.
   - **La misma pieza en los dos archivos** (`botonDetalle()` en `cotizador.js`
     y en `reserva.js`, y `.detalle-*` en el `<style>` de promociones y en
     `site.css`): si cambia una, se cambia la otra. No es una quinta excepción de

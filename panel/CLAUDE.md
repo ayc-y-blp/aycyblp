@@ -512,6 +512,13 @@ uno para bebestibles"*.
   que cambiar el producto cambiaba las cotizaciones ya mandadas: se fue.
 - **Ningún permiso cambió**: lo escribe quien cambia el catálogo
   (`configurar`).
+- **También en el `?` del cotizador del sitio, en español** (2026-11-25, lo
+  preguntó el cliente con el karting): `promocionesParaElSitio()` manda
+  `detalles` —por nombre, solo los productos con algo escrito, armado con
+  `detalleDe()`— y `cotizador.js` lo usa antes que el texto escondido de la
+  página. En inglés y portugués sigue el del sitio, porque lo escrito no se
+  traduce. **Ninguna lectura más**: la ruta ya leía `Menús`. Ver `CLAUDE.md`
+  de la raíz, "El `?` de cada producto".
 - **Ayuda**: el `?` de Productos y los dos nuevos. **Ventanas**:
   `ficha-producto` mide 616px (era 495) y `ficha-producto-nuevo` 538 (era 417).
 
