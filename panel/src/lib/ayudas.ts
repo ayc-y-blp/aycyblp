@@ -1406,7 +1406,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     texto: [
       '📞 Contactar: los clientes a quienes quedaste en hablarles (el día que elegiste al anotar) y los recordatorios de siempre: mandadas sin respuesta hace días, el evento cerca sin ganar y el contrato que no vuelve firmado.',
       '✍ Por redactar: los candidatos y borradores, por el día para el que prometiste la cotización. Se cumple al mandarla.',
-      'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo.'
+      'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo, y el día que elegiste para contactarlo, en ámbar hasta ese día y en rojo desde ese día.'
     ]
   },
   notas: {

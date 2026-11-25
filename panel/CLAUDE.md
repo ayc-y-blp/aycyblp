@@ -328,6 +328,14 @@ vigentes… puedes mostrar las notas de ambas pero filtrable por cotización?"*.
   el día del calendario y en *Sin fecha*. En el celular, donde la fila se
   dobla, va en su propio renglón, a la izquierda, y el total debajo: así las
   filas con pastilla quedan parejas.
+- **La frase del recontacto, con la misma regla** (lo decidió el cliente el
+  mismo día: *"sí, rojo desde el día"*): en la Agenda (*Tus pendientes* y
+  *🗓 Agenda*) y en *Lo conversado* del paso 4, *Contactar el lun 16 nov* va en
+  ámbar y *Quedaste en contactarlo hoy* o *…(hace 2 días)* en rojo, con el borde
+  de la fila rojo (`fraseDe()` en `lib/agenda.ts`, con pruebas). **Solo el día
+  elegido**: lo prometido (*✍ Por redactar*) y los recordatorios automáticos
+  siguen como antes, ámbar hoy y rojo atrasado. La tarjeta *🗓 Agenda* de la
+  Lista no cambia: cuenta todo lo de hoy.
 - **Las notas, de la más nueva a la más vieja, y con la misma hora, la anotada
   después** (`ordenarNotas()`, `ultimaNota()` en `lib/notas.ts`): la que viene
   después en la lista, que es la que se anotó después. A la pantalla las notas

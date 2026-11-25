@@ -155,7 +155,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
 
   const BOTON = 'boton min-h-[44px] lg:min-h-[40px]';
   return (
-    <li className={`rounded-lg border-2 bg-panel p-2.5 ${x.cuando === 'atrasado' ? 'border-rojo-fuerte/50' : 'border-hueso/15'}`}>
+    <li className={`rounded-lg border-2 bg-panel p-2.5 ${frase.tono === 'rojo' ? 'border-rojo-fuerte/50' : 'border-hueso/15'}`}>
       <button type="button" onClick={() => onAbrir(p, x.tipo === 'redactar' ? 3 : undefined)} className="w-full text-left">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {soloHoy && <span aria-hidden>{x.tipo === 'redactar' ? '✍' : '📞'}</span>}

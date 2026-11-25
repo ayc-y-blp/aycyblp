@@ -193,7 +193,13 @@ const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno
  * *Esperando respuesta*.
  */
 export function fraseDe(x: ItemAgenda, hoy: Fecha): { texto: string; tono: 'rojo' | 'ambar' | 'neutro' } {
-  const tono = x.cuando === 'atrasado' ? 'rojo' : x.cuando === 'hoy' ? 'ambar' : 'neutro';
+  // **El día elegido para recontactarlo, como la pastilla 📞** (2026-11-25, lo
+  // decidió el cliente: *"sí, rojo desde el día"*): ámbar hasta ese día y rojo
+  // desde ese día. Lo demás —lo prometido, los recordatorios— sigue igual:
+  // ámbar hoy, rojo atrasado.
+  const tono = x.motivo === 'elegida' && x.cuando !== 'sinPlazo'
+    ? (x.cuando === 'proximo' ? 'ambar' : 'rojo')
+    : x.cuando === 'atrasado' ? 'rojo' : x.cuando === 'hoy' ? 'ambar' : 'neutro';
   if (x.tipo === 'redactar') {
     if (x.cuando === 'sinPlazo') return { texto: 'Sin plazo para mandarla', tono: 'neutro' };
     if (x.cuando === 'atrasado') {

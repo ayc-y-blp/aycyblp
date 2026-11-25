@@ -8068,6 +8068,20 @@ console.log('\nLa empresa del cliente, al lado de su nombre (2026-11-25)');
   ok(conCliente(p, fichas).empresaCliente === 'Andes SpA', 'la cotización trae la empresa de la ficha del cliente');
 }
 
+console.log('\nLa frase del recontacto: ámbar hasta el día, rojo desde el día (2026-11-25)');
+{
+  const A = await import('./agenda.ts');
+  const p0 = { id: 'X' } as unknown as Presupuesto;
+  const hoyF = '2026-11-13';
+  const item = (fecha: string, cuando: 'proximo' | 'hoy' | 'atrasado', motivo: 'elegida' | 'sinRespuesta') =>
+    A.fraseDe({ p: p0, tipo: 'contactar', fecha, cuando, motivo, dias: 3 } as Parameters<typeof A.fraseDe>[0], hoyF).tono;
+  ok(item('2026-11-16', 'proximo', 'elegida') === 'ambar' && item(hoyF, 'hoy', 'elegida') === 'rojo'
+     && item('2026-11-11', 'atrasado', 'elegida') === 'rojo',
+     'el día elegido: ámbar hasta el día, rojo el día mismo y después');
+  ok(item(hoyF, 'hoy', 'sinRespuesta') === 'ambar' && item('2026-11-16', 'proximo', 'sinRespuesta') === 'neutro',
+     'un recordatorio automático sigue como antes: ámbar hoy');
+}
+
 console.log('\nClientes: filtrar por vendedor (2026-11-25)');
 {
   const A = await import('./asignar.ts');
