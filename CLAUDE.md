@@ -1397,6 +1397,40 @@ solo en `promociones.html`). La mitad del panel —las promociones en
   responde `anticipacion` y la boleta dice que se elija un día más adelante,
   en los tres idiomas. Sin plazo, desde mañana, como siempre. El vendedor,
   en `panel/CLAUDE.md`.
+- **La fecha, en un calendario y en su propio paso** (2026-11-25, lo pidió el
+  cliente con una foto: *"solo me muestra la info que al menos x días de
+  anticipación pero me deja elegir el día… intuitivamente el usuario entiende
+  qué próxima fecha es elegible y que no le deja elegir fecha inferior a la
+  fecha de anticipación"*; eligió el calendario sobre arreglar el campo, y
+  *"piénsala bien"*). El campo de fecha del navegador dejaba los días antes del
+  plazo apenas grises y se podía escribir uno a mano.
+  - **Cuatro pasos**: ① *¿Qué día?* ② *¿Cuántos son?* (con lo que incluye y el
+    lugar exclusivo) ③ *¿Qué menú?* ④ *Tu cotización*. La fecha va primero,
+    como en la reserva.
+  - **El calendario tiene la forma del de la reserva** (`calendario()` en
+    `cotizador.js`, clases `cal-*`): los días antes del plazo son un número
+    suelto, sin caja, que no se aprieta; los que se pueden elegir, teclas con
+    borde dorado; el elegido, relleno. Abre en el mes del primer día posible, no
+    deja ir a un mes anterior, y llega hasta 18 meses adelante. Debajo dice
+    *Con al menos 21 días de anticipación: desde el viernes, 4 de diciembre*.
+  - **En el computador, los cuatro lado a lado desde 1200px**, y el cotizador
+    toma el ancho de la pantalla (con 34px de margen) en vez del de la columna
+    del texto: si no, el paso de cuántos son no tenía ancho para sus teclas. De
+    760 a 1199px, de a dos; en el celular, uno debajo del otro. Las casillas
+    miden lo que deja la pantalla, entre 32 y 40px.
+  - **Medidas** a 1262×573 (el notebook del cliente): 479px sin elegir nada y
+    498 con el día, el menú y el lugar exclusivo, en español (eran 426 y 471);
+    518 a 543 en inglés y en portugués (eran 456 a 497). **Pasa del margen
+    seguro (473) por 25 a 70px**, más que antes, por el calendario. En el
+    celular, unos 1.640px con todo elegido.
+- **Los títulos y las secciones, más marcados** (2026-11-25, lo pidió el
+  cliente: *"títulos y secciones se tienen que destacar y diferenciar un poco
+  más"*, y *"aplica ambos en los dos"*): el título de cada paso en Fraunces, con
+  una línea dorada debajo y el número algo mayor; el marco del paso dorado
+  suave, más marcado que lo de adentro; los rótulos en dorado, y una línea fina
+  entre las secciones de un paso. **Lo mismo en los tres pasos de
+  `reservas.html`** (`site.css`, al final), que son la misma pieza: el
+  formulario mide 507px a 1262×573 (eran 500).
 - **Con el cotizador**, los datos del bloque dicen lo del panel —*desde $X
   + IVA por persona* y desde cuántas personas— y sin la etiqueta *de
   ejemplo*; el precio de niños de ejemplo del Día de Campo se esconde

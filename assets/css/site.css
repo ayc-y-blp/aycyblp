@@ -1289,3 +1289,24 @@ footer a:hover{ color: var(--ink); }
   .incluye .etiqueta{ margin-top:18px; }
 }
 
+
+/* ---------- Los pasos, con su titulo y su marco mas marcados (2026-11-25) ----------
+   Lo pidio el cliente mirando el cotizador de promociones: "titulos y
+   secciones se tienen que destacar y diferenciar un poco mas", y "aplica
+   ambos en los dos": el cotizador y la reserva son la misma pieza. El
+   titulo del paso pasa a la serif de los titulos, con una linea dorada
+   debajo; la tarjeta del paso lleva un marco dorado suave, mas marcado que
+   lo de adentro (la regla del marco del panel). El paso que sigue y el
+   listo siguen como antes: borde dorado entero y el tic relleno. */
+.reserva-widget .reserva-paso{
+  font-family:var(--serif); font-size:1.15rem; font-weight:600;
+  text-transform:none; letter-spacing:0; color: var(--ink);
+}
+.reserva-caja > .reserva-paso,
+.reserva-caja > .campo > .reserva-paso{ border-bottom:2px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+.reserva-paso .num{ width:32px; height:32px; border-width:2px; font-size:1.05rem; }
+.reserva-caja{ border:2px solid color-mix(in srgb, var(--gold) 40%, var(--line)); }
+@media (min-width: 900px){
+  .reserva-widget .reserva-paso{ font-size:1.1rem; }
+  .reserva-paso .num{ width:30px; height:30px; font-size:1rem; }
+}

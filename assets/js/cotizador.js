@@ -48,7 +48,7 @@
     es: {
       locale: 'es-CL', moneda: '',
       titulo: 'Cotiza en línea', bajada: 'Elige y ve el total al tiro. Te la mandamos formal y te contactamos hoy.',
-      paso1: '¿Cuántos y qué día?', paso2: '¿Qué menú?', paso3: 'Tu cotización', quiero: 'Quiero esta cotización', volver: '← Ver el detalle',
+      pasoDia: '¿Qué día?', pasoCuantos: '¿Cuántos son?', paso2: '¿Qué menú?', paso3: 'Tu cotización', quiero: 'Quiero esta cotización', volver: '← Ver el detalle',
       personas: 'Personas', adultos: 'Adultos', ninos: 'Niños', dia: 'Día del evento',
       menos: 'Uno menos', mas: 'Uno más', menuFijo: 'Menú', incluye: 'Incluye', suma: 'Se puede sumar', cuantos: '¿Cuántos?',
       porPersona: 'por persona', fijo: 'una vez', masIva: '+ IVA', loCobra: 'lo cobra',
@@ -61,7 +61,7 @@
       calculando: 'Calculando…',
       minimo: 'Esta promoción es desde {n} personas.',
       anticipacion: 'Esta promoción se cotiza con al menos {n} días de anticipación: elige un día más adelante.',
-      conAnticipacion: 'Con al menos {n} días de anticipación.',
+      conAnticipacion: 'Con al menos {n} días de anticipación: desde el {f}.', mesAnterior: 'Mes anterior', mesSiguiente: 'Mes siguiente',
       fecha: 'Elige un día desde mañana.',
       tomado: 'Ese día ya está tomado. Prueba con otro.',
       menu: 'Elige un menú.',
@@ -85,7 +85,7 @@
     en: {
       locale: 'en-US', moneda: ' CLP',
       titulo: 'Get a quote online', bajada: 'Choose and see the total right away. We send you the formal quote and contact you today.',
-      paso1: 'How many and which day?', paso2: 'Which menu?', paso3: 'Your quote', quiero: 'I want this quote', volver: '← See the details',
+      pasoDia: 'Which day?', pasoCuantos: 'How many?', paso2: 'Which menu?', paso3: 'Your quote', quiero: 'I want this quote', volver: '← See the details',
       personas: 'People', adultos: 'Adults', ninos: 'Children', dia: 'Event date',
       menos: 'One less', mas: 'One more', menuFijo: 'Menu', incluye: 'Includes', suma: 'You can add', cuantos: 'How many?',
       porPersona: 'per person', fijo: 'one time', masIva: '+ VAT', loCobra: 'charged by',
@@ -98,7 +98,7 @@
       calculando: 'Calculating…',
       minimo: 'This offer starts at {n} people.',
       anticipacion: 'This offer needs at least {n} days\u2019 notice: choose a later date.',
-      conAnticipacion: 'At least {n} days in advance.',
+      conAnticipacion: 'At least {n} days in advance: from {f}.', mesAnterior: 'Previous month', mesSiguiente: 'Next month',
       fecha: 'Choose a date from tomorrow on.',
       tomado: 'That day is already booked. Try another one.',
       menu: 'Choose a menu.',
@@ -122,7 +122,7 @@
     pt: {
       locale: 'pt-BR', moneda: ' CLP',
       titulo: 'Faça seu orçamento online', bajada: 'Escolha e veja o total na hora. Enviamos o orçamento formal e entramos em contato hoje.',
-      paso1: 'Quantos e em que dia?', paso2: 'Qual cardápio?', paso3: 'Seu orçamento', quiero: 'Quero este orçamento', volver: '← Ver o detalhe',
+      pasoDia: 'Que dia?', pasoCuantos: 'Quantos são?', paso2: 'Qual cardápio?', paso3: 'Seu orçamento', quiero: 'Quero este orçamento', volver: '← Ver o detalhe',
       personas: 'Pessoas', adultos: 'Adultos', ninos: 'Crianças', dia: 'Data do evento',
       menos: 'Um a menos', mas: 'Um a mais', menuFijo: 'Cardápio', incluye: 'Inclui', suma: 'Você pode somar', cuantos: 'Quantos?',
       porPersona: 'por pessoa', fijo: 'uma vez', masIva: '+ IVA', loCobra: 'cobrado por',
@@ -135,7 +135,7 @@
       calculando: 'Calculando…',
       minimo: 'Esta promoção é a partir de {n} pessoas.',
       anticipacion: 'Esta promoção precisa de pelo menos {n} dias de antecedência: escolha uma data mais adiante.',
-      conAnticipacion: 'Com pelo menos {n} dias de antecedência.',
+      conAnticipacion: 'Com pelo menos {n} dias de antecedência: a partir de {f}.', mesAnterior: 'Mês anterior', mesSiguiente: 'Próximo mês',
       fecha: 'Escolha um dia a partir de amanhã.',
       tomado: 'Esse dia já está reservado. Tente outro.',
       menu: 'Escolha um cardápio.',
@@ -306,6 +306,72 @@
     var m = String(d.getMonth() + 1).padStart(2, '0'), dd = String(d.getDate()).padStart(2, '0');
     return d.getFullYear() + '-' + m + '-' + dd;
   }
+  /** Una fecha AAAA-MM-DD en palabras, en el idioma de la página: "sábado 12 de diciembre". */
+  function fechaLarga(f) {
+    var p = f.split('-').map(Number);
+    try { return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(idioma, { weekday: 'long', day: 'numeric', month: 'long' }); }
+    catch (e) { return f; }
+  }
+
+  /**
+   * **El calendario del cotizador** (2026-11-25): la misma forma que el de la
+   * reserva (`reserva.js`, clases `cal-*`). La semana parte en lunes; los días
+   * antes de `minimo` son un número suelto (un `<span>`: el teclado no pasa por
+   * ellos) y los que se pueden elegir, teclas. Abre en el mes del primer día
+   * posible, y no deja ir a un mes anterior a ese. Las fechas son texto
+   * AAAA-MM-DD de punta a punta, como en la reserva.
+   */
+  function calendario(minimo, alElegir) {
+    var caja = el('div', 'calendario cot-cal');
+    var mesMin = minimo.slice(0, 8) + '01';
+    var mes = mesMin, elegida = '';
+    var hoy = diaEn(0);
+    function correr(m, n) {
+      var p = m.split('-').map(Number), k = p[1] - 1 + n;
+      var y = p[0] + Math.floor(k / 12); k = ((k % 12) + 12) % 12;
+      return y + '-' + String(k + 1).padStart(2, '0') + '-01';
+    }
+    var mesMax = correr(mesMin, 18);
+    function dibujar() {
+      caja.innerHTML = '';
+      var p = mes.split('-').map(Number);
+      var cab = el('div', 'cal-cab');
+      function flecha(n, etiqueta, puede) {
+        var b = el('button', 'cal-nav', n < 0 ? '\u2039' : '\u203A');
+        b.type = 'button'; b.setAttribute('aria-label', etiqueta); b.title = etiqueta; b.disabled = !puede;
+        b.addEventListener('click', function () { mes = correr(mes, n); dibujar(); });
+        return b;
+      }
+      var nombre = mes;
+      try { nombre = new Date(p[0], p[1] - 1, 1).toLocaleDateString(idioma, { month: 'long', year: 'numeric' }); } catch (e) { /* queda AAAA-MM */ }
+      cab.append(flecha(-1, T.mesAnterior, mes > mesMin), el('strong', 'cal-mes', nombre), flecha(1, T.mesSiguiente, mes < mesMax));
+      caja.appendChild(cab);
+      var grilla = el('div', 'cal-grilla');
+      for (var i = 0; i < 7; i++) {
+        var ini;
+        try { ini = new Date(2024, 0, 1 + i).toLocaleDateString(idioma, { weekday: 'narrow' }); } catch (e) { ini = 'LMMJVSD'[i]; }
+        var wd = el('span', 'cal-wd', ini); wd.setAttribute('aria-hidden', 'true'); grilla.appendChild(wd);
+      }
+      var desde = (new Date(p[0], p[1] - 1, 1).getDay() + 6) % 7;
+      for (var h = 0; h < desde; h++) grilla.appendChild(el('span', 'cal-dia vacio'));
+      var dias = new Date(p[0], p[1], 0).getDate();
+      for (var d = 1; d <= dias; d++) {
+        var f = mes.slice(0, 8) + String(d).padStart(2, '0');
+        var marcaHoy = f === hoy ? ' hoy' : '';
+        if (f < minimo) { grilla.appendChild(el('span', 'cal-dia cerrado' + marcaHoy, String(d))); continue; }
+        var b = el('button', 'cal-dia abierto' + marcaHoy + (f === elegida ? ' elegido' : ''), String(d));
+        b.type = 'button'; b.setAttribute('aria-label', fechaLarga(f));
+        if (f === elegida) b.setAttribute('aria-current', 'date');
+        b.addEventListener('click', (function (fecha) {
+          return function () { elegida = fecha; dibujar(); alElegir(fecha); };
+        })(f));
+        grilla.appendChild(b);
+      }
+      caja.appendChild(grilla);
+    }
+    dibujar();
+    return caja;
+  }
   function precioDe(x) {
     return pesos(x.precio) + (x.masIva ? ' ' + T.masIva : '') + ' ' + (x.fijo ? T.fijo : T.porPersona);
   }
@@ -391,27 +457,34 @@
       return p;
     }
 
-    // 1. Cuántos y qué día.
-    var p1 = paso(1, T.paso1);
-    p1.appendChild(contador(menusNinos.length ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; grupoCambio(); }));
+    // 1. Qué día. **En un calendario, como el de la reserva** (2026-11-25, lo
+    // pidió el cliente: *"que intuitivamente el usuario entiende qué próxima
+    // fecha es elegible y que no le deja elegir fecha inferior a la fecha de
+    // anticipación"*). Con el campo de fecha del navegador, los días antes del
+    // plazo apenas se veían grises y se podían escribir a mano. Acá son un
+    // número suelto, sin caja, y los que se pueden elegir son teclas: la forma
+    // del calendario de reservas.html. Va primero, como en la reserva.
+    var plazo = Math.max(1, Number(promo.anticipacion) || 0);
+    var minimo = diaEn(plazo);
+    var alCambiarFecha = [];
+    var p1 = paso(1, T.pasoDia);
+    p1.appendChild(calendario(minimo, function (f) {
+      estado.fecha = f;
+      alCambiarFecha.forEach(function (fn) { fn(); });
+      calcular();
+    }));
+    if (plazo > 1) p1.appendChild(el('p', 'cot-plazo', T.conAnticipacion.replace('{n}', plazo).replace('{f}', fechaLarga(minimo))));
+
+    // 2. Cuántos son, lo que incluye y el lugar exclusivo.
+    var pc = paso(2, T.pasoCuantos);
+    pc.appendChild(contador(menusNinos.length ? T.adultos : T.personas, estado.adultos, 0, function (n) { estado.adultos = n; grupoCambio(); }));
     // Con un solo menú de niños, el contador dice "Niños"; con varios, el nombre de cada menú.
     menusNinos.forEach(function (m, k) {
-      p1.appendChild(contador(menusNinos.length === 1 ? T.ninos : m.nombre, 0, 0, function (n) { estado.ninos[k] = n; grupoCambio(); }));
+      pc.appendChild(contador(menusNinos.length === 1 ? T.ninos : m.nombre, 0, 0, function (n) { estado.ninos[k] = n; grupoCambio(); }));
     });
-    var dia = el('label', 'cot-dia');
-    dia.appendChild(el('span', 'cot-rotulo', T.dia));
-    // **Desde mañana, o desde el plazo de la promoción** (2026-11-24, lo pidió
-    // el cliente: el karting o el taller de queso no se organizan sin tiempo).
-    // El calendario no deja elegir antes, y bajo el campo se dice.
-    var plazo = Math.max(1, Number(promo.anticipacion) || 0);
-    var fecha = el('input', 'cot-campo'); fecha.type = 'date'; fecha.min = diaEn(plazo);
-    fecha.addEventListener('change', function () { estado.fecha = fecha.value; calcular(); });
-    dia.appendChild(fecha);
-    if (plazo > 1) dia.appendChild(el('span', 'cot-plazo', T.conAnticipacion.replace('{n}', plazo)));
-    p1.appendChild(dia);
 
-    // 2. Qué menú y qué se suma.
-    var p2 = paso(2, T.paso2);
+    // 3. Qué menú y qué se suma.
+    var p2 = paso(3, T.paso2);
     if (promo.menus.length === 1) {
       var fijo = el('p', 'cot-fijo');
       fijo.append(el('span', 'cot-rotulo', T.menuFijo), el('strong', '', promo.menus[0].nombre),
@@ -428,11 +501,11 @@
       });
       p2.appendChild(grupo);
     }
-    // Lo que incluye va en el paso 1, que tiene espacio: así el paso 2 no
-    // crece y el cotizador cabe en una pantalla.
+    // Lo que incluye va en el paso de cuántos son, que tiene espacio: así el
+    // del menú no crece y el cotizador cabe en una pantalla.
     if (promo.incluye.length) {
       var inc = el('p', 'cot-incluye'); inc.append(el('span', 'cot-rotulo', T.incluye), document.createTextNode(promo.incluye.join(' · ')));
-      p1.appendChild(inc);
+      pc.appendChild(inc);
     }
     // **El lugar exclusivo** (2026-11-25): suma el arriendo del recinto a su
     // precio estándar, sin el descuento de la promoción. Solo si el panel manda
@@ -459,11 +532,11 @@
         return T.exclusivoPrecio.replace('{m}', pesos(p) + (promo.arriendo.masIva ? ' ' + T.masIva : ''));
       };
       exPrecio.textContent = precioExclusivo();
-      fecha.addEventListener('change', function () { exPrecio.textContent = precioExclusivo(); });
+      alCambiarFecha.push(function () { exPrecio.textContent = precioExclusivo(); });
       exTexto.append(el('strong', '', T.exclusivo), exPrecio);
       exO.append(exC, exTexto); exCaja.appendChild(exO);
       exC.addEventListener('change', function () { estado.exclusivo = exC.checked; calcular(); });
-      p1.appendChild(exCaja);
+      pc.appendChild(exCaja);
     }
     if (promo.suma.length) {
       p2.appendChild(el('p', 'cot-rotulo cot-rotulo-suelto', T.suma));
@@ -504,7 +577,7 @@
     }
 
     // 3. La boleta y el envío.
-    var p3 = paso(3, T.paso3);
+    var p3 = paso(4, T.paso3);
     p3.classList.add('cot-final');
     var boleta = el('div', 'cot-boleta'); boleta.setAttribute('aria-live', 'polite');
     var aviso = el('p', 'cot-aviso', T.faltaDia);
@@ -607,7 +680,7 @@
       clearTimeout(reloj);
       if (!estado.fecha) { dibujar(null); return; }
       // Un día escrito a mano antes del plazo: se dice sin preguntarle al panel.
-      if (estado.fecha < fecha.min) { dibujar({ ok: false, codigo: plazo > 1 ? 'anticipacion' : 'fecha', dias: plazo }); return; }
+      if (estado.fecha < minimo) { dibujar({ ok: false, codigo: plazo > 1 ? 'anticipacion' : 'fecha', dias: plazo }); return; }
       if (!estado.menu) { dibujar({ ok: false, codigo: 'menu' }); return; }
       var ninos = estado.ninos.reduce(function (a, n) { return a + n; }, 0);
       if (estado.adultos + ninos < promo.minimo) { dibujar({ ok: false, codigo: 'minimo', minimo: promo.minimo }); return; }
