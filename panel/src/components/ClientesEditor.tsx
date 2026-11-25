@@ -105,7 +105,7 @@ export default function ClientesEditor() {
   const [hoyDia, setHoyDia] = useState('');
   const [usuario, setUsuario] = useState('');
   /** La ventanita de las notas abierta desde la ficha: de qué cotización y de quién. */
-  const [anotando, setAnotando] = useState<{ h: EnHistorial; nombre: string; telefono: string; correo: string } | null>(null);
+  const [anotando, setAnotando] = useState<{ h: EnHistorial; nombre: string; empresa: string; telefono: string; correo: string } | null>(null);
   /**
    * Qué ficha está abierta. Una a la vez, como en `/equipo`. Lo escrito y su
    * guardado viven en `EditarCliente`, la misma pieza de la ventana de cotizar.
@@ -428,7 +428,7 @@ export default function ClientesEditor() {
                                     misma ventanita de la cotización —qué
                                     conversaron y cuándo volver a contactarlo—. */}
                                 {h.anota && !soloMiraCotizar && (
-                                  <button type="button" onClick={() => setAnotando({ h, nombre: c.nombre, telefono: c.telefono ?? '', correo: c.correo ?? '' })}
+                                  <button type="button" onClick={() => setAnotando({ h, nombre: c.nombre, empresa: c.empresa ?? '', telefono: c.telefono ?? '', correo: c.correo ?? '' })}
                                     className="boton min-h-[48px] shrink-0 !border-oro font-semibold">📝 Anotar</button>
                                 )}
                               </li>
@@ -462,8 +462,8 @@ export default function ClientesEditor() {
       )}
       {anotando && (
         <NotasCotizacion
-          p={{ id: anotando.h.id, cliente: anotando.nombre, recontactar: anotando.h.recontactar ?? '', fecha: anotando.h.fecha,
-            telefono: anotando.telefono, email: anotando.correo }}
+          p={{ id: anotando.h.id, cliente: anotando.nombre, empresaCliente: anotando.empresa,
+            recontactar: anotando.h.recontactar ?? '', fecha: anotando.h.fecha, telefono: anotando.telefono, email: anotando.correo }}
           grupo={anotando.h.grupo} notas={Object.values(notas).flat()} hoy={hoyDia} usuario={usuario}
           onCambio={() => void cargar()} onCerrar={() => setAnotando(null)} />
       )}

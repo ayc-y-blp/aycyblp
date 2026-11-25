@@ -26,6 +26,7 @@ import { ESTADO_PRESUPUESTO, estadoNormal, estadoVisible, estaMandada, folioDe, 
 import { alternativasDe, enCarrera, grupoDe } from '@/lib/cotizar';
 import { enCorto, esFecha, type Fecha } from '@/lib/fechas';
 import type { Nota } from '@/lib/notas';
+import EmpresaCliente from './EmpresaCliente';
 
 const TONO = { rojo: 'font-semibold text-rojo-texto', ambar: 'font-semibold text-ambar-texto', neutro: 'text-hueso/75' } as const;
 
@@ -159,6 +160,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {soloHoy && <span aria-hidden>{x.tipo === 'redactar' ? '✍' : '📞'}</span>}
           <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
+          <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
           <span className="text-[13px] text-hueso/65">N° {folioDe(p)}</span>
           <PastillaEstado estado={estadoVisible(p, hoy)} />
           {notas > 0 && <span className="text-[13px] text-hueso/65">🗒 {notas}</span>}

@@ -208,6 +208,24 @@ export function buscarClientes(lista: Cliente[], texto: string): Cliente[] {
 }
 
 /** Ordenados por nombre, como todas las listas de gente del panel. */
+/**
+ * **La empresa al lado del nombre** (2026-11-25, lo pidió el cliente:
+ * *"donde mostramos cotizaciones y mostramos el nombre del cliente, debería
+ * mostrarse la empresa también"*). La empresa, o `''` si no tiene o si es lo
+ * mismo que el nombre (un cliente que es la empresa): así no se repite.
+ */
+export function empresaAparte(nombre: string | undefined, empresa: string | undefined): string {
+  const e = (empresa ?? '').trim();
+  if (!e || normalizar(e) === normalizar(nombre ?? '')) return '';
+  return e;
+}
+
+/** *Ignacia Rojas · Constructora Maipo*, para una línea de texto. Sin empresa, el nombre. */
+export function nombreConEmpresa(nombre: string | undefined, empresa: string | undefined): string {
+  const e = empresaAparte(nombre, empresa);
+  return e ? `${nombre || 'Sin cliente'} · ${e}` : (nombre ?? '');
+}
+
 export function porNombreCliente(a: Cliente, b: Cliente): number {
   return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
 }

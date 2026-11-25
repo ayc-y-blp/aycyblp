@@ -508,7 +508,7 @@ export function clienteDe(
 /** La cotización con su cliente resuelto, para mostrar o convertir. */
 export function conCliente<T extends Presupuesto>(p: T, clientes: Cliente[]): T {
   const c = clienteDe(p, clientes);
-  return { ...p, cliente: c.nombre, email: c.email, telefono: c.telefono };
+  return { ...p, cliente: c.nombre, email: c.email, telefono: c.telefono, empresaCliente: c.empresa };
 }
 
 /** El grupo de alternativas de una cotización: el suyo, o ella misma. */

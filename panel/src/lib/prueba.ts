@@ -25,7 +25,7 @@ import * as Caida from './caida.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
-import { prepararLineas, esDiaPublico, clienteDe, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
+import { prepararLineas, esDiaPublico, clienteDe, conCliente, otrasAlternativas, grupoSinGanar, seCayo, enCarrera, lineaDeProducto, yaEstaEnLaCotizacion, cambiarCantidad,
          alternativasDe, letraDe, principalDe, sigueViva, vivasDelGrupo, faltaElegir, paraElLink,
          ESTADOS_A_MANO, productoDe, showDe, reglaShowDe, showQuedaBajoMinimo, showBajoMinimoDe,
          reglaArriendoDe, minimoDeArriendo, esPublicoParaArriendo, arriendoQuedaBajoMinimo, arriendoDe } from './cotizar.ts';
@@ -44,7 +44,7 @@ import { pendientesDeAprobar, pendientesDeCupo, pendientesDeSobrecupo, juntarPen
 import { limiteSinAprobar, subeElCupo, marcaCupoPedido, cupoPedidoDe, cupoAlAprobar } from './cupo.ts';
 import { leerClientesDe, filaCliente, limpiarCliente, faltaEnCliente, parecidos,
          nuevoIdCliente, buscarClientes, migrarAClientes, ENCABEZADO_CLIENTES,
-         faltaParaFactura, type Cliente } from './clientes.ts';
+         faltaParaFactura, empresaAparte, nombreConEmpresa, type Cliente } from './clientes.ts';
 import { diaParaReservaManual, diaParaGanar, queLeHizo, deshacerDia, cupoParaGanar } from './dias.ts';
 import { valorSeguro } from './celdas.ts';
 import { tranquilidadDeCotizacion, devolucionSugerida, faltaDevolver, frasesCancelacion,
@@ -8051,6 +8051,21 @@ console.log('\nEl recontacto y la última nota, en todas partes (2026-11-25)');
      '📞 Recontactar: las que tienen un día, la atrasada primero');
   ok(L.proximosPasos(lista[4], ctx)[0]?.contacto === '2026-11-23',
      'el día elegido llega a la fila de la lista para dibujarlo como pastilla');
+}
+
+console.log('\nLa empresa del cliente, al lado de su nombre (2026-11-25)');
+{
+  ok(empresaAparte('Ignacia Rojas', 'Constructora Maipo') === 'Constructora Maipo'
+     && nombreConEmpresa('Ignacia Rojas', 'Constructora Maipo') === 'Ignacia Rojas · Constructora Maipo',
+     'la empresa va al lado del nombre');
+  ok(empresaAparte('Viña Santa Rita', 'viña santa rita ') === '' && nombreConEmpresa('Viña Santa Rita', 'VIÑA SANTA RITA') === 'Viña Santa Rita',
+     'si la empresa es el mismo nombre, no se repite');
+  ok(empresaAparte('Ana Soto', '') === '' && nombreConEmpresa('Ana Soto', undefined) === 'Ana Soto',
+     'sin empresa, solo el nombre');
+  const fichas = [{ id: 'C-0009', nombre: 'Ana Soto', correo: 'ana@x.cl', telefono: '+56 9 1234 5678',
+    empresa: 'Andes SpA' }] as unknown as Cliente[];
+  const p = { id: 'P-1', idCliente: 'C-0009', cliente: '', email: '', telefono: '' } as unknown as import('./presupuestos.ts').Presupuesto;
+  ok(conCliente(p, fichas).empresaCliente === 'Andes SpA', 'la cotización trae la empresa de la ficha del cliente');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

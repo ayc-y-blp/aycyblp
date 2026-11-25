@@ -61,6 +61,7 @@ import AvisoFijo from './AvisoFijo';
 import { BotonMias, BotonTodos } from './BotonMias';
 import { Pastilla, PastillaCotizado, PastillaContacto } from './Pastilla';
 import ListaCotizaciones from './ListaCotizaciones';
+import EmpresaCliente from './EmpresaCliente';
 import { veElEquipo, type ContextoLista } from '@/lib/listaCotizaciones';
 
 type Datos = DatosCotizar & {
@@ -392,6 +393,9 @@ export default function CotizacionesVista() {
         <button type="button" onClick={() => setAbierta({ p })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
           className="abrir absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
         <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
+        {/* La empresa del cliente, al lado (2026-11-25): la misma pieza de
+            Clientes, Agenda, *Tus pendientes* y la página del día. */}
+        <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
         <PastillaEstado estado={estadoDe(p)} />
         {conFecha && (
           <span className="text-[14px] text-hueso/70">
@@ -657,7 +661,7 @@ export default function CotizacionesVista() {
           texto: porDevolver.length === 1 ? '1 devolución por hacer' : `${porDevolver.length} devoluciones por hacer`,
           ayuda: 'Eventos cancelados con plata acordada para devolver. Ábrelo y anota la devolución al transferir.',
           lista: <div className="space-y-1.5">{porDevolver.map(({ p, falta }) => (
-            <FilaPendiente key={p.id} quien={p.cliente || 'Sin cliente'} dato={`devolver ${enPesos(falta)}`} rojo
+            <FilaPendiente key={p.id} quien={p.cliente || 'Sin cliente'} empresa={p.empresaCliente} dato={`devolver ${enPesos(falta)}`} rojo
               onAbrir={() => setAbierta({ p, paso: 4 })} />))}</div>
         }] : []),
         ...(avisos.saldo.length ? (() => {
@@ -668,7 +672,7 @@ export default function CotizacionesVista() {
             urgente: vencidos ? (vencidos === 1 ? '1 vencido' : `${vencidos} vencidos`) : undefined,
             lista: <div className="space-y-1.5">{avisos.saldo.map((a) => {
               const p = porId.get(a.id)!;
-              return <FilaPendiente key={a.id} quien={p.cliente} rojo={a.dias < 0}
+              return <FilaPendiente key={a.id} quien={p.cliente} empresa={p.empresaCliente} rojo={a.dias < 0}
                 dato={`${enPesos(a.monto)} · ${a.dias < 0 ? `venció hace ${-a.dias} ${a.dias === -1 ? 'día' : 'días'}`
                   : a.dias === 0 ? 'vence hoy' : a.dias === 1 ? 'vence mañana' : `vence en ${a.dias} días`}`}
                 onAbrir={() => setAbierta({ p })} />;
@@ -681,7 +685,7 @@ export default function CotizacionesVista() {
           ayuda: 'Comprueba que la plata llegó y márcalos revisados.',
           lista: <div className="space-y-1.5">{[...sinRevisar].map(([id, r]) => {
             const p = porId.get(id)!;
-            return <FilaPendiente key={id} quien={p.cliente}
+            return <FilaPendiente key={id} quien={p.cliente} empresa={p.empresaCliente}
               dato={`${r.n === 1 ? '1 cobro' : `${r.n} cobros`} · ${enPesos(r.monto)}`} onAbrir={() => setAbierta({ p })} />;
           })}</div>
         }] : []),
@@ -691,7 +695,7 @@ export default function CotizacionesVista() {
           ayuda: 'Ya pagaron el anticipo. Mientras no esté ganada, otro puede tomar ese día.',
           lista: <div className="space-y-1.5">{avisos.anticipoSinGanar.map((a) => {
             const p = porId.get(a.id)!;
-            return <FilaPendiente key={a.id} quien={p.cliente} dato={`pagó ${enPesos(a.monto)}`}
+            return <FilaPendiente key={a.id} quien={p.cliente} empresa={p.empresaCliente} dato={`pagó ${enPesos(a.monto)}`}
               onAbrir={() => setAbierta({ p, paso: 4 })} />;
           })}</div>
         }] : []),
@@ -711,7 +715,7 @@ export default function CotizacionesVista() {
           texto: pronto.length === 1 ? '1 vence pronto' : `${pronto.length} vencen pronto`,
           lista: <div className="space-y-1.5">{pronto.map((p) => {
             const n = diasParaVencer(p, hoy);
-            return <FilaPendiente key={p.id} quien={p.cliente}
+            return <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente}
               dato={n === 0 ? 'vence hoy' : n === 1 ? 'vence mañana' : `vence en ${n} días`} onAbrir={() => setAbierta({ p })} />;
           })}</div>
         }] : []),
@@ -720,7 +724,7 @@ export default function CotizacionesVista() {
           texto: porCoordinarMias.length === 1 ? '1 por coordinar con otra empresa' : `${porCoordinarMias.length} por coordinar con otras empresas`,
           ayuda: 'Llevan algo que cobra otra empresa, como el karting. Cuando lo tengas coordinado, márcalo con 🤝 Ya lo coordiné bajo el total de la cotización.',
           lista: <div className="space-y-1.5">{porCoordinarMias.map(({ p, faltan }) => (
-            <FilaPendiente key={p.id} quien={p.cliente}
+            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente}
               dato={faltan.map((f) => `${f.conceptos.join(', ')} · ${f.empresa}`).join(' · ')}
               onAbrir={() => setAbierta({ p, paso: 3 })} />))}</div>
         }] : []),
@@ -729,7 +733,7 @@ export default function CotizacionesVista() {
           texto: vencidas.length === 1 ? '1 venció sin cerrar' : `${vencidas.length} vencieron sin cerrar`,
           ayuda: 'Ya no cuentan como gente posible: márcalas perdidas o renueva la vigencia.',
           lista: <div className="space-y-1.5">{vencidas.map((p) => (
-            <FilaPendiente key={p.id} quien={p.cliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p })} />))}</div>
+            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p })} />))}</div>
         }] : [])
       ]} />
       </div>

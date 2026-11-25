@@ -619,8 +619,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   chat y *Correo* copia el correo. **La pastilla 📞 va en la primera fila de
   cada cotización de la lista, al centro, ámbar hasta el día y roja desde el
   día** (lo pidió el cliente con una foto); lo mismo en Clientes, la tarjeta
-  *Recontactar* y el botón *🗒 Notas*. Ningún permiso, columna ni lectura
-  nueva. **En un PR, en preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
+  *Recontactar* y el botón *🗒 Notas*. **Y la empresa del cliente al lado de
+  su nombre** donde se muestra una cotización (`EmpresaCliente`, lo pidió el
+  cliente). Ningún permiso, columna ni lectura nueva. **En un PR, en preview
+  hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "El recontacto y la
   última nota, en todas partes".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).

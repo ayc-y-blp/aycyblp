@@ -31,6 +31,7 @@ import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
 import { MEDIOS, iconoDeMedio, notasPorDia, sePuedeCorregir, LARGO_NOTA, QUIEN_CRM, type Nota } from '@/lib/notas';
 import { esFecha, sumarDias, type Fecha } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
+import { nombreConEmpresa } from '@/lib/clientes';
 
 const ENTRADA = 'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] focus:border-oro focus:outline-none';
 
@@ -50,7 +51,7 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
    * La cotización del grupo desde donde se abrió: solo lo que la ventana usa,
    * para que la abra también la ficha del cliente (2026-11-25).
    */
-  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'> & Partial<Pick<Presupuesto, 'telefono' | 'email'>>;
+  p: Pick<Presupuesto, 'id' | 'cliente' | 'recontactar' | 'fecha'> & Partial<Pick<Presupuesto, 'telefono' | 'email' | 'empresaCliente'>>;
   grupo: string;
   /** Las notas que esta cuenta puede leer (de todas sus cotizaciones). */
   notas: Nota[];
@@ -125,7 +126,7 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
     // **En el computador, dos columnas** (2026-11-23): a la izquierda anotar,
     // a la derecha lo ya conversado. En una sola columna no cabía en
     // 1280×650 con dos notas. En el celular, una debajo de la otra.
-    <Dialogo titulo={`Notas · ${p.cliente || 'Sin cliente'}`} onCerrar={onCerrar} ancho="max-w-2xl lg:max-w-5xl">
+    <Dialogo titulo={`Notas · ${nombreConEmpresa(p.cliente || 'Sin cliente', p.empresaCliente)}`} onCerrar={onCerrar} ancho="max-w-2xl lg:max-w-5xl">
       <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
       <div>
       <div className={`mt-2 ${marcoGrupo('rosa')} p-3`}>

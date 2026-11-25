@@ -901,6 +901,8 @@ export interface AvisoSitio {
   id: string;
   folio: string;
   cliente: string;
+  /** La empresa del cliente, de su ficha (2026-11-25). */
+  empresa: string;
   promo: string;
   fecha: string;
   invitados: number;
@@ -920,7 +922,7 @@ const SIGUE = new Set<string>([ESTADO_PRESUPUESTO.candidato, ESTADO_PRESUPUESTO.
  */
 export function avisosDelSitio(
   presupuestos: (Pick<Presupuesto, 'id' | 'origen' | 'avisoVisto' | 'estado' | 'creadoPor' | 'fecha' | 'invitados' | 'descuento'>
-    & { cliente?: string })[],
+    & { cliente?: string; empresaCliente?: string })[],
   lineas: LineaPresupuesto[],
   cuenta: { usuario: string; asigna: boolean }
 ): AvisoSitio[] {
@@ -929,7 +931,7 @@ export function avisosDelSitio(
     .filter((p) => esDelSitio(p) && !String(p.avisoVisto ?? '').trim() && SIGUE.has(estadoNormal(p.estado))
       && (p.creadoPor ? !!yo && normalizar(p.creadoPor) === yo : cuenta.asigna))
     .map((p) => ({
-      id: p.id, folio: folioDe(p), cliente: p.cliente ?? '',
+      id: p.id, folio: folioDe(p), cliente: p.cliente ?? '', empresa: p.empresaCliente ?? '',
       promo: String(p.origen ?? '').replace(/^sitio\s*·\s*/i, ''),
       fecha: String(p.fecha ?? ''), invitados: p.invitados,
       total: totalDe(lineasDe(lineas, p.id), p.descuento)

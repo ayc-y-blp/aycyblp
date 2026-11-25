@@ -442,6 +442,14 @@ export interface Presupuesto {
   id: string;
   fecha: Fecha;
   cliente: string;
+  /**
+   * **La empresa del cliente, de su ficha** (2026-11-25, lo pidió el
+   * cliente: *"donde mostramos cotizaciones y mostramos el nombre del
+   * cliente, debería mostrarse la empresa también"*). No es una columna: la
+   * pone `conCliente()` al leer, como el nombre. No se recorta por rol: la
+   * empresa no es un dato de contacto.
+   */
+  empresaCliente?: string;
   email: string;
   telefono: string;
   estado: string;

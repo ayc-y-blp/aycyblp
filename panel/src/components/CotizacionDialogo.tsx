@@ -49,7 +49,7 @@ import { igualAlProducto } from '@/lib/detalle';
 import {
   condicionesDe, estadoCobros, montoCobro, CONCEPTO_COBRO, ganaSinRespaldo, type Cobro
 } from '@/lib/cobros';
-import { buscarClientes, porNombreCliente, faltaParaFactura, type Cliente } from '@/lib/clientes';
+import { buscarClientes, porNombreCliente, faltaParaFactura, empresaAparte, type Cliente } from '@/lib/clientes';
 import { puedeTocarPresupuesto, puede, type Rol } from '@/lib/auth';
 import { achicarFoto } from '@/lib/achicarFoto';
 import { faltaDelCliente, partirHorario, textoHorario, moverHora, PASO_HORARIO } from '@/lib/contrato';
@@ -1851,6 +1851,7 @@ export default function CotizacionDialogo({
   const resumenArriba = cliente && paso !== 1 ? (
     <div className="text-[15px]">
       Para <strong>{cliente.nombre}</strong>
+      {empresaAparte(cliente.nombre, cliente.empresa) && <span className="text-hueso/75"> · {cliente.empresa}</span>}
       {fechaReal ? <> · <span className="inline-block first-letter:uppercase">{enPalabras(fechaReal)}</span></>
         : periodo ? <> · {periodo}</> : null}
       {invitados > 0 && <> · {invitados} invitados</>}
@@ -1987,6 +1988,7 @@ export default function CotizacionDialogo({
       {cliente && paso !== 1 && (
         <p className="mb-3 text-[15px] lg:hidden">
           Para <strong>{cliente.nombre}</strong>
+          {empresaAparte(cliente.nombre, cliente.empresa) && <span className="text-hueso/75"> · {cliente.empresa}</span>}
           {fechaReal && <> · <span className="first-letter:uppercase inline-block">{enPalabras(fechaReal)}</span></>}
           {!fechaReal && periodo && <> · {periodo}</>}
         </p>

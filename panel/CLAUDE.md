@@ -173,6 +173,7 @@ revisan antes de cada cambio en esta carpeta.
   | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
   | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*, también desde la ficha del cliente) y `HistorialNotas` (la misma lista en la ficha del cliente, filtrable por cotización) |
   | La última nota y el próximo contacto | `LoConversado` (paso 4 de cotizar) y `UltimaNota` (la ficha del cliente y la Agenda); dentro del botón *🗒 Notas* de la cotización, en un renglón |
+  | La empresa del cliente al lado de su nombre, donde se muestra una cotización | `EmpresaCliente` (y `nombreConEmpresa()` en una línea de texto): la Lista, la Agenda, *Tus pendientes*, la página del día, la cabecera de la cotización, *🗒 Notas*, la bandeja, el aviso del sitio y las ventas de Vendedores |
   | El día elegido para volver a contactarlo | `PastillaContacto` (📞, con `textoContacto()`): ámbar hasta el día y rojo desde el día; en la primera fila de cada cotización de la lista (al centro), y en Clientes |
   | Elegir un día con atajos: *Mañana · En 3 días · En una semana · 📅 Elegir… · Sin fecha* | `ElegirFecha` (el próximo contacto en las notas y el plazo prometido en el paso Evento) |
   | La ficha de un cliente para editarla: sus campos, el guardado solo y el nombre que se confirma | `EditarCliente` y `CamposCliente` (la ficha abierta en *Clientes* y *✎ Editar cliente* en el paso Cliente de la cotización) |
@@ -230,6 +231,28 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## La empresa del cliente, al lado de su nombre (2026-11-25)
+
+Lo pidió el cliente: *"y donde mostramos cotizaciones y mostramos el nombre del
+cliente, debería mostrarse la empresa también"*.
+
+- **El dato**: `conCliente()` (`lib/cotizar.ts`) suma `empresaCliente`, de la
+  ficha del cliente, igual que el nombre. No es una columna nueva y **no se
+  recorta por rol**: la empresa no es un dato de contacto (lo que se tapa es el
+  teléfono y el correo).
+- **La pieza**: `EmpresaCliente` (`components/EmpresaCliente.tsx`), la misma
+  forma de *Clientes*: después del nombre, a 14px y más clara. En una línea de
+  texto, `nombreConEmpresa()` (*Ignacia Rojas · Constructora Maipo*). **Sin
+  empresa, o si es igual al nombre** (un cliente que es la empresa), no se
+  repite (`empresaAparte()` en `lib/clientes.ts`, con pruebas).
+- **Dónde**: la fila de cada cotización (la Lista, el día del calendario y *Sin
+  fecha*), la Agenda, *Tus pendientes*, lo cotizado de la página del día, la
+  cabecera de la cotización (*Para …*), el título de *🗒 Notas*, la ventana de
+  las cotizaciones del sitio, la bandeja (condiciones, acuerdos y liberar un
+  día exclusivo) y las ventas de Vendedores, del link personal y del Informe.
+- **Lecturas de Google**: ninguna; las rutas ya leían `Clientes`. **Ningún
+  permiso ni columna nueva.** Ninguna ayuda describe cómo se escribe el nombre.
 
 ## El recontacto y la última nota, en todas partes (2026-11-25)
 

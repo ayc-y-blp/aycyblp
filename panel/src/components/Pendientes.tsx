@@ -14,6 +14,7 @@
  */
 import { useState } from 'react';
 import AyudaCorta from './AyudaCorta';
+import EmpresaCliente from './EmpresaCliente';
 
 export type TonoPendiente = 'rojo' | 'ambar' | 'verde' | 'rosa' | 'neutro';
 
@@ -90,14 +91,18 @@ export default function Pendientes({ items, titulo = 'Pendientes', enFila = fals
 }
 
 /** Una fila corta de una lista de pendientes: quién, el dato y *Abrir →*. */
-export function FilaPendiente({ quien, dato, rojo = false, onAbrir }: {
-  quien: string; dato: string; rojo?: boolean; onAbrir: () => void;
+export function FilaPendiente({ quien, empresa, dato, rojo = false, onAbrir }: {
+  quien: string;
+  /** La empresa del cliente, al lado del nombre (2026-11-25): `EmpresaCliente`. */
+  empresa?: string;
+  dato: string; rojo?: boolean; onAbrir: () => void;
 }) {
   return (
     <button type="button" onClick={onAbrir}
       className={`tecla flex min-h-[44px] w-full flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg border bg-panel px-3 py-1.5 text-left
         hover:border-oro ${rojo ? 'border-rojo-fuerte/60' : 'border-hueso/15'}`}>
       <span className="text-[15px] font-semibold">{quien}</span>
+      <EmpresaCliente nombre={quien} empresa={empresa} />
       <span className={`text-[14px] ${rojo ? 'font-semibold text-rojo-texto' : 'text-hueso/75'}`}>{dato}</span>
       <span className="ml-auto text-[14px] font-semibold text-oro">Abrir →</span>
     </button>

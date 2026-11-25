@@ -25,6 +25,7 @@ import { acuerdosPorRevisar, huellaDe } from './acuerdos.ts';
 import { ESTADO_PAGO } from './columnas.ts';
 import { porRecibirDe, porRevisarCaja, partesRecibido, type Movimiento } from './caja.ts';
 import { leerCobroLocal, sumaCobro, fraseCobro } from './cobroLocal.ts';
+import { nombreConEmpresa } from './clientes.ts';
 
 /** Lo que tienen todas las cosas por aprobar. */
 interface Base {
@@ -244,7 +245,7 @@ export function pendientesDeSobrecupo(
  * (el del grupo), para no importar acá la lógica de alternativas.
  */
 export function pendientesDeExclusivo(
-  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'cliente' | 'invitados' | 'exclusivo' | 'exclusividad' | 'diaPausado' | 'idReserva'>[],
+  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'cliente' | 'empresaCliente' | 'invitados' | 'exclusivo' | 'exclusividad' | 'diaPausado' | 'idReserva'>[],
   reservas: Reserva[], hoy: string, diasMinimos: number, folio: (id: string) => string = (id) => id
 ): PendienteExclusivo[] {
   const lista: PendienteExclusivo[] = [];
@@ -255,7 +256,7 @@ export function pendientesDeExclusivo(
     const plazo = plazoParaLiberar(p.fecha, hoy, diasMinimos);
     lista.push({
       tipo: 'exclusivo', clave: `exclusivo-${p.id}`, fecha: p.fecha, pide: d.quien || 'alguien', cuando: d.cuando,
-      motivo: '', comentario: '', id: p.id, folio: folio(p.id), cliente: p.cliente || 'sin nombre',
+      motivo: '', comentario: '', id: p.id, folio: folio(p.id), cliente: nombreConEmpresa(p.cliente || 'sin nombre', p.empresaCliente),
       invitados: Number(p.invitados) || 0, reservas: otras.length,
       personas: otras.reduce((n, r) => n + (Number(r.personas) || 0), 0),
       faltan: plazo.faltan, enPlazo: plazo.enPlazo, diasMinimos, pausado: !!p.diaPausado
@@ -331,7 +332,7 @@ export function pendientesDeCuenta(
 /** Todo junto, del día más antiguo al más nuevo. */
 /** Los pedidos de condiciones especiales, de la cotización más próxima a la más lejana. */
 export function pendientesDeCondiciones(
-  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'periodo' | 'cliente' | 'condicionesPedidas' | 'condicionesEspeciales'>[],
+  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'periodo' | 'cliente' | 'empresaCliente' | 'condicionesPedidas' | 'condicionesEspeciales'>[],
   topes: Topes, folio: (id: string) => string = (id) => id
 ): PendienteCondiciones[] {
   const lista: PendienteCondiciones[] = [];
@@ -342,7 +343,7 @@ export function pendientesDeCondiciones(
     lista.push({
       tipo: 'condiciones', clave: `condiciones-${p.id}`, fecha: p.fecha || '', pide: d.quien || 'alguien',
       cuando: d.cuando, motivo: d.nota, comentario: '', id: p.id, folio: folio(p.id),
-      cliente: p.cliente || 'sin nombre', pedido: frasePedido(pedido, topes)
+      cliente: nombreConEmpresa(p.cliente || 'sin nombre', p.empresaCliente), pedido: frasePedido(pedido, topes)
     });
   }
   return lista.sort(porFecha) as PendienteCondiciones[];
@@ -350,7 +351,7 @@ export function pendientesDeCondiciones(
 
 /** Las cotizaciones en carrera o ganadas con acuerdos adicionales que pagos no ha visto. */
 export function pendientesDeAcuerdos(
-  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'cliente' | 'estado' | 'acuerdos' | 'acuerdosRevisados' | 'creadoPor'>[],
+  presupuestos: Pick<Presupuesto, 'id' | 'fecha' | 'cliente' | 'empresaCliente' | 'estado' | 'acuerdos' | 'acuerdosRevisados' | 'creadoPor'>[],
   folio: (id: string) => string = (id) => id
 ): PendienteAcuerdos[] {
   const fuera = new Set(['perdida', 'no elegida', 'cancelada']);
@@ -358,7 +359,7 @@ export function pendientesDeAcuerdos(
     .filter((p) => !fuera.has(String(p.estado ?? '').trim().toLowerCase()) && acuerdosPorRevisar(p))
     .map((p) => ({
       tipo: 'acuerdos' as const, clave: `acuerdos-${p.id}`, fecha: p.fecha || '', pide: p.creadoPor || 'alguien',
-      cuando: '', motivo: '', comentario: '', id: p.id, folio: folio(p.id), cliente: p.cliente || 'sin nombre',
+      cuando: '', motivo: '', comentario: '', id: p.id, folio: folio(p.id), cliente: nombreConEmpresa(p.cliente || 'sin nombre', p.empresaCliente),
       texto: String(p.acuerdos).trim(), huella: huellaDe(p.acuerdos)
     }))
     .sort(porFecha) as PendienteAcuerdos[];
