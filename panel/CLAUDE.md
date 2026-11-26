@@ -144,6 +144,15 @@ revisan antes de cada cambio en esta carpeta.
   cuánto muestra según su espacio, **no el formato**. Antes de dibujar algo
   se busca la pieza que ya lo muestra; si hay dos formas del mismo dato, se
   unifican. **Y un cambio de diseño se lleva a sus parecidos** (regla del
+  **Y la misma estructura en las pantallas parecidas** (2026-11-26, lo
+  pidió el cliente: *"el orden, estructura de diseño, columnas y filas debe
+  ser coherente en todos los elementos del sitio donde se ordenan datos de una
+  forma/estructura parecida"*): dos vistas de lo mismo —el calendario y la
+  Lista de Cotizaciones— llevan las barras en el mismo orden (*← Volver* al
+  extremo izquierdo, la acción principal a su lado, los botones que cambian
+  de vista al extremo derecho y con el mismo diseño) y la misma segunda fila
+  (*De quién* a la izquierda, el periodo a la derecha); y una lista con los
+  mismos datos que otra los ordena en las mismas columnas.
   cliente, 2026-11-21, está en la raíz): se cambia en todas las pantallas
   que usan esa pieza en el mismo PR, o, si hay duda, se le pregunta al
   cliente nombrando cuáles. **Las piezas compartidas, hoy**:
@@ -197,7 +206,9 @@ revisan antes de cada cambio en esta carpeta.
   | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
-  | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`) |
+  | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`), y la de sus cotizaciones (`data-columnas="historial"`) |
+  | Filtrar por vendedor (la gerencia, pagos y el administrador) | `BotonPorVendedor` + `BuscarEnLista` (el calendario y la Lista de Cotizaciones, y Clientes) |
+  | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* | `BOTON_VISTA` (`filaCotizacion.ts`) |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -246,6 +257,48 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## La barra de Cotizaciones y *👤 Por vendedor…* en el calendario (2026-11-26)
+
+Lo pidió el cliente con dos fotos, la del calendario y la de la Lista:
+*"volver al calendario y lista deben tener el mismo diseño, más marcado, y
+volver calendario → botón más izquierda, lista → botón más derecha, cotizar se
+ve bien pero debe estar al lado derecho de volver calendario. En calendario
+cotizaciones debo poder filtrar también por vendedor (los tres roles arriba),
+y el orden, estructura de diseño, columnas y filas debe ser coherente en todos
+los elementos del sitio donde se ordenan datos de una forma/estructura
+parecida"*, y *"si es necesario actualizar reglas o skills, hazlo"*.
+
+- **La barra de arriba, en el mismo orden en las tres vistas**: *← Volver al
+  calendario* al extremo izquierdo (en la Lista y *Sin fecha*), *+ Cotizar* a
+  su derecha, los pendientes, y al extremo derecho *Mías / De todos*, *Sin
+  fecha* y *📋 Lista*. **Los botones que cambian de vista** —*Volver*, *Sin
+  fecha* y *Lista*— llevan el mismo diseño, más marcado (`BOTON_VISTA` en
+  `filaCotizacion.ts`: borde doble dorado y seminegrita; el de la vista que se
+  mira, relleno en dorado claro). *Sin fecha* se sumó porque es la misma pieza.
+- **La segunda fila, igual en el calendario y en la Lista**, para quien ve al
+  equipo (la gerencia, pagos y el administrador): *👤 Por vendedor…* a la
+  izquierda y el periodo a la derecha (en la Lista, además *🤝 Por socio…* y
+  las fechas). Para el vendedor el periodo sigue en la fila de arriba: solo,
+  la segunda fila quedaba casi vacía.
+- **Un solo *👤 Por vendedor…* para las tres vistas** (`vendedor` en
+  `CotizacionesVista`, que se le pasa a `ListaCotizaciones`): elegido en una,
+  sigue en las otras. En el calendario y *Sin fecha* deja los grupos de ese
+  vendedor (`visiblesDe(…, vendedor)`) y pasa a *De todos*. **Es una pieza**,
+  `BotonPorVendedor`, la misma de Clientes.
+- **La lista de cotizaciones de la ficha de un cliente, en columnas** (la
+  regla *el mismo dato va en la misma columna*): el N°, el estado y la fecha ·
+  los avisos (✉, 📞, 🆕), al centro · el total · *📝 Anotar*. La fila entera
+  abre la cotización, en el paso de lo apretado. ✉ entró a la columna de los
+  avisos (antes iba afuera, a la derecha). En el celular, los avisos en su
+  renglón y debajo el total con *Anotar*. `revisarColumnas()` la mide
+  (`data-columnas="historial"`).
+- **La regla de coherencia suma la estructura** (*"y si es necesario actualizar
+  reglas o skills, hazlo"*): en `CLAUDE.md`, aquí arriba y en el skill
+  `panel-playstation`, *la misma estructura en las pantallas parecidas*.
+- **Ninguna lectura, permiso ni columna.** **Ayuda**: el `?` de Cotizaciones.
+- **Lo que no cambió**: la Agenda (es una lista de cosas por hacer, cada fila con
+  sus botones) y las listas de *Tus pendientes* (nombre y un dato).
 
 ## Se cae sola al día siguiente del evento (2026-11-26)
 

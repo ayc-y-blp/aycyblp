@@ -709,6 +709,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Clientes** (✉ *sin confirmar el envío* en la columna central). En el mismo PR
   #375, con la regla nueva *el mismo dato va en la misma columna* y su prueba,
   `revisarColumnas()`. Ver `panel/CLAUDE.md`.
+- **Cotizaciones: la barra en orden y *👤 Por vendedor…* en el calendario**
+  (26-11-2026, lo pidió el cliente): *← Volver* a la izquierda, *+ Cotizar* a
+  su lado y *📋 Lista* a la derecha, con el mismo diseño; un solo filtro por
+  vendedor para el calendario, *Sin fecha* y la Lista; las cotizaciones de la
+  ficha de un cliente en columnas; y la regla de coherencia suma *la misma
+  estructura en las pantallas parecidas*. **En un PR, en preview hasta el
+  *"mergea"*.** Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

@@ -26,6 +26,7 @@ import NotasCotizacion, { HistorialNotas } from './NotasCotizacion';
 import { UltimaNota } from './LoConversado';
 import { PastillaContacto, PastillaNueva } from './Pastilla';
 import { PastillaEnvio } from './ConfirmarEnvio';
+import BotonPorVendedor from './BotonPorVendedor';
 import { pasoDelClic } from './pasoDelClic';
 import { PASO, pasoDelEstado, linkACotizacion } from '@/lib/pasos';
 import { ordenarNotas, type Nota } from '@/lib/notas';
@@ -308,15 +309,10 @@ export default function ClientesEditor() {
               onClick={() => { setVer('todos'); setVendedor(''); }} />
           </div>
         )}
-        {hayFiltro && porVendedor && (vendedor ? (
-          <button type="button" onClick={() => setVendedor('')}
-            className="boton min-h-[44px] border-oro bg-oro/15 !font-semibold text-oro">
-            👤 {nombreVendedor(vendedor)} <span className="ml-1 tabular-nums">{delVendedor.size}</span> ✕
-          </button>
-        ) : (
-          <button type="button" onClick={() => setEligiendoVendedor(!eligiendoVendedor)}
-            aria-expanded={eligiendoVendedor} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
-        ))}
+        {hayFiltro && porVendedor && (
+          <BotonPorVendedor vendedor={vendedor} nombre={nombreVendedor(vendedor)} cuantos={delVendedor.size}
+            abierto={eligiendoVendedor} onAbrir={() => setEligiendoVendedor(!eligiendoVendedor)} onSoltar={() => setVendedor('')} />
+        )}
         {hayFiltro && (
           <button type="button" aria-pressed={porContactar} onClick={() => setPorContactar(!porContactar)}
             disabled={!conRecontacto && !porContactar}
@@ -543,25 +539,35 @@ export default function ClientesEditor() {
                       {(historial[c.id] ?? []).length === 0 ? (
                         <p className="text-[14px] text-hueso/60">Todavía ninguna.</p>
                       ) : (
-                        <ul className="space-y-1.5">
+                        <ul data-columnas="historial" className="space-y-1.5 lg:grid lg:grid-cols-[auto_minmax(min-content,1fr)_auto_auto] lg:gap-x-3">
                           {(historial[c.id] ?? []).map((h) => {
                             const alternativas = (historial[c.id] ?? []).filter((x) => x.grupo === h.grupo).length;
                             return (
-                              <li key={h.id} className="flex items-stretch gap-2">
-                                {/* Abre en el paso del dato apretado (2026-11-26,
-                                    `pasoDelClic()`): la fecha, el Evento; el
-                                    estado, el suyo; el total, Productos; el 📞, el
-                                    Envío. El N°, como siempre. */}
-                                <a href={linkACotizacion(h.id)}
+                              <li key={h.id}
+                                className={`relative flex min-h-[48px] flex-wrap items-center gap-x-3 gap-y-1 rounded border px-3 py-2
+                                            hover:border-oro/60 lg:col-span-full lg:grid lg:grid-cols-subgrid
+                                            ${h.estado === 'Ganada' ? 'border-verde-fuerte bg-verde/10' : 'border-hueso/15'}`}
+                                // **En columnas, como la Lista de Cotizaciones**
+                                // (2026-11-26, regla *el mismo dato va en la misma
+                                // columna*): el N°, el estado y la fecha · los
+                                // avisos, al centro · el total · *📝 Anotar*. La
+                                // fila entera abre la cotización, en el paso del
+                                // dato apretado (`pasoDelClic()`): la fecha, el
+                                // Evento; el estado, el suyo; el total,
+                                // Productos; el 📞, el Envío. El N°, como siempre.
+                                onClick={(e) => {
+                                  if ((e.target as Element).closest('button, a')) return;
+                                  window.location.href = linkACotizacion(h.id, pasoDelClic(e));
+                                }}>
+                                <a href={linkACotizacion(h.id)} aria-label={`Abrir la cotización N° ${h.folio}`}
                                   onClick={(e) => {
-                                    const n = pasoDelClic(e);
+                                    const n = pasoDelClic(e, e.currentTarget.closest('li'));
                                     if (!n) return;
                                     e.preventDefault();
                                     window.location.href = linkACotizacion(h.id, n);
                                   }}
-                                  className={`tecla flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 rounded border
-                                              px-3 py-2 min-h-[48px] ${h.estado === 'Ganada'
-                                    ? 'border-verde-fuerte bg-verde/10' : 'border-hueso/15'}`}>
+                                  className="absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
+                                <span className="contents lg:flex lg:min-w-0 lg:flex-wrap lg:items-center lg:gap-x-3 lg:gap-y-1">
                                   <span className="text-[14px] font-semibold">N° {h.folio}</span>
                                   <span data-paso={pasoDelEstado(h.estado)}><PastillaEstado estado={h.estado} /></span>
                                   {alternativas > 1 && (
@@ -571,25 +577,36 @@ export default function ClientesEditor() {
                                     {/* Como en la lista de cotizaciones (2026-11-22): *DOM 22 nov 2026*. */}
                                     {h.fecha ? <FechaDia fecha={h.fecha} tamano="aviso" conAno /> : h.periodo}
                                   </span>
-                                  {h.recontactar && (
-                                    <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={h.recontactar} hoy={hoyDia} /></span>
+                                </span>
+                                {/* Los avisos, en la columna del medio: ✉ (que
+                                    abre la cotización en el Envío y pregunta),
+                                    el 📞 y la 🆕. */}
+                                <span className={`flex flex-1 flex-wrap items-center gap-2 lg:justify-center
+                                                  ${h.envio || h.recontactar || h.nueva ? 'max-lg:basis-full' : 'max-lg:hidden'}`}>
+                                  {(h.envio || h.recontactar || h.nueva) && (
+                                    <span data-columna="avisos" data-eje="centro" className="inline-flex flex-wrap items-center justify-center gap-2">
+                                      {h.envio && (
+                                        <PastillaEnvio cliente={c.nombre} suya={h.envio === 'pregunta'}
+                                          href={(h.envio === 'pregunta' || h.envio === 'abre') && !soloMiraCotizar
+                                            ? linkACotizacion(h.id, PASO.envio, true) : undefined} />
+                                      )}
+                                      {h.recontactar && (
+                                        <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={h.recontactar} hoy={hoyDia} /></span>
+                                      )}
+                                      {h.nueva && <PastillaNueva promo={h.promo ?? ''} creado={h.creado ?? ''} ahora={ahora} />}
+                                    </span>
                                   )}
-                                  {h.nueva && <PastillaNueva promo={h.promo ?? ''} creado={h.creado ?? ''} ahora={ahora} />}
-                                  {(h.envio === 'aviso' || (h.envio && soloMiraCotizar)) && <PastillaEnvio cliente={c.nombre} suya={false} />}
-                                  <span className="flex-1" />
-                                  <strong data-paso={PASO.productos} className="text-[15px]">{enPesos(h.total)}</strong>
-                                </a>
+                                </span>
+                                <strong data-paso={PASO.productos} data-columna="valores" data-eje="der"
+                                  className="text-[15px] max-lg:mr-auto lg:justify-self-end lg:whitespace-nowrap">{enPesos(h.total)}</strong>
                                 {/* **📝 Anotar, desde la ficha** (2026-11-25): la
                                     misma ventanita de la cotización —qué
                                     conversaron y cuándo volver a contactarlo—. */}
-                                {(h.envio === 'pregunta' || h.envio === 'abre') && !soloMiraCotizar && (
-                                  <PastillaEnvio cliente={c.nombre} suya={h.envio === 'pregunta'} href={linkACotizacion(h.id, PASO.envio, true)}
-                                    className="!min-h-[48px] self-center" />
-                                )}
-                                {h.anota && !soloMiraCotizar && (
-                                  <button type="button" onClick={() => setAnotando({ h, nombre: c.nombre, empresa: c.empresa ?? '', telefono: c.telefono ?? '', correo: c.correo ?? '' })}
-                                    className="boton min-h-[48px] shrink-0 !border-oro font-semibold">📝 Anotar</button>
-                                )}
+                                {h.anota && !soloMiraCotizar ? (
+                                  <button type="button" data-columna="anotar"
+                                    onClick={() => setAnotando({ h, nombre: c.nombre, empresa: c.empresa ?? '', telefono: c.telefono ?? '', correo: c.correo ?? '' })}
+                                    className="boton relative z-10 min-h-[44px] shrink-0 !border-oro font-semibold">📝 Anotar</button>
+                                ) : <span aria-hidden className="hidden lg:block" />}
                               </li>
                             );
                           })}

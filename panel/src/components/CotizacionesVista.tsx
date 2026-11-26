@@ -21,7 +21,9 @@
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
 import { PastillaEnvio } from './ConfirmarEnvio';
 import { pasoDelClic } from './pasoDelClic';
-import { LISTA_FILAS } from './filaCotizacion';
+import { LISTA_FILAS, BOTON_VISTA } from './filaCotizacion';
+import BotonPorVendedor from './BotonPorVendedor';
+import BuscarEnLista from './BuscarEnLista';
 import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
 import { ahoraEnChile } from '@/lib/bitacora';
 import type { AvisoSitio } from '@/lib/promociones';
@@ -69,6 +71,7 @@ import AvisoFijo from './AvisoFijo';
 import { BotonMias, BotonTodos } from './BotonMias';
 import { Pastilla, PastillaCotizado, PastillaContacto, PastillaNueva } from './Pastilla';
 import ListaCotizaciones from './ListaCotizaciones';
+import { vendedoresDe } from '@/lib/listaCotizaciones';
 import EmpresaCliente from './EmpresaCliente';
 import { veElEquipo, type ContextoLista } from '@/lib/listaCotizaciones';
 
@@ -147,6 +150,15 @@ export default function CotizacionesVista() {
     setDe(v);
     try { localStorage.setItem('blp-cotizaciones-de', v); } catch { /* da igual */ }
   }
+  /**
+   * **👤 Por vendedor…, también en el calendario** (2026-11-26, lo pidió el
+   * cliente: *"en calendario cotizaciones debo poder filtrar también por
+   * vendedor"*). Uno solo para las tres vistas —el calendario, *Sin fecha* y la
+   * Lista—: elegido en una, sigue al cambiar. Para quien ve al equipo (la
+   * gerencia, pagos y el administrador). Vacío, todos.
+   */
+  const [vendedor, setVendedor] = useState('');
+  const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   const [semanas, setSemanas] = useState(10);
   /**
    * **El periodo del calendario** (2026-11-24, lo pidió el cliente:
@@ -251,7 +263,7 @@ export default function CotizacionesVista() {
 
   const porDia = useMemo(() => {
     const m = new Map<string, Presupuesto[]>();
-    for (const p of visiblesDe(datos, de)) {
+    for (const p of visiblesDe(datos, de, vendedor)) {
       if (!esFecha(p.fecha)) continue;
       // Una cancelada no ocupa el calendario de cotizar (2026-11-11, lo
       // pidió el cliente): sigue en *Todas*, con su devolución.
@@ -260,7 +272,7 @@ export default function CotizacionesVista() {
       m.get(p.fecha)!.push(p);
     }
     return m;
-  }, [datos, de]);
+  }, [datos, de, vendedor]);
 
   if (error) return <Aviso error={error} permiso={sinPermiso} />;
   if (!datos) return <p className="text-hueso/50">Cargando…</p>;
@@ -268,7 +280,7 @@ export default function CotizacionesVista() {
   const hoy = datos.hoy;
   const estadoDe = (p: Presupuesto) => estadoVisible(p, hoy);
   const soloMias = soloMiasDe(datos, de);
-  const visibles = visiblesDe(datos, de);
+  const visibles = visiblesDe(datos, de, vendedor);
   const mias = visiblesDe(datos, 'mias');
   const sinFecha = visibles.filter((p) => !esFecha(p.fecha));
   const estadoDelDia = new Map(datos.fechas.map((f) => [f.fecha, f.estado]));
@@ -723,26 +735,30 @@ export default function CotizacionesVista() {
           quedan en esta fila (ver `Pendientes`). */}
       <div data-fila="barra" className="lg:mb-3 lg:flex lg:flex-wrap lg:items-center lg:gap-2">
       <div className="mb-4 flex flex-wrap gap-2 lg:contents">
+        {/* **← Volver al calendario, al extremo izquierdo, y + Cotizar a su
+            lado** (2026-11-26, lo pidió el cliente: *"volver calendario →
+            botón más izquierda… cotizar debe estar al lado derecho de volver
+            calendario"*). En el celular, *Volver* sigue justo encima de la
+            lista. */}
+        {vista !== 'calendario' && (
+          <button type="button" onClick={() => setVista('calendario')} data-fila="fija"
+            className={`${BOTON_VISTA} hidden lg:order-1 lg:inline-flex`}>
+            ← Volver al calendario
+          </button>
+        )}
         {!soloMira && (
           <button type="button" onClick={() => setAbierta({ p: null })} data-fila="fija"
             className="boton boton-relleno min-h-[48px] px-5 text-[15px] lg:order-1 lg:min-h-[44px]">+ Cotizar</button>
         )}
-        {/* **El periodo del calendario** (2026-11-24): en la fila de los
-            botones, donde en la Lista va *← Volver al calendario*. */}
-        {vista === 'calendario' && (
+        {/* **El periodo del calendario**, en esta fila para quien no ve al
+            equipo (2026-11-24); para la gerencia, pagos y el administrador va
+            en la segunda, con *👤 Por vendedor…*. */}
+        {vista === 'calendario' && !veElEquipo(datos.rol) && (
           <div data-fila="fija" className="w-full lg:order-2 lg:w-auto">
             <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo}
               onModo={(clave) => setPeriodo(cambiarModo(periodo, clave, hoy))}
               titulo={tituloDelPeriodo(periodo)} onMover={(n) => setPeriodo(moverPeriodo(periodo, n))} />
           </div>
-        )}
-        {/* En el computador, *Volver* va en esta fila (2026-11-22, la regla
-            del espacio); en el celular sigue justo encima de la lista. */}
-        {vista !== 'calendario' && (
-          <button type="button" onClick={() => setVista('calendario')} data-fila="fija"
-            className="boton hidden min-h-[44px] !text-[15px] !font-semibold lg:order-2 lg:inline-flex">
-            ← Volver al calendario
-          </button>
         )}
         <span className="flex-1 lg:order-3" />
         {/* El mismo *Mías* de todo el panel (`BotonMias`, 2026-11-13). **En
@@ -765,7 +781,7 @@ export default function CotizacionesVista() {
           ['lista', '📋 Lista']
         ] as const).map(([k, texto]) => (
           <button key={k} type="button" data-fila="fija" onClick={() => setVista(vista === k ? 'calendario' : k)} aria-pressed={vista === k}
-            className={`boton min-h-[48px] lg:order-4 lg:min-h-[44px] ${vista === k ? 'border-oro bg-oro/15 font-semibold' : ''}`}>
+            className={`${BOTON_VISTA} lg:order-4 ${vista === k ? '!border-oro bg-oro/15' : ''}`}>
             {texto}
           </button>
         ))}
@@ -859,6 +875,35 @@ export default function CotizacionesVista() {
       ]} />
       </div>
 
+      {/* **La segunda fila, la misma en las tres vistas** (2026-11-26), para
+          quien ve al equipo: a la izquierda *👤 Por vendedor…*, a la derecha el
+          periodo. En la Lista la dibuja `ListaCotizaciones` (con *🤝 Por
+          socio…* y las fechas); acá, el calendario y *Sin fecha*. */}
+      {vista !== 'lista' && veElEquipo(datos.rol) && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-3">
+          <div role="group" aria-label="De quién" className="flex flex-wrap gap-2">
+            <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')}
+              abierto={eligiendoVendedor} onAbrir={() => setEligiendoVendedor(!eligiendoVendedor)} />
+          </div>
+          <span className="flex-1" />
+          {vista === 'calendario' && (
+            <div className="w-full lg:w-auto">
+              <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo}
+                onModo={(clave) => setPeriodo(cambiarModo(periodo, clave, hoy))}
+                titulo={tituloDelPeriodo(periodo)} onMover={(n) => setPeriodo(moverPeriodo(periodo, n))} />
+            </div>
+          )}
+          {eligiendoVendedor && (
+            <div className="basis-full lg:max-w-md">
+              <BuscarEnLista etiqueta="Buscar vendedor" vacia="Nadie ha cotizado todavía." elegido={vendedor}
+                opciones={vendedoresDe(datos.presupuestos)}
+                onElegir={(id) => { setVendedor(id); setEligiendoVendedor(false); elegirDe('todos'); }}
+                onCerrar={() => setEligiendoVendedor(false)} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* **🆕 Nuevas del sitio** (2026-11-25, lo pidió el cliente: *"necesito
           que estos se destacan… una tercera sección arriba en clientes y
           cotizaciones que muestra NUEVOS para que al tiro pueden empezar el
@@ -926,7 +971,7 @@ export default function CotizacionesVista() {
           busca al terminar de mirar. */}
       {vista !== 'calendario' && (
         <button type="button" onClick={() => setVista('calendario')}
-          className="boton mb-4 min-h-[44px] !text-[15px] !font-semibold lg:hidden">
+          className={`${BOTON_VISTA} mb-4 lg:hidden`}>
           ← Volver al calendario
         </button>
       )}
@@ -953,6 +998,7 @@ export default function CotizacionesVista() {
           <ListaCotizaciones ctx={ctx} rol={datos.rol} visibles={visibles} mias={mias} soloMias={soloMias}
             socios={(datos.socios ?? []).map((s) => ({ id: s.id, nombre: s.nombre, activo: s.activo }))}
             fila={(p, detalle) => fila(p, true, detalle)} onDeTodos={() => elegirDe('todos')}
+            vendedor={vendedor} onVendedor={setVendedor}
             verAgenda={(a) => verAgenda(a)} />
         );
       })()}
@@ -1010,9 +1056,15 @@ function soloMiasDe(datos: { rol: string } | null, de: '' | 'mias' | 'todos'): b
  */
 function visiblesDe(
   datos: { presupuestos: Presupuesto[]; usuario: string; rol: string } | null,
-  de: '' | 'mias' | 'todos'
+  de: '' | 'mias' | 'todos',
+  /** *👤 Por vendedor…* (2026-11-26): solo los grupos de ese vendedor. */
+  vendedor = ''
 ): Presupuesto[] {
   if (!datos) return [];
+  if (vendedor) {
+    const grupos = new Set(datos.presupuestos.filter((p) => p.creadoPor === vendedor).map((p) => grupoDe(p)));
+    return datos.presupuestos.filter((p) => grupos.has(grupoDe(p)));
+  }
   if (de === 'todos' || (!de && !soloMiasDe(datos, de))) return datos.presupuestos;
   const grupos = new Set(datos.presupuestos
     .filter((p) => esSuya(datos.usuario, p.creadoPor)).map((p) => grupoDe(p)));

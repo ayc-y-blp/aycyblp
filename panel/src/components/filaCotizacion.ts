@@ -18,3 +18,11 @@
  * repite, `data-columna` (con `data-eje`).
  */
 export const LISTA_FILAS = 'space-y-2 lg:grid lg:grid-cols-[auto_minmax(min-content,1fr)_auto_auto_auto] lg:gap-x-3';
+
+/**
+ * **Los botones que cambian de vista**: *← Volver al calendario*, *Sin fecha* y
+ * *📋 Lista* (2026-11-26, lo pidió el cliente: *"volver al calendario y lista
+ * deben tener el mismo diseño, más marcado"*). Borde doble dorado y letra
+ * seminegrita; el de la vista que se está mirando, relleno en dorado claro.
+ */
+export const BOTON_VISTA = 'boton min-h-[48px] !border-2 !border-oro/60 !text-[15px] !font-semibold lg:min-h-[44px]';

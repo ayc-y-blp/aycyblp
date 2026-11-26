@@ -130,6 +130,12 @@ es lo que queda en la bitácora.
   cumple esto es una pieza compartida: el cambio llega solo a todas partes.
 - Mantener una **lista de piezas compartidas** en el `CLAUDE.md` del panel (dato
   → pieza) y buscarla antes de dibujar algo.
+- **La misma estructura en las pantallas parecidas**: dos vistas de lo mismo
+  llevan las barras en el mismo orden (*← Volver* al extremo izquierdo, la
+  acción principal a su lado, los botones que cambian de vista al extremo
+  derecho, con el mismo diseño) y la misma segunda fila (los filtros de *de
+  quién* a la izquierda, el periodo a la derecha). Una lista con los mismos
+  datos que otra los ordena en las mismas columnas.
 
 ## 11. La plata y los permisos
 

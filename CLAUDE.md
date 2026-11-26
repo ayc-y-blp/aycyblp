@@ -81,6 +81,15 @@ más abajo; esto es la lista para revisar.
   Reservas—, **no el formato**. Antes de dibujar algo se busca la pieza que
   ya lo muestra y se reutiliza; si aparecen dos formas del mismo dato, se
   unifican en una. En el panel, la lista de piezas está en `panel/CLAUDE.md`.
+  **Y la misma estructura en las pantallas parecidas** (2026-11-26, lo
+  pidió el cliente: *"el orden, estructura de diseño, columnas y filas debe
+  ser coherente en todos los elementos del sitio donde se ordenan datos de una
+  forma/estructura parecida"*): dos vistas de lo mismo —el calendario y la
+  Lista de Cotizaciones— llevan las barras en el mismo orden (*← Volver* al
+  extremo izquierdo, la acción principal a su lado, los botones que cambian
+  de vista al extremo derecho y con el mismo diseño) y la misma segunda fila
+  (*De quién* a la izquierda, el periodo a la derecha); y una lista con los
+  mismos datos que otra los ordena en las mismas columnas.
 - **Un cambio de diseño se lleva a sus parecidos** (regla del cliente,
   2026-11-21: *"que siempre revisas si se hacen cambios de diseño en
   secciones que… muestran similar información en similar formato, que se

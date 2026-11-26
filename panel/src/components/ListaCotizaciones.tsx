@@ -25,6 +25,7 @@ import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
 import BuscarEnLista from './BuscarEnLista';
+import BotonPorVendedor from './BotonPorVendedor';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
@@ -57,7 +58,7 @@ const DE_LAS_TARJETAS: Partial<Record<FiltroLista, string>> = {
   recontactar: 'las que tienen un día para recontactar, de todas las fechas'
 };
 
-export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda }: {
+export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda, vendedor, onVendedor }: {
   ctx: ContextoLista;
   rol: string;
   /** Las que deja ver *Mías / De todos*. */
@@ -73,6 +74,12 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   onDeTodos: () => void;
   /** La agenda de lo que se está mirando, con los botones de cada fila (`Agenda`). */
   verAgenda: (a: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }) => ReactNode;
+  /**
+   * *👤 Por vendedor…*, el mismo del calendario (2026-11-26): lo guarda la
+   * pantalla, así sigue puesto al pasar de una vista a otra.
+   */
+  vendedor: string;
+  onVendedor: (v: string) => void;
 }) {
   const equipo = veElEquipo(rol);
   const [filtro, setFiltro] = useState<FiltroLista>('enCarrera');
@@ -87,7 +94,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   // la Agenda y no en la Lista. *Semana*, *Mes* y *Todo* quedan a un toque.
   const [periodo, setPeriodo] = useState<string>(LO_QUE_VIENE);
   const [porFecha, setPorFecha] = useState<PorFecha>('evento');
-  const [vendedor, setVendedor] = useState('');
+  const setVendedor = onVendedor;
   const [socio, setSocio] = useState('');
   const [eligiendo, setEligiendo] = useState<'' | 'vendedor' | 'socio'>('');
 
@@ -133,13 +140,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       <div className="flex flex-wrap items-center gap-2">
         {equipo && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="De quién">
-            {vendedor ? (
-              <button type="button" onClick={() => setVendedor('')}
-                className="boton min-h-[44px] border-oro bg-oro/15 !font-semibold text-oro">👤 {vendedor} ✕</button>
-            ) : (
-              <button type="button" onClick={() => setEligiendo(eligiendo === 'vendedor' ? '' : 'vendedor')}
-                aria-expanded={eligiendo === 'vendedor'} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
-            )}
+            <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')} abierto={eligiendo === 'vendedor'}
+              onAbrir={() => setEligiendo(eligiendo === 'vendedor' ? '' : 'vendedor')} />
             {socio ? (
               <button type="button" onClick={() => setSocio('')}
                 className="boton min-h-[44px] border-cielo-fuerte bg-cielo/15 !font-semibold text-cielo-texto">🤝 {nombreSocio(socio)} ✕</button>

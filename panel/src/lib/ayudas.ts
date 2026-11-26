@@ -303,6 +303,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ponle el día nuevo y vuelve sola.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío. La '
+      + 'gerencia, pagos y el administrador eligen además un vendedor con 👤 Por '
+      + 'vendedor…, debajo, al lado del periodo: el calendario, Sin fecha y la Lista '
+      + 'quedan con lo suyo hasta soltarlo con el ✕. La '
       + 'gerencia, pagos y el administrador ven además ✉ N sin confirmar el envío: '
       + 'las listas de otros vendedores que todavía no confirman que las mandaron. En '
       + 'cada una, ✉ sin confirmar el envío la abre en Envío y pregunta si ya se mandó.',
@@ -318,8 +321,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'eliges también Semana, Mes o Todo, te mueves con ◀ ▶ y eliges si cuenta '
       + 'la fecha del evento o la de cotización. 📞 Recontactar muestra todas las '
       + 'que tienen un día para volver a contactarlo, de cualquier fecha. Se filtra '
-      + 'además por estado y con el buscador; la gerencia, también por vendedor '
-      + 'o por socio. '
+      + 'además por estado y con el buscador; la gerencia, pagos y el administrador, '
+      + 'también por vendedor (👤 Por vendedor…, el mismo del calendario: elegido en '
+      + 'uno, sigue en el otro) o por socio. '
       + 'La lista va por fecha del evento, de la más próxima a la más lejana; '
       + 'las que no tienen día exacto, al final.'
     ],
