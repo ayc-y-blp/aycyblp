@@ -15,5 +15,5 @@ export default async function Pagina() {
     cookieDe(headers().get('cookie'), COOKIE_SESION), secretoDeSesion(process.env)
   );
   return <AyudaRol rol={sesion?.rol ?? ''} gerencia={sesion?.gerencia === true}
-    conComentar={!!process.env.COMENTARIOS_SHEET_ID?.trim()} />;
+    conComentar />;
 }

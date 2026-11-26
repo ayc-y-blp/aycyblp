@@ -583,7 +583,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **El cotizador con fondo propio** (25-11-2026, lo pidió el cliente): dorado
   suave de día y de noche, con los pasos claros encima. Ver `CLAUDE.md`, "El
   cotizador de promociones".
-- **💬 Coméntame solo en producción** (25-11-2026, lo decidió el cliente: *"solo
+- ~~**💬 Coméntame solo en producción**~~ (**cambió el 26-11-2026**: los comentarios pasaron a la planilla del panel y 💬 aparece también en la versión de prueba) (25-11-2026, lo decidió el cliente: *"solo
   comentarán en producción"*): en una versión de prueba no aparece porque
   `COMENTARIOS_SHEET_ID` está solo en Production, y así se queda. No es un
   error: no se agrega a Preview.
@@ -764,11 +764,20 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **Las tareas internas** (26-11-2026, lo pidió el cliente: primera parte de
   un panel de gerencia): pantalla *Tareas* para todas las cuentas, *📋 Nueva
   tarea* a una persona o a un rol entero, ✓ Hecha / ❓ Preguntar, y *📋 Tienes N
-  tareas* en la portada. Permiso nuevo `tareas` y pestaña nueva `Tareas`. En un
-  PR, en preview hasta el *"mergea"*. **Lo que sigue del mismo proyecto**: los
+  tareas* en la portada. Permiso nuevo `tareas` y pestaña nueva `Tareas` (se
+  crea sola en cada planilla). **PR #384, mergeado el 26-11-2026** con el
+  *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después. **Lo que sigue del mismo proyecto**: los
   comentarios de 💬 dentro del panel (verlos, contestarlos, pasarlos a tarea) y
   `/gerencia` con Ventas, Reservas y ocupación, Plata y Tareas y comentarios.
   Ver `panel/CLAUDE.md`, "Las tareas internas".
+- **Los comentarios de 💬, dentro del panel** (26-11-2026, el cliente:
+  *"hagámoslo"*): pasaron de *Gran Testeo* a la pestaña `Comentarios` de la
+  planilla del panel; se ven y contestan en *Tareas → 💬 Comentarios*, se pasan
+  a tarea, y la portada avisa. Los viejos se traen una vez desde Mantención;
+  después se puede borrar `COMENTARIOS_SHEET_ID`. En el mismo PR, **la
+  anfitriona sin tareas** (el cliente: *"la anfitriona no"*). En preview hasta
+  el *"mergea"*. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
+  panel". Lo que sigue: `/gerencia` con los números.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -944,7 +953,7 @@ real. Los parámetros del negocio viven en la pestaña `Config`, no en Vercel.
 | `Otras empresas` | una empresa que cobra directo algo del evento (desde el 24-11-2026) | `Nombre` (la identidad: lo usan `Menús.Lo cobra` y `Presupuesto Líneas.Lo cobra`), `RUT`, `Contacto`, `Teléfono`, `Correo`, `Qué hace`, `Activa` | `Menús` y `Presupuesto Líneas` por nombre |
 | `Caja chica` | un movimiento de la caja (desde el 23-11-2026) | `ID`, `Fecha`, `Cuándo`, `Tipo` (*Saldo inicial / Cobro / Gasto / Entrega / Depósito / Compra*), `Monto`, `Detalle`, `Quién`, `Para`, `Recibido`, `Comprobante` (id en Drive), `Reserva`, `Revisado` | `Reservas` por `ID Orden` (un cobro en efectivo) |
 | `Bitácora` | una acción | `Cuándo`, `Quién`, `Rol`, `Acción`, `Detalle` | — |
-| `Comentarios` | (en **otra** planilla, `COMENTARIOS_SHEET_ID`) lo que manda el botón 💬 | — | — |
+| `Comentarios` | un comentario de 💬 (desde el 26-11-2026 en la planilla del panel; antes en *Gran Testeo*) | las once de siempre y `ID`, `Respondido por`, `Respuesta vista`, `Tarea` | `Tareas` por `Tarea` |
 
 ### Shopify
 
@@ -1008,7 +1017,7 @@ detalle de cada una (qué es, en qué entorno, cómo recuperarla) está en
 | `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET` | solo Production (app *Reservas Pirque* del Dev Dashboard) |
 | `SHOPIFY_WEBHOOK_SECRET` | secreto de la real / de la de desarrollo |
 | `CRON_SECRET` | igual |
-| `COMENTARIOS_SHEET_ID` | solo Production, a propósito: se comenta solo en producción (25-11-2026). Sin ella no aparece el botón 💬 |
+| `COMENTARIOS_SHEET_ID` | solo Production. **Desde el 26-11-2026 solo sirve para traer una vez los comentarios viejos de *Gran Testeo***: los nuevos van a la planilla del panel. Después se puede borrar |
 | `CRM_API_KEY` | solo Production (opcional; el CRM está apagado) |
 
 El proyecto del sitio no lleva variables: es estático.

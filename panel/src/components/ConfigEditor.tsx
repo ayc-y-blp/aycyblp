@@ -16,6 +16,7 @@ import Ayuda from './Ayuda';
 import PasoAProduccion from './PasoAProduccion';
 import ImportarCRM from './ImportarCRM';
 import TraerProduccion from './TraerProduccion';
+import TraerComentarios from './TraerComentarios';
 import BuscarEnLista from './BuscarEnLista';
 import { NOMBRE_ROL } from '@/lib/roles';
 import { usarSoloMira } from './SesionCliente';
@@ -465,6 +466,7 @@ export default function ConfigEditor() {
           </div>
           <ImportarCRM />
           <TraerProduccion />
+          <TraerComentarios />
           <PasoAProduccion />
         </div>
       )

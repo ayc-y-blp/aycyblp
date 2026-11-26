@@ -35,6 +35,7 @@ import { HOJA_COBROS } from './cobros.ts';
 import { HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HOJA_AJUSTES_SUELTOS } from './equipo.ts';
 import { HOJA_NOTAS } from './notas.ts';
 import { HOJA_TAREAS } from './tareas.ts';
+import { HOJA_COMENTARIOS } from './comentarios.ts';
 import { HOJA_CIERRES } from './cierres.ts';
 import { HOJA_ACTIVIDADES, HOJA_COLABORADORES } from './extras.ts';
 import { HOJA_PAGOS, HOJA_BOLETAS } from './remuneraciones.ts';
@@ -75,6 +76,9 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
   // Las tareas internas (2026-11-26): son lo que el equipo se pide entre sí, no
   // datos de prueba; y la base en cero de producción ya se hizo (22-11-2026).
   { hoja: HOJA_TAREAS, que: 'Tareas internas' },
+  // Los comentarios del equipo (2026-11-26): pasaron de *Gran Testeo* a esta
+  // planilla. Son lo que el equipo pide y avisa, no datos de prueba.
+  { hoja: HOJA_COMENTARIOS, que: 'Comentarios del equipo' },
   { hoja: HOJA_TRABAJADORES, que: 'Trabajadores' },
   { hoja: HOJA_PUESTOS, que: 'Puestos' },
   { hoja: HOJA_USUARIOS, que: 'Cuentas' },
@@ -89,9 +93,10 @@ export const SE_CONSERVAN: PestanaProduccion[] = [
 
 /**
  * Pestañas del panel que no están en la planilla de la empresa, y por eso en
- * ninguna de las dos listas: los comentarios del testeo viven en otra.
+ * ninguna de las dos listas. Desde el 2026-11-26 ninguna: los comentarios,
+ * que vivían en *Gran Testeo*, pasaron a la planilla del panel.
  */
-export const FUERA_DE_LA_PLANILLA: string[] = ['Comentarios'];
+export const FUERA_DE_LA_PLANILLA: string[] = [];
 
 /**
  * **Pestañas de paso** (2026-11-21): las que se suben para importar del CRM

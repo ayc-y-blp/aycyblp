@@ -150,6 +150,8 @@ export const PANTALLAS = [
   ['caja', '/caja'],
   // Las tareas internas (2026-11-26, `tareas.ts`).
   ['tareas', '/tareas'],
+  // Los comentarios del equipo (2026-11-26), la segunda vista de Tareas.
+  ['tareas-comentarios', '/tareas?ver=comentarios'],
   // Las promociones del sitio (2026-11-23), en Productos.
   ['productos-promociones', '/menus?ver=promociones'],
   ['productos-empresas', '/menus?ver=empresas']

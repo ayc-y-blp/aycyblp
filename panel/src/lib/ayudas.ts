@@ -391,7 +391,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Arriba, Para ti: lo que te toca ahora. Abajo, Las que mandaste, con cómo va cada una. Las atrasadas van '
       + 'primero, en rojo.',
       'Una tarea a un rol entero (todos los encargados de turno, por ejemplo) la cierra el primero que la hace, y '
-      + 'queda a su nombre.'
+      + 'queda a su nombre.',
+      '💬 Comentarios, al lado, son los que se mandan con Coméntame. Cada uno ve los suyos y la respuesta '
+      + '(✓ Entendido apaga el aviso de la portada). La gerencia general y el administrador ven todos: '
+      + 'los contestan, les ponen estado y prioridad, y con 📋 Pasar a tarea se lo encargan a alguien.'
     ],
     pasos: [
       '📋 Nueva tarea: a quién —una persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
@@ -400,7 +403,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
       'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
     ],
-    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona.'
+    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona, y todos los comentarios.'
   },
   informe: {
     titulo: 'El informe para pagar',
@@ -588,6 +591,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'y los pedidos del sitio viejo, como reservas pagadas o por pagar. Antes de escribir nada muestra '
       + 'cuánto entra, a nombre de qué cuenta queda, qué filas no entran y cómo queda el cupo de cada día. '
       + 'Se puede apretar dos veces: lo que ya entró no se duplica.',
+      'En producción, «Traer los comentarios de Gran Testeo» copia una vez los comentarios que quedaron '
+      + 'en esa planilla, donde iban antes de pasar al panel. Allá solo se lee, y apretarlo de nuevo no duplica.',
       'En una versión de prueba, «Traer los datos de producción a la prueba» deja la planilla de esa '
       + 'versión igual a la de producción, para probar con lo que hay hoy: las reservas, las cotizaciones, '
       + 'el equipo, la configuración, la bitácora y las cuentas (en la prueba se entra con la clave de '

@@ -302,7 +302,9 @@ panel y la pantalla de números de la gerencia vienen después.
   que el equipo se pide entre sí, no datos de prueba (y en la columna de lo que
   se borra ya no cabía otra línea en 1280×650).
 - **Permiso nuevo, `tareas`**: todas las cuentas que entran al panel, también
-  el vendedor y la anfitriona. Quién ve todas no es un permiso: es
+  el vendedor, **menos la anfitriona** (lo decidió el cliente el mismo día,
+  después del merge: *"la anfitriona no"*): no ve *Tareas* ni se le puede
+  mandar una, ni a ella ni a su rol. Quién ve todas no es un permiso: es
   `VEN_TODAS` (gerencia y administrador), como las notas.
 - **Lecturas de Google**: `/api/tareas` una tanda (`Tareas` y `Usuarios`);
   cambiar una relee `Tareas`. La portada, ninguna más.
@@ -311,6 +313,52 @@ panel y la pantalla de números de la gerencia vienen después.
   `tareas` en la prueba de espacio.
 - **El panel de ejemplo** trae seis tareas, una de cada caso (atrasada, a un
   rol, con pregunta, hecha…).
+
+## Los comentarios del equipo, dentro del panel (2026-11-26)
+
+Segunda parte del panel de gerencia. Se le propuso al cliente traer los
+comentarios de 💬 a la planilla del panel, en vez de seguir en *Gran Testeo*, y
+dijo *"hagámoslo"* (antes preguntó *"¿no tendrá sentido traerlo a nuestra base
+de datos? ¿o no deberíamos inflarla más?"*: el peso es mínimo y el límite de
+lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
+
+- **Viven en la pestaña `Comentarios` de la planilla del panel** (`lib/comentarios.ts`).
+  Las once columnas de *Gran Testeo* van primero y en su orden, y al final
+  cuatro nuevas: `ID`, `Respondido por`, `Respuesta vista` y `Tarea`. Se crea
+  sola. **La versión de prueba tiene los suyos**, en *BBDD Prueba*: 💬 aparece
+  siempre, ya no depende de `COMENTARIOS_SHEET_ID`.
+- **Se ven en *Tareas → 💬 Comentarios*** (`ComentariosVista`, la segunda vista
+  de la pantalla; `?ver=comentarios`), con los botones que cambian de vista a la
+  derecha y el marco de la vista (`BOTON_VISTA`). El número rojo cuenta lo
+  pendiente.
+  - **La gerencia general y el administrador** (`LEEN_TODOS`) ven todos, en
+    *🆕 Nuevos*, *⏳ En curso* y *✓ Cerrados* (plegado): ***↩ Contestar*** (y
+    queda resuelto o sigue en curso), estado (*Nuevo · En curso · Resuelto · No
+    se hará*), prioridad (*Alta · Media · Baja*) y ***📋 Pasar a tarea***, que
+    crea la tarea con el texto del comentario, a quien se elija, y lo deja en
+    curso.
+  - **Los demás**, *Tus comentarios*: cómo va cada uno y la respuesta, con *✓
+    Entendido*. La anfitriona comenta pero no ve *Tareas*: sus respuestas no
+    le llegan al panel (no tiene el permiso `tareas`).
+- **En la portada**, al lado de *📋 Tienes N tareas* (lado a lado en el
+  computador): *💬 N comentarios nuevos* para quien los trabaja y *💬 Te
+  contestaron N comentarios* para quien comentó. `Comentarios` se sumó a la
+  tanda de `/api/reservas`: ninguna lectura más.
+- **Los de *Gran Testeo* se traen una vez**: Configuración → Mantención, *💬
+  Traer los comentarios de Gran Testeo* (`/api/comentarios/traer`, solo el
+  administrador). Allá solo se lee, y apretarlo de nuevo no duplica
+  (`comentariosPorTraer()`). Sale solo donde está `COMENTARIOS_SHEET_ID`
+  (producción). **Después de traerlos, la variable se puede borrar de Vercel**
+  y el Apps Script de *Gran Testeo* deja de recibir los nuevos.
+- **Ningún permiso nuevo**: comentar sigue siendo de cualquier cuenta;
+  contestar, de `LEEN_TODOS`; marcar visto, de quien lo escribió. *Dejar la
+  base en cero* los conserva.
+- **Lecturas de Google**: `/api/comentarios` una tanda (`Comentarios`,
+  `Usuarios`, `Tareas`); mandar uno lee el encabezado de la pestaña. La
+  portada, ninguna más. **Ayuda**: el `?` de *Tareas* y el de Configuración.
+  **Ventanas**: la pantalla `tareas-comentarios` en la prueba de espacio.
+- **El panel de ejemplo** trae tres comentarios: uno nuevo, uno en curso con
+  prioridad alta y uno contestado sin ver.
 
 ## Los calendarios: lo cotizado, siempre a la misma altura (2026-11-26)
 

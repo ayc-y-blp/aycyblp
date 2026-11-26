@@ -220,6 +220,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [deCotizacion, setDeCotizacion] = useState<Record<string, string>>({});
   // Las tareas que te tocan (2026-11-26, `lib/tareas.ts`): vienen con las reservas.
   const [tareasMias, setTareasMias] = useState({ total: 0, atrasadas: 0 });
+  const [comentariosMios, setComentariosMios] = useState({ nuevos: 0, respuestas: 0 });
   /**
    * **Los días que cambiaron de gente en la última actualización**, con
    * cuánto y desde qué hora (2026-11-12). Se marcan en dorado un minuto:
@@ -282,6 +283,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         if (d.menus) setMenus(d.menus);
         if (d.deCotizacion) setDeCotizacion(d.deCotizacion);
         if (d.tareasMias) setTareasMias(d.tareasMias);
+        if (d.comentariosMios) setComentariosMios(d.comentariosMios);
       })
       .catch(() => {});
     // **Las dos de abajo se piden solo si la cuenta puede leerlas.** No es
@@ -475,14 +477,29 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
       <BandejaAprobaciones pendientes={pendientes} onCambio={() => void cargar()} />
       {/* **Las tareas que te tocan** (2026-11-26): un aviso que se aprieta y
           lleva a *Tareas*. Rojo si alguna está atrasada. */}
+      {/* Las tareas y los comentarios, lado a lado en el computador (la regla del espacio). */}
+      {(tareasMias.total > 0 || comentariosMios.nuevos > 0 || comentariosMios.respuestas > 0) && (
+      <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:gap-3" data-fila-propia>
       {tareasMias.total > 0 && (
-        <a href="/tareas" data-fila-propia
-           className={`tecla mb-3 flex min-h-[44px] items-center gap-2 rounded-2xl border-[3px] px-3 py-2 text-[15px] font-semibold ${tareasMias.atrasadas
+        <a href="/tareas"
+           className={`tecla flex lg:flex-1 min-h-[44px] items-center gap-2 rounded-2xl border-[3px] px-3 py-2 text-[15px] font-semibold ${tareasMias.atrasadas
              ? 'border-rojo-fuerte/80 bg-rojo/[0.06] text-rojo-texto' : 'border-cielo-fuerte/80 bg-cielo/[0.06]'}`}>
           📋 {tareasMias.total === 1 ? 'Tienes 1 tarea' : `Tienes ${tareasMias.total} tareas`}
           {tareasMias.atrasadas > 0 && <span>· {tareasMias.atrasadas} atrasada{tareasMias.atrasadas === 1 ? '' : 's'}</span>}
           <span className="ml-auto text-[14px] font-normal text-hueso/70">Ver →</span>
         </a>
+      )}
+      {/* **Los comentarios** (2026-11-26): a quien los trabaja, los nuevos; a
+          quien comentó, que le contestaron. Lleva a *Tareas → 💬 Comentarios*. */}
+      {(comentariosMios.nuevos > 0 || comentariosMios.respuestas > 0) && (
+        <a href="/tareas?ver=comentarios"
+           className="tecla flex lg:flex-1 min-h-[44px] flex-wrap items-center gap-x-2 rounded-2xl border-[3px] border-cielo-fuerte/80 bg-cielo/[0.06] px-3 py-2 text-[15px] font-semibold">
+          {comentariosMios.nuevos > 0 && <span>💬 {comentariosMios.nuevos === 1 ? '1 comentario nuevo' : `${comentariosMios.nuevos} comentarios nuevos`}</span>}
+          {comentariosMios.respuestas > 0 && <span>💬 {comentariosMios.respuestas === 1 ? 'Te contestaron 1 comentario' : `Te contestaron ${comentariosMios.respuestas} comentarios`}</span>}
+          <span className="ml-auto text-[14px] font-normal text-hueso/70">Ver →</span>
+        </a>
+      )}
+      </div>
       )}
       {conAvisos && <AvisosRecepcion reservas={reservas} />}
       {/* En el computador la frase no va: *toca un día* lo dice el `?`, y el

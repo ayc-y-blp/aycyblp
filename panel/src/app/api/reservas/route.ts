@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { HOJA_TAREAS, cuantasMeTocan } from '@/lib/tareas';
+import { HOJA_COMENTARIOS, avisosDeComentarios } from '@/lib/comentarios';
 import { HOJA_RESERVAS, HOJA_FECHAS } from '@/lib/columnas';
 import { HOJA_CONFIG } from '@/lib/config';
 import { ocupacionDe } from '@/lib/ocupacion';
@@ -12,7 +13,7 @@ import { marcasDePago } from '@/lib/plata';
 import { ROL, esSuya, puede, type Rol } from '@/lib/auth';
 import { empujarDia } from '@/lib/crm-escribir';
 import { anotar } from '@/lib/datos';
-import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerVendedores, leerTareas } from '@/lib/datos';
+import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerVendedores, leerTareas, leerComentarios } from '@/lib/datos';
 import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { HOJA_CLIENTES } from '@/lib/clientes';
 import { leerReservas, crearReserva, leerMenus, abrirElDiaSiHaceFalta, reservasDeCotizaciones,
@@ -28,16 +29,16 @@ import { ahoraEnChile } from '@/lib/bitacora';
 
 export const dynamic = 'force-dynamic';   // nunca cachear: son datos vivos
 
-export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_VENDEDORES, HOJA_TAREAS], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_VENDEDORES, HOJA_TAREAS, HOJA_COMENTARIOS], async function GET(req: Request) {
   const no = await exigirVer(req, 'ver');
   if (no) return no;
   try {
     // Los menus viajan junto a las reservas: las dos vistas que leen esto
     // los necesitan para agrupar, y asi no hay una peticion mas.
-    const [reservas, menus, deCot, presupuestos, lineasCot, clientes, fichas, tareas] = await Promise.all([
+    const [reservas, menus, deCot, presupuestos, lineasCot, clientes, fichas, tareas, comentarios] = await Promise.all([
       leerReservas(), leerMenus(), reservasDeCotizaciones().catch(() => new Map<string, string>()),
       leerPresupuestos().catch(() => []), leerLineasPresupuesto().catch(() => []), leerClientes().catch(() => []),
-      leerVendedores().catch(() => []), leerTareas().catch(() => [])
+      leerVendedores().catch(() => []), leerTareas().catch(() => []), leerComentarios().catch(() => [])
     ]);
     // **Lo acordado en la cotización ganada** (2026-11-20): va dentro de la
     // caja de Fudo, así que el recorte de `privacidad.ts` lo saca junto con
@@ -120,7 +121,10 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HO
       vendedorDe, folioDeReserva, empresaDeReserva, socioDeReserva, empresa,
       // **Las tareas que te tocan** (2026-11-26, `lib/tareas.ts`): solo la
       // cuenta, para el aviso de la portada. `Tareas` viene en la tanda.
-      tareasMias: cuantasMeTocan(tareas, { usuario: quien.usuario, rol: quien.rol }, h)
+      tareasMias: cuantasMeTocan(tareas, { usuario: quien.usuario, rol: quien.rol }, h),
+      // Los comentarios (2026-11-26): los nuevos, a quien los trabaja; a cada
+      // uno, sus respuestas sin ver. `Comentarios` también viene en la tanda.
+      comentariosMios: avisosDeComentarios(comentarios, quien.rol, quien.usuario)
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

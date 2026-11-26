@@ -64,6 +64,8 @@ import {
   ESTADO_PRESUPUESTO, estadoNormal
 } from './presupuestos.ts';
 import { conCliente } from './cotizar.ts';
+import { HOJA_COMENTARIOS, ENCABEZADO_COMENTARIOS, leerComentariosDe, filaDeComentario, nuevoIdComentario,
+         type ComentarioGuardado } from './comentarios.ts';
 import { HOJA_TAREAS, ENCABEZADO_TAREAS, leerTareasDe, filaTarea, nuevoIdTarea, type Tarea } from './tareas.ts';
 import { HOJA_NOTAS, ENCABEZADO_NOTAS, leerNotasDe, filaNota, nuevoIdNota, type Nota } from './notas.ts';
 import { HOJA_VENDEDORES, ENCABEZADO_VENDEDORES, leerVendedoresDe, filaVendedor, fichaDe, baseDeVenta,
@@ -1248,6 +1250,58 @@ export async function cambiarTarea<E extends { error: string }>(
   if ('error' in nueva) return nueva;
   await escribirFila(HOJA_TAREAS, fila, filaTarea(filas[0] ?? ENCABEZADO_TAREAS, nueva));
   return nueva;
+}
+
+/* ---------- Los comentarios del equipo (2026-11-26, `lib/comentarios.ts`) ---------- */
+
+/** Los comentarios. Si la pestaña no está, se crea, como las tareas. */
+export async function leerComentarios(): Promise<ComentarioGuardado[]> {
+  try {
+    return leerComentariosDe(await leerHoja(HOJA_COMENTARIOS));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_COMENTARIOS, ENCABEZADO_COMENTARIOS); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+/** El encabezado, con las columnas del panel al final si una pestaña vieja no las tiene. */
+async function encabezadoComentarios(): Promise<{ filas: string[][]; enc: string[] }> {
+  const filas = await asegurarEncabezado(HOJA_COMENTARIOS, ENCABEZADO_COMENTARIOS);
+  const enc = await asegurarColumnas(HOJA_COMENTARIOS, filas[0] ?? ENCABEZADO_COMENTARIOS, ENCABEZADO_COMENTARIOS);
+  return { filas, enc };
+}
+
+/** Agrega comentarios al final, cada uno con su ID. */
+export async function agregarComentarios(lista: Omit<ComentarioGuardado, 'fila'>[]): Promise<number> {
+  if (!lista.length) return 0;
+  const { enc } = await encabezadoComentarios();
+  await agregarFilas(HOJA_COMENTARIOS, lista.map((c) => filaDeComentario(enc, { ...c, id: c.id && !c.id.startsWith('fila-') ? c.id : nuevoIdComentario() })));
+  return lista.length;
+}
+
+/**
+ * Cambia un comentario, leyendo la pestaña fresca para saber en qué fila
+ * está. `cambio` decide con lo escrito; un comentario sin ID (de antes) lo
+ * gana al guardarse.
+ */
+export async function cambiarComentario<E extends { error: string }>(
+  id: string, cambio: (c: Omit<ComentarioGuardado, 'fila'>) => Omit<ComentarioGuardado, 'fila'> | E
+): Promise<Omit<ComentarioGuardado, 'fila'> | E | null> {
+  let filas: string[][];
+  try { filas = await leerHoja(HOJA_COMENTARIOS, true); } catch (e) {
+    if (esPestanaQueNoExiste(e)) return null;
+    throw e;
+  }
+  const c = leerComentariosDe(filas).find((x) => x.id === id);
+  if (!c) return null;
+  const { fila, ...sinFila } = c;
+  const nuevo = cambio(sinFila);
+  if ('error' in nuevo) return nuevo;
+  const conId = { ...nuevo, id: nuevo.id.startsWith('fila-') ? nuevoIdComentario() : nuevo.id };
+  const enc = await asegurarColumnas(HOJA_COMENTARIOS, filas[0] ?? ENCABEZADO_COMENTARIOS, ENCABEZADO_COMENTARIOS);
+  await escribirFila(HOJA_COMENTARIOS, fila, filaDeComentario(enc, conId));
+  return conId;
 }
 
 /* ---------- La caja chica (2026-11-23, `lib/caja.ts`) ---------- */

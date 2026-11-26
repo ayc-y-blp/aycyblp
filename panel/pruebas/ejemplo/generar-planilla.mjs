@@ -29,6 +29,7 @@ const prm = await import(L + 'promociones.ts');
 const pla = await import(L + 'plata.ts');
 const otr = await import(L + 'otrasEmpresas.ts');
 const tar = await import(L + 'tareas.ts');
+const cmt = await import(L + 'comentarios.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -537,7 +538,20 @@ H['Bitácora'] = [bit.ENCABEZADO_BITACORA,
   ['2026-11-13 13:41', 'Fernanda Muñoz', 'anfitrion', 'Editó una reserva', `fila ${RES.findIndex((r) => r.nombre === 'Martín Araya') + 2} · asistencia, llegaron`]
 ];
 
-H['Comentarios'] = [['Cuándo', 'Quién', 'Rol', 'Pantalla', 'Comentario']];
+// **Los comentarios del equipo** (2026-11-26): pasaron a la planilla del
+// panel. Uno nuevo, uno en curso pasado a tarea y uno contestado sin ver.
+const comentario = (c) => cmt.filaDeComentario(cmt.ENCABEZADO_COMENTARIOS, { prioridad: '', respuesta: '', resuelto: '',
+  respondidoPor: '', vista: '', tarea: '', para: '', estado: 'Nuevo', ...c });
+H['Comentarios'] = [cmt.ENCABEZADO_COMENTARIOS,
+  comentario({ id: 'C-EJ1', fecha: '2026-11-12 19:40', rol: 'Vendedor', nombre: 'Jorge', tipo: '🧩 Me falta', donde: 'Cotizaciones',
+    texto: 'No veo cuánto le queda por pagar al cliente sin abrir la cotización.', para: 'Para llamarlo con el número a mano.' }),
+  comentario({ id: 'C-EJ2', fecha: '2026-11-11 15:05', rol: 'Encargado de turno', nombre: 'Tomás Herrera', tipo: '🐞 Algo falla',
+    donde: 'Recepción', texto: 'Al marcar Llegó en el teléfono a veces no cambia de color.', estado: 'En curso', prioridad: 'Alta',
+    tarea: 'T-EJ5' }),
+  comentario({ id: 'C-EJ3', fecha: '2026-11-09 12:30', rol: 'Vendedor', nombre: 'Jorge', tipo: '🤔 No se entiende', donde: 'Vendedores',
+    texto: '¿Qué significa comisión garantizada?', estado: 'Resuelto', respuesta: 'Es la de las cotizaciones que el cliente ya pagó y pagos revisó.',
+    respondidoPor: 'Paula Fuentes', resuelto: '2026-11-10' })
+];
 
 /* ---------- Las pestañas de importar (2026-11-21) ----------
  * Lo que se sube para importar del CRM viejo y del sitio viejo, con gente

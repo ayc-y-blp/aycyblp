@@ -74,7 +74,7 @@ export const VEN_TODAS: string[] = [ROL.gerencia, ROL.admin];
 
 /** Los roles a los que se le puede mandar una tarea entera (los que entran al panel). */
 export const ROLES_CON_TAREAS: string[] = [ROL.admin, ROL.gerencia, ROL.operaciones, ROL.pagos, ROL.encargado,
-  ROL.vendedor, ROL.anfitrion];
+  ROL.vendedor];
 
 export interface Mensaje {
   cuando: string;

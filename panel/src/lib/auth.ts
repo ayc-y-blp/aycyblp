@@ -551,10 +551,11 @@ export const PERMISOS = {
   /**
    * **Las tareas internas** (2026-11-26, `lib/tareas.ts`): mandar una tarea a
    * otra cuenta o a un rol, y contestar las que llegan. Todas las cuentas que
-   * entran al panel. Quién ve todas no es un permiso: es `VEN_TODAS` (la
-   * gerencia y el administrador), como las notas.
+   * entran al panel, **menos la anfitriona** (lo decidió el cliente el mismo
+   * día: *"la anfitriona no"*). Quién ve todas no es un permiso: es
+   * `VEN_TODAS` (la gerencia y el administrador), como las notas.
    */
-  tareas: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia, ROL.vendedor, ROL.anfitrion]
+  tareas: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia, ROL.vendedor]
 } as const;
 
 export type Accion = keyof typeof PERMISOS;
