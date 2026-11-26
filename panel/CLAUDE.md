@@ -259,6 +259,30 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El calendario de Cotizaciones: lo cotizado, siempre a la misma altura (2026-11-26)
+
+Lo pidió el cliente con una foto del calendario de Cotizaciones: *"deja la info
+de cotización siempre en la misma altura pese a que falte aún el cupo y
+ocupación, encima de cotizar el día"*. Un día sin abrir no tiene lo reservado ni
+su barra, y sus pastillas (*✉ 1 sin confirmar el envío*, *1 cotización · 20
+posibles*) subían hasta la fecha, más arriba que en la tarjeta de al lado.
+
+- **Si algún día de la semana tiene cupo, los que no lo tienen dejan ese lugar
+  vacío**, del mismo alto (`reservarCupo` en `tarjeta()` de
+  `CotizacionesVista`, `data-cupo-vacio`). Así lo cotizado —o *nada
+  cotizado*— parte a la misma altura en todas las tarjetas de la fila, justo
+  encima de *+ Cotizar este día*. En una semana sin ningún cupo no se reserva
+  nada.
+- **Solo con tarjetas lado a lado** (desde 640px): en el celular van una
+  debajo de la otra y no cambia.
+- **Lo mide `revisarTarjetasParejas()`**, que ahora mira además lo marcado con
+  `data-pareja` dentro de una `data-tarjeta`: en `npm run ventanas`, en
+  Cotizaciones, con los días cotizados del ejemplo sin abrir. Probado al revés:
+  sin el lugar vacío, falla con lo cotizado a 39 y 85px.
+- **El calendario de Reservas no cambió**: ahí un día sin cupo muestra sus
+  personas y *Sin cupo definido*, otra forma.
+- **Ninguna lectura, permiso ni columna.** Ninguna ayuda dice dónde va.
+
 ## La Agenda: cada cotización en una sola sección (2026-11-26)
 
 Lo preguntó el cliente con una foto de la Agenda, donde Angel F Mammana salía
