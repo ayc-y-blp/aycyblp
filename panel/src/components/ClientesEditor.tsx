@@ -404,22 +404,36 @@ export default function ClientesEditor() {
               : soloMios ? `Ninguno de los tuyos calza con “${busqueda}”. Mira en Todos.` : `Nadie calza con “${busqueda}”.`}
         </p>
       ) : (
-        <div>{secciones.map((sec, k) => (
-        <div key={sec.clave} className={k > 0 ? 'mt-5' : ''}>
+        // **Las tarjetas, en columnas** (2026-11-26, lo pidió el cliente: *"sin
+        // confirmar envío es importante, debe estar en una columna central, no
+        // al borde derecha"*; regla *el mismo dato va en la misma columna*). En
+        // el computador, todas las secciones son una sola grilla y cada
+        // cabecera usa sus columnas (`subgrid`): el nombre y su contacto · los
+        // avisos (✉, 📞, 🆕), centrados en la columna del medio · *Borrar*. Así
+        // quedan en la misma vertical en todas las tarjetas, también entre
+        // secciones. En el celular, como antes.
+        <div data-columnas="clientes" className="lg:grid lg:grid-cols-[auto_minmax(min-content,1fr)_auto]">{secciones.map((sec, k) => (
+        <div key={sec.clave} className={`lg:contents ${k > 0 ? 'mt-5' : ''}`}>
         {/* El rótulo de los grupos de la Agenda (*Hoy · Próximos días*). */}
         {/* Un título de verdad (2026-11-25): abre su sección. */}
         {sec.titulo && (
-          <h3 className={`mb-1.5 text-[13px] font-semibold uppercase tracking-wider ${sec.nuevos ? 'text-rosa-texto' : 'text-hueso/60'}`}>
+          <h3 className={`mb-1.5 text-[13px] font-semibold uppercase tracking-wider lg:col-span-full
+                          ${k > 0 ? 'lg:mt-5' : ''} ${sec.nuevos ? 'text-rosa-texto' : 'text-hueso/60'}`}>
             {sec.titulo}
           </h3>
         )}
-        <ul className={LISTA_TARJETAS}>
+        <ul className={`${LISTA_TARJETAS} lg:contents`}>
           {sec.lista.map((c) => {
             const n = cotizaciones[c.id] ?? 0;
             const abiertaEsta = abierta === c.id;
             return (
-              <li key={c.id} className={`overflow-hidden ${marcoTarjeta(!!abiertaEsta)}`}>
-                <div className="flex items-center gap-2 pr-2">
+              <li key={c.id} className={`overflow-hidden ${marcoTarjeta(!!abiertaEsta)}
+                                         lg:col-span-full lg:grid lg:grid-cols-subgrid`}>
+                {/* La cabecera entera abre la ficha (2026-11-26): los avisos van
+                    fuera del botón, en su columna, y apretarlos también la abre
+                    —salvo ✉, que lleva a la cotización—. */}
+                <div className="flex flex-wrap items-center gap-x-2 pr-2 lg:col-span-full lg:grid lg:grid-cols-subgrid lg:gap-x-3"
+                  onClick={(e) => { if (!(e.target as Element).closest('button, a')) abrir(c); }}>
                   <button type="button" aria-expanded={!!abiertaEsta} onClick={() => abrir(c)}
                     className="flex min-h-[52px] min-w-0 flex-1 flex-wrap items-center gap-x-3
                                gap-y-1 px-3 py-2.5 text-left hover:bg-hueso/5">
@@ -433,30 +447,39 @@ export default function ClientesEditor() {
                         {n} cotizaci{n === 1 ? 'ón' : 'ones'}
                       </span>
                     )}
-                    {/* El recontacto más cercano, también con la ficha cerrada. */}
-                    <PastillaContacto fecha={primerRecontacto(historial[c.id])} hoy={hoyDia} />
-                    {/* 🆕 La del sitio sin contacto anotado (2026-11-25). */}
-                    {nuevaDe(historial[c.id]) && (
-                      <PastillaNueva promo={nuevaDe(historial[c.id])!.promo ?? ''} creado={nuevaDe(historial[c.id])!.creado ?? ''} ahora={ahora} />
-                    )}
                   </button>
-                  {/* ✉ Una lista sin confirmar (2026-11-25): fuera del botón que
-                      abre la ficha, porque se aprieta. Abre la cotización en el
-                      Envío y pregunta (2026-11-26). */}
-                  {envioDe(historial[c.id]) && (() => {
-                    const x = envioDe(historial[c.id])!;
-                    return <PastillaEnvio cliente={c.nombre} suya={x.envio === 'pregunta'}
-                      href={x.envio !== 'aviso' && !soloMiraCotizar ? linkACotizacion(x.id, PASO.envio, true) : undefined} />;
+                  {/* **Los avisos, en la columna del medio** (2026-11-26): el
+                      recontacto más cercano, la del sitio sin contacto (🆕) y
+                      ✉ una lista sin confirmar, que abre la cotización en el
+                      Envío y pregunta. En el celular, debajo del nombre. */}
+                  {(() => {
+                    const contacto = primerRecontacto(historial[c.id]);
+                    const nueva = nuevaDe(historial[c.id]);
+                    const x = envioDe(historial[c.id]);
+                    return (
+                      <div className={`flex cursor-pointer justify-center max-lg:basis-full max-lg:justify-start max-lg:px-3
+                                       ${contacto || nueva || x ? '' : 'max-lg:hidden'}`}>
+                        {(contacto || nueva || x) && (
+                          <span data-columna="avisos" data-eje="centro"
+                            className="inline-flex flex-wrap items-center justify-center gap-2 max-lg:pb-2.5">
+                            {x && <PastillaEnvio cliente={c.nombre} suya={x.envio === 'pregunta'}
+                              href={x.envio !== 'aviso' && !soloMiraCotizar ? linkACotizacion(x.id, PASO.envio, true) : undefined} />}
+                            <PastillaContacto fecha={contacto} hoy={hoyDia} />
+                            {nueva && <PastillaNueva promo={nueva.promo ?? ''} creado={nueva.creado ?? ''} ahora={ahora} />}
+                          </span>
+                        )}
+                      </div>
+                    );
                   })()}
-                  {n === 0 && !soloMira && !c.contactoTapado && (
+                  {n === 0 && !soloMira && !c.contactoTapado ? (
                     <button onClick={() => void borrar(c)}
-                      className="boton shrink-0 hover:border-rojo-fuerte hover:text-rojo-texto"
+                      className="boton shrink-0 hover:border-rojo-fuerte hover:text-rojo-texto lg:justify-self-end"
                       title="No tiene cotizaciones, así que se puede borrar">Borrar</button>
-                  )}
+                  ) : <span aria-hidden className="hidden lg:block" />}
                 </div>
 
                 {abiertaEsta && (
-                  <div className={`${CUERPO_ABIERTO} p-4`}>
+                  <div className={`${CUERPO_ABIERTO} p-4 lg:col-span-full`}>
                     {/* **Su historial de cotizaciones** (Fase 2): todas, con la
                         ganada en verde y las alternativas marcadas. Un cliente
                         que pide varias, o dos opciones, las ve juntas acá. */}

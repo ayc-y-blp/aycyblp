@@ -197,6 +197,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro, los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
+  | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`) |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -298,6 +299,16 @@ el largo del nombre: en cada fila quedaban en otro lugar.
   `display: contents` y la fila se dobla como antes.
 - Va en la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas del sitio*:
   todas usan `fila()`.
+- **Y en Clientes** (lo pidió el cliente el mismo día, con una foto: *"aquí
+  'sin confirmar envío' es importante, debe estar en una columna central, no
+  al borde derecho"*): la cabecera de cada tarjeta usa las columnas de toda la
+  lista —el nombre y su contacto · los avisos (✉, 📞, 🆕), centrados en la
+  columna del medio · *Borrar*—, **una sola grilla para las tres secciones**
+  (`lg:contents` en cada sección y su lista), así quedan en la misma vertical
+  también entre *🆕 Nuevos*, *📞 Por contactar* y *Los demás*. Los avisos
+  salieron del botón que abre la ficha: apretarlos también la abre (la
+  cabecera entera abre), salvo ✉, que lleva a la cotización. En el celular van
+  debajo del nombre (antes ✉ iba a la derecha).
 - **Lo mide `revisarColumnas()`** (regla nueva del mismo día, *"anótalo
   así"*): cada lista lleva `data-columnas` y cada dato que se repite,
   `data-columna` —las pastillas (`avisos`, por su centro), los valores (por su

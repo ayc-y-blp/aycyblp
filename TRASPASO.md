@@ -700,8 +700,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   sin ganar, se ve perdida con *se cayó: pasó el evento*; no se escribe nada y
   vuelve sola si se le cambia el día (`pasoElEvento()`). **Y las filas de
   cotizaciones van en columnas** (lo pidió el cliente: las pastillas 📞 y ✉,
-  centradas en una sola columna, como *Se cayó* a la derecha). En el mismo PR
-  #375. Ver `panel/CLAUDE.md`.
+  centradas en una sola columna, como *Se cayó* a la derecha), **también en
+  Clientes** (✉ *sin confirmar el envío* en la columna central). En el mismo PR
+  #375, con la regla nueva *el mismo dato va en la misma columna* y su prueba,
+  `revisarColumnas()`. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
