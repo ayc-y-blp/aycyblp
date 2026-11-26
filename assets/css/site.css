@@ -466,6 +466,21 @@ a.card .mas{
   font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
 }
 .tier-cap .pay:hover, .tier-cap .pay:focus-visible{ background:#DAB02C; }
+/* **Ver bebestibles** (2026-11-25, lo pidio el cliente: "agrega el boton ver
+   bebestibles… al apretar, achunta el boton perfecto o no, se da vuelta y
+   muestra las bebestibles"). No es un <button> ni un enlace: un control dentro
+   del <label> no giraria la tarjeta (ver .pay). Es un span con forma de boton,
+   asi que se apriete el o cualquier parte de la tarjeta, gira, y el reverso dice
+   los bebestibles. Va al lado de Reservar pagando ahora, y se dobla debajo si
+   no cabe. */
+.tier-acciones{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.tier-acciones .pay{ margin-top:0; }
+.ver-bebestibles{
+  align-self:flex-start; display:inline-flex; align-items:center; min-height:40px; padding:8px 14px;
+  border:1px solid rgba(244,240,230,0.75); background: rgba(11,11,10,0.35); color:#F4F0E6; border-radius:2px;
+  font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+}
+.flip-card:hover .ver-bebestibles{ border-color:#F4F0E6; background: rgba(11,11,10,0.55); }
 .flip-back{
   transform: rotateY(180deg); background: var(--bg-raise); border-color: var(--gold-soft);
   padding: 18px 16px; display:flex; flex-direction:column; justify-content:center; gap:2px;

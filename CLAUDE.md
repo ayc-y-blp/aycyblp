@@ -896,6 +896,33 @@ idioma y Diurno/Nocturno.
 cuerpo de texto, que ya estaban a tamaño de leer; y el aspecto general, que
 sigue siendo el mismo.
 
+### *Ver bebestibles* en las tarjetas de las experiencias (2026-11-26)
+
+Lo pidió el cliente: *"en las tarjetas de las distintas experiencias, agrega el
+botón 'ver bebestibles'. Pero con la condición que gira la tarjeta de todas
+maneras al apretar, achunta el botón perfecto o no, se da vuelta y muestra las
+bebestibles"*.
+
+- **En el frente de cada tarjeta que gira**, bajo el precio: las dos de
+  `experiencias.html` (al lado de *Reservar pagando ahora*, y debajo si no
+  cabe) y las tres de socios, promociones y el dossier. Delineado claro sobre la
+  foto, de 40px, como *Reservar pagando ahora*.
+- **No es un `<button>` ni un enlace**: un control dentro del `<label>` no
+  giraría la tarjeta (por eso *Reservar pagando ahora* lleva a la reserva sin
+  girarla). Es un `span` con forma de botón (`.ver-bebestibles`): se apriete él
+  o cualquier parte de la tarjeta, gira, y el reverso dice los bebestibles. Cero
+  JavaScript.
+- **El reverso no cambió**: ya decía *Bebestibles —* con lo de cada
+  experiencia. *Ver detalle*, en la esquina, sigue.
+- La regla vive en `site.css` y en el `<style>` de cada landing (son la misma
+  pieza: si cambia una, se cambian las cuatro). Traducción: *See drinks* /
+  *Ver bebidas*. Se rehicieron los PDF del dossier y de socios (la guarda lo
+  pide; el contenido es el mismo).
+- **Comprobado** con Playwright en las cuatro páginas, en español, inglés y
+  portugués, a 1262×573, 393×740 y 360×640: apretar el botón gira la tarjeta,
+  apretar al medio de la foto también, y nada se sale de lado. Un reverso de
+  Experiencias a 360×640 pasa 2px de su alto, como antes del cambio.
+
 ### La reserva en tres pasos y los llamados a reservar (2026-11-23)
 
 Lo pidió el cliente: *"rediseñar esta sección de reservas con mucho
