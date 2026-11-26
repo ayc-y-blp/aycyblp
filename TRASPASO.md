@@ -764,8 +764,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **Las tareas internas** (26-11-2026, lo pidió el cliente: primera parte de
   un panel de gerencia): pantalla *Tareas* para todas las cuentas, *📋 Nueva
   tarea* a una persona o a un rol entero, ✓ Hecha / ❓ Preguntar, y *📋 Tienes N
-  tareas* en la portada. Permiso nuevo `tareas` y pestaña nueva `Tareas`. En un
-  PR, en preview hasta el *"mergea"*. **Lo que sigue del mismo proyecto**: los
+  tareas* en la portada. Permiso nuevo `tareas` y pestaña nueva `Tareas` (se
+  crea sola en cada planilla). **PR #384, mergeado el 26-11-2026** con el
+  *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después. **Lo que sigue del mismo proyecto**: los
   comentarios de 💬 dentro del panel (verlos, contestarlos, pasarlos a tarea) y
   `/gerencia` con Ventas, Reservas y ocupación, Plata y Tareas y comentarios.
   Ver `panel/CLAUDE.md`, "Las tareas internas".
