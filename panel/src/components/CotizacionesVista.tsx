@@ -425,8 +425,9 @@ export default function CotizacionesVista() {
   const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => {
     const caerse = puedeCaerse(p);
     const envio = marcaEnvio(p);
-    const botonCaer = (donde: string) => (
+    const botonCaer = (donde: string, columna = false) => (
       <button type="button" onClick={() => setCayendo(p)} aria-label={`Se cayó la cotización de ${p.cliente || 'sin cliente'}`}
+        data-columna={columna ? 'se-cayo' : undefined}
         className={`boton relative z-10 shrink-0 !min-h-[40px] !border-2 !border-rojo-fuerte/50 !px-2.5 !text-[14px]
                     !font-semibold text-rojo-texto hover:!border-rojo-fuerte hover:!text-rojo-texto ${donde}`}>
         ✕ Se cayó…
@@ -476,12 +477,16 @@ export default function CotizacionesVista() {
             dobla, va en su renglón, a la izquierda: así todas las filas con
             pastilla quedan parejas (el total, debajo). */}
         <span className={`flex flex-1 flex-wrap items-center gap-2 lg:justify-center ${recontactoDe(p, hoy) || envio ? 'max-lg:basis-full' : ''}`}>
-          {envio}
-          {recontactoDe(p, hoy) && (
-            <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} /></span>
+          {(envio || recontactoDe(p, hoy)) && (
+            <span data-columna="avisos" data-eje="centro" className="inline-flex flex-wrap items-center gap-2">
+              {envio}
+              {recontactoDe(p, hoy) && (
+                <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} /></span>
+              )}
+            </span>
           )}
         </span>
-        <span data-paso={PASO.productos} className="text-[14px] text-hueso/70 lg:justify-self-end lg:whitespace-nowrap">
+        <span data-paso={PASO.productos} data-columna="valores" data-eje="der" className="text-[14px] text-hueso/70 lg:justify-self-end lg:whitespace-nowrap">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
         </span>
@@ -491,12 +496,12 @@ export default function CotizacionesVista() {
             {alternativasDe(p, datos.presupuestos).length} alternativas
           </span>
         ) : <span aria-hidden className="hidden lg:block" />}
-        <span className="text-[13px] text-hueso/55 lg:whitespace-nowrap">N° {folioDe({ id: grupoDe(p) })}</span>
+        <span data-columna="numero" className="text-[13px] text-hueso/55 lg:whitespace-nowrap">N° {folioDe({ id: grupoDe(p) })}</span>
         {/* **Al final de la fila** (2026-11-26, lo pidió el cliente: *"deja el
             se cayó al lado derecho, al final de la fila… así queda más
             ordenado"*): después del N°, siempre en el mismo borde, mida lo que
             mida el monto. Antes iba antes de los valores. */}
-        {caerse && botonCaer('hidden lg:inline-flex')}
+        {caerse && botonCaer('hidden lg:inline-flex', true)}
         {/* Sin *Se cayó…* (una ganada, una perdida), su lugar queda vacío en
             el computador: así los montos y el N° quedan en columna en todas
             las filas. */}
@@ -671,7 +676,7 @@ export default function CotizacionesVista() {
           <p className="text-[14px] font-semibold first-letter:uppercase">{enPalabras(diaAbierto)}</p>
           <button type="button" onClick={() => setDiaAbierto(null)} className="boton">Cerrar</button>
         </div>
-        <ul className={LISTA_FILAS}>{delDia.map((p) => fila(p, false))}</ul>
+        <ul className={LISTA_FILAS} data-columnas="cotizaciones del día">{delDia.map((p) => fila(p, false))}</ul>
       </div>
     );
   };
@@ -851,7 +856,7 @@ export default function CotizacionesVista() {
           <p className={`${TITULO_GRUPO} mb-2 flex items-center gap-2`}>
             🆕 Nuevas del sitio · {nuevas.length} <AyudaCorta tema="nuevasDelSitio" />
           </p>
-          <ul className={LISTA_FILAS}>
+          <ul className={LISTA_FILAS} data-columnas="nuevas del sitio">
             {nuevas.map((p) => fila(p, true, (
               <>
                 <PastillaNueva promo={promoDelOrigen(p.origen)} creado={p.creado ?? ''} ahora={ahora} />
@@ -919,7 +924,7 @@ export default function CotizacionesVista() {
             <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">
               Ninguna sin fecha.
             </p>
-          ) : <ul className={LISTA_FILAS}>{agrupar(sinFecha).map((p) => fila(p))}</ul>}
+          ) : <ul className={LISTA_FILAS} data-columnas="sin fecha">{agrupar(sinFecha).map((p) => fila(p))}</ul>}
         </div>
       )}
 

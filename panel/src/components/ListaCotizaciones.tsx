@@ -280,7 +280,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         {filtro === 'agenda' ? verAgenda(agenda) : lista.length === 0 ? (
           <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">Ninguna calza.</p>
         ) : (
-          <ul className={LISTA_FILAS}>
+          <ul className={LISTA_FILAS} data-columnas="lista">
             {lista.map((p) => {
               const detalle = (
                 <>

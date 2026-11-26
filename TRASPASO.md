@@ -1857,6 +1857,11 @@ misma pasada.
 - **El espacio se usa bien** (22-11-2026): en el computador, lo que cabe en
   una fila no se apila. Lo mide `revisarEspacio()` dentro de `npm run
   ventanas`; una pantalla o vista nueva se agrega a `PANTALLAS`.
+- **En una lista, el mismo dato va en la misma columna** (26-11-2026): una
+  pastilla, un monto, un N° o un botón en la misma vertical en todas las
+  filas; cada fila deja su lugar aunque esté vacío. Lo mide
+  `revisarColumnas()` dentro de `npm run ventanas` (`data-columnas` /
+  `data-columna`).
 - **Los formularios van alineados** (21-11-2026): los nombres de los campos
   en una columna y los valores en otra, todos partiendo en la misma
   vertical; nunca un campo pegado a su nombre porque la palabra es más

@@ -11,5 +11,9 @@
  * Una fila **siempre dibuja sus seis celdas** (vacías si no tiene ese dato):
  * si falta una, las de la derecha se corren de columna. En el celular, la
  * fila se dobla como antes.
+ *
+ * **Lo mide `revisarColumnas()`** (`pruebas/alineacion.mjs`, regla del
+ * cliente del mismo día): la lista lleva `data-columnas` y cada dato que se
+ * repite, `data-columna` (con `data-eje`).
  */
 export const LISTA_FILAS = 'space-y-2 lg:grid lg:grid-cols-[auto_minmax(min-content,1fr)_auto_auto_auto_auto] lg:gap-x-3';

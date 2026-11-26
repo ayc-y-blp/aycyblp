@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija, revisarColumnas } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -604,6 +604,13 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
     const h = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
     console.log(`  ${h.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${h.length ? '\n           · ' + h.join('\n           · ') : ''}`);
     if (h.length) fallas.push(`espacio · ${nombre}`);
+    // **El mismo dato, en la misma columna** (2026-11-26, regla del cliente):
+    // en toda pantalla que tenga una lista marcada con `data-columnas`.
+    const c = await revisarColumnas(p);
+    if (c.length) {
+      console.log(`  FALLA  columnas · ${nombre}\n           · ${c.join('\n           · ')}`);
+      fallas.push(`columnas · ${nombre}`);
+    }
   }
 }
 // **Los botones fijos de Cotizaciones no bajan** (2026-11-25): como Daniela,
@@ -628,6 +635,9 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
         const e = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
         console.log(`  ${e.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${e.length ? '\n           · ' + e.join('\n           · ') : ''}`);
         if (e.length) fallas.push(`espacio · ${nombre}`);
+        const c = await revisarColumnas(p);
+        console.log(`  ${c.length ? 'FALLA ' : 'ok     '} columnas · ${nombre}${c.length ? '\n           · ' + c.join('\n           · ') : ''}`);
+        if (c.length) fallas.push(`columnas · ${nombre}`);
       }
     });
   }

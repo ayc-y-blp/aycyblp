@@ -327,3 +327,39 @@ export async function revisarEspacio(page) {
     return hallazgos;
   });
 }
+
+/**
+ * **En una lista, el mismo dato va en la misma columna en todas las filas**
+ * (2026-11-26, regla del cliente: *"deja los anuncios de contactar o envío
+ * alineados en una columna pero centralizado… porque es lo mismo como la de
+ * se cayó a la derecha"*, y *"anótalo así"*). Una lista lleva
+ * `data-columnas="nombre"`, y cada dato que se repite fila a fila,
+ * `data-columna="dato"` —con `data-eje="centro"` o `"der"` si no se mide por su
+ * borde izquierdo—. Falla si en una misma lista el mismo dato se corre más de
+ * 2px entre una fila y otra. Se usa en el computador: en el celular las filas
+ * se doblan a propósito.
+ */
+export async function revisarColumnas(page) {
+  return page.evaluate(() => {
+    const malas = [];
+    for (const lista of document.querySelectorAll('[data-columnas]')) {
+      const grupos = new Map();
+      for (const el of lista.querySelectorAll('[data-columna]')) {
+        if (el.closest('[data-columnas]') !== lista) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        const eje = el.dataset.eje ?? 'izq';
+        const x = eje === 'centro' ? r.left + r.width / 2 : eje === 'der' ? r.right : r.left;
+        const k = el.dataset.columna;
+        if (!grupos.has(k)) grupos.set(k, []);
+        grupos.get(k).push(x);
+      }
+      for (const [k, xs] of grupos) {
+        if (xs.length < 2) continue;
+        const d = Math.max(...xs) - Math.min(...xs);
+        if (d > 2) malas.push(`«${k}» se corre ${Math.round(d)}px entre las filas de «${lista.dataset.columnas}»`);
+      }
+    }
+    return malas;
+  });
+}

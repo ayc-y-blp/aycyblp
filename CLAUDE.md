@@ -160,6 +160,16 @@ más abajo; esto es la lista para revisar.
   **Una pantalla o una vista nueva se agrega a `PANTALLAS` de
   `pruebas/ventanas.mjs` en el mismo PR.** El celular no cambia: ahí las
   filas se apilan a propósito.
+- **En una lista, el mismo dato va en la misma columna en todas las filas**
+  (regla del cliente, 2026-11-26: *"deja los anuncios de contactar o envío
+  alineados en una columna pero centralizado… porque es lo mismo como la de
+  se cayó a la derecha"*, y *"anótalo así"*). Una pastilla, un monto, un N° o
+  un botón quedan en la misma vertical —centrados o al borde— en cada fila,
+  mida lo que mida el nombre de al lado; para eso **cada fila deja su lugar
+  aunque esté vacío**. **Lo mide una prueba**: `revisarColumnas()`, dentro de
+  `npm run ventanas`, falla si un dato marcado con `data-columna` se corre
+  entre una fila y otra de la misma lista (`data-columnas`). **Una lista nueva
+  con datos que se repiten fila a fila marca sus columnas en el mismo PR.**
 - **Lo que explica va en su `?`, no fijo en la pantalla** (regla del
   cliente, 2026-11-21: *"vamos a capacitar a la gente y entonces después
   molesta mucho texto constante"*). A la vista quedan el dato y la acción;
