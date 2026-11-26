@@ -270,8 +270,10 @@ centralizada"*. Decidió *"cada uno las suyas"* (la gerencia y el
 administrador ven todas) y *"tareas primero"*; los comentarios de 💬 en el
 panel y la pantalla de números de la gerencia vienen después.
 
-- **Pantalla nueva, *Tareas*** (`/tareas`, `TareasVista`), en el menú de todas
-  las cuentas, segunda después del Calendario. Grupos con su marco: ***👉 Para
+- **Pantalla nueva, *Mi panel*** (`/tareas`, `TareasVista`), en el menú de todas
+  las cuentas, segunda después del Calendario. **Se llamó *Tareas* el primer
+  día**: el cliente pidió *"debería llamarse mi panel, no tareas"*; la banda
+  dice *Mi panel · Tareas y comentarios* y la dirección sigue siendo `/tareas`. Grupos con su marco: ***👉 Para
   ti*** (lo que te toca ahora), ***📤 Las que mandaste***, ***👥 Del equipo***
   (solo quien ve todas) y ***✓ Cerradas***, plegado. Las atrasadas van arriba,
   con la tarjeta en rojo.

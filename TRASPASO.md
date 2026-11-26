@@ -776,7 +776,11 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   a tarea, y la portada avisa. Los viejos se traen una vez desde Mantención;
   después se puede borrar `COMENTARIOS_SHEET_ID`. En el mismo PR, **la
   anfitriona sin tareas** (el cliente: *"la anfitriona no"*). En preview hasta
-  el *"mergea"*. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
+  el *"mergea"*. **PR #385, mergeado el 26-11-2026** con el *"mergea"* del
+  cliente; `verificar.sh` dio 15 de 15 después. **Falta que el cliente apriete
+  *💬 Traer los comentarios de Gran Testeo*** en producción. Y **la pantalla se
+  llama *Mi panel*** (el cliente: *"debería llamarse mi panel, no tareas"*), en
+  un PR aparte. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
   panel". Lo que sigue: `/gerencia` con los números.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).

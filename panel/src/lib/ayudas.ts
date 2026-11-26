@@ -384,7 +384,7 @@ export const AYUDAS: Record<string, Ayuda> = {
     ]
   },
   tareas: {
-    titulo: 'Las tareas',
+    titulo: 'Mi panel: tareas y comentarios',
     cuerpo: [
       'Lo que alguien te pide hacer, y lo que tú pides a otros. No es un chat: cada tarea es una cosa por hacer, '
       + 'con su plazo si lo tiene, y se cierra cuando está hecha.',

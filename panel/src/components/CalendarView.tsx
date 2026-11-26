@@ -476,7 +476,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
       {!conCupo && <AvisoSobrecupo dias={sobrecupo} />}
       <BandejaAprobaciones pendientes={pendientes} onCambio={() => void cargar()} />
       {/* **Las tareas que te tocan** (2026-11-26): un aviso que se aprieta y
-          lleva a *Tareas*. Rojo si alguna está atrasada. */}
+          lleva a *Mi panel*. Rojo si alguna está atrasada. */}
       {/* Las tareas y los comentarios, lado a lado en el computador (la regla del espacio). */}
       {(tareasMias.total > 0 || comentariosMios.nuevos > 0 || comentariosMios.respuestas > 0) && (
       <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:gap-3" data-fila-propia>
@@ -490,7 +490,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         </a>
       )}
       {/* **Los comentarios** (2026-11-26): a quien los trabaja, los nuevos; a
-          quien comentó, que le contestaron. Lleva a *Tareas → 💬 Comentarios*. */}
+          quien comentó, que le contestaron. Lleva a *Mi panel → 💬 Comentarios*. */}
       {(comentariosMios.nuevos > 0 || comentariosMios.respuestas > 0) && (
         <a href="/tareas?ver=comentarios"
            className="tecla flex lg:flex-1 min-h-[44px] flex-wrap items-center gap-x-2 rounded-2xl border-[3px] border-cielo-fuerte/80 bg-cielo/[0.06] px-3 py-2 text-[15px] font-semibold">

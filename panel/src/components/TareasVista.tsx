@@ -88,7 +88,7 @@ export default function TareasVista() {
   if (!d) {
     return (
       <div className="space-y-3">
-        <BandaSeccion tono="cielo" icono="📋" seccion="Tareas" titulo="Tareas" ayuda={<Ayuda tema="tareas" />} />
+        <BandaSeccion tono="cielo" icono="📋" seccion="Mi panel" titulo="Tareas y comentarios" ayuda={<Ayuda tema="tareas" />} />
         <p className={error ? 'text-rojo-texto' : 'text-hueso/70'}>{error || 'Cargando…'}</p>
       </div>
     );
@@ -123,7 +123,7 @@ export default function TareasVista() {
 
   return (
     <div className="space-y-3">
-      <BandaSeccion tono="cielo" icono="📋" seccion="Tareas" titulo="Tareas" ayuda={<Ayuda tema="tareas" />} />
+      <BandaSeccion tono="cielo" icono="📋" seccion="Mi panel" titulo="Tareas y comentarios" ayuda={<Ayuda tema="tareas" />} />
 
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setNueva(true)} className="boton boton-relleno min-h-[44px] px-4">
