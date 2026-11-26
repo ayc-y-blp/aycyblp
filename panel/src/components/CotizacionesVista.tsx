@@ -885,6 +885,13 @@ export default function CotizacionesVista() {
             <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')}
               abierto={eligiendoVendedor} onAbrir={() => setEligiendoVendedor(!eligiendoVendedor)} />
           </div>
+          {/* En *Sin fecha*, la frase que la explica va en esta fila: sola
+              debajo, dejaba dos filas que cabían en una. */}
+          {vista === 'sinFecha' && (
+            <p className="flex items-center gap-1.5 text-[14px] text-hueso/70">
+              No ocupan ninguna fecha del calendario. <AyudaCorta tema="sinFecha" />
+            </p>
+          )}
           <span className="flex-1" />
           {vista === 'calendario' && (
             <div className="w-full lg:w-auto">
@@ -977,9 +984,11 @@ export default function CotizacionesVista() {
       )}
       {vista === 'sinFecha' && (
         <div>
-          <p className="mb-3 flex items-center gap-1.5 text-[14px] text-hueso/70">
-            No ocupan ninguna fecha del calendario. <AyudaCorta tema="sinFecha" />
-          </p>
+          {!veElEquipo(datos.rol) && (
+            <p className="mb-3 flex items-center gap-1.5 text-[14px] text-hueso/70">
+              No ocupan ninguna fecha del calendario. <AyudaCorta tema="sinFecha" />
+            </p>
+          )}
           {sinFecha.length === 0 ? (
             <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">
               Ninguna sin fecha.
