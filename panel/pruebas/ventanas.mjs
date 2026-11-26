@@ -577,6 +577,9 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length) {
   await p.route('**/api/ocupacion*', async (r) => {
     const d = await (await r.fetch()).json();
     (d.ocupacion ?? []).forEach((o, i) => { if (o.capacidad > 0) { o.capacidad = 150; if (i % 2) { o.tomadas = 150; o.porPagar = 150; o.pagadas = 0; o.quedan = 0; } } });
+    // Lo cotizado en todos los días (2026-11-26): con y sin los tramos del
+    // pago, la pastilla tiene que quedar a la misma altura (`data-pareja`).
+    (d.ocupacion ?? []).forEach((o) => { if (!o.presupuestos) { o.presupuestos = 1; o.presupuestadas = 20; } });
     let deHoy = (d.ocupacion ?? []).find((o) => o.fecha === hoyEjemplo);
     const molde = (d.ocupacion ?? []).find((o) => o.capacidad > 0);
     if (!deHoy && molde) { deHoy = { ...molde, fecha: hoyEjemplo }; d.ocupacion.push(deHoy); d.ocupacion.sort((a, c) => a.fecha.localeCompare(c.fecha)); }

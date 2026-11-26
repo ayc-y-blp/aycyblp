@@ -753,7 +753,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   (26-11-2026, lo pidió el cliente con una foto): en una semana con algún día
   con cupo, los días sin cupo dejan ese lugar vacío, así las pastillas quedan
   parejas encima de *+ Cotizar este día*. Lo mide `revisarTarjetasParejas()`.
-  En un PR, en preview hasta el *"mergea"*. Ver `panel/CLAUDE.md`.
+  **PR #382, mergeado el 26-11-2026** con el *"mergea"* del cliente;
+  `verificar.sh` dio 15 de 15 después. Ver `panel/CLAUDE.md`.
+- **El calendario de Reservas: lo cotizado, pegado al pie** (26-11-2026, lo
+  pidió el cliente: *"dale, hazlo también, si no me gusta, lo devolvemos"*): la
+  pastilla de lo cotizado va al final de cada tarjeta, encima de *Reservas ·
+  Editar · Equipo*, a la misma altura en toda la fila. En un PR, en preview
+  hasta el *"mergea"*. Si no le gusta, se revierte. Ver `panel/CLAUDE.md`,
+  "Los calendarios: lo cotizado, siempre a la misma altura".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

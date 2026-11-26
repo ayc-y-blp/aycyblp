@@ -157,6 +157,8 @@ const CARA = `col-start-1 row-start-1 flex h-full flex-col rounded border p-4 lg
              `${ALTO_ESTANDAR} [backface-visibility:hidden]`;
 
 const PIE = 'mt-auto flex items-center gap-2 border-t border-hueso/10 pt-3 lg:pt-1.5';
+/** El pie del frente, que va con lo cotizado en un bloque que ya está pegado abajo. */
+const PIE_ABAJO = 'flex items-center gap-2 border-t border-hueso/10 pt-3 lg:pt-1.5';
 
 /**
  * **La regla PlayStation, aplicada al pie de la tarjeta** (2026-11-01).
@@ -239,7 +241,7 @@ export default function TarjetaDia({
         style={{ transform: volteada ? 'rotateY(180deg)' : undefined }}>
 
         {/* ---------- el frente: la ocupación ---------- */}
-        <div className={`${CARA} ${alto} ${COLOR_TARJETA(d)} ${d.fecha === hoy() ? MARCO_HOY : ''} ${volteada ? 'pointer-events-none' : ''}`}
+        <div data-tarjeta className={`${CARA} ${alto} ${COLOR_TARJETA(d)} ${d.fecha === hoy() ? MARCO_HOY : ''} ${volteada ? 'pointer-events-none' : ''}`}
              aria-hidden={volteada}>
           {/* **La línea de la fecha no se dobla** (2026-11-22): con *HOY* y
               *EXCLUSIVO* el estado bajaba un renglón. Cede el aire —8px de
@@ -397,15 +399,6 @@ export default function TarjetaDia({
               y los cotizados en rosado — ver `EventosCRM.tsx`. */}
           {delSocio && <LineaCRM e={delSocio} quedan={d.quedan} />}
 
-          {/* La misma pastilla de Cotizaciones y Turnos (`Pastilla.tsx`,
-              2026-11-13): antes era cuadrada, con un punto, y decía
-              *presupuesto*. */}
-          {d.presupuestos > 0 && (
-            <p className="mt-2 flex flex-wrap gap-2">
-              <PastillaCotizado cotizaciones={d.presupuestos} posibles={d.presupuestadas} />
-            </p>
-          )}
-
           {/* Que el día esté cerrado o privado ya lo dice la palabra bajo
               el punto. Lo único que sobrevive como línea es el aviso de un
               día cerrado **con gente ya reservada**, porque eso no es un
@@ -418,12 +411,28 @@ export default function TarjetaDia({
           )}
           {d.notas && <p className="mt-2 text-[13px] text-hueso/70">{d.notas}</p>}
 
+          {/* **Lo cotizado, pegado al pie** (2026-11-26, como en el calendario
+              de Cotizaciones; lo pidió el cliente: *"deja la info de
+              cotización siempre en la misma altura pese a que falte aún el
+              cupo y ocupación"*). Lo de arriba cambia de alto de un día a
+              otro —el cupo o *Sin cupo definido*, los tramos del pago, el
+              sobrecupo—, así que la pastilla va al final, justo encima del
+              pie: las tarjetas de una fila miden lo mismo, y queda a la misma
+              altura en todas. El aire que sobra queda arriba de ella.
+              Es la misma pastilla de Cotizaciones y Turnos (`Pastilla.tsx`,
+              2026-11-13). */}
+          <div className="mt-auto">
+          {d.presupuestos > 0 && (
+            <p data-pareja="cotizado" className="mt-2 flex flex-wrap gap-2">
+              <PastillaCotizado cotizaciones={d.presupuestos} posibles={d.presupuestadas} />
+            </p>
+          )}
           {/* `pie-tarjeta`: si los tres botones no caben en una línea, pasan
               a dos (ver `globals.css`). */}
-          {/* En el computador el pie sigue pegado abajo (`lg:mt-auto`) y este
-              hueco le asegura 6px de aire sobre su línea. */}
+          {/* En el computador este hueco le asegura al pie 6px de aire sobre
+              su línea. */}
           <div aria-hidden className="hidden h-1.5 shrink-0 lg:block" />
-          <div className={`mt-3 lg:mt-auto ${PIE} pie-tarjeta`}><div className={`pie-botones${conDias ? '' : ' pie-sin-editar'}`}>
+          <div className={`${PIE_ABAJO} pie-tarjeta`}><div className={`pie-botones${conDias ? '' : ' pie-sin-editar'}`}>
             {/* "Ver reservas" y no "Ver quiénes vienen": con tres acciones
                 en el pie, el texto largo se partía en dos líneas en una
                 tarjeta de cuatro columnas. La fecha de arriba lleva al mismo
@@ -479,6 +488,7 @@ export default function TarjetaDia({
               </button>
             )}
           </div></div>
+          </div>
         </div>
 
         {/* ---------- el dorso: el equipo ---------- */}
