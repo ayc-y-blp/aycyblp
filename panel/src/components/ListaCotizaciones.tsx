@@ -19,6 +19,7 @@
  *
  * El vendedor ve sus números: sin *Por vendedor*, y las tarjetas de lo suyo.
  */
+import { LISTA_FILAS } from './filaCotizacion';
 import { useMemo, useState, type ReactNode } from 'react';
 import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
@@ -279,7 +280,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         {filtro === 'agenda' ? verAgenda(agenda) : lista.length === 0 ? (
           <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">Ninguna calza.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className={LISTA_FILAS}>
             {lista.map((p) => {
               const detalle = (
                 <>

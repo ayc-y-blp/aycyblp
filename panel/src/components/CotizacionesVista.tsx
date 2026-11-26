@@ -21,6 +21,7 @@
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
 import { PastillaEnvio } from './ConfirmarEnvio';
 import { pasoDelClic } from './pasoDelClic';
+import { LISTA_FILAS } from './filaCotizacion';
 import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
 import { ahoraEnChile } from '@/lib/bitacora';
 import type { AvisoSitio } from '@/lib/promociones';
@@ -402,7 +403,7 @@ export default function CotizacionesVista() {
    * en la línea del nombre, **al final, después del N°** (2026-11-26); en el celular, al final de
    * la línea del vendedor, a la derecha, para no sumar un renglón.
    */
-  const puedeCaerse = (p: Presupuesto) => !soloMira && enCarrera(p)
+  const puedeCaerse = (p: Presupuesto) => !soloMira && enCarrera(p, hoy)
     && puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor);
   /**
    * **✉ ¿La mandaste?** (2026-11-25, `lib/envio.ts`): la marca de un grupo
@@ -434,7 +435,8 @@ export default function CotizacionesVista() {
     return (
       <li key={p.id} className="relative flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 rounded border
                                 border-hueso/15 bg-panel px-3 py-2.5 hover:border-oro/60
-                                [&:has(>.abrir:active)]:translate-y-px"
+                                [&:has(>.abrir:active)]:translate-y-px
+                                lg:col-span-full lg:grid lg:grid-cols-subgrid"
         // **Lo que queda encima del botón también abre** (2026-11-26): un texto
         // con `opacity` (el *nov 2026* de la fecha) se dibuja sobre el botón
         // que cubre la fila, y apretarlo no abría nada. Lo que no es otro
@@ -449,42 +451,47 @@ export default function CotizacionesVista() {
             `pasoDelClic()`). El nombre y el N°, como siempre. */}
         <button type="button" onClick={(e) => setAbierta({ p, paso: pasoDelClic(e, e.currentTarget.closest('li')) })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
           className="abrir absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
-        <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
-        {/* La empresa del cliente, al lado (2026-11-25): la misma pieza de
-            Clientes, Agenda, *Tus pendientes* y la página del día. */}
-        <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
-        <span data-paso={pasoDelEstado(estadoDe(p))}><PastillaEstado estado={estadoDe(p)} /></span>
-        {conFecha && (
-          <span data-paso={PASO.evento} className="text-[14px] text-hueso/70">
-            {/* *DOM 22 nov 2026* (2026-11-22, lo pidió el cliente): la misma
-                pieza de la fecha que los calendarios, con el año, porque la
-                lista mezcla años. */}
-            {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
-          </span>
-        )}
-        {/* **📞 El próximo contacto, en la primera fila y al centro**
-            (2026-11-25, lo pidió el cliente: *"deja el contactar el 26 en
-            primera fila, centrado"*): el hueco entre la fecha y los valores
-            lo ocupa la pastilla. La misma en la lista, el día del calendario
-            y *Sin fecha*. En el celular, donde la fila se dobla, va en su
-            renglón, a la izquierda: así todas las filas con pastilla quedan
-            parejas (el total, debajo). */}
+        {/* **En columnas, en el computador** (2026-11-26, `LISTA_FILAS`): esta
+            es la primera; en el celular sus piezas son de la fila, como antes. */}
+        <span className="contents lg:flex lg:min-w-0 lg:flex-wrap lg:items-center lg:gap-x-3 lg:gap-y-1">
+          <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
+          {/* La empresa del cliente, al lado (2026-11-25): la misma pieza de
+              Clientes, Agenda, *Tus pendientes* y la página del día. */}
+          <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
+          <span data-paso={pasoDelEstado(estadoDe(p))}><PastillaEstado estado={estadoDe(p)} /></span>
+          {conFecha && (
+            <span data-paso={PASO.evento} className="text-[14px] text-hueso/70">
+              {/* *DOM 22 nov 2026* (2026-11-22, lo pidió el cliente): la misma
+                  pieza de la fecha que los calendarios, con el año, porque la
+                  lista mezcla años. */}
+              {p.fecha ? <FechaDia fecha={p.fecha} tamano="aviso" conAno /> : p.periodo}
+            </span>
+          )}
+        </span>
+        {/* **📞 y ✉, en su columna y al centro** (2026-11-25 y 2026-11-26, lo
+            pidió el cliente: *"deja el contactar el 26 en primera fila,
+            centrado"*, y después *"alineados en una columna pero
+            centralizado"*): la columna del medio, la misma en todas las filas,
+            y cada pastilla centrada en ella. En el celular, donde la fila se
+            dobla, va en su renglón, a la izquierda: así todas las filas con
+            pastilla quedan parejas (el total, debajo). */}
         <span className={`flex flex-1 flex-wrap items-center gap-2 lg:justify-center ${recontactoDe(p, hoy) || envio ? 'max-lg:basis-full' : ''}`}>
           {envio}
           {recontactoDe(p, hoy) && (
             <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} /></span>
           )}
         </span>
-        <span data-paso={PASO.productos} className="text-[14px] text-hueso/70">
+        <span data-paso={PASO.productos} className="text-[14px] text-hueso/70 lg:justify-self-end lg:whitespace-nowrap">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
         </span>
-        {alternativasDe(p, datos.presupuestos).length > 1 && (
-          <span data-paso={PASO.productos} className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80">
+        {alternativasDe(p, datos.presupuestos).length > 1 ? (
+          <span data-paso={PASO.productos} className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80
+                                                      lg:justify-self-center lg:whitespace-nowrap">
             {alternativasDe(p, datos.presupuestos).length} alternativas
           </span>
-        )}
-        <span className="text-[13px] text-hueso/55">N° {folioDe({ id: grupoDe(p) })}</span>
+        ) : <span aria-hidden className="hidden lg:block" />}
+        <span className="text-[13px] text-hueso/55 lg:whitespace-nowrap">N° {folioDe({ id: grupoDe(p) })}</span>
         {/* **Al final de la fila** (2026-11-26, lo pidió el cliente: *"deja el
             se cayó al lado derecho, al final de la fila… así queda más
             ordenado"*): después del N°, siempre en el mismo borde, mida lo que
@@ -498,7 +505,7 @@ export default function CotizacionesVista() {
                                        font-semibold lg:inline-flex lg:min-h-[40px]">✕ Se cayó…</span>
         )}
         {(detalle || caerse) && (
-          <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70">
+          <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70 lg:col-span-full">
             <span className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5">{detalle}</span>
             {caerse && botonCaer('lg:hidden')}
           </span>
@@ -664,7 +671,7 @@ export default function CotizacionesVista() {
           <p className="text-[14px] font-semibold first-letter:uppercase">{enPalabras(diaAbierto)}</p>
           <button type="button" onClick={() => setDiaAbierto(null)} className="boton">Cerrar</button>
         </div>
-        <ul className="space-y-2">{delDia.map((p) => fila(p, false))}</ul>
+        <ul className={LISTA_FILAS}>{delDia.map((p) => fila(p, false))}</ul>
       </div>
     );
   };
@@ -844,7 +851,7 @@ export default function CotizacionesVista() {
           <p className={`${TITULO_GRUPO} mb-2 flex items-center gap-2`}>
             🆕 Nuevas del sitio · {nuevas.length} <AyudaCorta tema="nuevasDelSitio" />
           </p>
-          <ul className="space-y-1.5">
+          <ul className={LISTA_FILAS}>
             {nuevas.map((p) => fila(p, true, (
               <>
                 <PastillaNueva promo={promoDelOrigen(p.origen)} creado={p.creado ?? ''} ahora={ahora} />
@@ -912,7 +919,7 @@ export default function CotizacionesVista() {
             <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">
               Ninguna sin fecha.
             </p>
-          ) : <ul className="space-y-2">{agrupar(sinFecha).map((p) => fila(p))}</ul>}
+          ) : <ul className={LISTA_FILAS}>{agrupar(sinFecha).map((p) => fila(p))}</ul>}
         </div>
       )}
 

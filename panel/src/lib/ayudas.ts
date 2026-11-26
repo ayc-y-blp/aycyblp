@@ -298,6 +298,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Cada dato de una fila abre la cotización en su paso: la fecha, en Evento; el '
       + 'total, en Productos; el estado, falta cobrar o el 📞, en Envío; un contrato sin '
       + 'volver, en Contrato. El nombre abre en Productos, como siempre.',
+      'El día después del evento, una cotización que no se ganó se cae sola: pasa a '
+      + 'Perdidas y vencidas con se cayó: pasó el evento. Si el evento cambió de día, '
+      + 'ponle el día nuevo y vuelve sola.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío. La '
       + 'gerencia, pagos y el administrador ven además ✉ N sin confirmar el envío: '
@@ -1322,6 +1325,14 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Las cotizaciones que llegaron por el cotizador de la página de promociones y que todavía no tienen ningún contacto anotado. Al cliente ya le llegaron con su total.',
       'Contáctalo cuanto antes y anótalo con 📝 Anotar el primer contacto (llamé, le escribí por WhatsApp): con la primera nota sale de acá y sigue como cualquier otra, con su día de recontacto.',
       'Cada una es tuya, o, si llegó sin vendedor, de quien asigna (la gerencia, pagos y el administrador). En Clientes salen arriba, en 🆕 Nuevos.'
+    ]
+  },
+  cayoSola: {
+    titulo: '⌛ Se cayó sola',
+    texto: [
+      'El día después del evento, una cotización que no se ganó se cae sola: se ve como perdida, sale de En carrera, de la Agenda y de los avisos, y cuenta como perdida en la tasa de cierre. No se borra nada.',
+      'Si el evento se cambió de día, ponle el día nuevo: vuelve sola a como estaba.',
+      'Si el evento sí se hizo y se olvidó marcarla ganada, la gerencia, pagos o el administrador la pueden ganar igual.'
     ]
   },
   confirmarEnvio: {

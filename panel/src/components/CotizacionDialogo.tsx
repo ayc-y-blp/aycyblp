@@ -35,7 +35,7 @@ import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
 import { normalizar } from '@/lib/columnas';
 import {
-  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
+  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, pasoElEvento, ESTADO_PRESUPUESTO, IVA,
   DOCUMENTO, documentoDe, numeroONulo, montoONulo, estaMandada, totalDe, estadoNormal, lineasDe, type Documento, type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import {
@@ -324,8 +324,11 @@ export default function CotizacionDialogo({
   const [notasAbiertas, setNotasAbiertas] = useState(false);
   /** El próximo contacto como quedó al anotar: la cotización abierta no se recarga. */
   const [recontactar, setRecontactar] = useState(p?.recontactar ?? '');
+  // Una que se cayó sola al pasar su evento (2026-11-26) se ve perdida, pero
+  // guarda su estado de siempre: así, si se le cambia el día, vuelve sola.
   const [estado, setEstado] = useState(
-    p ? (estadoVisible(p, datos.hoy) === 'Vencida' ? p.estado : estadoVisible(p, datos.hoy))
+    p ? (pasoElEvento(p, datos.hoy) ? (estadoNormal(p.estado) || ESTADO_PRESUPUESTO.borrador)
+      : estadoVisible(p, datos.hoy) === 'Vencida' ? p.estado : estadoVisible(p, datos.hoy))
       : ESTADO_PRESUPUESTO.borrador);
   const [motivo, setMotivo] = useState(p?.motivo ?? '');
   /**
@@ -553,6 +556,11 @@ export default function CotizacionDialogo({
   const puedePagar = puede(datos.rol as Rol, 'pagar');
   const cliente = clientes.find((c) => c.id === idCliente);
   const fechaReal = sinFecha ? '' : fecha;
+  /**
+   * **Se cayó sola** (2026-11-26, `pasoElEvento()`): el evento pasó y no se
+   * ganó. Con el día que tiene ahora: si se le cambia, deja de estarlo.
+   */
+  const cayoSola = !!p && pasoElEvento({ estado, idReserva: p.idReserva, fecha: fechaReal }, datos.hoy);
   const publico = esFecha(fechaReal) && esDiaPublico(fechaReal, datos.fechas);
   /**
    * **El mínimo del show en un día privado** (2026-11-20): la misma regla del
@@ -1747,7 +1755,7 @@ export default function CotizacionDialogo({
    * quien puede tocarla: el vendedor la suya; pagos, la gerencia y el
    * administrador, todas.
    */
-  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva }) ? (
+  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva, fecha: fechaReal }, datos.hoy) ? (
     <button type="button" disabled={guardando} onClick={() => setCayendo(true)}
       className="boton min-h-[52px] !border-2 !border-rojo-fuerte/60 !px-4 !text-[15px] !font-bold text-rojo-texto
                  hover:!border-rojo-fuerte hover:!text-rojo-texto lg:min-h-[44px]">
@@ -1920,6 +1928,13 @@ export default function CotizacionDialogo({
           </button>
         ))}
       </nav>
+      {cayoSola && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-1.5 rounded-lg border-2 border-hueso/25 bg-hueso/5 px-3 py-2
+                      text-[15px] lg:mb-0 lg:py-1.5">
+          <strong>⌛ Se cayó sola:</strong> pasó el evento ({enCorto(fechaReal)}) sin ganarla.
+          <AyudaCorta tema="cayoSola" />
+        </p>
+      )}
 
       {/* ***🗒 Notas*** (2026-11-23, la agenda del vendedor): lo conversado
           con el cliente y cuándo volver a contactarlo, a la vista en los cinco

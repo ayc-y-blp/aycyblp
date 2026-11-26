@@ -695,6 +695,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   al entrar abren en el paso de lo apretado (`lib/pasos.ts`). En el mismo PR
   que *Se cayó* al final. Ver `panel/CLAUDE.md`, "Cada dato abre la cotización
   en su paso".
+- **Se cae sola al día siguiente del evento** (26-11-2026, lo preguntó el
+  cliente y dijo *"sí, hazlo así"*): una cotización en carrera con día exacto,
+  sin ganar, se ve perdida con *se cayó: pasó el evento*; no se escribe nada y
+  vuelve sola si se le cambia el día (`pasoElEvento()`). **Y las filas de
+  cotizaciones van en columnas** (lo pidió el cliente: las pastillas 📞 y ✉,
+  centradas en una sola columna, como *Se cayó* a la derecha). En el mismo PR
+  #375. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

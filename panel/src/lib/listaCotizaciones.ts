@@ -19,7 +19,7 @@
  */
 import {
   estadoVisible, estadoNormal, cuentaComoPosible, porVencer, diasParaVencer, totalDe, lineasDe, gentePosible,
-  folioDe, ESTADO_PRESUPUESTO, type Presupuesto, type LineaPresupuesto
+  folioDe, pasoElEvento, ESTADO_PRESUPUESTO, type Presupuesto, type LineaPresupuesto
 } from './presupuestos.ts';
 import { grupoDe, alternativasDe, principalDe } from './cotizar.ts';
 import { normalizar } from './columnas.ts';
@@ -171,7 +171,7 @@ export function pasaFiltro(p: Presupuesto, filtro: FiltroLista, ctx: ContextoLis
 export function tocaHoy(p: Presupuesto, ctx: Pick<ContextoLista, 'hoy' | 'seguimiento'>): boolean {
   const c = proximoContacto(p, ctx.hoy, ctx.seguimiento);
   if (c && c.fecha <= ctx.hoy) return true;
-  return sinMandar(p) && esFecha(p.redactarAntes) && p.redactarAntes! <= ctx.hoy;
+  return sinMandar(p) && !pasoElEvento(p, ctx.hoy) && esFecha(p.redactarAntes) && p.redactarAntes! <= ctx.hoy;
 }
 
 const sinMandar = (p: Presupuesto) => {
@@ -293,6 +293,8 @@ export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
     pasos.push(falta > 0 ? { texto: `falta cobrar ${pesos(falta)}`, tono: 'ambar', paso: PASO.envio }
       : { texto: '✓ pagada', tono: 'verde', paso: PASO.envio });
   }
+  // **Se cayó sola** (2026-11-26, `pasoElEvento()`): pasó el evento sin ganarla.
+  if (pasoElEvento(p, ctx.hoy)) return [{ texto: 'se cayó: pasó el evento', tono: 'neutro', paso: PASO.evento }];
   if (!pasos.length && e === ESTADO_PRESUPUESTO.rechazado && p.motivo) pasos.push({ texto: `perdida: ${p.motivo}`, tono: 'neutro' });
   // **Lo prometido** (2026-11-23): para cuándo se le dijo que le llegaba la cotización.
   if (sinMandar(p)) {

@@ -186,6 +186,7 @@ revisan antes de cada cambio en esta carpeta.
   | Las cotizaciones del sitio que la cuenta no ha visto, y las listas que no ha confirmado como mandadas | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
+  | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro, los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -234,6 +235,60 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Se cae sola al día siguiente del evento (2026-11-26)
+
+Lo preguntó el cliente: *"la cotización debería caer automáticamente a se
+cayó un día después del día del evento de la cotización, ¿tiene sentido?"*.
+Se le propuso hacerlo como *Vencida* —se deduce, no se escribe— y dijo *"sí,
+hazlo así"*.
+
+- **`pasoElEvento()`** (`lib/presupuestos.ts`, con pruebas): una cotización
+  en carrera —candidato, borrador, enviada o en negociación—, sin reserva y
+  con día exacto, cuyo evento ya pasó (el día siguiente en adelante). Sin día
+  exacto (con periodo), no.
+- **No se escribe nada en la planilla ni hay una tarea diaria.** Se ve como
+  **perdida** (`estadoVisible()`, igual que la que se marca con *✕ Se
+  cayó…*) y su próximo paso dice ***se cayó: pasó el evento***
+  (`motivoVisible()`). Va a *Perdidas y vencidas* y cuenta como perdida en la
+  tasa de cierre.
+- **Sale de todo lo que está en carrera**: *En carrera*, gente posible y los
+  calendarios (`cuentaComoPosible()`), la Agenda (`proximoContacto()` y
+  *✍ Por redactar*, con `enCarrera(p, hoy)`), el 📞 (`recontactoDe()`: un
+  evento pasado no lo tiene), *✉ ¿La mandaste?* (ya era así), *🆕 Nuevas* y
+  *venció sin cerrar*. *✕ Se cayó…* no se ofrece: ya se cayó.
+- **Si se le cambia el día, vuelve sola**: la ventana de cotizar guarda su
+  estado de siempre (no escribe *Perdida*) y, arriba de todo, dice ***⌛ Se
+  cayó sola: pasó el evento (dom 8 nov) sin ganarla*** con su `?`
+  (`cayoSola`). En la Lista, *se cayó: pasó el evento* abre en Evento.
+- **Ganarla igual** (el evento sí se hizo y nadie la marcó): la gerencia,
+  pagos y el administrador, como cualquier evento pasado. `/convertir` la deja
+  pasar aunque se vea perdida; antes, una así quedaba *Vencida* y no se podía
+  ganar.
+- **Ninguna lectura, permiso ni columna.** **Ayuda**: el `?` de Cotizaciones
+  y uno nuevo, `cayoSola`.
+
+## Las filas de cotizaciones, en columnas (2026-11-26)
+
+Lo pidió el cliente con una foto de la Lista: *"deja los anuncios de
+contactar o envío alineados en una columna pero centralizado… porque es lo
+mismo como la de se cayó a la derecha"*. Las pastillas *📞* y *✉* iban
+centradas en el hueco entre la fecha y los valores, y ese hueco cambiaba con
+el largo del nombre: en cada fila quedaban en otro lugar.
+
+- **En el computador, la lista es una grilla y cada fila usa sus columnas**
+  (`subgrid`, `LISTA_FILAS` en `filaCotizacion.ts`): el nombre, la empresa, el
+  estado y la fecha · las pastillas, **centradas en la columna del medio** ·
+  los valores, a la derecha · las alternativas · el N° · *✕ Se cayó…*. Medido
+  en el ejemplo: el centro de las pastillas en el mismo pixel en las 8 filas,
+  y el N° también.
+- **Una fila dibuja siempre sus seis celdas**, vacías si no tiene ese dato
+  (las alternativas, *Se cayó*): si falta una, las de la derecha se corren.
+- **En el celular no cambia**: las piezas de la primera columna van en un
+  `display: contents` y la fila se dobla como antes.
+- Va en la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas del sitio*:
+  todas usan `fila()`.
+- **Ninguna lectura, permiso ni columna.** Ninguna ayuda dice dónde van.
 
 ## Cada dato abre la cotización en su paso (2026-11-26)
 

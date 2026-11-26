@@ -8164,5 +8164,33 @@ console.log('\nCada dato abre la cotización en su paso (2026-11-26)');
      && P.linkACotizacion('P-12') === '/presupuestos?abrir=P-12', 'el link con su paso y la pregunta');
 }
 
+console.log('\nSe cae sola al día siguiente del evento (2026-11-26)');
+{
+  const Pr = await import('./presupuestos.ts');
+  const Co = await import('./cotizar.ts');
+  const Ag = await import('./agenda.ts');
+  const HOY = '2026-11-26';
+  const base = { id: 'P', grupo: '', estado: 'Enviada', fecha: '2026-11-25', periodo: '', creado: '', creadoPor: 'Jorge',
+    socio: '', idReserva: '', invitados: 30, validoHasta: '2026-12-10', enviada: '', ultimoSeguimiento: '', descuento: 0,
+    tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', recontactar: '2026-11-28' } as unknown as Presupuesto;
+  ok(Pr.pasoElEvento(base, HOY) && Pr.estadoVisible(base, HOY) === 'Perdida', 'el día después del evento se ve perdida');
+  ok(!Pr.pasoElEvento({ ...base, fecha: HOY }, HOY) && Pr.estadoVisible({ ...base, fecha: HOY }, HOY) === 'Enviada',
+     'el mismo día del evento todavía no');
+  ok(!Pr.pasoElEvento({ ...base, fecha: '' , periodo: 'Diciembre' } as Presupuesto, HOY), 'sin día exacto no se cae');
+  ok(!Pr.pasoElEvento({ ...base, idReserva: 'MANUAL-1' }, HOY) && Pr.estadoVisible({ ...base, idReserva: 'MANUAL-1' }, HOY) === 'Ganada',
+     'una ganada no se cae');
+  ok(['Candidato', 'Borrador', '', 'Negociación'].every((e) => Pr.pasoElEvento({ ...base, estado: e }, HOY))
+     && !Pr.pasoElEvento({ ...base, estado: 'Perdida' }, HOY) && !Pr.pasoElEvento({ ...base, estado: 'Cancelada' }, HOY),
+     'se caen las que siguen en carrera, no las cerradas');
+  ok(!Pr.cuentaComoPosible(base, HOY) && !Pr.vencidoSinCerrar({ ...base, validoHasta: '2026-11-20' }, HOY),
+     'deja de contar como posible y no queda como vencida sin cerrar');
+  ok(Pr.motivoVisible(base, HOY) === 'pasó el evento' && Pr.motivoVisible({ ...base, motivo: 'Precio' }, HOY) === 'Precio',
+     'su motivo es pasó el evento');
+  ok(Co.enCarrera(base) && !Co.enCarrera(base, HOY), 'con hoy, ya no está en carrera');
+  ok(Ag.recontactoDe(base, HOY) === '' && Ag.recontactoDe({ ...base, fecha: '2026-12-05' }, HOY) === '2026-11-28',
+     'pierde su recontacto; si cambia el día, lo recupera');
+  ok(Pr.estadoVisible({ ...base, fecha: '2026-12-05' }, HOY) === 'Enviada', 'si se le cambia el día, vuelve sola');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

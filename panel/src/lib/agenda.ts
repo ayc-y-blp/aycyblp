@@ -19,7 +19,7 @@
  * Puro y con pruebas.
  */
 import {
-  seguimientoDe, estadoNormal, estaMandada, ESTADO_PRESUPUESTO, type Presupuesto
+  seguimientoDe, estadoNormal, estaMandada, pasoElEvento, ESTADO_PRESUPUESTO, type Presupuesto
 } from './presupuestos.ts';
 import { grupoDe, enCarrera } from './cotizar.ts';
 import { esFecha, sumarDias, enCorto, type Fecha } from './fechas.ts';
@@ -62,6 +62,8 @@ export function diasEntre(desde: Fecha, hasta: Fecha): number {
  */
 export function proximoContacto(p: Presupuesto, hoy: Fecha, cfg: Cfg): Contacto | null {
   if (CERRADAS.includes(estadoNormal(p.estado))) return null;
+  // Pasado su evento se cayó sola (2026-11-26): no hay a quién contactar.
+  if (pasoElEvento(p, hoy)) return null;
   if (esFecha(p.recontactar)) {
     const elegida = recontactoDe(p, hoy);
     return elegida ? { fecha: elegida, motivo: 'elegida', dias: 0 } : null;
@@ -79,14 +81,15 @@ export function proximoContacto(p: Presupuesto, hoy: Fecha, cfg: Cfg): Contacto 
  * si sigue valiendo, o `''`. Es lo que muestra la pastilla *📞* en la Lista,
  * en la ficha del cliente y en la tarjeta *📞 Recontactar* (2026-11-25): no el
  * recordatorio automático, solo el día elegido. Una perdida, no elegida o
- * cancelada no lo tiene, ni una ganada cuyo evento ya pasó.
+ * cancelada no lo tiene, ni una cuyo evento ya pasó: la ganada ya se hizo, y
+ * la que no se ganó se cayó sola (2026-11-26).
  */
 export function recontactoDe(
   p: Pick<Presupuesto, 'estado' | 'recontactar' | 'idReserva' | 'fecha'>, hoy: Fecha
 ): Fecha | '' {
   if (CERRADAS.includes(estadoNormal(p.estado))) return '';
   if (!esFecha(p.recontactar)) return '';
-  if (p.idReserva && esFecha(p.fecha) && p.fecha < hoy) return '';
+  if (esFecha(p.fecha) && p.fecha < hoy) return '';
   return p.recontactar as Fecha;
 }
 
@@ -125,9 +128,9 @@ export interface ItemAgenda {
 }
 
 /** Si el grupo todavía no se mandó: candidatos y borradores en carrera, ninguna mandada ni ganada. */
-function porMandar(grupo: Presupuesto[]): Presupuesto[] {
+function porMandar(grupo: Presupuesto[], hoy: Fecha): Presupuesto[] {
   if (grupo.some((x) => x.idReserva || estaMandada(x.estado))) return [];
-  return grupo.filter((x) => enCarrera(x));
+  return grupo.filter((x) => enCarrera(x, hoy));
 }
 
 /**
@@ -155,7 +158,7 @@ export function agendaDe(lista: Presupuesto[], hoy: Fecha, cfg: Cfg): { contacta
       }
     }
     if (mejor) contactar.push(mejor);
-    const abiertas = porMandar(grupo);
+    const abiertas = porMandar(grupo, hoy);
     if (abiertas.length) {
       const plazos = abiertas.map((x) => x.redactarAntes ?? '').filter(esFecha).sort();
       const fecha = plazos[0] ?? '';
