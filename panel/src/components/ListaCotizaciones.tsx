@@ -25,6 +25,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
+import GrupoTarjetas, { GrupoComision } from './GrupoTarjetas';
 import BotonPorVendedor, { FiltroConBuscador } from './BotonPorVendedor';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
@@ -182,8 +183,15 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
           grande, los tres en una fila; más angosto, uno debajo del otro. El
           ancho de cada grupo va por cuántas tarjetas lleva, con un poco más
           para *Resultado*: así *Tasa de cierre* no se dobla. */}
-      <div className="mt-2 grid gap-2 min-[1230px]:grid-cols-[minmax(0,3.2fr)_minmax(0,5fr)_minmax(0,3.7fr)]">
-        <GrupoTarjetas titulo="En curso" columnas="grid-cols-2">
+      {/* **💰 La comisión, en su propia sección** (2026-11-26): con ella son
+          cuatro grupos. Desde 1230px van de a dos por fila —*En curso* y *Por
+          hacer*, *Resultado* y *Comisión*— en una grilla de 12 columnas, y
+          a 1800px los cuatro en una fila doblaban los títulos. Sin ella (quien no ve comisiones),
+          los tres de siempre en una fila. */}
+      <div className={`mt-2 grid gap-2 ${r.comision
+        ? 'min-[1230px]:grid-cols-12'
+        : 'min-[1230px]:grid-cols-[minmax(0,3.2fr)_minmax(0,5fr)_minmax(0,3.7fr)]'}`}>
+        <GrupoTarjetas titulo="En curso" columnas="grid-cols-2" ancho={r.comision ? ANCHO_GRUPO.angosto : ''}>
           <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
             nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}
             tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'enCarrera'} onClick={() => setFiltro('enCarrera')} />
@@ -192,7 +200,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
             ? ` · ${r.cotizado.borradores} sin mandar${r.cotizado.montoBorradores ? ` (${enPesos(r.cotizado.montoBorradores)})` : ''}` : ''}`}
             tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'mandadas'} onClick={() => alternar('mandadas')} />
         </GrupoTarjetas>
-        <GrupoTarjetas titulo="Por hacer" columnas="grid-cols-2 sm:grid-cols-3">
+        <GrupoTarjetas titulo="Por hacer" columnas="grid-cols-2 sm:grid-cols-3" ancho={r.comision ? ANCHO_GRUPO.ancho : ''}>
           {/* **🗓 Agenda** (2026-11-23, reemplaza a *Por seguir*): lo que toca
               hoy —contactar o mandar una cotización prometida—. Se aprieta y se
               ve la agenda entera. */}
@@ -215,26 +223,28 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
             tono={r.porCobrar.monto ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
             activa={filtro === 'porCobrar'} onClick={() => alternar('porCobrar')} />
         </GrupoTarjetas>
-        <GrupoTarjetas titulo="Resultado" columnas="grid-cols-2">
-          {/* **💰 La comisión de lo ganado** (2026-11-26, lo pidió el cliente:
-              *"aquí mostrar la ganancia (comisión) del vendedor también, para
-              motivarlo a ganar más"*): bajo *Ganado*, lo que dejan en comisión
-              las ganadas que se están mirando. Al vendedor, *Tu comisión*; a
-              la gerencia, la del vendedor elegido o la de todos. Solo si esta
-              cuenta ve comisiones (`ctx.comisiones`). */}
+        <GrupoTarjetas titulo="Resultado" columnas="grid-cols-2" ancho={r.comision ? ANCHO_GRUPO.mitad : ''}>
           <Tarjeta que="Ganado" ayuda="listaGanado" valor={enPesos(r.ganado.monto)}
             nota={`${r.ganado.n} ${r.ganado.n === 1 ? 'evento' : 'eventos'}`}
-            extra={r.ganado.comision === null ? undefined : (
-              <span className="inline-flex flex-wrap items-baseline gap-x-1.5 rounded-lg bg-verde/10 px-2 py-0.5 text-[14px] font-semibold text-verde-texto">
-                <span>💰 {!equipo || soloMias ? 'Tu comisión' : vendedor ? `Comisión de ${vendedor}` : 'Comisiones'}</span>
-                <span className="whitespace-nowrap tabular-nums">{enPesos(r.ganado.comision)}</span>
-              </span>
-            )}
             tono="border-verde-fuerte/40 bg-verde/[0.06] text-verde-texto" activa={filtro === 'ganadas'} onClick={() => alternar('ganadas')} />
           <Tarjeta que="Tasa de cierre" ayuda="listaTasa" valor={r.tasa.pct == null ? '—' : `${r.tasa.pct}%`}
             nota={`${r.tasa.ganadas} ${r.tasa.ganadas === 1 ? 'ganada' : 'ganadas'} · ${r.tasa.perdidas} ${r.tasa.perdidas === 1 ? 'perdida' : 'perdidas'}`}
             tono="border-hueso/20 bg-panel" />
         </GrupoTarjetas>
+        {/* **💰 La comisión, aparte** (2026-11-26, lo pidió el cliente: primero
+            *"mostrar la ganancia (comisión) del vendedor también, para
+            motivarlo a ganar más"*, y después *"comisión debe ser una sección
+            más separada, que muestre la posible ganancia por ganadas y aparte
+            la comisión garantizada (por cotización pagada)"*). De las ganadas
+            que se están mirando: **posible**, la de las que el cliente todavía
+            no termina de pagar; **garantizada**, la de las que pagó y pagos
+            revisó. Al vendedor, *Tu comisión*; a la gerencia, la del vendedor
+            elegido o la de todos. Solo si esta cuenta ve comisiones. */}
+        {r.comision && (
+          <GrupoComision titulo={`💰 ${!equipo || soloMias ? 'Tu comisión' : vendedor ? `Comisión de ${vendedor}` : 'Comisiones'}`}
+            c={r.comision} ancho={ANCHO_GRUPO.mitad}
+            notaGarantizada={`${r.comision.nGarantizada} ${r.comision.nGarantizada === 1 ? 'pagada' : 'pagadas'}`} />
+        )}
       </div>
 
       {/* 3. **Ganado mes a mes** (2026-11-22, lo pidió el cliente: *"no se
@@ -310,16 +320,10 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   );
 }
 
-/**
- * **Un grupo de tarjetas de la Lista** (2026-11-26): un marco más suave que el
- * de una tarjeta abierta, con su rótulo chico arriba —*En curso*, *Por hacer*,
- * *Resultado*—, y las tarjetas en su grilla.
- */
-function GrupoTarjetas({ titulo, columnas, children }: { titulo: string; columnas: string; children: ReactNode }) {
-  return (
-    <section aria-label={titulo} className="rounded-xl border-2 border-hueso/25 bg-hueso/[0.03] p-1.5 pt-1">
-      <p className="mb-1 px-1 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">{titulo}</p>
-      <div className={`grid gap-2 ${columnas}`}>{children}</div>
-    </section>
-  );
-}
+
+/** Cuánto ocupa cada grupo en la grilla de 12 columnas, cuando son cuatro (con la comisión): de a dos por fila. */
+const ANCHO_GRUPO = {
+  angosto: 'min-[1230px]:col-span-5',
+  ancho: 'min-[1230px]:col-span-7',
+  mitad: 'min-[1230px]:col-span-6'
+};

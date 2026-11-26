@@ -15,7 +15,7 @@
  * otras ventas.
  */
 import type { FichaVendedor, Venta } from '@/lib/vendedores';
-import { resumenDelPeriodo, porCobrar, comoDe, finesDeMesEntre } from '@/lib/vendedores';
+import { resumenDelPeriodo, porCobrar, comoDe, finesDeMesEntre, comisionPosibleYGarantizada } from '@/lib/vendedores';
 import { cuentaBoleta, montosDeVendedor } from '@/lib/boletas';
 import CajaBoleta from '@/components/CajaBoleta';
 import type { Boleta } from '@/lib/remuneraciones';
@@ -112,6 +112,7 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
   const condiciones = tratoEnLineas(socio);
   const falta = faltaDe(documento.delPeriodo.aTransferir, pagado);
   const vienen = porCobrar(ventas).sort((a, b) => a.fechaEvento.localeCompare(b.fechaEvento));
+  const comision = comisionPosibleYGarantizada(vienen, r.cuentan);
   const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
   return (
@@ -182,6 +183,24 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
               nota={recibidos.length ? cuenta(recibidos.length, 'pago', 'pagos') : undefined} />
             <Azulejo que="Falta" monto={falta} tono={falta > 0 ? 'border-ambar/40 bg-ambar/[0.06] text-ambar-texto' : 'border-hueso/20 bg-panel text-hueso/85'} />
           </div>
+
+          {/* **💰 Tu comisión, posible y garantizada** (2026-11-26, lo pidió el
+              cliente: *"esta estadística sirve también para pestaña vendedores y
+              mi resumen en el link personal"*). Lo mismo de Cotizaciones →
+              *Lista* y de *Vendedores* (`comisionPosibleYGarantizada()`), con
+              los azulejos de esta página: el link no lleva JavaScript, así que
+              no usa `GrupoComision` (su `?` lo necesita). Posible: lo que viene;
+              garantizada: lo pagado y revisado en el periodo. */}
+          <section aria-label="Tu comisión" className="mt-4 rounded-xl border-2 border-hueso/25 bg-hueso/[0.03] p-1.5 pt-1">
+            <p className="mb-1 px-1 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">💰 Tu comisión</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Azulejo que="Posible" monto={comision.posible} tono="border-oro/50 bg-oro/[0.06] text-oro"
+                nota={cuenta(comision.nPosible, 'ganada sin pagar', 'ganadas sin pagar')
+                  + (comision.porRevisar ? ` · ${comision.porRevisar} por revisar` : '')} />
+              <Azulejo que="Garantizada" monto={comision.garantizada} tono="border-verde-fuerte/40 bg-verde/[0.06] text-verde-texto"
+                nota={`${cuenta(comision.nGarantizada, 'pagada', 'pagadas')} ${esMes ? 'este mes' : 'esta semana'}`} />
+            </div>
+          </section>
 
           {documento.total > 0 && (
             <div className="mt-5">

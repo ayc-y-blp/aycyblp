@@ -1155,10 +1155,28 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Ganado',
     texto: [
       'La suma de las cotizaciones ganadas de lo que estás mirando, con su total con IVA.',
-      'Si eliges un periodo, cuenta las ganadas cuyo evento cae en él, o que se cotizaron en él, según la fecha que elijas.',
-      '💰 Tu comisión es lo que te dejan esas ganadas, con tu trato de Vendedores. Se te paga cuando el '
-      + 'cliente termina de pagar y pagos lo revisa; hasta entonces es lo que vas a ganar. La gerencia, pagos '
-      + 'y el administrador ven la del vendedor elegido, o la de todos.'
+      'Si eliges un periodo, cuenta las ganadas cuyo evento cae en él, o que se cotizaron en él, según la fecha que elijas.'
+    ]
+  },
+  // ---------- 💰 La comisión, en la Lista (2026-11-26) ----------
+  listaComisionPosible: {
+    titulo: 'Comisión posible',
+    texto: [
+      'Lo que te van a dejar las ganadas que el cliente todavía no termina de pagar, con tu trato de '
+      + 'Vendedores de hoy. En la Lista, de las ganadas que estás mirando; en Vendedores y en tu link, todas '
+      + 'las que vienen.',
+      'Pasa a garantizada cuando el cliente termina de pagar y pagos lo revisa. Si pagó todo y falta la '
+      + 'revisión, la nota dice cuántas están por revisar. Si la ganada se cancela, no deja comisión.',
+      'La gerencia, pagos y el administrador ven la del vendedor elegido, o la de todos.'
+    ]
+  },
+  listaComisionGarantizada: {
+    titulo: 'Comisión garantizada',
+    texto: [
+      'Lo que ya ganaste: la comisión de las ganadas que el cliente terminó de pagar y pagos revisó. En la '
+      + 'Lista, de las ganadas que estás mirando; en Vendedores y en tu link, las que se pagaron en el periodo.',
+      'Queda fija: aunque después cambie tu trato, esa no cambia. Se te paga desde el Informe, y la ves '
+      + 'en tu resumen de Vendedores y en tu link personal.'
     ]
   },
   // ---------- Las estadísticas de reservas (2026-11-19) ----------

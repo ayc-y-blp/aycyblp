@@ -27,6 +27,7 @@ import { ROL } from './auth.ts';
 import { esFecha, sumarDias, fechaEnZona, enCorto } from './fechas.ts';
 import { proximoContacto, recontactoDe, cuandoEs, diasEntre } from './agenda.ts';
 import { PASO } from './pasos.ts';
+import type { ResumenComision } from './vendedores.ts';
 
 /** Qué se muestra: los estados, y lo que piden las tarjetas. */
 export type FiltroLista = 'enCarrera' | 'esperando' | 'negociando' | 'ganadas' | 'cerradas' | 'todas'
@@ -49,7 +50,7 @@ export interface ContextoLista {
    * `comisionesPorCotizacion()`). Sin el dato, la tarjeta *Ganado* no la
    * muestra.
    */
-  comisiones?: Record<string, number>;
+  comisiones?: Record<string, { monto: number; pagada: boolean; porRevisar: boolean }>;
 }
 
 /**
@@ -196,8 +197,14 @@ export function calzaBusqueda(p: Presupuesto, texto: string): boolean {
 export interface ResumenLista {
   enCarrera: { n: number; gente: number };
   cotizado: { monto: number; n: number; borradores: number; montoBorradores: number };
-  /** `comision`: lo que dejan en comisión las ganadas que se ven; `null` si esta cuenta no la ve. */
-  ganado: { monto: number; n: number; comision: number | null };
+  ganado: { monto: number; n: number };
+  /**
+   * **La comisión de las ganadas que se ven** (2026-11-26): `garantizada`, de
+   * las que el cliente terminó de pagar y pagos revisó; `posible`, del resto
+   * (`porRevisar`: pagadas que esperan la revisión). `null` si esta cuenta no
+   * ve comisiones.
+   */
+  comision: ResumenComision | null;
   tasa: { ganadas: number; perdidas: number; pct: number | null };
   porCobrar: { monto: number; n: number };
 }
@@ -209,7 +216,8 @@ export interface ResumenLista {
 export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLista {
   const r: ResumenLista = {
     enCarrera: { n: 0, gente: 0 }, cotizado: { monto: 0, n: 0, borradores: 0, montoBorradores: 0 },
-    ganado: { monto: 0, n: 0, comision: ctx.comisiones ? 0 : null }, tasa: { ganadas: 0, perdidas: 0, pct: null },
+    ganado: { monto: 0, n: 0 },
+    comision: ctx.comisiones ? { posible: 0, nPosible: 0, porRevisar: 0, garantizada: 0, nGarantizada: 0 } : null, tasa: { ganadas: 0, perdidas: 0, pct: null },
     porCobrar: { monto: 0, n: 0 }
   };
   for (const p of base) {
@@ -226,7 +234,11 @@ export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLi
     }
     if (e === ESTADO_PRESUPUESTO.aceptado) {
       r.ganado.n++; r.ganado.monto += total; r.tasa.ganadas++;
-      if (r.ganado.comision !== null) r.ganado.comision += ctx.comisiones?.[p.id] ?? 0;
+      const c = ctx.comisiones?.[p.id];
+      if (r.comision && c) {
+        if (c.pagada) { r.comision.garantizada += c.monto; r.comision.nGarantizada++; }
+        else { r.comision.posible += c.monto; r.comision.nPosible++; if (c.porRevisar) r.comision.porRevisar++; }
+      }
     }
     if (e === ESTADO_PRESUPUESTO.rechazado) r.tasa.perdidas++;
     const falta = faltaCobrarDe(p, ctx);

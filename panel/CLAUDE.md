@@ -185,7 +185,8 @@ revisan antes de cada cambio en esta carpeta.
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, los calendarios de Reservas y de Cotizaciones: *Lo que viene · Semana · Mes*, con la cuenta de `lib/periodoCalendario.ts`) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
-  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo); en la Lista, en tres grupos con su marco (`GrupoTarjetas`). El número toma el tamaño que cabe (`numero-cabe`) y el `?` va en la esquina de arriba a la derecha |
+  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo); en la Lista, en grupos con su marco (`GrupoTarjetas`). El número toma el tamaño que cabe (`numero-cabe`) y el `?` va en la esquina de arriba a la derecha |
+  | La comisión de un vendedor: posible (ganadas sin pagar) y garantizada (pagadas y revisadas) | `GrupoComision` (`components/GrupoTarjetas.tsx`), con `ResumenComision`: Cotizaciones → *Lista* y *Vendedores*; el link personal, con sus azulejos y sin `?` |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
@@ -287,29 +288,45 @@ sección de la derecha?"*. Se le propuso y dijo *"dale con eso y mergea"*.
 - **Ninguna lectura, permiso ni columna.** **Ayuda**: `agenda` y el plazo
   prometido (`redactarAntes`).
 
-## *💰 Tu comisión*, en la tarjeta *Ganado* (2026-11-26)
+## *💰 Tu comisión*: posible y garantizada (2026-11-26)
 
-Lo pidió el cliente con una foto de la Lista, apuntando a *Ganado*: *"aquí
-mostrar la ganancia (comisión) del vendedor también, para motivarlo a ganar
-más"*.
+Lo pidió el cliente en tres mensajes, con fotos de la Lista: *"aquí mostrar la
+ganancia (comisión) del vendedor también, para motivarlo a ganar más"*;
+*"comisión debe ser una sección más separada, que muestre la posible ganancia
+por ganadas y aparte la comisión garantizada (por cotización pagada)"*; y
+*"esta estadística sirve también para pestaña vendedores y mi resumen en el
+link personal"*.
 
-- **Bajo *Ganado*, una línea verde *💰 Tu comisión $…***: lo que dejan en
-  comisión las ganadas que se están mirando (el mismo periodo, *De quién* y
-  filtros que *Ganado*). A la gerencia, pagos y el administrador les dice
-  ***💰 Comisión de Jorge*** con un vendedor elegido, o ***💰 Comisiones***
-  (las de todos). Va en la tarjeta (`extra` de `TarjetaNumero`), no en una
-  tarjeta aparte: el grupo *Resultado* sigue con dos.
-- **La cuenta es la de *Vendedores* y del link personal**
-  (`comisionesPorCotizacion()` en `lib/vendedores.ts`, con pruebas, sobre
-  `ventasDe()`): la congelada si el cliente ya pagó y pagos lo revisó; si no,
-  la que da su ficha hoy. `/api/presupuestos` la manda por id
-  (`comisiones`).
+- **Una sección propia, *💰 Tu comisión***, con dos tarjetas: ***Posible***
+  (en dorado), la de las ganadas que el cliente todavía no termina de pagar
+  —con *N por revisar* si pagó todo y falta pagos—, y ***Garantizada*** (en
+  verde), la de las que pagó y pagos revisó. **Es la regla de siempre para
+  ganarla**: la comisión se gana cuando el cliente terminó de pagar y el
+  encargado de pagos lo revisó.
+- **La misma pieza en tres lugares** (`GrupoComision` y `GrupoTarjetas` en
+  `components/GrupoTarjetas.tsx`, con `ResumenComision` de `lib/vendedores.ts`):
+  - **Cotizaciones → *Lista***: de las ganadas que se están mirando (el mismo
+    periodo y filtros que *Ganado*). La comisión de cada una la manda
+    `/api/presupuestos` (`comisiones`, de `comisionesPorCotizacion()`, con
+    pruebas). Con la sección son cuatro grupos: **desde 1230px van de a dos
+    por fila** (*En curso* y *Por hacer*, *Resultado* y *💰*), en una grilla
+    de 12 columnas; los cuatro en una fila doblaban los títulos aun a 1920px.
+    Sin ella, los tres de siempre en una fila.
+  - ***Vendedores*** (y *Mi resumen* del vendedor), bajo *Te toca · Pagado ·
+    Falta*: posible, lo que viene (`porCobrar()`); garantizada, lo pagado en
+    el periodo (`comisionPosibleYGarantizada()`).
+  - **El link personal** (vendedor y socio), en *Lo que gané*: lo mismo, con
+    los azulejos de esa página y sin `?`: el link no lleva JavaScript.
 - **Quién la ve: quien ya ve comisiones** (`vendedores`): el vendedor, solo
-  las suyas; la gerencia, pagos y el administrador, las de todos. Operaciones
-  no tiene ese permiso y no la ve, aunque cotice. **Ningún permiso cambió.**
+  las suyas (*💰 Tu comisión*); la gerencia, pagos y el administrador, la del
+  vendedor elegido (*💰 Comisión de Jorge*) o la de todos (*💰 Comisiones*).
+  Operaciones no tiene ese permiso y no la ve en la Lista, aunque cotice.
+  **Ningún permiso cambió.**
+- **Un vendedor sin trato escrito sale en $0**: quien vende sin el rol Vendedor
+  parte en 0% (ver "Vende quien cotiza"). Se le escribe en *Vendedores*.
 - **Lecturas de Google**: ninguna más (`Vendedores`, `Cobros`, `Menús` y
-  `Usuarios` ya venían en la tanda). **Ninguna columna.** **Ayuda**:
-  `listaGanado`.
+  `Usuarios` ya venían en la tanda). **Ninguna columna.** **Ayuda**: dos
+  nuevas, `listaComisionPosible` y `listaComisionGarantizada`.
 
 ## Los números caben en su marco, el `?` va en la esquina y es más chico (2026-11-26)
 
