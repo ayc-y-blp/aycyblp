@@ -57,7 +57,8 @@ export const PODER: Record<Accion, { icono: string; corto: string }> = {
   configurar: { icono: '⚙️', corto: 'Precios y Configuración' },
   bitacora: { icono: '📜', corto: 'Ver la bitácora' },
   usuarios: { icono: '🔑', corto: 'Cuentas y roles' },
-  mantencion: { icono: '🛠️', corto: 'Mantención técnica' }
+  mantencion: { icono: '🛠️', corto: 'Mantención técnica' },
+  tareas: { icono: '📋', corto: 'Tareas' }
 };
 
 /** Los cinco mundos, en el orden en que se leen. */
@@ -71,7 +72,7 @@ export const MUNDOS: { id: string; icono: string; nombre: string; poderes: Accio
   { id: 'plata', icono: '💰', nombre: 'La plata',
     poderes: ['informe', 'pagar', 'boleta', 'caja', 'recibirCaja'] },
   { id: 'sistema', icono: '⚙️', nombre: 'El sistema',
-    poderes: ['configurar', 'bitacora', 'usuarios', 'mantencion'] }
+    poderes: ['tareas', 'configurar', 'bitacora', 'usuarios', 'mantencion'] }
 ];
 
 export interface PoderDeRol { accion: Accion; icono: string; corto: string; frase: string; tiene: boolean }

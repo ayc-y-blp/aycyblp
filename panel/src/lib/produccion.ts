@@ -34,6 +34,7 @@ import { HOJA_CLIENTES } from './clientes.ts';
 import { HOJA_COBROS } from './cobros.ts';
 import { HOJA_PUESTOS, HOJA_TRABAJADORES, HOJA_TURNOS, HOJA_AJUSTES_SUELTOS } from './equipo.ts';
 import { HOJA_NOTAS } from './notas.ts';
+import { HOJA_TAREAS } from './tareas.ts';
 import { HOJA_CIERRES } from './cierres.ts';
 import { HOJA_ACTIVIDADES, HOJA_COLABORADORES } from './extras.ts';
 import { HOJA_PAGOS, HOJA_BOLETAS } from './remuneraciones.ts';
@@ -56,6 +57,8 @@ export const SE_VACIAN: PestanaProduccion[] = [
   { hoja: HOJA_CLIENTES, que: 'Clientes' },
   // Las notas del vendedor (2026-11-23): son de las cotizaciones y los clientes que se borran.
   { hoja: HOJA_NOTAS, que: 'Notas de los vendedores' },
+  // Las tareas internas (2026-11-26): las de prueba no sirven en la base real.
+  { hoja: HOJA_TAREAS, que: 'Tareas internas' },
   { hoja: HOJA_COBROS, que: 'Pagos de los clientes' },
   { hoja: HOJA_TURNOS, que: 'Turnos del equipo' },
   { hoja: HOJA_AJUSTES_SUELTOS, que: 'Ajustes fuera de turno' },

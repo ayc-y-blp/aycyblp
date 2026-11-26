@@ -64,6 +64,7 @@ import {
   ESTADO_PRESUPUESTO, estadoNormal
 } from './presupuestos.ts';
 import { conCliente } from './cotizar.ts';
+import { HOJA_TAREAS, ENCABEZADO_TAREAS, leerTareasDe, filaTarea, nuevoIdTarea, type Tarea } from './tareas.ts';
 import { HOJA_NOTAS, ENCABEZADO_NOTAS, leerNotasDe, filaNota, nuevoIdNota, type Nota } from './notas.ts';
 import { HOJA_VENDEDORES, ENCABEZADO_VENDEDORES, leerVendedoresDe, filaVendedor, fichaDe, baseDeVenta,
          comisionDe, marcaComision, confirmadaEl, cuentasQueVenden, type FichaVendedor } from './vendedores.ts';
@@ -1201,6 +1202,52 @@ export async function leerNotasOCrear(): Promise<Nota[]> {
     try { await asegurarEncabezado(HOJA_NOTAS, ENCABEZADO_NOTAS); } catch { /* la próxima vez */ }
     return [];
   }
+}
+
+/* ---------- Las tareas internas (2026-11-26, `lib/tareas.ts`) ---------- */
+
+/**
+ * Las tareas. **Si la pestaña no está, se crea**, como las notas: la portada
+ * la lee en cada carga, y mientras nadie mandara una cada lectura habría
+ * costado una más buscándola.
+ */
+export async function leerTareas(): Promise<Tarea[]> {
+  try {
+    return leerTareasDe(await leerHoja(HOJA_TAREAS));
+  } catch (e) {
+    if (!esPestanaQueNoExiste(e)) throw e;
+    try { await asegurarEncabezado(HOJA_TAREAS, ENCABEZADO_TAREAS); } catch { /* la próxima vez */ }
+    return [];
+  }
+}
+
+export async function agregarTarea(t: Omit<Tarea, 'id' | 'fila'>): Promise<Tarea> {
+  const filas = await asegurarEncabezado(HOJA_TAREAS, ENCABEZADO_TAREAS);
+  const nueva = { ...t, id: nuevoIdTarea() };
+  await agregarFila(HOJA_TAREAS, filaTarea(filas[0] ?? ENCABEZADO_TAREAS, nueva));
+  return { ...nueva, fila: filas.length + 1 };
+}
+
+/**
+ * Cambia una tarea, leyendo la pestaña fresca para saber en qué fila está.
+ * `cambio` recibe la de ahora y devuelve la nueva o un error: así lo que se
+ * decide (¿todavía está pendiente?) se decide con lo que está escrito.
+ */
+export async function cambiarTarea<E extends { error: string }>(
+  id: string, cambio: (t: Omit<Tarea, 'fila'>) => Omit<Tarea, 'fila'> | E
+): Promise<Omit<Tarea, 'fila'> | E | null> {
+  let filas: string[][];
+  try { filas = await leerHoja(HOJA_TAREAS, true); } catch (e) {
+    if (esPestanaQueNoExiste(e)) return null;
+    throw e;
+  }
+  const t = leerTareasDe(filas).find((x) => x.id === id);
+  if (!t) return null;
+  const { fila, ...sinFila } = t;
+  const nueva = cambio(sinFila);
+  if ('error' in nueva) return nueva;
+  await escribirFila(HOJA_TAREAS, fila, filaTarea(filas[0] ?? ENCABEZADO_TAREAS, nueva));
+  return nueva;
 }
 
 /* ---------- La caja chica (2026-11-23, `lib/caja.ts`) ---------- */

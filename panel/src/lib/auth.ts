@@ -547,7 +547,14 @@ export const PERMISOS = {
    */
   cupo: [ROL.admin, ROL.operaciones, ROL.pagos, ROL.gerencia],
   /** Consultar Shopify a mano y ver el diagnóstico de la planilla. */
-  mantencion: [ROL.admin]
+  mantencion: [ROL.admin],
+  /**
+   * **Las tareas internas** (2026-11-26, `lib/tareas.ts`): mandar una tarea a
+   * otra cuenta o a un rol, y contestar las que llegan. Todas las cuentas que
+   * entran al panel. Quién ve todas no es un permiso: es `VEN_TODAS` (la
+   * gerencia y el administrador), como las notas.
+   */
+  tareas: [ROL.admin, ROL.encargado, ROL.operaciones, ROL.pagos, ROL.gerencia, ROL.vendedor, ROL.anfitrion]
 } as const;
 
 export type Accion = keyof typeof PERMISOS;
