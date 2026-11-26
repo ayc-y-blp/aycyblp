@@ -404,10 +404,11 @@ export default function ClientesEditor() {
         <div>{secciones.map((sec, k) => (
         <div key={sec.clave} className={k > 0 ? 'mt-5' : ''}>
         {/* El rótulo de los grupos de la Agenda (*Hoy · Próximos días*). */}
+        {/* Un título de verdad (2026-11-25): abre su sección. */}
         {sec.titulo && (
-          <p className={`mb-1.5 text-[13px] font-semibold uppercase tracking-wider ${sec.nuevos ? 'text-rosa-texto' : 'text-hueso/60'}`}>
+          <h3 className={`mb-1.5 text-[13px] font-semibold uppercase tracking-wider ${sec.nuevos ? 'text-rosa-texto' : 'text-hueso/60'}`}>
             {sec.titulo}
-          </p>
+          </h3>
         )}
         <ul className={LISTA_TARJETAS}>
           {sec.lista.map((c) => {

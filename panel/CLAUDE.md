@@ -316,7 +316,11 @@ Anotar*); *Entendido* en la ventana del sitio no la saca.
   correo*).
 - **Ventanas**: `v-confirmar-envio` y `v-pregunta-al-abrir` (263px); la prueba
   de espacio mira además Cotizaciones y Clientes como Daniela, que tiene una
-  nueva y una sin confirmar.
+  nueva y una sin confirmar. **`revisarEspacio()` suma ahora la fila de arriba
+  entera**: en una fila que se dobla (la de una cotización, con su detalle
+  debajo) comparaba solo el último elemento —el N°— y daba *dos filas que
+  cabrían en una* con la de arriba llena. Y el rótulo de cada sección de
+  Clientes pasó a ser un título (`h3`), que es lo que es.
 
 ## Cotizaciones: los botones de arriba no se bajan (2026-11-25)
 

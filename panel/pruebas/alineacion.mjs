@@ -309,7 +309,16 @@ export async function revisarEspacio(page) {
         // Un nombre con su detalle debajo es una ficha, no dos filas: solo
         // cuenta si alguna de las dos trae algo que se aprieta o se escribe.
         if (!control(a) && !control(b)) continue;
-        const ea = extension(a), eb = extension(b);
+        // **La fila de arriba entera, no solo su último elemento** (2026-11-25):
+        // en una fila que se dobla —el nombre, la fecha, el total y el N° de
+        // una cotización, y debajo su detalle—, lo último de arriba mide poco,
+        // pero la fila está llena. Se suma todo lo que va en esa línea.
+        const enLaLinea = hijos.slice(0, i + 1).filter((h) => {
+          const r = h.getBoundingClientRect();
+          return r.bottom > ra.top + 1 && r.top < ra.bottom - 1;
+        });
+        const anchoA = enLaLinea.reduce((n, h) => n + (extension(h)?.ancho ?? 0), 0);
+        const ea = anchoA > 0 ? { ancho: anchoA } : null, eb = extension(b);
         if (!ea || !eb) continue;
         if (ea.ancho + eb.ancho + AIRE > ancho) continue;
         hallazgos.push(`dos filas que cabrían en una (${Math.round(ea.ancho)} + ${Math.round(eb.ancho)} de ${Math.round(ancho)}px): "${texto(a)}" y debajo "${texto(b)}"`);
