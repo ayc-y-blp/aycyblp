@@ -393,7 +393,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Una tarea a un rol entero (todos los encargados de turno, por ejemplo) la cierra el primero que la hace, y '
       + 'queda a su nombre.',
       '💬 Comentarios, al lado, son los que se mandan con Coméntame. Cada uno ve los suyos y la respuesta '
-      + '(✓ Entendido apaga el aviso de la portada). La gerencia general y el administrador ven todos: '
+      + '(✓ Entendido apaga el aviso de la portada). El administrador ve todos: '
       + 'los contestan, les ponen estado y prioridad, y con 📋 Pasar a tarea se lo encargan a alguien.'
     ],
     pasos: [
@@ -403,7 +403,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
       'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
     ],
-    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona, y todos los comentarios.'
+    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona. Los comentarios de todos los ve solo el administrador.'
   },
   informe: {
     titulo: 'El informe para pagar',

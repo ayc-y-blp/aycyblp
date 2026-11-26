@@ -90,7 +90,7 @@ export const PATCH = conLecturas([HOJA_COMENTARIOS, HOJA_USUARIOS, HOJA_TAREAS],
     const id = String(cuerpo.id ?? '').trim();
     const todos = LEEN_TODOS.includes(quien.rol);
     if (accion !== 'visto' && !todos) {
-      return NextResponse.json({ error: 'Los comentarios los contesta la gerencia general o el administrador.', permiso: true },
+      return NextResponse.json({ error: 'Los comentarios los contesta el administrador.', permiso: true },
         { status: 403 });
     }
     const ahora = ahoraEnChile();

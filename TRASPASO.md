@@ -780,7 +780,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   cliente; `verificar.sh` dio 15 de 15 después. **Falta que el cliente apriete
   *💬 Traer los comentarios de Gran Testeo*** en producción. Y **la pantalla se
   llama *Mi panel*** (el cliente: *"debería llamarse mi panel, no tareas"*), en
-  un PR aparte. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
+  un PR aparte (#386), junto con **Configuración en secciones plegables** y **los
+  comentarios de todos, solo para el administrador** (la gerencia ve las tareas). Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
   panel". Lo que sigue: `/gerencia` con los números.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).

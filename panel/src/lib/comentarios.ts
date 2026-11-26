@@ -119,8 +119,13 @@ export function filaDeComentario(encabezado: string[], c: Omit<ComentarioGuardad
   return fila;
 }
 
-/** La gerencia general y el administrador ven y contestan todos. */
-export const LEEN_TODOS: string[] = [ROL.gerencia, ROL.admin];
+/**
+ * **Solo el administrador ve y contesta todos** (2026-11-26, lo decidió el
+ * cliente: *"la gerencia no tiene que ver los coméntame, eso solo admin,
+ * gerencia ve lo que se envía por interno"*). La gerencia ve todas las
+ * tareas (`VEN_TODAS` de `tareas.ts`), y de los comentarios, solo los suyos.
+ */
+export const LEEN_TODOS: string[] = [ROL.admin];
 
 const llano = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 /** Es suyo: lo escribió esa cuenta (el nombre, como lo guarda la sesión). */

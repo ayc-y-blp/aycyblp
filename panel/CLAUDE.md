@@ -333,7 +333,10 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
   de la pantalla; `?ver=comentarios`), con los botones que cambian de vista a la
   derecha y el marco de la vista (`BOTON_VISTA`). El número rojo cuenta lo
   pendiente.
-  - **La gerencia general y el administrador** (`LEEN_TODOS`) ven todos, en
+  - **El administrador** (`LEEN_TODOS`) ve todos —**la gerencia no**, lo
+    decidió el cliente el mismo día: *"la gerencia no tiene que ver los
+    coméntame, eso solo admin, gerencia ve lo que se envía por interno"*: ve
+    todas las tareas y, de los comentarios, solo los suyos—, en
     *🆕 Nuevos*, *⏳ En curso* y *✓ Cerrados* (plegado): ***↩ Contestar*** (y
     queda resuelto o sigue en curso), estado (*Nuevo · En curso · Resuelto · No
     se hará*), prioridad (*Alta · Media · Baja*) y ***📋 Pasar a tarea***, que
@@ -353,7 +356,7 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
   (producción). **Después de traerlos, la variable se puede borrar de Vercel**
   y el Apps Script de *Gran Testeo* deja de recibir los nuevos.
 - **Ningún permiso nuevo**: comentar sigue siendo de cualquier cuenta;
-  contestar, de `LEEN_TODOS`; marcar visto, de quien lo escribió. *Dejar la
+  contestar, del administrador (`LEEN_TODOS`); marcar visto, de quien lo escribió. *Dejar la
   base en cero* los conserva.
 - **Lecturas de Google**: `/api/comentarios` una tanda (`Comentarios`,
   `Usuarios`, `Tareas`); mandar uno lee el encabezado de la pestaña. La
