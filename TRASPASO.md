@@ -682,6 +682,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   mergeado el 26-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15
   de 15 después. Ver `panel/CLAUDE.md`, "La línea de cada reserva dice
   de dónde viene".
+- ***✕ Se cayó…* al final de la fila** (26-11-2026, lo pidió el cliente): en la
+  fila de cada cotización y en la Agenda, después del N° y a la derecha; las
+  filas sin él dejan su lugar, así los montos quedan en columna. **En un PR, en
+  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

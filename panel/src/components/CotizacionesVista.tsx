@@ -389,7 +389,7 @@ export default function CotizacionesVista() {
    * **La fila ya no es un botón entero**, porque un botón no puede ir dentro
    * de otro: es una caja con un botón invisible que la cubre (`abrir`, el que
    * abre la cotización) y *Se cayó…* encima, con `z-10`. En el computador va
-   * en la línea del nombre, antes de los valores; en el celular, al final de
+   * en la línea del nombre, **al final, después del N°** (2026-11-26); en el celular, al final de
    * la línea del vendedor, a la derecha, para no sumar un renglón.
    */
   const puedeCaerse = (p: Presupuesto) => !soloMira && enCarrera(p)
@@ -447,7 +447,6 @@ export default function CotizacionesVista() {
           {envio}
           <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
         </span>
-        {caerse && botonCaer('hidden lg:inline-flex')}
         <span className="text-[14px] text-hueso/70">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
@@ -458,6 +457,18 @@ export default function CotizacionesVista() {
           </span>
         )}
         <span className="text-[13px] text-hueso/55">N° {folioDe({ id: grupoDe(p) })}</span>
+        {/* **Al final de la fila** (2026-11-26, lo pidió el cliente: *"deja el
+            se cayó al lado derecho, al final de la fila… así queda más
+            ordenado"*): después del N°, siempre en el mismo borde, mida lo que
+            mida el monto. Antes iba antes de los valores. */}
+        {caerse && botonCaer('hidden lg:inline-flex')}
+        {/* Sin *Se cayó…* (una ganada, una perdida), su lugar queda vacío en
+            el computador: así los montos y el N° quedan en columna en todas
+            las filas. */}
+        {!caerse && (
+          <span aria-hidden className="invisible hidden shrink-0 items-center rounded border-2 px-2.5 text-[14px]
+                                       font-semibold lg:inline-flex lg:min-h-[40px]">✕ Se cayó…</span>
+        )}
         {(detalle || caerse) && (
           <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70">
             <span className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5">{detalle}</span>

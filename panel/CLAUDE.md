@@ -234,6 +234,25 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## *✕ Se cayó…* al final de la fila (2026-11-26)
+
+Lo pidió el cliente con una foto de la Lista: *"deja el se cayó al lado
+derecho, al final de la fila, revisa dónde más aplicarlo, así queda más
+ordenado"*. Hasta ese día iba antes de los valores (2026-11-22), y quedaba a una
+altura distinta según el largo del monto.
+
+- **La fila de cada cotización** (`fila()` de `CotizacionesVista`: la Lista, el
+  día del calendario, *Sin fecha* y *🆕 Nuevas del sitio*): *✕ Se cayó…* va al
+  final, después del N°, siempre en el mismo borde. En una fila sin él (una
+  ganada, una perdida) su lugar queda vacío en el computador, así los montos y
+  el N° quedan en columna en todas las filas. En el celular, como antes: al
+  final de la línea del vendedor, a la derecha.
+- **La Agenda**: *✕ Se cayó…* pasa al final de los botones de cada fila,
+  empujado a la derecha.
+- **No cambia** el pie de una reserva en la página del día ni el de la ventana
+  de cotizar: ahí ya va con las acciones, a la derecha.
+- **Ningún permiso, columna ni lectura.** Ninguna ayuda describe dónde va.
+
 ## La línea de cada reserva dice de dónde viene (2026-11-26)
 
 Lo pidió el cliente con una foto de la página del día (*Diego Zapata ·
