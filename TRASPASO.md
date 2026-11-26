@@ -735,8 +735,9 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   cliente: *"mostrar la ganancia (comisión) del vendedor también, para
   motivarlo"*): una línea verde con la comisión de las ganadas que se miran; la
   gerencia, pagos y el administrador ven la del vendedor elegido o la de todos.
-  Solo la ve quien ya ve comisiones. **En un PR, en preview hasta el
-  *"mergea"*.** Ver `panel/CLAUDE.md`.
+  Solo la ve quien ya ve comisiones. **PR #378, mergeado el 26-11-2026** con
+  el *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después. Ver
+  `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
