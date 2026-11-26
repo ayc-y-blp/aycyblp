@@ -17,6 +17,7 @@
  * decide: eso es de quien mira el día. Una reserva que viene de una
  * cotización no se suelta acá: se cancela desde su cotización.
  */
+import { PASO, linkACotizacion } from '@/lib/pasos';
 import { BotonMias, BotonTodos } from './BotonMias';
 import AyudaCorta from './AyudaCorta';
 import { useState } from 'react';
@@ -281,7 +282,8 @@ export default function BloqueSobrecupo({ dia, reservas, capacidadMaxima, rol, u
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {cot ? (
-                  <a href={`/presupuestos?abrir=${encodeURIComponent(cot)}`} className="tecla boton">
+                  // Al Contrato, donde está *Cancelar evento* (2026-11-26, `lib/pasos.ts`).
+                  <a href={linkACotizacion(cot, PASO.contrato)} className="tecla boton">
                     Abrir la cotización para cancelarla
                   </a>
                 ) : mia ? (

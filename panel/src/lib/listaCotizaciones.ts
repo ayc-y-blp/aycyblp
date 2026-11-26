@@ -26,6 +26,7 @@ import { normalizar } from './columnas.ts';
 import { ROL } from './auth.ts';
 import { esFecha, sumarDias, fechaEnZona, enCorto } from './fechas.ts';
 import { proximoContacto, recontactoDe, cuandoEs, diasEntre } from './agenda.ts';
+import { PASO } from './pasos.ts';
 
 /** Qué se muestra: los estados, y lo que piden las tarjetas. */
 export type FiltroLista = 'enCarrera' | 'esperando' | 'negociando' | 'ganadas' | 'cerradas' | 'todas'
@@ -253,6 +254,12 @@ export type Paso = {
   texto: string; tono: 'rojo' | 'ambar' | 'verde' | 'neutro';
   /** El día elegido para volver a contactarlo: la Lista lo dibuja como la pastilla 📞 (2026-11-25). */
   contacto?: string;
+  /**
+   * **En qué paso se abre la cotización al apretarlo** (2026-11-26, lo pidió
+   * el cliente: *"en vez de terminar en el paso correspondiente a la info
+   * donde apreté"*). Ver `lib/pasos.ts`.
+   */
+  paso?: number;
 };
 
 /**
@@ -273,27 +280,29 @@ export function proximosPasos(p: Presupuesto, ctx: ContextoLista): Paso[] {
     const paso: Paso = cuando === 'atrasado' ? { texto: `contactar: atrasado ${atraso} ${atraso === 1 ? 'día' : 'días'}`, tono: 'rojo' }
       : cuando === 'hoy' ? { texto: 'contactar hoy', tono: 'ambar' }
         : { texto: `📞 contactar el ${enCorto(c.fecha)}`, tono: 'neutro' };
-    pasos.push({ ...paso, contacto: c.fecha });
-  } else if (s?.motivo === 'contratoSinFirmar') pasos.push({ texto: `contrato sin volver hace ${s.dias} días`, tono: 'ambar' });
-  else if (s?.motivo === 'eventoCerca') pasos.push({ texto: s.dias === 0 ? 'el evento es hoy y no se gana' : `evento en ${s.dias} ${s.dias === 1 ? 'día' : 'días'} sin ganar`, tono: 'rojo' });
-  else if (s?.motivo === 'sinRespuesta') pasos.push({ texto: `sin respuesta hace ${s.dias} días`, tono: 'rojo' });
+    pasos.push({ ...paso, contacto: c.fecha, paso: PASO.envio });
+  } else if (s?.motivo === 'contratoSinFirmar') pasos.push({ texto: `contrato sin volver hace ${s.dias} días`, tono: 'ambar', paso: PASO.contrato });
+  else if (s?.motivo === 'eventoCerca') pasos.push({ texto: s.dias === 0 ? 'el evento es hoy y no se gana' : `evento en ${s.dias} ${s.dias === 1 ? 'día' : 'días'} sin ganar`, tono: 'rojo', paso: PASO.envio });
+  else if (s?.motivo === 'sinRespuesta') pasos.push({ texto: `sin respuesta hace ${s.dias} días`, tono: 'rojo', paso: PASO.envio });
   else if (porVencer(p, ctx.hoy)) {
     const d = diasParaVencer(p, ctx.hoy) ?? 0;
-    pasos.push({ texto: d === 0 ? 'vence hoy' : d === 1 ? 'vence mañana' : `vence en ${d} días`, tono: 'ambar' });
+    pasos.push({ texto: d === 0 ? 'vence hoy' : d === 1 ? 'vence mañana' : `vence en ${d} días`, tono: 'ambar', paso: PASO.envio });
   }
   if (e === ESTADO_PRESUPUESTO.aceptado) {
     const falta = faltaCobrarDe(p, ctx);
-    pasos.push(falta > 0 ? { texto: `falta cobrar ${pesos(falta)}`, tono: 'ambar' } : { texto: '✓ pagada', tono: 'verde' });
+    pasos.push(falta > 0 ? { texto: `falta cobrar ${pesos(falta)}`, tono: 'ambar', paso: PASO.envio }
+      : { texto: '✓ pagada', tono: 'verde', paso: PASO.envio });
   }
   if (!pasos.length && e === ESTADO_PRESUPUESTO.rechazado && p.motivo) pasos.push({ texto: `perdida: ${p.motivo}`, tono: 'neutro' });
   // **Lo prometido** (2026-11-23): para cuándo se le dijo que le llegaba la cotización.
   if (sinMandar(p)) {
     const f = p.redactarAntes ?? '';
     const cuando = cuandoEs(f, ctx.hoy);
-    pasos.push(cuando === 'atrasado' ? { texto: `mandarla: prometida el ${enCorto(f)}`, tono: 'rojo' }
-      : cuando === 'hoy' ? { texto: 'mandarla hoy', tono: 'ambar' }
-        : cuando === 'proximo' ? { texto: `✍ mandarla antes del ${enCorto(f)}`, tono: 'neutro' }
-          : { texto: 'sin mandar', tono: 'neutro' });
+    // A redactarla, como *✍ Redactarla* de la Agenda: lo que falta son los productos.
+    pasos.push({ paso: PASO.productos, ...(cuando === 'atrasado' ? { texto: `mandarla: prometida el ${enCorto(f)}`, tono: 'rojo' as const }
+      : cuando === 'hoy' ? { texto: 'mandarla hoy', tono: 'ambar' as const }
+        : cuando === 'proximo' ? { texto: `✍ mandarla antes del ${enCorto(f)}`, tono: 'neutro' as const }
+          : { texto: 'sin mandar', tono: 'neutro' as const }) });
   }
   return pasos;
 }

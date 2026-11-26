@@ -289,7 +289,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
                   {/* El día elegido para recontactarlo va como la pastilla 📞,
                       en la primera fila (2026-11-25): `fila` la pone. */}
                   {proximosPasos(p, ctx).filter((x) => !x.contacto).map((x) => (
-                    <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
+                    <span key={x.texto} data-paso={x.paso} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
                 </>
               );
               return fila(p, detalle);

@@ -686,6 +686,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   fila de cada cotización y en la Agenda, después del N° y a la derecha; las
   filas sin él dejan su lugar, así los montos quedan en columna. **En un PR, en
   preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`.
+- **Cada dato abre la cotización en su paso** (26-11-2026, lo pidió el
+  cliente: *"el botón sin confirmar el envío debería terminar en paso 4
+  envío, no en productos… preguntarme al tiro"*): ✉ abre el Envío con la
+  pregunta, también para la gerencia (*¿Ya se le mandó…?*); en una fila, la
+  fecha abre en Evento, el total en Productos y el estado, el 📞 o *falta
+  cobrar* en Envío; y los pendientes, la bandeja, la página del día y el aviso
+  al entrar abren en el paso de lo apretado (`lib/pasos.ts`). En el mismo PR
+  que *Se cayó* al final. Ver `panel/CLAUDE.md`, "Cada dato abre la cotización
+  en su paso".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

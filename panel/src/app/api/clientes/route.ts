@@ -11,7 +11,7 @@ import { limpiarCliente, faltaEnCliente, parecidos } from '@/lib/clientes';
 import { folioDe, estadoVisible, totalDe, lineasDe } from '@/lib/presupuestos';
 import { grupoDe } from '@/lib/cotizar';
 import { hoy } from '@/lib/fechas';
-import { puede, esSuya } from '@/lib/auth';
+import { puede, esSuya, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import { HOJA_NOTAS, notasVisibles, notasDelCrm, puedeVerNotas, type Nota } from '@/lib/notas';
 import { recontactoDe } from '@/lib/agenda';
@@ -86,10 +86,12 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
       anota: boolean;
       /**
        * **✉ ¿La mandaste?** (2026-11-25, `lib/envio.ts`): `pregunta` si está
-       * lista sin confirmar y es de esta cuenta; `aviso` si es de otro y esta
-       * cuenta ve al equipo; vacío si no.
+       * lista sin confirmar y es de esta cuenta; `abre` si es de otro y esta
+       * cuenta puede tocarla (la gerencia, pagos y el administrador: desde el
+       * 2026-11-26 la abren en el Envío y confirman); `aviso` si es de otro y
+       * esta cuenta solo ve al equipo; vacío si no.
        */
-      envio: '' | 'pregunta' | 'aviso';
+      envio: '' | 'pregunta' | 'abre' | 'aviso';
       /** **🆕 Nueva del sitio** (2026-11-25): sin ningún contacto anotado, y de esta cuenta. */
       nueva: boolean;
       /** La promoción que la trajo y cuándo llegó, para la pastilla *🆕 Nueva*. */
@@ -121,7 +123,8 @@ export const GET = conLecturas([HOJA_CLIENTES, HOJA_PRESUPUESTOS, HOJA_LINEAS, H
           id: p.id, folio: folioDe(p), fecha: p.fecha, periodo: p.periodo,
           estado: estadoVisible(p, h), total: totalDe(lineasDe(lineas, p.id), p.descuento),
           grupo: grupoDe(p), recontactar: recontactoDe(p, h), anota: anotaEn.has(grupoDe(p)),
-          envio: !porConfirmar.has(p.id) ? '' : esSuya(quien.usuario, p.creadoPor) ? 'pregunta' : veEquipo ? 'aviso' : '',
+          envio: !porConfirmar.has(p.id) ? '' : esSuya(quien.usuario, p.creadoPor) ? 'pregunta'
+            : !veEquipo ? '' : puedeTocarPresupuesto(quien.rol as Rol, quien.usuario, p.creadoPor) ? 'abre' : 'aviso',
           nueva: esNuevaDelSitio(p, notasDelGrupo.get(grupoDe(p)) ?? 0, h) && esNuevaPara(p, quien.usuario, asigna),
           promo: esDelSitio(p) ? promoDelOrigen(p.origen) : '', creado: p.creado ?? ''
         });

@@ -8151,5 +8151,18 @@ console.log('\nConfirmar el envío y las nuevas del sitio (2026-11-25)');
      'cuánto hace que llegó: recién, minutos, horas, ayer, días');
 }
 
+console.log('\nCada dato abre la cotización en su paso (2026-11-26)');
+{
+  const P = await import('./pasos.ts');
+  ok(P.pasoDelEstado('Candidato') === 3 && P.pasoDelEstado('Borrador') === 3, 'una que se está armando, a Productos');
+  ok(['Enviada', 'Negociación', 'Vencida', 'Ganada', 'Cancelada'].every((e) => P.pasoDelEstado(e) === 4),
+     'mandada, vencida, ganada o cancelada, al Envío');
+  ok(P.pasoDelEstado('Perdida') === undefined && P.pasoDelEstado('No elegida') === undefined, 'una perdida se abre como siempre');
+  ok(P.pasoDeTexto('4') === 4 && P.pasoDeTexto('0') === undefined && P.pasoDeTexto('7') === undefined
+     && P.pasoDeTexto('x') === undefined && P.pasoDeTexto(null) === undefined, 'el paso de la dirección, solo del 1 al 5');
+  ok(P.linkACotizacion('P-12', 4, true) === '/presupuestos?abrir=P-12&paso=4&preguntar=1'
+     && P.linkACotizacion('P-12') === '/presupuestos?abrir=P-12', 'el link con su paso y la pregunta');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

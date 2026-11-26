@@ -184,7 +184,8 @@ revisan antes de cada cambio en esta carpeta.
 | Lo que cobra otra empresa (el karting): aparte del total, con quién lo cobra | La pastilla *lo cobra … · aparte* en la línea, y *Aparte, lo cobra …* bajo el total con *💬 Escribirle* (ventana de cotizar); el recuadro *Aparte: lo cobra otra empresa*, con los datos de la empresa, en `TablaCotizacion` (la cotización y el contrato) |
 | Una otra empresa y sus datos | `OtrasEmpresasEditor` (*Productos → 🤝 Otras empresas*), con `datosEnFrase()` / `datosDe()` de `lib/otrasEmpresas.ts` |
   | Las cotizaciones del sitio que la cuenta no ha visto, y las listas que no ha confirmado como mandadas | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
-  | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` y `PreguntaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes); en el calendario, la pastilla *✉ N sin confirmar el envío* |
+  | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
+  | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -233,6 +234,68 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## Cada dato abre la cotización en su paso (2026-11-26)
+
+Lo pidió el cliente con una foto de las pastillas *✉ sin confirmar el envío*:
+*"el botón sin confirmar el envío debería terminar en paso 4 envío, no en
+productos. Y luego cuando yo aprieto, debe preguntarme al tiro si quiero
+confirmar el envío… así se debe revisar todo el sitio si existen más casos
+(según yo sí, uno siempre solo termina en productos) en vez de terminar en el
+paso correspondiente a la info donde apreté"*.
+
+**Qué pasaba**: a la gerencia, pagos y el administrador, *✉ sin confirmar el
+envío* era un aviso que no se apretaba; al apretarlo se apretaba la fila, que
+abre en Productos. Y casi todo lo que abre una cotización desde afuera —los
+pendientes, la bandeja, la página del día, el aviso al entrar— abría ahí
+también, aunque lo apretado fuera un cobro, una fecha o un contrato.
+
+- **✉ abre la cotización en el paso 4 y pregunta al tiro** (`PastillaEnvio`):
+  a su vendedor dice *¿La mandaste?*; a la gerencia, pagos y el administrador
+  —que pueden tocarla— *sin confirmar el envío*, y la pregunta es *¿Ya se le
+  mandó la cotización a …?* con *✓ Sí, ya se mandó*. Es la pregunta de la
+  ventana de cotizar (`preguntarEnvio`), no una ventanita aparte: se fue
+  `PreguntaEnvio`. Quien solo mira sigue viendo el aviso. En Clientes, el
+  mismo botón es un enlace (`linkACotizacion(id, 4, true)`), y
+  `/api/clientes` manda `envio: 'abre'` a quien puede tocar la de otro.
+- **Cada dato de una fila de cotización abre en su paso** (`lib/pasos.ts`,
+  con pruebas). La fila sigue siendo un solo botón: lo que hay bajo el dedo
+  dice su paso con `data-paso` y lo lee `pasoDelClic()`. **El nombre, el N° y
+  el teclado abren como siempre, en Productos.**
+
+  | Dato | Paso |
+  |---|---|
+  | La fecha | 2 · Evento |
+  | El total y las alternativas | 3 · Productos |
+  | El estado: Candidato o Borrador | 3 · Productos |
+  | El estado: Enviada, Negociación, Vencida, Ganada o Cancelada | 4 · Envío |
+  | El 📞 del recontacto; *sin respuesta*, *vence…*, *falta cobrar*, *✓ pagada*, *evento en N días sin ganar* | 4 · Envío |
+  | *Contrato sin volver* | 5 · Contrato |
+  | *Mandarla…* o *sin mandar* (por redactar) | 3 · Productos, como *✍ Redactarla* de la Agenda |
+
+  Va en la Lista, el día del calendario, *Sin fecha*, *🆕 Nuevas del sitio* y
+  cada cotización de la ficha de un cliente. El próximo paso de la Lista lo
+  trae `proximosPasos()` en `paso`.
+- **Lo que abre una cotización desde otra pantalla** (`?abrir=…&paso=4`, y
+  `&preguntar=1` para la pregunta; Cotizaciones los lee al llegar):
+  - *Tus pendientes*: saldo por cobrar, cobros por revisar, *vence pronto* y
+    *venció sin cerrar* → Envío (los cobros y la vigencia están ahí). Lo
+    demás ya iba a su paso.
+  - La ventana al entrar (*Abrir →*) → Envío.
+  - La bandeja: condiciones especiales → Envío (*El pago*); acuerdos
+    adicionales → Contrato.
+  - La página del día: *Abrir la cotización N°* de una reserva ganada → Envío
+    (sus cobros); lo cotizado del día → el paso de su estado.
+  - Liberar un día exclusivo: *Ya se puede marcar ganada* → Envío; *se mueve
+    desde ahí* → Evento. El sobrecupo: *Abrir la cotización para cancelarla*
+    → Contrato (donde está *Cancelar evento*).
+- **Las escenas de prueba abren una cotización por la esquina de su fila**
+  (`abrirCotizacion()` en `ventanas.mjs`, y `abrirEnvio()` en
+  `capturas-ayuda.mjs`): al centro puede quedar un dato que abre otro paso.
+- **Ninguna lectura, permiso ni columna nueva.** **Ayuda**: el `?` de
+  Cotizaciones y el de Clientes, y `confirmarEnvio`. **Ventanas**:
+  `v-confirmar-envio` (ahora la pregunta sobre el paso 4) y una nueva,
+  `v-confirmar-envio-de-otro` (como el administrador), las dos de 263px.
 
 ## *✕ Se cayó…* al final de la fila (2026-11-26)
 
@@ -308,9 +371,11 @@ productos no está listo.
   mitad)—, con la línea *Está lista y todavía no figura como mandada*. Sale
   cada vez que la abre, hasta que diga que sí.
 - **✉ ¿La mandaste?** (`PastillaEnvio` en `components/ConfirmarEnvio.tsx`): a
-  su vendedor, un botón ámbar de 36px que abre la misma pregunta sin abrir la
+  su vendedor, un botón ámbar de 36px que abría la misma pregunta sin abrir la
   cotización (`PreguntaEnvio`, `marcarMandada()`: `seguimiento: 'enviada'`, la
-  llamada de siempre). En la primera fila de cada cotización de la Lista, del
+  llamada de siempre). **Desde el 2026-11-26 abre la cotización en el paso 4 y
+  pregunta**, también a la gerencia: ver "Cada dato abre la cotización en su
+  paso". En la primera fila de cada cotización de la Lista, del
   día del calendario y de *Sin fecha* (al centro, antes del 📞), en la Agenda
   (*✍ Por redactar*) y en Clientes (la tarjeta cerrada y cada cotización de la
   ficha). **A la gerencia, pagos y el administrador** les sale como aviso,

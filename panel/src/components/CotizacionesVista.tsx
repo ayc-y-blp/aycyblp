@@ -20,11 +20,13 @@
  */
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
 import { PastillaEnvio } from './ConfirmarEnvio';
+import { pasoDelClic } from './pasoDelClic';
 import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
 import { ahoraEnChile } from '@/lib/bitacora';
 import type { AvisoSitio } from '@/lib/promociones';
 import type { AvisoSinConfirmar } from '@/lib/envio';
 import { porCoordinar } from '@/lib/presupuestos';
+import { PASO, pasoDelEstado, pasoDeTexto } from '@/lib/pasos';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import AyudaCorta from './AyudaCorta';
 import { marcoGrupo, TITULO_GRUPO } from './TarjetaLista';
@@ -159,8 +161,12 @@ export default function CotizacionesVista() {
   const [cayendo, setCayendo] = useState<Presupuesto | null>(null);
   /** Las notas abiertas desde una fila de la agenda (2026-11-23). */
   const [anotando, setAnotando] = useState<Presupuesto | null>(null);
+  /**
+   * `paso`: en cuál se abre (2026-11-26, el del dato apretado: `lib/pasos.ts`).
+   * `preguntar`: abre además *¿La mandaste?* (la pastilla ✉).
+   */
   const [abierta, setAbierta] = useState<
-    { p: Presupuesto | null; fecha?: string; cliente?: string; paso?: number } | null>(null);
+    { p: Presupuesto | null; fecha?: string; cliente?: string; paso?: number; preguntar?: boolean } | null>(null);
   /**
    * **Abriendo otra cotización** —la recién creada, una alternativa nueva o
    * la otra pestaña del grupo— mientras llega la lista recargada.
@@ -222,17 +228,21 @@ export default function CotizacionesVista() {
 
   useEffect(() => { void cargar(); }, []);
 
-  // Abrir una cotización desde otra pantalla: `/presupuestos?abrir=<id>`.
+  // Abrir una cotización desde otra pantalla: `/presupuestos?abrir=<id>`,
+  // con `&paso=4` en el paso del dato que se apretó y `&preguntar=1` para la
+  // pregunta *¿La mandaste?* (2026-11-26, `linkACotizacion()`).
   useEffect(() => {
     if (!datos) return;
     const q = new URLSearchParams(window.location.search);
     const id = q.get('abrir');
     const p = id ? datos.presupuestos.find((x) => x.id === id) : undefined;
+    const paso = pasoDeTexto(q.get('paso'));
+    const preguntar = q.get('preguntar') === '1';
     // `?cliente=<id>`: cotizarle a un cliente desde su ficha.
     const cliente = q.get('cliente');
     // `?cotizar=<fecha>`: cotizar ese día, desde la página del día (2026-11-12).
     const cotizar = q.get('cotizar') ?? '';
-    if (p) setAbierta({ p });
+    if (p) setAbierta({ p, paso, preguntar });
     else if (cliente) setAbierta({ p: null, cliente });
     else if (esFecha(cotizar)) setAbierta({ p: null, fecha: cotizar });
     if (p || cliente || esFecha(cotizar)) window.history.replaceState(null, '', '/presupuestos');
@@ -405,7 +415,11 @@ export default function CotizacionesVista() {
     if (!x) return null;
     const suya = esSuya(datos.usuario, x.creadoPor);
     if (!suya && !veElEquipo(datos.rol)) return null;
-    return <PastillaEnvio id={x.id} cliente={x.cliente || p.cliente} pregunta={suya && !soloMira} onListo={recargarTodo} />;
+    // **Abre la cotización en el Envío y pregunta** (2026-11-26, lo pidió el
+    // cliente): a quien puede tocarla; a quien solo mira, el aviso.
+    const toca = !soloMira && puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, x.creadoPor);
+    return <PastillaEnvio cliente={x.cliente || p.cliente} suya={suya}
+      onAbrir={toca ? () => setAbierta({ p: x, paso: PASO.envio, preguntar: true }) : undefined} />;
   };
   const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => {
     const caerse = puedeCaerse(p);
@@ -420,16 +434,28 @@ export default function CotizacionesVista() {
     return (
       <li key={p.id} className="relative flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 rounded border
                                 border-hueso/15 bg-panel px-3 py-2.5 hover:border-oro/60
-                                [&:has(>.abrir:active)]:translate-y-px">
-        <button type="button" onClick={() => setAbierta({ p })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
+                                [&:has(>.abrir:active)]:translate-y-px"
+        // **Lo que queda encima del botón también abre** (2026-11-26): un texto
+        // con `opacity` (el *nov 2026* de la fecha) se dibuja sobre el botón
+        // que cubre la fila, y apretarlo no abría nada. Lo que no es otro
+        // botón o enlace abre, en el paso de lo apretado.
+        onClick={(e) => {
+          if ((e.target as Element).closest('button, a')) return;
+          setAbierta({ p, paso: pasoDelClic(e) });
+        }}>
+        {/* **Abre en el paso del dato apretado** (2026-11-26, lo pidió el
+            cliente): la fecha, en el Evento; el estado, en el suyo; el total,
+            en Productos; *falta cobrar* o el 📞, en el Envío (`data-paso`,
+            `pasoDelClic()`). El nombre y el N°, como siempre. */}
+        <button type="button" onClick={(e) => setAbierta({ p, paso: pasoDelClic(e, e.currentTarget.closest('li')) })} aria-label={`Abrir la cotización de ${p.cliente || 'sin cliente'}`}
           className="abrir absolute inset-0 rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-oro" />
         <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
         {/* La empresa del cliente, al lado (2026-11-25): la misma pieza de
             Clientes, Agenda, *Tus pendientes* y la página del día. */}
         <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
-        <PastillaEstado estado={estadoDe(p)} />
+        <span data-paso={pasoDelEstado(estadoDe(p))}><PastillaEstado estado={estadoDe(p)} /></span>
         {conFecha && (
-          <span className="text-[14px] text-hueso/70">
+          <span data-paso={PASO.evento} className="text-[14px] text-hueso/70">
             {/* *DOM 22 nov 2026* (2026-11-22, lo pidió el cliente): la misma
                 pieza de la fecha que los calendarios, con el año, porque la
                 lista mezcla años. */}
@@ -445,14 +471,16 @@ export default function CotizacionesVista() {
             parejas (el total, debajo). */}
         <span className={`flex flex-1 flex-wrap items-center gap-2 lg:justify-center ${recontactoDe(p, hoy) || envio ? 'max-lg:basis-full' : ''}`}>
           {envio}
-          <PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} />
+          {recontactoDe(p, hoy) && (
+            <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={recontactoDe(p, hoy)} hoy={hoy} /></span>
+          )}
         </span>
-        <span className="text-[14px] text-hueso/70">
+        <span data-paso={PASO.productos} className="text-[14px] text-hueso/70">
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
         </span>
         {alternativasDe(p, datos.presupuestos).length > 1 && (
-          <span className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80">
+          <span data-paso={PASO.productos} className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80">
             {alternativasDe(p, datos.presupuestos).length} alternativas
           </span>
         )}
@@ -653,7 +681,7 @@ export default function CotizacionesVista() {
           quedaba y parecía que no se había cerrado. Ver `AvisoFijo`. */}
       <AvisoCotizacionesSitio key={(datos.delSitio ?? []).map((a) => a.id).join()} avisos={datos.delSitio ?? []}
         sinConfirmar={datos.sinConfirmar ?? []} onCambio={recargarTodo}
-        onAbrir={(id) => { const p = datos.presupuestos.find((x) => x.id === id); if (p) setAbierta({ p }); }} />
+        onAbrir={(id) => { const p = datos.presupuestos.find((x) => x.id === id); if (p) setAbierta({ p, paso: PASO.envio }); }} />
       <AvisoFijo clave="cotizaciones-cupo" delServidor={datos.avisosLeidos} className="-mt-2 mb-4 lg:mb-3">
         Lo cotizado no ocupa cupo: recién al marcarla ganada se vuelve reserva.
       </AvisoFijo>
@@ -741,7 +769,7 @@ export default function CotizacionesVista() {
               return <FilaPendiente key={a.id} quien={p.cliente} empresa={p.empresaCliente} rojo={a.dias < 0}
                 dato={`${enPesos(a.monto)} · ${a.dias < 0 ? `venció hace ${-a.dias} ${a.dias === -1 ? 'día' : 'días'}`
                   : a.dias === 0 ? 'vence hoy' : a.dias === 1 ? 'vence mañana' : `vence en ${a.dias} días`}`}
-                onAbrir={() => setAbierta({ p })} />;
+                onAbrir={() => setAbierta({ p, paso: PASO.envio })} />;
             })}</div>
           }];
         })() : []),
@@ -752,7 +780,7 @@ export default function CotizacionesVista() {
           lista: <div className="space-y-1.5">{[...sinRevisar].map(([id, r]) => {
             const p = porId.get(id)!;
             return <FilaPendiente key={id} quien={p.cliente} empresa={p.empresaCliente}
-              dato={`${r.n === 1 ? '1 cobro' : `${r.n} cobros`} · ${enPesos(r.monto)}`} onAbrir={() => setAbierta({ p })} />;
+              dato={`${r.n === 1 ? '1 cobro' : `${r.n} cobros`} · ${enPesos(r.monto)}`} onAbrir={() => setAbierta({ p, paso: PASO.envio })} />;
           })}</div>
         }] : []),
         ...(avisos.anticipoSinGanar.length ? [{
@@ -782,7 +810,7 @@ export default function CotizacionesVista() {
           lista: <div className="space-y-1.5">{pronto.map((p) => {
             const n = diasParaVencer(p, hoy);
             return <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente}
-              dato={n === 0 ? 'vence hoy' : n === 1 ? 'vence mañana' : `vence en ${n} días`} onAbrir={() => setAbierta({ p })} />;
+              dato={n === 0 ? 'vence hoy' : n === 1 ? 'vence mañana' : `vence en ${n} días`} onAbrir={() => setAbierta({ p, paso: PASO.envio })} />;
           })}</div>
         }] : []),
         ...(porCoordinarMias.length ? [{
@@ -799,7 +827,7 @@ export default function CotizacionesVista() {
           texto: vencidas.length === 1 ? '1 venció sin cerrar' : `${vencidas.length} vencieron sin cerrar`,
           ayuda: 'Ya no cuentan como gente posible: márcalas perdidas o renueva la vigencia.',
           lista: <div className="space-y-1.5">{vencidas.map((p) => (
-            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p })} />))}</div>
+            <FilaPendiente key={p.id} quien={p.cliente} empresa={p.empresaCliente} dato={`N° ${folioDe(p)}`} onAbrir={() => setAbierta({ p, paso: PASO.envio })} />))}</div>
         }] : [])
       ]} />
       </div>
@@ -926,6 +954,7 @@ export default function CotizacionesVista() {
             if (huboCambios.current) { huboCambios.current = false; setVersionOcupacion((v) => v + 1); }
           }}
           pasoInicial={abierta.paso}
+          preguntarEnvio={abierta.preguntar}
           alternativas={abierta.p ? alternativasDe(abierta.p, datos.presupuestos) : []}
           onAbrir={(id, paso) => void abrirOtra(id, paso)}
         />

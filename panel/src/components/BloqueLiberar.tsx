@@ -19,6 +19,7 @@
  * devolver, quien decide la exclusividad (`exclusividad`). **Lo que mueve
  * plata o un lugar pregunta antes**, en la misma tarjeta.
  */
+import { PASO, linkACotizacion } from '@/lib/pasos';
 import { useState } from 'react';
 import AyudaCorta from './AyudaCorta';
 import { avisar } from './AvisoFlotante';
@@ -115,7 +116,8 @@ export default function BloqueLiberar({ fecha, reservas, cotizacion, deCotizacio
             <div className="mt-3 rounded-xl border-2 border-verde-fuerte/70 bg-verde/10 p-3">
               <p className="text-[17px] font-bold text-verde-texto">✓ El día quedó libre</p>
               <p className="mt-1 text-[15px]">Ya se puede marcar ganada la cotización: el día queda exclusivo.</p>
-              <a href={`/presupuestos?abrir=${encodeURIComponent(cotizacion.id)}`}
+              {/* Al Envío, donde se marca ganada (2026-11-26, `lib/pasos.ts`). */}
+              <a href={linkACotizacion(cotizacion.id, PASO.envio)}
                 className="tecla boton boton-relleno mt-2 min-h-[48px]">Abrir la cotización N° {folio} →</a>
             </div>
           )}
@@ -148,7 +150,7 @@ export default function BloqueLiberar({ fecha, reservas, cotizacion, deCotizacio
                 </p>
 
                 {idCot ? (
-                  <a href={`/presupuestos?abrir=${encodeURIComponent(idCot)}`} className="tecla boton mt-3 min-h-[44px] w-full justify-center !whitespace-normal text-center">
+                  <a href={linkACotizacion(idCot, PASO.evento)} className="tecla boton mt-3 min-h-[44px] w-full justify-center !whitespace-normal text-center">
                     Viene de una cotización: se mueve desde ahí →
                   </a>
                 ) : pregunta === 'cancelar' ? (

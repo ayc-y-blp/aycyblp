@@ -255,10 +255,16 @@ function Elegir({ opciones, valor, onElegir, etiqueta }: {
 
 export default function CotizacionDialogo({
   presupuesto, lineasIniciales, fechaInicial, clienteInicial, datos, onCambio, onCerrar,
-  pasoInicial, onAbrir, alternativas = []
+  pasoInicial, preguntarEnvio, onAbrir, alternativas = []
 }: {
   /** En qué paso abrir. Por defecto, Productos si ya existe. */
   pasoInicial?: number;
+  /**
+   * **Abrir preguntando *¿La mandaste?*** (2026-11-26): la pastilla ✉ de una
+   * lista sin confirmar, para quien puede tocarla —su vendedor, y también la
+   * gerencia, pagos y el administrador—.
+   */
+  preguntarEnvio?: boolean;
   /**
    * Abrir otra cotización en esta misma ventana: una alternativa, o la que
    * se acaba de crear. La pantalla recarga y la abre ya guardada.
@@ -538,8 +544,10 @@ export default function CotizacionDialogo({
    * mitad. Sale cada vez que la abre, hasta que diga que sí.
    */
   const [preguntaAlAbrir] = useState(() => !!presupuesto && puedeEditar
-    && esSuya(datos.usuario, presupuesto.creadoPor)
+    && (esSuya(datos.usuario, presupuesto.creadoPor) || !!preguntarEnvio)
     && !!porConfirmarDelGrupo(alternativas.length ? alternativas : [presupuesto], datos.lineas ?? [], datos.hoy));
+  /** La pregunta, a quien no la mandó (la gerencia, por su vendedor): *¿Ya se le mandó…?*. */
+  const preguntaDeOtro = !!presupuesto && !esSuya(datos.usuario, presupuesto.creadoPor);
   useEffect(() => { if (preguntaAlAbrir) setPreguntaEnvio('cotizacion'); }, [preguntaAlAbrir]);
   /** Revisar cobros es de quien hace los pagos, no de quien los anota. */
   const puedePagar = puede(datos.rol as Rol, 'pagar');
@@ -3708,7 +3716,7 @@ export default function CotizacionDialogo({
               la pregunta como título. Los botones van fuera, al pie. */}
           <div className={`mt-3 ${marcoGrupo('rosa')} p-3`}>
           <p className={TITULO_GRUPO}>
-            ¿Le mandaste {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
+            {preguntaDeOtro ? '¿Ya se le mandó' : '¿Le mandaste'} {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
             {cliente?.nombre ?? 'tu cliente'}?
           </p>
           {/* Al abrirla, sin haber apretado nada (2026-11-25): se dice por qué. */}
@@ -3779,7 +3787,7 @@ export default function CotizacionDialogo({
             </button>
             <button type="button" autoFocus disabled={guardando} onClick={() => void confirmarEnvio()}
               className="boton boton-relleno min-h-[52px] px-6 text-[16px]">
-              {preguntaEnvio === 'contrato' ? '✓ Sí, lo mandé' : '✓ Sí, la mandé'}</button>
+              {preguntaDeOtro ? '✓ Sí, ya se mandó' : preguntaEnvio === 'contrato' ? '✓ Sí, lo mandé' : '✓ Sí, la mandé'}</button>
           </div>
         </Dialogo>
       )}

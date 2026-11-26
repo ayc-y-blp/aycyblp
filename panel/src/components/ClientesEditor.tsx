@@ -26,6 +26,8 @@ import NotasCotizacion, { HistorialNotas } from './NotasCotizacion';
 import { UltimaNota } from './LoConversado';
 import { PastillaContacto, PastillaNueva } from './Pastilla';
 import { PastillaEnvio } from './ConfirmarEnvio';
+import { pasoDelClic } from './pasoDelClic';
+import { PASO, pasoDelEstado, linkACotizacion } from '@/lib/pasos';
 import { ordenarNotas, type Nota } from '@/lib/notas';
 import { avisar } from './AvisoFlotante';
 import {
@@ -45,7 +47,7 @@ interface EnHistorial {
   /** Si esta cuenta anota en esa cotización (su vendedor o la gerencia). */
   anota?: boolean;
   /** ✉ Lista sin confirmar el envío (2026-11-25): `pregunta` a su vendedor, `aviso` a quien ve al equipo. */
-  envio?: '' | 'pregunta' | 'aviso';
+  envio?: '' | 'pregunta' | 'abre' | 'aviso';
   /** 🆕 Nueva del sitio, sin contacto anotado (2026-11-25), con su promoción y cuándo llegó. */
   nueva?: boolean;
   promo?: string;
@@ -68,7 +70,8 @@ const nuevaDe = (h: EnHistorial[] = []) =>
   h.filter((x) => x.nueva).sort((a, b) => (b.creado ?? '').localeCompare(a.creado ?? ''))[0];
 
 /** **La lista sin confirmar de un cliente** (2026-11-25): primero la suya, que se pregunta. */
-const envioDe = (h: EnHistorial[] = []) => h.find((x) => x.envio === 'pregunta') ?? h.find((x) => x.envio === 'aviso');
+const envioDe = (h: EnHistorial[] = []) => h.find((x) => x.envio === 'pregunta') ?? h.find((x) => x.envio === 'abre')
+  ?? h.find((x) => x.envio === 'aviso');
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-3 py-2 text-[15px] ' +
@@ -438,11 +441,13 @@ export default function ClientesEditor() {
                     )}
                   </button>
                   {/* ✉ Una lista sin confirmar (2026-11-25): fuera del botón que
-                      abre la ficha, porque a su vendedor se le aprieta. */}
-                  {envioDe(historial[c.id]) && (
-                    <PastillaEnvio id={envioDe(historial[c.id])!.id} cliente={c.nombre}
-                      pregunta={envioDe(historial[c.id])!.envio === 'pregunta' && !soloMiraCotizar} onListo={() => void cargar()} />
-                  )}
+                      abre la ficha, porque se aprieta. Abre la cotización en el
+                      Envío y pregunta (2026-11-26). */}
+                  {envioDe(historial[c.id]) && (() => {
+                    const x = envioDe(historial[c.id])!;
+                    return <PastillaEnvio cliente={c.nombre} suya={x.envio === 'pregunta'}
+                      href={x.envio !== 'aviso' && !soloMiraCotizar ? linkACotizacion(x.id, PASO.envio, true) : undefined} />;
+                  })()}
                   {n === 0 && !soloMira && !c.contactoTapado && (
                     <button onClick={() => void borrar(c)}
                       className="boton shrink-0 hover:border-rojo-fuerte hover:text-rojo-texto"
@@ -520,30 +525,42 @@ export default function ClientesEditor() {
                             const alternativas = (historial[c.id] ?? []).filter((x) => x.grupo === h.grupo).length;
                             return (
                               <li key={h.id} className="flex items-stretch gap-2">
-                                <a href={`/presupuestos?abrir=${encodeURIComponent(h.id)}`}
+                                {/* Abre en el paso del dato apretado (2026-11-26,
+                                    `pasoDelClic()`): la fecha, el Evento; el
+                                    estado, el suyo; el total, Productos; el 📞, el
+                                    Envío. El N°, como siempre. */}
+                                <a href={linkACotizacion(h.id)}
+                                  onClick={(e) => {
+                                    const n = pasoDelClic(e);
+                                    if (!n) return;
+                                    e.preventDefault();
+                                    window.location.href = linkACotizacion(h.id, n);
+                                  }}
                                   className={`tecla flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 rounded border
                                               px-3 py-2 min-h-[48px] ${h.estado === 'Ganada'
                                     ? 'border-verde-fuerte bg-verde/10' : 'border-hueso/15'}`}>
                                   <span className="text-[14px] font-semibold">N° {h.folio}</span>
-                                  <PastillaEstado estado={h.estado} />
+                                  <span data-paso={pasoDelEstado(h.estado)}><PastillaEstado estado={h.estado} /></span>
                                   {alternativas > 1 && (
                                     <span className="text-[13px] text-hueso/60">alternativa</span>
                                   )}
-                                  <span className="text-[14px] text-hueso/70">
+                                  <span data-paso={PASO.evento} className="text-[14px] text-hueso/70">
                                     {/* Como en la lista de cotizaciones (2026-11-22): *DOM 22 nov 2026*. */}
                                     {h.fecha ? <FechaDia fecha={h.fecha} tamano="aviso" conAno /> : h.periodo}
                                   </span>
-                                  <PastillaContacto fecha={h.recontactar ?? ''} hoy={hoyDia} />
+                                  {h.recontactar && (
+                                    <span data-paso={PASO.envio} className="inline-flex"><PastillaContacto fecha={h.recontactar} hoy={hoyDia} /></span>
+                                  )}
                                   {h.nueva && <PastillaNueva promo={h.promo ?? ''} creado={h.creado ?? ''} ahora={ahora} />}
-                                  {h.envio === 'aviso' && <PastillaEnvio id={h.id} cliente={c.nombre} pregunta={false} onListo={() => void cargar()} />}
+                                  {(h.envio === 'aviso' || (h.envio && soloMiraCotizar)) && <PastillaEnvio cliente={c.nombre} suya={false} />}
                                   <span className="flex-1" />
-                                  <strong className="text-[15px]">{enPesos(h.total)}</strong>
+                                  <strong data-paso={PASO.productos} className="text-[15px]">{enPesos(h.total)}</strong>
                                 </a>
                                 {/* **📝 Anotar, desde la ficha** (2026-11-25): la
                                     misma ventanita de la cotización —qué
                                     conversaron y cuándo volver a contactarlo—. */}
-                                {h.envio === 'pregunta' && !soloMiraCotizar && (
-                                  <PastillaEnvio id={h.id} cliente={c.nombre} pregunta onListo={() => void cargar()}
+                                {(h.envio === 'pregunta' || h.envio === 'abre') && !soloMiraCotizar && (
+                                  <PastillaEnvio cliente={c.nombre} suya={h.envio === 'pregunta'} href={linkACotizacion(h.id, PASO.envio, true)}
                                     className="!min-h-[48px] self-center" />
                                 )}
                                 {h.anota && !soloMiraCotizar && (

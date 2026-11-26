@@ -60,7 +60,9 @@ const abrirEnvio = (nombre) => [
   clic(boton(/📋 Lista/, 0)),
   // La fila es una caja con un botón que la cubre (2026-11-22, *✕ Se cayó…*
   // va adentro): se aprieta ese botón, no el texto del nombre.
-  clic(boton(`Abrir la cotización de ${nombre}`)),
+  // Cada dato de la fila abre en su paso (2026-11-26): se aprieta en la
+  // esquina, donde va el nombre, que abre como siempre.
+  async (p) => { await boton(`Abrir la cotización de ${nombre}`)(p).click({ position: { x: 6, y: 6 } }); await p.waitForTimeout(900); },
   async (p) => { await p.waitForTimeout(1500); await boton(/Envío/)(p).click(); await p.waitForTimeout(900); }
 ];
 

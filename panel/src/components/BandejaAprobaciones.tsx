@@ -24,6 +24,7 @@
  * esperando una respuesta que hay que darle. Cualquier tipo nuevo de
  * `Pendiente` (`lib/aprobaciones.ts`) se dibuja en esta misma fila.
  */
+import { PASO, linkACotizacion } from '@/lib/pasos';
 import { useState } from 'react';
 import { DE_PAGOS, type Pendiente } from '@/lib/aprobaciones';
 import { EstadoDelPago } from './PastillaPago';
@@ -241,7 +242,8 @@ export default function BandejaAprobaciones({ pendientes, onCambio, verReserva }
               {p.tipo === 'caja'
                 ? <a href="/caja" className="tecla boton min-h-[44px]">Ver la caja →</a>
                 : p.tipo === 'condiciones' || p.tipo === 'acuerdos'
-                ? <a href={`/presupuestos?abrir=${encodeURIComponent(p.id)}`} className="tecla boton min-h-[44px]">Ver la cotización →</a>
+                // Las condiciones, en *El pago* (Envío); los acuerdos, en el Contrato (2026-11-26).
+                ? <a href={linkACotizacion(p.id, p.tipo === 'acuerdos' ? PASO.contrato : PASO.envio)} className="tecla boton min-h-[44px]">Ver la cotización →</a>
                 : p.tipo === 'cuenta'
                 ? <a href={p.de === 'trabajador' ? '/equipo' : '/extras'} className="tecla boton min-h-[44px]">Ver la ficha →</a>
                 : (p.tipo === 'descuento' || p.tipo === 'pago' || p.tipo === 'descuentoVisto') && verReserva
