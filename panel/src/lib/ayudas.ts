@@ -1155,7 +1155,10 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Ganado',
     texto: [
       'La suma de las cotizaciones ganadas de lo que estás mirando, con su total con IVA.',
-      'Si eliges un periodo, cuenta las ganadas cuyo evento cae en él, o que se cotizaron en él, según la fecha que elijas.'
+      'Si eliges un periodo, cuenta las ganadas cuyo evento cae en él, o que se cotizaron en él, según la fecha que elijas.',
+      '💰 Tu comisión es lo que te dejan esas ganadas, con tu trato de Vendedores. Se te paga cuando el '
+      + 'cliente termina de pagar y pagos lo revisa; hasta entonces es lo que vas a ganar. La gerencia, pagos '
+      + 'y el administrador ven la del vendedor elegido, o la de todos.'
     ]
   },
   // ---------- Las estadísticas de reservas (2026-11-19) ----------

@@ -562,6 +562,32 @@ export function ventasDe(usuario: string, presupuestos: Presupuesto[], lineas: L
     .sort((a, b) => (b.pagadaEl || b.fechaEvento).localeCompare(a.pagadaEl || a.fechaEvento));
 }
 
+/**
+ * **La comisión de cada cotización ganada, para la tarjeta *Ganado*** de
+ * Cotizaciones → *Lista* (2026-11-26, lo pidió el cliente: *"aquí mostrar la
+ * ganancia (comisión) del vendedor también, para motivarlo a ganar más"*).
+ * Por id de cotización, la misma cuenta de *Vendedores* y del link personal
+ * (`ventasDe()`: la congelada si ya se pagó, si no la que da su ficha hoy).
+ *
+ * Con `soloDe`, solo las de esa cuenta: es lo que ve un vendedor. Sin él, las
+ * de todos los que venden (`cuentasQueVenden()`): lo que ve quien ve el
+ * resumen de todos (`vendedores`, menos el vendedor).
+ */
+export function comisionesPorCotizacion(presupuestos: Presupuesto[], lineas: LineaPresupuesto[],
+  cobros: Cobro[], fichas: FichaVendedor[], menus: Pick<Menu, 'nombre' | 'bonoVendedor'>[],
+  cuentas: { usuario: string; nombre: string; rol: string; activo: boolean }[],
+  soloDe?: { usuario: string; nombre: string }): Record<string, number> {
+  const quienes = soloDe ? [soloDe] : cuentasQueVenden(cuentas, fichas, presupuestos);
+  const salida: Record<string, number> = {};
+  for (const c of quienes) {
+    const ficha = fichaDe(fichas, c.usuario, c.nombre);
+    for (const v of ventasDe(c.usuario, presupuestos, lineas, cobros, ficha, menus, c.nombre)) {
+      if (!v.cancelada) salida[v.id] = v.comision;
+    }
+  }
+  return salida;
+}
+
 /* ---------- el periodo ---------- */
 
 /** Los últimos días de mes que caen en el periodo: cada uno suma un sueldo fijo. */

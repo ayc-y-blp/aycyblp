@@ -87,6 +87,8 @@ type Datos = DatosCotizar & {
   sobrecupo?: SobrecupoCorto[];
   /** El día en que se ganó cada cotización (2026-11-17, para la Lista). */
   ganadaEl?: Record<string, string>;
+  /** La comisión de cada ganada que esta cuenta puede ver (2026-11-26): la línea 💰 de *Ganado*. */
+  comisiones?: Record<string, number>;
 };
 
 /** El color de cada estado: se distingue por la pastilla con borde. */
@@ -991,7 +993,7 @@ export default function CotizacionesVista() {
       {vista === 'lista' && (() => {
         const ctx: ContextoLista = {
           hoy, lineas: datos.lineas, cobros: (datos.cobros ?? []).map((c) => ({ presupuesto: c.presupuesto, monto: c.monto })),
-          ganadaEl: datos.ganadaEl ?? {}, todas: datos.presupuestos,
+          ganadaEl: datos.ganadaEl ?? {}, todas: datos.presupuestos, comisiones: datos.comisiones,
           seguimiento: { seguimientoDias: datos.seguimiento?.dias ?? 5, avisoEvento: datos.seguimiento?.antesEvento ?? 14 }
         };
         return (

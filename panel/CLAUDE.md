@@ -287,6 +287,30 @@ sección de la derecha?"*. Se le propuso y dijo *"dale con eso y mergea"*.
 - **Ninguna lectura, permiso ni columna.** **Ayuda**: `agenda` y el plazo
   prometido (`redactarAntes`).
 
+## *💰 Tu comisión*, en la tarjeta *Ganado* (2026-11-26)
+
+Lo pidió el cliente con una foto de la Lista, apuntando a *Ganado*: *"aquí
+mostrar la ganancia (comisión) del vendedor también, para motivarlo a ganar
+más"*.
+
+- **Bajo *Ganado*, una línea verde *💰 Tu comisión $…***: lo que dejan en
+  comisión las ganadas que se están mirando (el mismo periodo, *De quién* y
+  filtros que *Ganado*). A la gerencia, pagos y el administrador les dice
+  ***💰 Comisión de Jorge*** con un vendedor elegido, o ***💰 Comisiones***
+  (las de todos). Va en la tarjeta (`extra` de `TarjetaNumero`), no en una
+  tarjeta aparte: el grupo *Resultado* sigue con dos.
+- **La cuenta es la de *Vendedores* y del link personal**
+  (`comisionesPorCotizacion()` en `lib/vendedores.ts`, con pruebas, sobre
+  `ventasDe()`): la congelada si el cliente ya pagó y pagos lo revisó; si no,
+  la que da su ficha hoy. `/api/presupuestos` la manda por id
+  (`comisiones`).
+- **Quién la ve: quien ya ve comisiones** (`vendedores`): el vendedor, solo
+  las suyas; la gerencia, pagos y el administrador, las de todos. Operaciones
+  no tiene ese permiso y no la ve, aunque cotice. **Ningún permiso cambió.**
+- **Lecturas de Google**: ninguna más (`Vendedores`, `Cobros`, `Menús` y
+  `Usuarios` ya venían en la tanda). **Ninguna columna.** **Ayuda**:
+  `listaGanado`.
+
 ## Los números caben en su marco, el `?` va en la esquina y es más chico (2026-11-26)
 
 Lo pidió el cliente en cuatro mensajes seguidos, con una foto de la Lista:

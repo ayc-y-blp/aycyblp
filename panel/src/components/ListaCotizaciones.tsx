@@ -216,8 +216,20 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
             activa={filtro === 'porCobrar'} onClick={() => alternar('porCobrar')} />
         </GrupoTarjetas>
         <GrupoTarjetas titulo="Resultado" columnas="grid-cols-2">
+          {/* **💰 La comisión de lo ganado** (2026-11-26, lo pidió el cliente:
+              *"aquí mostrar la ganancia (comisión) del vendedor también, para
+              motivarlo a ganar más"*): bajo *Ganado*, lo que dejan en comisión
+              las ganadas que se están mirando. Al vendedor, *Tu comisión*; a
+              la gerencia, la del vendedor elegido o la de todos. Solo si esta
+              cuenta ve comisiones (`ctx.comisiones`). */}
           <Tarjeta que="Ganado" ayuda="listaGanado" valor={enPesos(r.ganado.monto)}
             nota={`${r.ganado.n} ${r.ganado.n === 1 ? 'evento' : 'eventos'}`}
+            extra={r.ganado.comision === null ? undefined : (
+              <span className="inline-flex flex-wrap items-baseline gap-x-1.5 rounded-lg bg-verde/10 px-2 py-0.5 text-[14px] font-semibold text-verde-texto">
+                <span>💰 {!equipo || soloMias ? 'Tu comisión' : vendedor ? `Comisión de ${vendedor}` : 'Comisiones'}</span>
+                <span className="whitespace-nowrap tabular-nums">{enPesos(r.ganado.comision)}</span>
+              </span>
+            )}
             tono="border-verde-fuerte/40 bg-verde/[0.06] text-verde-texto" activa={filtro === 'ganadas'} onClick={() => alternar('ganadas')} />
           <Tarjeta que="Tasa de cierre" ayuda="listaTasa" valor={r.tasa.pct == null ? '—' : `${r.tasa.pct}%`}
             nota={`${r.tasa.ganadas} ${r.tasa.ganadas === 1 ? 'ganada' : 'ganadas'} · ${r.tasa.perdidas} ${r.tasa.perdidas === 1 ? 'perdida' : 'perdidas'}`}

@@ -5441,7 +5441,7 @@ console.log('\nEl link personal de los extras');
 
 console.log('\nLos socios comerciales (primera entrega)');
 {
-  const { fichaSocio, fichaVacia, nuevoIdSocio, etapaDe, comisionDe, ventasDe, leerVendedoresDe, filaVendedor,
+  const { fichaSocio, fichaVacia, nuevoIdSocio, etapaDe, comisionDe, ventasDe, comisionesPorCotizacion, leerVendedoresDe, filaVendedor,
           ENCABEZADO_VENDEDORES, CON_SOCIO_DEFECTO, esVentaDe } = await import('./vendedores.ts');
   const s1 = fichaSocio('S-0001', 'Turismo Maipo');
   ok(s1.tipo === 'socio' && s1.etapa1Desde === 22 && s1.comisionPct === 5 && s1.etapa2Desde === 55 && s1.etapa2Pct === 10
@@ -5500,6 +5500,16 @@ console.log('\nLos socios comerciales (primera entrega)');
   ok(esVentaDe('', 'vendedor', '')({ creadoPor: '', socio: '' }) === false
      && esVentaDe('S-0001', 'socio', 'Daniela Rojas')({ creadoPor: 'Daniela Rojas', socio: '' }) === false,
      'un vendedor sin usuario ni nombre no calza con nada, y a un socio el nombre no le suma ventas creadas');
+  // **La comisión de lo ganado, para la tarjeta *Ganado*** (2026-11-26).
+  const cuentas = [{ usuario: 'carla', nombre: 'Carla', rol: 'vendedor', activo: true },
+    { usuario: 'felipe', nombre: 'Felipe', rol: 'vendedor', activo: true }];
+  const deTodos = comisionesPorCotizacion(pres, lineas, [], [vend], [], cuentas);
+  const soloCarla = comisionesPorCotizacion(pres, lineas, [], [vend], [], cuentas, { usuario: 'carla', nombre: 'Carla' });
+  ok(deTodos.A === deCarla.find((v) => v.id === 'A')!.comision && deTodos.B === deCarla.find((v) => v.id === 'B')!.comision
+     && deTodos.C === 999,
+     'la comisión de cada ganada es la de Vendedores: la de su ficha, o la congelada si ya se pagó');
+  ok(Object.keys(soloCarla).sort().join() === 'A,B',
+     'el vendedor ve solo la comisión de las suyas');
 }
 
 console.log('\nLos socios comerciales (segunda entrega)');
