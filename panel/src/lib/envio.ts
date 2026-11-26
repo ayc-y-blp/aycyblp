@@ -17,7 +17,7 @@
  *   que muestra NUEVOS para que al tiro pueden empezar el seguimiento"*.
  */
 import {
-  ESTADO_PRESUPUESTO, estadoNormal, estaMandada, estaVencido, folioDe, lineasDe, totalDe,
+  ESTADO_PRESUPUESTO, estadoNormal, estaMandada, estaVencido, folioDe, lineasDe, pasoElEvento, totalDe,
   type LineaPresupuesto, type Presupuesto
 } from './presupuestos.ts';
 import { grupoDe } from './cotizar.ts';
@@ -103,10 +103,10 @@ const EN_CARRERA = new Set<string>([ESTADO_PRESUPUESTO.candidato, ESTADO_PRESUPU
  * llegó; esta sección, que falta empezar.
  */
 export function esNuevaDelSitio(
-  p: Pick<Presupuesto, 'origen' | 'estado' | 'idReserva' | 'validoHasta'>, notasDelGrupo: number, hoy: Fecha
+  p: Pick<Presupuesto, 'origen' | 'estado' | 'idReserva' | 'validoHasta' | 'fecha'>, notasDelGrupo: number, hoy: Fecha
 ): boolean {
   return esDelSitio(p) && !String(p.idReserva ?? '').trim() && EN_CARRERA.has(estadoNormal(p.estado))
-    && !estaVencido(p, hoy) && notasDelGrupo === 0;
+    && !estaVencido(p, hoy) && !pasoElEvento(p, hoy) && notasDelGrupo === 0;
 }
 
 /**

@@ -18,7 +18,7 @@ import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { esFecha } from '@/lib/fechas';
 import { esExclusivo } from '@/lib/exclusivo';
 import {
-  lineasDe, reservaDesdePresupuesto, folioDe, estadoVisible, totalDe,
+  lineasDe, reservaDesdePresupuesto, folioDe, estadoVisible, pasoElEvento, totalDe,
   ESTADO_PRESUPUESTO
 } from '@/lib/presupuestos';
 import { hoy } from '@/lib/fechas';
@@ -93,8 +93,11 @@ export const POST = conLecturas([], async function POST(req: Request) {
       }, { status: 409 });
     }
     const visible = estadoVisible(p, hoy());
-    if (visible === 'Vencida' || visible === ESTADO_PRESUPUESTO.rechazado
-        || visible === ESTADO_PRESUPUESTO.noElegida) {
+    // **Una que se cayó sola al pasar su evento** (2026-11-26, `pasoElEvento()`)
+    // se ve perdida, pero no la marcó nadie: ganarla es lo de un evento pasado,
+    // que ya se miró arriba (la gerencia, pagos y el administrador).
+    if (!pasoElEvento(p, hoy()) && (visible === 'Vencida' || visible === ESTADO_PRESUPUESTO.rechazado
+        || visible === ESTADO_PRESUPUESTO.noElegida)) {
       return NextResponse.json({
         error: `Este presupuesto está ${visible.toLowerCase()}. `
              + 'Renueva su vigencia o vuelve a marcarlo antes de convertirlo.'

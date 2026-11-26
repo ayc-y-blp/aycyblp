@@ -678,9 +678,32 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   15 de 15 y `brasasdelopirque.cl/promociones.html` ya lo trae.
 - **La línea de cada reserva dice de dónde viene** (26-11-2026, lo pidió el
   cliente con una foto de la página del día): *🛒 Shopify · N°*, *✍ A mano ·
-  MANUAL-…* o *🤝 Cotización N° … · empresa · vendió … · socio …*. **En un PR, en preview
-  hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "La línea de cada reserva dice
+  MANUAL-…* o *🤝 Cotización N° … · empresa · vendió … · socio …*. **PR #374,
+  mergeado el 26-11-2026** con el *"mergea"* del cliente; `verificar.sh` dio 15
+  de 15 después. Ver `panel/CLAUDE.md`, "La línea de cada reserva dice
   de dónde viene".
+- ***✕ Se cayó…* al final de la fila** (26-11-2026, lo pidió el cliente): en la
+  fila de cada cotización y en la Agenda, después del N° y a la derecha; las
+  filas sin él dejan su lugar, así los montos quedan en columna. **En un PR, en
+  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`.
+- **Cada dato abre la cotización en su paso** (26-11-2026, lo pidió el
+  cliente: *"el botón sin confirmar el envío debería terminar en paso 4
+  envío, no en productos… preguntarme al tiro"*): ✉ abre el Envío con la
+  pregunta, también para la gerencia (*¿Ya se le mandó…?*); en una fila, la
+  fecha abre en Evento, el total en Productos y el estado, el 📞 o *falta
+  cobrar* en Envío; y los pendientes, la bandeja, la página del día y el aviso
+  al entrar abren en el paso de lo apretado (`lib/pasos.ts`). En el mismo PR
+  que *Se cayó* al final. Ver `panel/CLAUDE.md`, "Cada dato abre la cotización
+  en su paso".
+- **Se cae sola al día siguiente del evento** (26-11-2026, lo preguntó el
+  cliente y dijo *"sí, hazlo así"*): una cotización en carrera con día exacto,
+  sin ganar, se ve perdida con *se cayó: pasó el evento*; no se escribe nada y
+  vuelve sola si se le cambia el día (`pasoElEvento()`). **Y las filas de
+  cotizaciones van en columnas** (lo pidió el cliente: las pastillas 📞 y ✉,
+  centradas en una sola columna, como *Se cayó* a la derecha), **también en
+  Clientes** (✉ *sin confirmar el envío* en la columna central). En el mismo PR
+  #375, con la regla nueva *el mismo dato va en la misma columna* y su prueba,
+  `revisarColumnas()`. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
@@ -1836,6 +1859,11 @@ misma pasada.
 - **El espacio se usa bien** (22-11-2026): en el computador, lo que cabe en
   una fila no se apila. Lo mide `revisarEspacio()` dentro de `npm run
   ventanas`; una pantalla o vista nueva se agrega a `PANTALLAS`.
+- **En una lista, el mismo dato va en la misma columna** (26-11-2026): una
+  pastilla, un monto, un N° o un botón en la misma vertical en todas las
+  filas; cada fila deja su lugar aunque esté vacío. Lo mide
+  `revisarColumnas()` dentro de `npm run ventanas` (`data-columnas` /
+  `data-columna`).
 - **Los formularios van alineados** (21-11-2026): los nombres de los campos
   en una columna y los valores en otra, todos partiendo en la misma
   vertical; nunca un campo pegado a su nombre porque la palabra es más

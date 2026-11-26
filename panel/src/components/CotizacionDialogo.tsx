@@ -35,7 +35,7 @@ import CampoTelefono from './CampoTelefono';
 import { avisar, copiarConAviso } from './AvisoFlotante';
 import { normalizar } from '@/lib/columnas';
 import {
-  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, ESTADO_PRESUPUESTO, IVA,
+  cuentasDe, otrasEmpresas, coordinadasDe, totalDeLinea, folioDe, estadoVisible, pasoElEvento, ESTADO_PRESUPUESTO, IVA,
   DOCUMENTO, documentoDe, numeroONulo, montoONulo, estaMandada, totalDe, estadoNormal, lineasDe, type Documento, type Presupuesto, type LineaPresupuesto
 } from '@/lib/presupuestos';
 import {
@@ -255,10 +255,16 @@ function Elegir({ opciones, valor, onElegir, etiqueta }: {
 
 export default function CotizacionDialogo({
   presupuesto, lineasIniciales, fechaInicial, clienteInicial, datos, onCambio, onCerrar,
-  pasoInicial, onAbrir, alternativas = []
+  pasoInicial, preguntarEnvio, onAbrir, alternativas = []
 }: {
   /** En qué paso abrir. Por defecto, Productos si ya existe. */
   pasoInicial?: number;
+  /**
+   * **Abrir preguntando *¿La mandaste?*** (2026-11-26): la pastilla ✉ de una
+   * lista sin confirmar, para quien puede tocarla —su vendedor, y también la
+   * gerencia, pagos y el administrador—.
+   */
+  preguntarEnvio?: boolean;
   /**
    * Abrir otra cotización en esta misma ventana: una alternativa, o la que
    * se acaba de crear. La pantalla recarga y la abre ya guardada.
@@ -318,8 +324,11 @@ export default function CotizacionDialogo({
   const [notasAbiertas, setNotasAbiertas] = useState(false);
   /** El próximo contacto como quedó al anotar: la cotización abierta no se recarga. */
   const [recontactar, setRecontactar] = useState(p?.recontactar ?? '');
+  // Una que se cayó sola al pasar su evento (2026-11-26) se ve perdida, pero
+  // guarda su estado de siempre: así, si se le cambia el día, vuelve sola.
   const [estado, setEstado] = useState(
-    p ? (estadoVisible(p, datos.hoy) === 'Vencida' ? p.estado : estadoVisible(p, datos.hoy))
+    p ? (pasoElEvento(p, datos.hoy) ? (estadoNormal(p.estado) || ESTADO_PRESUPUESTO.borrador)
+      : estadoVisible(p, datos.hoy) === 'Vencida' ? p.estado : estadoVisible(p, datos.hoy))
       : ESTADO_PRESUPUESTO.borrador);
   const [motivo, setMotivo] = useState(p?.motivo ?? '');
   /**
@@ -538,13 +547,20 @@ export default function CotizacionDialogo({
    * mitad. Sale cada vez que la abre, hasta que diga que sí.
    */
   const [preguntaAlAbrir] = useState(() => !!presupuesto && puedeEditar
-    && esSuya(datos.usuario, presupuesto.creadoPor)
+    && (esSuya(datos.usuario, presupuesto.creadoPor) || !!preguntarEnvio)
     && !!porConfirmarDelGrupo(alternativas.length ? alternativas : [presupuesto], datos.lineas ?? [], datos.hoy));
+  /** La pregunta, a quien no la mandó (la gerencia, por su vendedor): *¿Ya se le mandó…?*. */
+  const preguntaDeOtro = !!presupuesto && !esSuya(datos.usuario, presupuesto.creadoPor);
   useEffect(() => { if (preguntaAlAbrir) setPreguntaEnvio('cotizacion'); }, [preguntaAlAbrir]);
   /** Revisar cobros es de quien hace los pagos, no de quien los anota. */
   const puedePagar = puede(datos.rol as Rol, 'pagar');
   const cliente = clientes.find((c) => c.id === idCliente);
   const fechaReal = sinFecha ? '' : fecha;
+  /**
+   * **Se cayó sola** (2026-11-26, `pasoElEvento()`): el evento pasó y no se
+   * ganó. Con el día que tiene ahora: si se le cambia, deja de estarlo.
+   */
+  const cayoSola = !!p && pasoElEvento({ estado, idReserva: p.idReserva, fecha: fechaReal }, datos.hoy);
   const publico = esFecha(fechaReal) && esDiaPublico(fechaReal, datos.fechas);
   /**
    * **El mínimo del show en un día privado** (2026-11-20): la misma regla del
@@ -1739,7 +1755,7 @@ export default function CotizacionDialogo({
    * quien puede tocarla: el vendedor la suya; pagos, la gerencia y el
    * administrador, todas.
    */
-  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva }) ? (
+  const botonSeCayo = p && puedeEditar && !cancelada && enCarrera({ estado, idReserva: p.idReserva, fecha: fechaReal }, datos.hoy) ? (
     <button type="button" disabled={guardando} onClick={() => setCayendo(true)}
       className="boton min-h-[52px] !border-2 !border-rojo-fuerte/60 !px-4 !text-[15px] !font-bold text-rojo-texto
                  hover:!border-rojo-fuerte hover:!text-rojo-texto lg:min-h-[44px]">
@@ -1912,6 +1928,13 @@ export default function CotizacionDialogo({
           </button>
         ))}
       </nav>
+      {cayoSola && (
+        <p className="mb-4 flex flex-wrap items-center gap-x-1.5 rounded-lg border-2 border-hueso/25 bg-hueso/5 px-3 py-2
+                      text-[15px] lg:mb-0 lg:py-1.5">
+          <strong>⌛ Se cayó sola:</strong> pasó el evento ({enCorto(fechaReal)}) sin ganarla.
+          <AyudaCorta tema="cayoSola" />
+        </p>
+      )}
 
       {/* ***🗒 Notas*** (2026-11-23, la agenda del vendedor): lo conversado
           con el cliente y cuándo volver a contactarlo, a la vista en los cinco
@@ -3708,7 +3731,7 @@ export default function CotizacionDialogo({
               la pregunta como título. Los botones van fuera, al pie. */}
           <div className={`mt-3 ${marcoGrupo('rosa')} p-3`}>
           <p className={TITULO_GRUPO}>
-            ¿Le mandaste {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
+            {preguntaDeOtro ? '¿Ya se le mandó' : '¿Le mandaste'} {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
             {cliente?.nombre ?? 'tu cliente'}?
           </p>
           {/* Al abrirla, sin haber apretado nada (2026-11-25): se dice por qué. */}
@@ -3779,7 +3802,7 @@ export default function CotizacionDialogo({
             </button>
             <button type="button" autoFocus disabled={guardando} onClick={() => void confirmarEnvio()}
               className="boton boton-relleno min-h-[52px] px-6 text-[16px]">
-              {preguntaEnvio === 'contrato' ? '✓ Sí, lo mandé' : '✓ Sí, la mandé'}</button>
+              {preguntaDeOtro ? '✓ Sí, ya se mandó' : preguntaEnvio === 'contrato' ? '✓ Sí, lo mandé' : '✓ Sí, la mandé'}</button>
           </div>
         </Dialogo>
       )}

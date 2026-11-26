@@ -17,7 +17,7 @@ import {
 import type { Cliente } from './clientes.ts';
 import type { FechaHabil } from './tipos.ts';
 import type { Config } from './config.ts';
-import { diaSemana } from './fechas.ts';
+import { diaSemana, esFecha } from './fechas.ts';
 
 /** El producto del catálogo que corresponde a una línea, si hay uno. */
 export function productoDe(concepto: string, catalogo: Menu[]): Menu | undefined {
@@ -615,8 +615,10 @@ export const ESTADOS_A_MANO: string[] = [
  * *Se cayó…* (`seCayo()`). Una ganada no: esa se cancela, porque ya tomó
  * cupo y puede haber plata que devolver.
  */
-export function enCarrera(p: Pick<Presupuesto, 'estado' | 'idReserva'>): boolean {
+export function enCarrera(p: Pick<Presupuesto, 'estado' | 'idReserva'> & { fecha?: string }, hoy?: string): boolean {
   if (p.idReserva) return false;
+  // Con `hoy`, una cuyo evento ya pasó se cayó sola (2026-11-26, `pasoElEvento()`).
+  if (hoy && esFecha(p.fecha) && p.fecha < hoy) return false;
   const e = estadoNormal(p.estado);
   return e === ESTADO_PRESUPUESTO.candidato || e === ESTADO_PRESUPUESTO.borrador
     || e === ESTADO_PRESUPUESTO.enviado || e === ESTADO_PRESUPUESTO.negociacion;

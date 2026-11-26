@@ -19,6 +19,7 @@
  *
  * El vendedor ve sus números: sin *Por vendedor*, y las tarjetas de lo suyo.
  */
+import { LISTA_FILAS } from './filaCotizacion';
 import { useMemo, useState, type ReactNode } from 'react';
 import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
@@ -279,7 +280,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         {filtro === 'agenda' ? verAgenda(agenda) : lista.length === 0 ? (
           <p className="rounded border border-dashed border-hueso/20 p-5 text-[15px] text-hueso/60">Ninguna calza.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className={LISTA_FILAS} data-columnas="lista">
             {lista.map((p) => {
               const detalle = (
                 <>
@@ -289,7 +290,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
                   {/* El día elegido para recontactarlo va como la pastilla 📞,
                       en la primera fila (2026-11-25): `fila` la pone. */}
                   {proximosPasos(p, ctx).filter((x) => !x.contacto).map((x) => (
-                    <span key={x.texto} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
+                    <span key={x.texto} data-paso={x.paso} className={TONO_PASO[x.tono]}>{x.texto}</span>))}
                 </>
               );
               return fila(p, detalle);

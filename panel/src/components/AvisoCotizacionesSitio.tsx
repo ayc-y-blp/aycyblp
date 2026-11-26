@@ -20,6 +20,7 @@
  * confirmarlas: no hay *Entendido* para ellas, porque lo que las saca es
  * confirmar. Se muestran cinco; las demás están en la Agenda y en la Lista.
  */
+import { PASO, linkACotizacion } from '@/lib/pasos';
 import { useState } from 'react';
 import Dialogo from './Dialogo';
 import FechaDia from './FechaDia';
@@ -72,8 +73,9 @@ export default function AvisoCotizacionesSitio({ avisos, sinConfirmar = [], onAb
   const abrir = async (id: string, delSitio: boolean) => {
     if (delSitio) await marcar([id]);
     cerrar();
+    // En el Envío: el seguimiento o confirmar que se mandó (2026-11-26, `lib/pasos.ts`).
     if (onAbrir) onAbrir(id);
-    else window.location.href = `/presupuestos?abrir=${encodeURIComponent(id)}`;
+    else window.location.href = linkACotizacion(id, PASO.envio);
   };
   const siLaMande = async (id: string) => {
     setConfirmando(id); setError('');

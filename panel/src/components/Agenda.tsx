@@ -209,15 +209,18 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
             <button type="button" disabled={enviando} className={BOTON}
               onClick={() => void cambiar({ estado: ESTADO_PRESUPUESTO.negociacion }, 'Pasó a Negociación')}>Está negociando</button>
           )}
-          {toca && enCarrera(p) && (
-            <button type="button" onClick={() => onCayo(p)}
-              className={`${BOTON} !border-2 !border-rojo-fuerte/50 font-semibold text-rojo-texto
-                         hover:!border-rojo-fuerte hover:!text-rojo-texto`}>✕ Se cayó…</button>
-          )}
           {/* Quien no anota (no es su vendedor ni la gerencia) posterga como antes. */}
           {toca && !anota && x.tipo === 'contactar' && x.motivo && x.motivo !== 'elegida' && x.motivo !== 'contratoSinFirmar' && (
             <button type="button" disabled={enviando} className={BOTON}
               onClick={() => void cambiar({ seguimiento: 'esperando' }, 'Te pregunto de nuevo más adelante')}>Sigue esperando</button>
+          )}
+          {/* **✕ Se cayó…, al final y a la derecha** (2026-11-26, lo pidió el
+              cliente para la fila de las cotizaciones: *"al final de la fila…
+              así queda más ordenado"*): el mismo lugar en la Agenda. */}
+          {toca && enCarrera(p) && (
+            <button type="button" onClick={() => onCayo(p)}
+              className={`${BOTON} ml-auto !border-2 !border-rojo-fuerte/50 font-semibold text-rojo-texto
+                         hover:!border-rojo-fuerte hover:!text-rojo-texto`}>✕ Se cayó…</button>
           )}
         </div>
       )}

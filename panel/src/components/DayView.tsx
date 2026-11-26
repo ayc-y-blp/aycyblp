@@ -5,6 +5,7 @@
  * El CSV se arma en el navegador con la misma función que prueba prueba.ts:
  * no hace falta un viaje al servidor para algo que ya está en pantalla.
  */
+import { PASO, pasoDelEstado, linkACotizacion } from '@/lib/pasos';
 import { usarAlDia, BarraAlDia } from './AlDia';
 import AyudaCorta from './AyudaCorta';
 import { LISTA_TARJETAS, SignoAbrir, marcoGrupo, marcoTarjeta, TITULO_GRUPO } from './TarjetaLista';
@@ -996,7 +997,8 @@ export default function DayView(
               </span>
               <div className="flex flex-wrap justify-end gap-2">
                 {idCotizacion ? (
-                  <a href={`/presupuestos?abrir=${encodeURIComponent(idCotizacion)}`}
+                  // Al Envío: los cobros de una ganada (2026-11-26, `lib/pasos.ts`).
+                  <a href={linkACotizacion(idCotizacion, PASO.envio)}
                     className="tecla boton boton-relleno min-h-[44px] whitespace-nowrap">
                     Abrir la cotización N° {folio} →
                   </a>
@@ -1549,7 +1551,7 @@ export default function DayView(
                         {' · '}{estadoVisible(f.p, cotizado.hoy).toLowerCase()}
                       </span>
                       <span className="flex-1" />
-                      <a href={`/presupuestos?abrir=${encodeURIComponent(f.p.id)}`} className="tecla boton">Abrir</a>
+                      <a href={linkACotizacion(f.p.id, pasoDelEstado(estadoVisible(f.p, cotizado.hoy)))} className="tecla boton">Abrir</a>
                     </li>
                   ))}
                 </ul>

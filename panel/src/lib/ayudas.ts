@@ -293,12 +293,19 @@ export const AYUDAS: Record<string, Ayuda> = {
       + '📝 Anotar el primer contacto: con la primera nota sale de ahí.',
       'Solo lo mandado cuenta como gente posible en los calendarios. Una cotización '
       + 'lista (con cliente y total) que no figura como mandada lleva ✉ ¿La mandaste?: '
-      + 'apriétalo y contéstalo. El panel también lo pregunta al abrirla y al entrar, '
-      + 'hasta que lo confirmes.',
+      + 'apriétalo, se abre en el paso 4 Envío y te lo pregunta. El panel también lo '
+      + 'pregunta al abrirla y al entrar, hasta que lo confirmes.',
+      'Cada dato de una fila abre la cotización en su paso: la fecha, en Evento; el '
+      + 'total, en Productos; el estado, falta cobrar o el 📞, en Envío; un contrato sin '
+      + 'volver, en Contrato. El nombre abre en Productos, como siempre.',
+      'El día después del evento, una cotización que no se ganó se cae sola: pasa a '
+      + 'Perdidas y vencidas con se cayó: pasó el evento. Si el evento cambió de día, '
+      + 'ponle el día nuevo y vuelve sola.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío. La '
       + 'gerencia, pagos y el administrador ven además ✉ N sin confirmar el envío: '
-      + 'las listas de otros vendedores que todavía no confirman que las mandaron.',
+      + 'las listas de otros vendedores que todavía no confirman que las mandaron. En '
+      + 'cada una, ✉ sin confirmar el envío la abre en Envío y pregunta si ya se mandó.',
       'Lo que viene · Semana · Mes, en el marco dorado del calendario: Lo que '
       + 'viene muestra desde esta semana, como siempre; Semana y Mes, con ◀ ▶, '
       + 'van también a las que pasaron, para revisar lo que se cotizó y se '
@@ -494,7 +501,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'día elegido para volver a contactarlos, el más cercano primero; abajo, '
       + 'los demás, de la A a la Z. El botón 📞 Por contactar deja solo los de arriba. '
       + 'Una cotización lista que todavía no figura como mandada lleva ✉ ¿La mandaste?: '
-      + 'apriétalo y contéstalo. Ese día sale en su línea, en ámbar '
+      + 'apriétalo, se abre en el paso 4 Envío y te lo pregunta. Ese día sale en su línea, en ámbar '
       + 'hasta ese día y en rojo desde ese día. Al abrir la ficha ves la última nota y, en '
       + 'cada cotización, su próximo contacto y 📝 Anotar: la misma ventanita de la '
       + 'cotización, con qué conversaron y cuándo volver a contactarlo. Si tiene '
@@ -1320,12 +1327,20 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Cada una es tuya, o, si llegó sin vendedor, de quien asigna (la gerencia, pagos y el administrador). En Clientes salen arriba, en 🆕 Nuevos.'
     ]
   },
+  cayoSola: {
+    titulo: '⌛ Se cayó sola',
+    texto: [
+      'El día después del evento, una cotización que no se ganó se cae sola: se ve como perdida, sale de En carrera, de la Agenda y de los avisos, y cuenta como perdida en la tasa de cierre. No se borra nada.',
+      'Si el evento se cambió de día, ponle el día nuevo: vuelve sola a como estaba.',
+      'Si el evento sí se hizo y se olvidó marcarla ganada, la gerencia, pagos o el administrador la pueden ganar igual.'
+    ]
+  },
   confirmarEnvio: {
     titulo: '✉ ¿La mandaste?',
     texto: [
       'Una cotización lista —con cliente y total— que todavía no figura como mandada. Solo lo mandado cuenta como gente posible en los calendarios.',
-      'Si ya se la mandaste (por WhatsApp, por correo, con el PDF o con el link), apriétala y contesta ✓ Sí, la mandé: pasa a Enviada y desde hoy corre su vigencia.',
-      'El panel también lo pregunta al volver de WhatsApp, del correo o de Ver el documento, al abrir la cotización y al entrar al panel, hasta que lo confirmes. A la gerencia, pagos y el administrador les sale como aviso: ✉ sin confirmar el envío.'
+      'Si ya se la mandaste (por WhatsApp, por correo, con el PDF o con el link), apriétala: se abre en el paso 4 Envío y te pregunta. Contesta ✓ Sí, la mandé: pasa a Enviada y desde hoy corre su vigencia.',
+      'El panel también lo pregunta al volver de WhatsApp, del correo o de Ver el documento, al abrir la cotización y al entrar al panel, hasta que lo confirmes. A la gerencia, pagos y el administrador les sale ✉ sin confirmar el envío: también se aprieta, abre el Envío y pregunta si ya se mandó.'
     ]
   },
   listaPorCobrar: {

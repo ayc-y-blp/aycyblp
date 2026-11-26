@@ -884,6 +884,8 @@ export function porVencer(
  */
 export function vencidoSinCerrar(p: Presupuesto, hoy: Fecha): boolean {
   if (String(p.idReserva ?? '').trim()) return false;
+  // Pasado su evento, ya se cayó sola (2026-11-26): no queda nada que cerrar.
+  if (pasoElEvento(p, hoy)) return false;
   if (ESTADOS_CERRADOS.includes(estadoNormal(p.estado))) return false;
   return estaVencido(p, hoy);
 }
@@ -934,7 +936,39 @@ export function cuentaComoPosible(p: Presupuesto, hoy: Fecha): boolean {
   if (String(p.idReserva ?? '').trim()) return false;
   const e = estadoNormal(p.estado);
   if (e === ESTADO_PRESUPUESTO.rechazado || e === ESTADO_PRESUPUESTO.noElegida) return false;
+  if (pasoElEvento(p, hoy)) return false;
   return !estaVencido(p, hoy);
+}
+
+/**
+ * **Se cae sola al día siguiente del evento** (2026-11-26, lo pidió el
+ * cliente: *"la cotización debería caer automáticamente a se cayó un día
+ * después del día del evento de la cotización"*, y dijo *"sí, hazlo así"* a
+ * hacerlo como *Vencida*: se deduce, no se escribe).
+ *
+ * Una cotización **en carrera** —candidato, borrador, enviada o en
+ * negociación—, sin reserva y con día exacto, cuyo evento ya pasó. **No se
+ * escribe nada en la planilla**, ni hay una tarea diaria: se ve como
+ * perdida (`estadoVisible()`), con *pasó el evento* de motivo
+ * (`motivoVisible()`), sale de lo que está en carrera, de la agenda y de los
+ * avisos, y cuenta como perdida en la tasa de cierre. **Si se le cambia el
+ * día, vuelve sola.** Ganarla igual (el evento sí se hizo) lo puede la
+ * gerencia, pagos y el administrador, como siempre con un evento pasado.
+ */
+export function pasoElEvento(
+  p: Pick<Presupuesto, 'estado' | 'idReserva' | 'fecha'>, hoy: Fecha
+): boolean {
+  if (String(p.idReserva ?? '').trim()) return false;
+  const e = estadoNormal(p.estado) || ESTADO_PRESUPUESTO.borrador;
+  const enCarrera = e === ESTADO_PRESUPUESTO.candidato || e === ESTADO_PRESUPUESTO.borrador
+    || e === ESTADO_PRESUPUESTO.enviado || e === ESTADO_PRESUPUESTO.negociacion;
+  return enCarrera && esFecha(p.fecha) && p.fecha < hoy;
+}
+
+/** El motivo para mostrar: el que se escribió, o *pasó el evento* si se cayó sola. */
+export const MOTIVO_PASO_EL_EVENTO = 'pasó el evento';
+export function motivoVisible(p: Pick<Presupuesto, 'estado' | 'idReserva' | 'fecha' | 'motivo'>, hoy: Fecha): string {
+  return String(p.motivo ?? '').trim() || (pasoElEvento(p, hoy) ? MOTIVO_PASO_EL_EVENTO : '');
 }
 
 /**
@@ -954,6 +988,9 @@ export function estadoVisible(p: Presupuesto, hoy: Fecha): string {
   if (e === ESTADO_PRESUPUESTO.cancelada) return e;
   if (String(p.idReserva ?? '').trim()) return ESTADO_PRESUPUESTO.aceptado;
   if (e === ESTADO_PRESUPUESTO.rechazado || e === ESTADO_PRESUPUESTO.noElegida) return e;
+  // **Pasado el evento, se cayó sola** (2026-11-26): antes que *Vencida*,
+  // porque dice más. Se ve como perdida, que es lo que deja *✕ Se cayó…*.
+  if (pasoElEvento(p, hoy)) return ESTADO_PRESUPUESTO.rechazado;
   if (estaVencido(p, hoy)) return 'Vencida';
   return e || ESTADO_PRESUPUESTO.borrador;
 }

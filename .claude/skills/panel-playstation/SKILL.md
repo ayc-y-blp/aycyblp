@@ -62,6 +62,12 @@ con buscador (*Por un socio…*). Nunca un botón por persona.
   su porqué. En el celular las filas se apilan a propósito.
 - Antes de cerrar un cambio en una tarjeta, se mira **una fila con tarjetas
   llenas y vacías juntas**.
+- **En una lista, el mismo dato va en la misma columna en todas las filas**:
+  una pastilla, un monto, un N° o un botón quedan en la misma vertical
+  —centrados o al borde—, mida lo que mida el nombre de al lado. Para eso cada
+  fila deja su lugar aunque esté vacío (una grilla con columnas compartidas,
+  como `subgrid`). Lo mide una prueba que compara la posición del mismo dato
+  entre filas; una lista nueva marca sus columnas en el mismo cambio.
 
 ## 5. Los formularios van alineados
 

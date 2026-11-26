@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija, revisarColumnas } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -87,6 +87,13 @@ export const ALINEACION_ACEPTADA = {
  * texto, un trozo del hallazgo.
  */
 export const ESPACIO_ACEPTADO = {
+  // *✕ Se cayó…* al final de la fila (2026-11-26, lo pidió el cliente): la fila
+  // de una cotización lleva debajo, a propósito, el renglón del detalle (el
+  // vendedor, la empresa, el tipo). Es el segundo renglón de la misma fila, no
+  // una fila suelta: subirlo al lado del N° la desordena.
+  'cotizaciones-lista': ['"✕ Se cayó…" y debajo'],
+  'cotizaciones-lista-todo': ['"✕ Se cayó…" y debajo'],
+  'cotizaciones-lista-recontactar': ['"✕ Se cayó…" y debajo']
 };
 
 /**
@@ -158,6 +165,14 @@ const ir = async (ruta) => { await p.goto(URL_PANEL + ruta, { waitUntil: 'networ
 const clic = async (loc, n = 0) => { await loc.nth(n).click(); await p.waitForTimeout(800); };
 const boton = (name, exact = false) => p.getByRole('button', { name, exact });
 const ventana = () => p.locator('[role=dialog]').last();
+// **Abrir una cotización por su nombre, como siempre** (2026-11-26): la fila es
+// un solo botón, pero cada dato abre en su paso (la fecha en Evento, el total
+// en Productos…, `pasoDelClic()`). Se aprieta en la esquina, donde va el
+// nombre: abre en Productos, que es lo que las escenas esperan.
+const abrirCotizacion = async (nombre) => {
+  await p.getByRole('button', { name: `Abrir la cotización de ${nombre}` }).first().click({ position: { x: 6, y: 6 } });
+  await p.waitForTimeout(800);
+};
 // Una tarjeta que se abre, no un botón que abre un buscador (*👤 Por
 // vendedor…* lleva `aria-haspopup`, 2026-11-25): si no, la escena abría el
 // buscador de Clientes en vez de la primera ficha.
@@ -169,7 +184,7 @@ const diaDe = async (ruta, dia) => {
 };
 const lineaDelDia = () => clic(ventana().locator('button[aria-expanded="false"]'));
 const cotizacion = async (paso) => {
-  await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await clic(p.getByRole('button', { name: 'Abrir la cotización de Andrés Pino' }));
+  await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await abrirCotizacion('Andrés Pino');
   await p.waitForTimeout(1400);
   if (paso) await clic(ventana().getByRole('button', { name: paso }));
 };
@@ -328,7 +343,7 @@ export const ESCENAS = {
   'v-cotizar-2-evento-candidato': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/));
     await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Felipe Ortúzar' }));
+    await abrirCotizacion('Felipe Ortúzar');
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Evento/ }));
   },
   'v-cotizar-2-evento': () => cotizacion(/Evento/),
@@ -367,25 +382,36 @@ export const ESCENAS = {
     // Su evento es en diciembre y la Lista abre en el mes en curso (2026-11-22): a *Todo*.
     await ir('/presupuestos'); await clic(boton(/📋 Lista/));
     await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
+    await abrirCotizacion('Marisol Cáceres');
     await p.waitForTimeout(1400); await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Copiar link' }));
   },
   // **✉ ¿La mandaste?, desde la lista** (2026-11-25): la pastilla de una lista
-  // sin confirmar abre la pregunta sin abrir la cotización. Como Daniela, que
-  // hizo la de Marisol Cáceres; la ventana que avisa al entrar se cierra antes.
+  // sin confirmar. Desde el 2026-11-26 abre la cotización en el paso 4 y
+  // pregunta al tiro. Como Daniela, que hizo la de Marisol Cáceres; la
+  // ventana que avisa al entrar se cierra antes.
   'v-confirmar-envio': () => comoVendedora(async () => {
     await ir('/presupuestos'); await clic(p.getByRole('button', { name: 'Después' }));
     await clic(boton(/📋 Lista/));
     await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
-    await clic(p.locator('button:visible[aria-label="¿Le mandaste la cotización a Marisol Cáceres?"]'));
+    await clic(p.locator('button:visible[aria-label^="¿Le mandaste la cotización a Marisol Cáceres?"]'));
+    await p.getByRole('dialog', { name: '¿La mandaste?' }).waitFor();
   }),
+  // **Y la gerencia, por su vendedor** (2026-11-26, lo pidió el cliente: el
+  // aviso *sin confirmar el envío* no hacía nada): como el administrador, la
+  // misma pastilla abre el Envío y pregunta *¿Ya se le mandó…?*.
+  'v-confirmar-envio-de-otro': async () => {
+    await ir('/presupuestos'); await clic(boton(/📋 Lista/));
+    await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
+    await clic(p.locator('button:visible[aria-label^="¿Ya se le mandó la cotización a Marisol Cáceres?"]'));
+    await p.getByRole('dialog', { name: '¿La mandaste?' }).waitFor();
+  },
   // **Y al abrirla** (2026-11-25): la misma pregunta sale sola.
   'v-pregunta-al-abrir': () => comoVendedora(async () => {
     await ir('/presupuestos'); await clic(p.getByRole('button', { name: 'Después' }));
     await clic(boton(/📋 Lista/));
     await clic(p.getByRole('group', { name: 'Periodo' }).getByRole('button', { name: 'Todo' }));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Marisol Cáceres' }));
+    await abrirCotizacion('Marisol Cáceres');
     await p.getByRole('dialog', { name: '¿La mandaste?' }).waitFor();
   }),
   // **¿Se cayó?** (2026-11-22): la ventanita de *✕ Se cayó…*, abierta desde
@@ -408,13 +434,13 @@ export const ESCENAS = {
   }),
   'v-cotizar-corregir-ganada': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await todoElPeriodo(); await clic(boton(/^Ganadas/));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
+    await abrirCotizacion('Gonzalo Contreras'); await p.waitForTimeout(1400);
     await clic(ventana().getByRole('button', { name: /Envío/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Corregir la ganada' }));
   },
   'v-cotizar-cancelar-evento': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await todoElPeriodo(); await clic(boton(/^Ganadas/));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
+    await abrirCotizacion('Gonzalo Contreras'); await p.waitForTimeout(1400);
     // *Cancelar evento* va en el pie del paso 5, Contrato.
     await clic(ventana().getByRole('button', { name: /Contrato/ }));
     await clic(ventana().locator('button:visible', { hasText: 'Cancelar evento' }));
@@ -424,7 +450,7 @@ export const ESCENAS = {
   // lista de lo que cambia, con su casilla. No guarda nada: solo la abre.
   'v-cotizar-ganada-dia-cerrado': async () => {
     await ir('/presupuestos'); await clic(boton(/📋 Lista/)); await todoElPeriodo(); await clic(boton(/^Ganadas/));
-    await clic(p.getByRole('button', { name: 'Abrir la cotización de Gonzalo Contreras' })); await p.waitForTimeout(1400);
+    await abrirCotizacion('Gonzalo Contreras'); await p.waitForTimeout(1400);
     await clic(ventana().getByRole('button', { name: /Evento/ }));
     await ventana().locator('input[type=date]').fill('2026-11-07'); await p.waitForTimeout(400);
     await clic(ventana().getByRole('button', { name: /Productos/ }));
@@ -578,6 +604,13 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
     const h = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
     console.log(`  ${h.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${h.length ? '\n           · ' + h.join('\n           · ') : ''}`);
     if (h.length) fallas.push(`espacio · ${nombre}`);
+    // **El mismo dato, en la misma columna** (2026-11-26, regla del cliente):
+    // en toda pantalla que tenga una lista marcada con `data-columnas`.
+    const c = await revisarColumnas(p);
+    if (c.length) {
+      console.log(`  FALLA  columnas · ${nombre}\n           · ${c.join('\n           · ')}`);
+      fallas.push(`columnas · ${nombre}`);
+    }
   }
 }
 // **Los botones fijos de Cotizaciones no bajan** (2026-11-25): como Daniela,
@@ -602,6 +635,9 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
         const e = (await revisarEspacio(p)).filter((x) => !(ESPACIO_ACEPTADO[nombre] ?? []).some((a) => x.includes(a)));
         console.log(`  ${e.length ? 'FALLA ' : 'ok     '} espacio · ${nombre}${e.length ? '\n           · ' + e.join('\n           · ') : ''}`);
         if (e.length) fallas.push(`espacio · ${nombre}`);
+        const c = await revisarColumnas(p);
+        console.log(`  ${c.length ? 'FALLA ' : 'ok     '} columnas · ${nombre}${c.length ? '\n           · ' + c.join('\n           · ') : ''}`);
+        if (c.length) fallas.push(`columnas · ${nombre}`);
       }
     });
   }
