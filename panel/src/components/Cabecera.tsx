@@ -42,7 +42,7 @@ export default function Cabecera({ rol, usuario, gerencia = false, rolReal = '',
   otras?: { id: string; nombre: string }[];
   /** Solo en una versión de prueba: las empresas entre las que se elige al entrar. */
   elegir?: { id: string; nombre: string }[];
-  /** Si los comentarios están conectados a su planilla (`COMENTARIOS_SHEET_ID`). */
+  /** Si se dibuja 💬 Comentar (desde el 2026-11-26, siempre: viven en la planilla del panel). */
   conComentar?: boolean;
   /** 'admin' si es un administrador mirando como otro rol ("ver como"). */
   rolReal?: string;

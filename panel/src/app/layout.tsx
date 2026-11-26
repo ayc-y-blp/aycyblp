@@ -25,8 +25,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const sesion = await leerSesion(
     cookieDe(headers().get('cookie'), COOKIE_SESION), secretoDeSesion(process.env)
   );
-  // El botón 💬 Comentar aparece recién cuando hay planilla donde anotar.
-  const conComentar = !!process.env.COMENTARIOS_SHEET_ID?.trim();
+  // **El botón 💬 Comentar, siempre** (2026-11-26): los comentarios pasaron a
+  // la planilla del panel, así que hay dónde anotarlos en producción y en
+  // cada versión de prueba. Antes aparecía solo con `COMENTARIOS_SHEET_ID`.
+  const conComentar = true;
   // **De qué empresa es esta dirección** (2026-11-23, Fase 5), y a cuáles
   // puede pasar la cuenta. Con una sola empresa encendida no se dibuja nada.
   const encendidas = empresasEncendidas(process.env);

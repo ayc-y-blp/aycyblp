@@ -24,6 +24,8 @@ import Dialogo from './Dialogo';
 import ElegirFecha from './ElegirFecha';
 import BuscarEnLista from './BuscarEnLista';
 import { FiltroConBuscador } from './BotonPorVendedor';
+import ComentariosVista from './ComentariosVista';
+import { BOTON_VISTA } from './filaCotizacion';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO, LISTA_TARJETAS } from './TarjetaLista';
 import {
   ESTADO_TAREA, estaAbierta, estaAtrasada, leToca, laMande, esParaMi, rolDelDestino, puedeHacer, destinoDelEnlace,
@@ -56,6 +58,19 @@ export default function TareasVista() {
   const [error, setError] = useState('');
   const [nueva, setNueva] = useState(false);
   const [persona, setPersona] = useState('');
+  // **Tareas o comentarios** (2026-11-26): los comentarios de 💬 se ven acá,
+  // como la segunda vista. `?ver=comentarios` abre en ellos (el aviso de la portada).
+  const [ver, setVer] = useState<'tareas' | 'comentarios'>('tareas');
+  const [avisosComentarios, setAvisosComentarios] = useState(0);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('ver') === 'comentarios') setVer('comentarios');
+  }, []);
+  const cambiarVista = (v: 'tareas' | 'comentarios') => {
+    setVer(v);
+    const u = new URL(window.location.href);
+    if (v === 'comentarios') u.searchParams.set('ver', 'comentarios'); else u.searchParams.delete('ver');
+    window.history.replaceState(null, '', u.toString());
+  };
 
   const cargar = async () => {
     try {
@@ -114,8 +129,8 @@ export default function TareasVista() {
         <button type="button" onClick={() => setNueva(true)} className="boton boton-relleno min-h-[44px] px-4">
           📋 Nueva tarea
         </button>
-        {d.venTodas && (
-          <div className="lg:ml-auto">
+        {d.venTodas && ver === 'tareas' && (
+          <div>
             <FiltroConBuscador texto="👤 Por persona…" icono="👤" elegido={persona} nombre={elegida?.nombre}
               cuantos={elegida ? base.length : undefined}
               opciones={d.personas.map((p) => ({ id: p.usuario, nombre: p.nombre,
@@ -124,8 +139,23 @@ export default function TareasVista() {
               etiqueta="Buscar persona" vacia="No hay cuentas activas." />
           </div>
         )}
+        {/* Los botones que cambian de vista, al extremo derecho y con el marco de la vista (regla de coherencia). */}
+        <div className="flex gap-2 lg:ml-auto" role="group" aria-label="Qué ver">
+          <button type="button" aria-pressed={ver === 'tareas'} onClick={() => cambiarVista('tareas')}
+            className={`${BOTON_VISTA} px-3 ${ver === 'tareas' ? '!bg-oro/25' : ''}`}>📋 Tareas</button>
+          <button type="button" aria-pressed={ver === 'comentarios'} onClick={() => cambiarVista('comentarios')}
+            className={`${BOTON_VISTA} px-3 ${ver === 'comentarios' ? '!bg-oro/25' : ''}`}>
+            💬 Comentarios{avisosComentarios > 0 && (
+              <span className="ml-1.5 rounded-full bg-rojo-fuerte px-2 text-[13px] text-white">{avisosComentarios}</span>
+            )}
+          </button>
+        </div>
       </div>
       {error && <p className="text-[15px] text-rojo-texto">{error}</p>}
+
+      {/* Los comentarios se montan siempre (escondidos en la vista de tareas) para contar sus avisos. */}
+      <div hidden={ver !== 'comentarios'}><ComentariosVista onAvisos={setAvisosComentarios} /></div>
+      {ver === 'tareas' && <>
 
       <Grupo titulo={elegida ? `Le toca a ${elegida.nombre}` : 'Para ti'} icono="👉" tono="cielo"
         lista={paraTi} vacia="No tienes nada pendiente." tarjetas={tarjetas} />
@@ -148,6 +178,8 @@ export default function TareasVista() {
           <div className="mt-2">{tarjetas(cerradas)}</div>
         </details>
       )}
+
+      </>}
 
       {nueva && (
         <NuevaTarea d={d} onCerrar={() => setNueva(false)}

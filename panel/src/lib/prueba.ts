@@ -23,6 +23,7 @@ import { aReserva, estadoDe, telefonoDe, emailDe, nombreDe, personasDe, menuDe,
          type PedidoShopify } from './shopify.ts';
 import * as Caida from './caida.ts';
 import * as T from './tareas.ts';
+import * as CM from './comentarios.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
@@ -5639,7 +5640,7 @@ console.log('\nTus poderes');
 
 console.log('\nLos comentarios del equipo');
 {
-  const { limpiarComentario, filaComentario, COLUMNAS_COMENTARIOS } = await import('./comentarios.ts');
+  const { limpiarComentario, filaComentario, ENCABEZADO_COMENTARIOS } = await import('./comentarios.ts');
   ok('error' in limpiarComentario({ tipo: 'otro', texto: 'x' }) && 'error' in limpiarComentario({ tipo: '💡 Idea', texto: '   ' })
      && 'error' in limpiarComentario(null),
      'sin una de las cuatro clases o sin texto, no se manda');
@@ -5648,9 +5649,9 @@ console.log('\nLos comentarios del equipo');
      'el texto se corta en 2000 caracteres y se limpia');
   if ('comentario' in l) {
     const f = filaComentario(l.comentario, { nombre: 'Camila', rol: 'Anfitrión' }, '2026-11-12 10:30');
-    ok(f.length === COLUMNAS_COMENTARIOS.length && f[0] === '2026-11-12 10:30' && f[1] === 'Anfitrión'
+    ok(f.length === ENCABEZADO_COMENTARIOS.length && f[0] === '2026-11-12 10:30' && f[1] === 'Anfitrión'
        && f[2] === 'Camila' && f[3] === '🧩 Me falta' && f[4] === 'Recepción' && f[7] === 'Nuevo' && f[8] === '',
-       'la fila calza con las once columnas de la planilla del testeo y nace en Nuevo');
+       'la fila calza con las once columnas del testeo (y las del panel al final) y nace en Nuevo');
   }
 }
 
@@ -8295,6 +8296,28 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   const orden = T.ordenarTareas([{ ...base, id: 'b', plazo: '' }, { ...base, id: 'a' }, { ...base, id: 'c', estado: 'Hecha' }], hoyT);
   ok(orden.map((x) => x.id).join() === 'a,b,c', 'atrasadas primero, sin plazo después, cerradas al final');
   ok(T.destinoDelEnlace('dia:2026-11-28')?.href === '/dia/2026-11-28', 'el enlace a un día');
+}
+
+{
+  console.log('\nLos comentarios, en la planilla del panel (2026-11-26)');
+  const enc = CM.ENCABEZADO_COMENTARIOS;
+  ok(enc.slice(0, 11).join() === CM.COLUMNAS_COMENTARIOS.join(), 'las once columnas del testeo van primero y en su orden');
+  const base: Omit<CM.ComentarioGuardado, 'fila'> = { id: 'C-1', fecha: '2026-11-26 10:00', rol: 'Vendedor', nombre: 'Jorge',
+    tipo: '💡 Idea', donde: 'Cotizaciones', texto: 'Algo', para: '', estado: 'Nuevo', prioridad: '', respuesta: '', resuelto: '',
+    respondidoPor: '', vista: '', tarea: '' };
+  const vuelta = CM.leerComentariosDe([enc, CM.filaDeComentario(enc, { ...base, respuesta: 'Listo' })])[0];
+  ok(vuelta.id === 'C-1' && vuelta.respuesta === 'Listo' && vuelta.fila === 2, 'ida y vuelta por la planilla, por nombre de columna');
+  // Una fila de Gran Testeo: once columnas, sin ID.
+  const vieja = CM.leerComentariosDe([[...CM.COLUMNAS_COMENTARIOS], ['2026-11-01 09:00', 'Vendedor', 'Jorge', '🐞 Algo falla', 'X', 'Se cae', '', '', '', '', '']])[0];
+  ok(vieja.id === 'fila-2' && vieja.estado === 'Nuevo', 'una fila de antes, sin ID ni estado, se lee igual: Nuevo');
+  const lista = [{ ...base, fila: 2 }, { ...base, id: 'C-2', nombre: 'Tomás', respuesta: 'Sí', fila: 3 }];
+  ok(CM.comentariosVisibles(lista, 'vendedor', 'jorge').length === 1 && CM.comentariosVisibles(lista, 'gerencia', 'x').length === 2,
+     'cada uno los suyos; la gerencia y el administrador, todos');
+  ok(CM.avisosDeComentarios(lista, 'admin', 'Tomás').nuevos === 2 && CM.avisosDeComentarios(lista, 'vendedor', 'Tomás').respuestas === 1
+     && CM.avisosDeComentarios(lista, 'vendedor', 'Tomás').nuevos === 0, 'los avisos: nuevos para quien los trabaja, respuestas sin ver para cada uno');
+  ok(CM.comentariosPorTraer([vieja, { ...vieja, texto: 'Otro' }], [{ ...vieja, id: 'C-9' }]).length === 1,
+     'traer de Gran Testeo no duplica lo que ya está');
+  ok(CM.ordenarComentarios([{ ...base, estado: 'Resuelto', fila: 2 }, { ...base, fila: 3 }])[0].estado === 'Nuevo', 'los nuevos primero');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
