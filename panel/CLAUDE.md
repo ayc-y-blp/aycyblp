@@ -234,6 +234,26 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## La línea de cada reserva dice de dónde viene (2026-11-26)
+
+Lo pidió el cliente con una foto de la página del día (*Diego Zapata ·
+MANUAL-1795…*, *Daniel Segura · 19083510284345*): *"aquí debería decir, aparte
+del número de pedido, por palabra que llega de Shopify, espacio hay
+suficiente… o de cotización de tal persona, tal empresa… y también el
+vendedor"*.
+
+- **Bajo el nombre de cada reserva** (cerrada o abierta), la palabra del filtro
+  de origen (`QUE_RESERVAS`): ***🛒 Shopify · 1908…***, ***✍ A mano ·
+  MANUAL-…*** o ***🤝 Cotización N° 693616 · Aguas Andinas · vendió Carmen***.
+  La persona es el nombre de la reserva (el de la cotización), así que no se
+  repite.
+- **En trozos que bajan enteros** en el celular: *🛒 Shopify* y su número no se
+  parten a la mitad; la empresa y el vendedor se doblan si hace falta.
+- **La empresa del cliente** viaja en `/api/reservas` como `empresaDeReserva`
+  (`Clientes` se sumó a la tanda: la ruta sigue en una lectura). No se recorta
+  por rol, igual que en las cotizaciones.
+- **Ningún permiso ni columna nueva.** Ninguna ayuda describía esa línea.
+
 ## Confirmar el envío y las nuevas del sitio (2026-11-25)
 
 Lo pidió el cliente en dos mensajes del mismo día. Con la foto de la N° 693616,
