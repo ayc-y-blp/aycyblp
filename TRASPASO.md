@@ -684,8 +684,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   de dónde viene".
 - ***✕ Se cayó…* al final de la fila** (26-11-2026, lo pidió el cliente): en la
   fila de cada cotización y en la Agenda, después del N° y a la derecha; las
-  filas sin él dejan su lugar, así los montos quedan en columna. **En un PR, en
-  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`.
+  filas sin él dejan su lugar, así los montos quedan en columna. Ver
+  `panel/CLAUDE.md`.
+- **PR #375, mergeado el 26-11-2026** con el *"luego mergea"* del cliente;
+  `verificar.sh` dio 15 de 15 después. Trajo *Se cayó* al final, cada dato
+  abre la cotización en su paso, *se cae sola* al día siguiente del evento,
+  las filas de Cotizaciones y Clientes en columnas y la regla nueva *el mismo
+  dato va en la misma columna* con `revisarColumnas()` (abajo).
 - **Cada dato abre la cotización en su paso** (26-11-2026, lo pidió el
   cliente: *"el botón sin confirmar el envío debería terminar en paso 4
   envío, no en productos… preguntarme al tiro"*): ✉ abre el Envío con la
