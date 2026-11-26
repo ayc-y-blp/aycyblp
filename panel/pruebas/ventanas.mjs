@@ -588,7 +588,22 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length) {
   console.log(`  ${desparejas.length ? 'FALLA ' : 'ok     '} calendario: las tarjetas de cada fila${desparejas.length ? '\n           · ' + desparejas.join('\n           · ') : ', parejas por dentro'}`);
   if (desparejas.length) fallas.push('calendario');
   for (const [nombre, ruta] of [['calendario', null], ['cotizaciones', '/presupuestos']]) {
-    if (ruta) await ir(ruta);
+    if (ruta) {
+      // **Lo cotizado, a la misma altura** (2026-11-26): también en un día sin
+      // cupo. Los días cotizados del ejemplo están abiertos, así que se les saca
+      // la ocupación: quedan sin abrir, al lado de un día con su barra.
+      const sinAbrir = async (r) => {
+        const d = await (await r.fetch()).json();
+        d.ocupacion = (d.ocupacion ?? []).filter((o) => !o.presupuestos);
+        await r.fulfill({ json: d });
+      };
+      await p.route('**/api/ocupacion*', sinAbrir);
+      await ir(ruta);
+      await p.unroute('**/api/ocupacion*', sinAbrir);
+      const parejas = await revisarTarjetasParejas(p);
+      console.log(`  ${parejas.length ? 'FALLA ' : 'ok     '} ${nombre}: lo cotizado de cada fila${parejas.length ? '\n           · ' + parejas.join('\n           · ') : ', a la misma altura'}`);
+      if (parejas.length) fallas.push(`${nombre} · tarjetas parejas`);
+    }
     const dobladas = await revisarLineaDeLaFecha(p);
     console.log(`  ${dobladas.length ? 'FALLA ' : 'ok     '} ${nombre}: la línea de la fecha${dobladas.length ? '\n           · ' + dobladas.join('\n           · ') : ', en una línea con hoy exclusivo'}`);
     if (dobladas.length) fallas.push(`${nombre} · línea de la fecha`);

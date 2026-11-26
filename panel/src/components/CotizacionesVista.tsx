@@ -601,7 +601,18 @@ export default function CotizacionesVista() {
     return { lunes, dias };
   }).filter((c) => c.dias.length > 0);
 
-  const tarjeta = (f: string) => {
+  /**
+   * **Lo cotizado, siempre a la misma altura** (2026-11-26, lo pidió el
+   * cliente con una foto: *"deja la info de cotización siempre en la misma
+   * altura pese a que falte aún el cupo y ocupación, encima de cotizar el
+   * día"*). Un día sin abrir no tiene lo reservado ni su barra, y sus
+   * pastillas subían hasta la fecha, más arriba que en la tarjeta de al lado.
+   * Ahora, **si algún día de la semana tiene cupo**, los que no lo tienen
+   * dejan ese lugar vacío (`reservarCupo`), del mismo alto. En una semana sin
+   * ningún cupo no se reserva nada. Solo con tarjetas lado a lado (desde
+   * `sm`): en el celular van una debajo de la otra.
+   */
+  const tarjeta = (f: string, reservarCupo = false) => {
     const delDia = agrupar(porDia.get(f) ?? []);
     const vivas = delDia.filter((p) => cuentaComoPosible(p, hoy));
     /**
@@ -629,7 +640,7 @@ export default function CotizacionesVista() {
          (`FechaDia`), lo reservado en grande con la misma barra (`BarraDia`)
          y el botón en un pie separado por una línea. Encima de eso, lo que es
          propio de Cotizaciones: las pastillas de lo cotizado. */
-      <div key={f} className={`flex h-full min-w-0 flex-col rounded border p-4 lg:px-2 lg:py-2.5 ${occ ? COLOR_TARJETA(occ) : 'border-hueso/15 bg-panel'}
+      <div key={f} data-tarjeta className={`flex h-full min-w-0 flex-col rounded border p-4 lg:px-2 lg:py-2.5 ${occ ? COLOR_TARJETA(occ) : 'border-hueso/15 bg-panel'}
         ${abiertaEsta ? 'ring-2 ring-oro' : ''} ${f === hoy ? MARCO_HOY : ''}`}>
         <button type="button" onClick={() => setDiaAbierto(abiertaEsta ? null : f)}
           aria-expanded={abiertaEsta}
@@ -655,10 +666,18 @@ export default function CotizacionesVista() {
               <BarraDia d={occ} className="mt-2.5 lg:mt-1.5" />
             </span>
           )}
+          {!(occ && occ.capacidad > 0) && reservarCupo && (
+            <span aria-hidden data-cupo-vacio className="invisible hidden sm:block">
+              <span className="block text-[26px] font-bold leading-none lg:text-[22px]">
+                0<span className="ml-1.5 text-[13px] font-medium">reservadas</span>
+              </span>
+              <span className="mt-2.5 block h-3 lg:mt-1.5" />
+            </span>
+          )}
           {/* **Todo lo cotizado en pastillas**, con la misma forma que la
               portada y Turnos (`Pastilla.tsx`, 2026-11-13): la gente posible
               va en su pastilla rosada, no como texto suelto debajo. */}
-          <span className="flex flex-wrap gap-1.5">
+          <span data-pareja="cotizado" className="flex flex-wrap gap-1.5">
             <PastillaCotizado cotizaciones={mandadas.length} posibles={posibles} />
             {ganadas > 0 && <Pastilla tipo="ganada">✓ {ganadas} ganada{ganadas === 1 ? '' : 's'}</Pastilla>}
             {porSeguirDia > 0 && <Pastilla tipo="alerta">! contactar hoy</Pastilla>}
@@ -954,7 +973,7 @@ export default function CotizacionesVista() {
                 {c.lunes === inicio && <MarcaAhora>esta semana</MarcaAhora>}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-2 xl:grid-cols-5">
-                {c.dias.map(tarjeta)}
+                {c.dias.map((f) => tarjeta(f, c.dias.some((d) => (ocupacion.get(d)?.capacidad ?? 0) > 0)))}
               </div>
               {franjaDelDia(c.dias)}
             </div>

@@ -117,6 +117,12 @@ export async function revisarAlineacion(page) {
  * del cupo de cada tarjeta de una fila tiene que estar a la misma altura: si
  * en una el tiempo o el número bajan de renglón, todo lo de abajo queda
  * corrido respecto de su vecina. Devuelve una frase por fila despareja.
+ *
+ * **Y lo marcado con `data-pareja`** dentro de una `data-tarjeta` (2026-11-26,
+ * lo pidió el cliente: *"deja la info de cotización siempre en la misma
+ * altura pese a que falte aún el cupo y ocupación"*): en el calendario de
+ * Cotizaciones, lo cotizado de cada tarjeta de una fila parte a la misma
+ * altura, tenga o no el día su cupo.
  */
 export async function revisarTarjetasParejas(page) {
   return page.evaluate(() => {
@@ -135,6 +141,20 @@ export async function revisarTarjetasParejas(page) {
       const ys = f.map((x) => x.y);
       if (Math.max(...ys) - Math.min(...ys) > 1) {
         salida.push(`tarjetas desparejas: la barra queda a ${[...new Set(ys)].join(' y ')}px (${f.map((x) => x.numero).join(' · ')})`);
+      }
+    }
+    const parejas = new Map();
+    for (const el of document.querySelectorAll('[data-tarjeta] [data-pareja]')) {
+      if (!el.offsetParent) continue;
+      const t = el.closest('[data-tarjeta]').getBoundingClientRect();
+      const k = `${el.dataset.pareja}@${Math.round(t.top)}`;
+      const fecha = el.closest('[data-tarjeta]').querySelector('[data-linea-fecha]')?.innerText.replace(/\s+/g, ' ') ?? '';
+      (parejas.get(k) ?? parejas.set(k, []).get(k)).push({ y: Math.round(el.getBoundingClientRect().top - t.top), fecha });
+    }
+    for (const [k, f] of parejas) {
+      const ys = f.map((x) => x.y);
+      if (Math.max(...ys) - Math.min(...ys) > 1) {
+        salida.push(`tarjetas desparejas: «${k.split('@')[0]}» queda a ${[...new Set(ys)].join(' y ')}px (${f.map((x) => x.fecha).join(' · ')})`);
       }
     }
     return salida;
