@@ -182,7 +182,7 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
           grande, los tres en una fila; más angosto, uno debajo del otro. El
           ancho de cada grupo va por cuántas tarjetas lleva, con un poco más
           para *Resultado*: así *Tasa de cierre* no se dobla. */}
-      <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,2.8fr)_minmax(0,2.2fr)]">
+      <div className="mt-2 grid gap-2 min-[1230px]:grid-cols-[minmax(0,3.2fr)_minmax(0,5fr)_minmax(0,3.7fr)]">
         <GrupoTarjetas titulo="En curso" columnas="grid-cols-2">
           <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
             nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}

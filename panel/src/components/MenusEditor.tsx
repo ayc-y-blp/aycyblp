@@ -524,7 +524,7 @@ export default function MenusEditor() {
 
                 {m.cotizacion && (
                   <div className="space-y-4 rounded border border-rosa/30 p-3 lg:min-w-0 lg:flex-1 lg:space-y-1.5 lg:px-3 lg:py-2">
-                    <p className="flex items-center text-[13px] font-semibold uppercase tracking-wide text-rosa-texto">
+                    <p className="flex items-center justify-between text-[13px] font-semibold uppercase tracking-wide text-rosa-texto">
                       En una cotización
                       <AyudaCorta titulo="En una cotización">
                         Es el precio que propone: en cada cotización se puede cambiar o

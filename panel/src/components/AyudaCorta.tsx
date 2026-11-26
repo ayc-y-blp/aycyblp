@@ -69,12 +69,19 @@ export default function AyudaCorta({ tema, titulo, children }: {
            que lo deja ocupando 16px del renglón: nunca lo agranda. **Lo que
            se aprieta mide 36px** —el `::before` lo extiende 6px a cada lado,
            más hacia arriba que hacia abajo, para no tapar el campo que va
-           debajo—: antes eran 30. Vale para los 101 lugares que lo usan. */
-        className="relative -my-1 ml-1.5 inline-flex h-6 w-6 shrink-0 items-center
+           debajo—: antes eran 30. Vale para los 101 lugares que lo usan.
+
+           **20px a la vista, un 15% menos** (2026-11-26, lo pidió el cliente:
+           *"haz los signos de interrogación (ayuda) 15% más chicos en todo el
+           sitio, compu o cel"*). Lo que se aprieta sigue en 36px (8px a cada
+           lado, 10 arriba y 6 abajo) y el signo sigue en 13px, el piso de la
+           regla: lo que se achica es el círculo. Ocupa los mismos 16px del
+           renglón. */
+        className="relative -my-0.5 ml-1.5 inline-flex h-5 w-5 shrink-0 items-center
                    justify-center rounded-full border-[1.5px] border-hueso/40 align-middle
                    text-[13px] font-bold normal-case leading-none tracking-normal
                    text-hueso/75 hover:border-oro hover:text-oro
-                   before:absolute before:-inset-x-1.5 before:-bottom-1 before:-top-2 before:content-['']">
+                   before:absolute before:-inset-x-2 before:-bottom-1.5 before:-top-2.5 before:content-['']">
         ?
       </button>
 

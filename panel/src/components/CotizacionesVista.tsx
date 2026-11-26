@@ -780,7 +780,7 @@ export default function CotizacionesVista() {
           ['lista', '📋 Lista']
         ] as const).map(([k, texto]) => (
           <button key={k} type="button" data-fila="fija" onClick={() => setVista(vista === k ? 'calendario' : k)} aria-pressed={vista === k}
-            className={`${BOTON_VISTA} lg:order-4 ${vista === k ? '!border-oro bg-oro/15' : ''}`}>
+            className={`${BOTON_VISTA} lg:order-4 ${vista === k ? '!bg-oro/25' : ''}`}>
             {texto}
           </button>
         ))}
@@ -912,7 +912,7 @@ export default function CotizacionesVista() {
       {nuevas.length > 0 && (
         <section className={`mb-4 lg:mb-3 ${marcoGrupo('rosa')} p-3`} aria-label="Nuevas del sitio">
           <p className={`${TITULO_GRUPO} mb-2 flex items-center gap-2`}>
-            🆕 Nuevas del sitio · {nuevas.length} <AyudaCorta tema="nuevasDelSitio" />
+            <span className="flex-1">🆕 Nuevas del sitio · {nuevas.length}</span><AyudaCorta tema="nuevasDelSitio" />
           </p>
           <ul className={LISTA_FILAS} data-columnas="nuevas del sitio">
             {nuevas.map((p) => fila(p, true, (

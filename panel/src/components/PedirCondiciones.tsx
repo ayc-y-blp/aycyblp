@@ -94,7 +94,7 @@ export default function PedirCondiciones({ id, cliente, topes, extras = {}, ante
   return (
     <Dialogo titulo={`Condiciones especiales para ${cliente || 'este cliente'}`} onCerrar={onCerrar} ancho="max-w-xl lg:max-w-4xl">
       <div className={`${marcoGrupo('ambar')} p-3`}>
-        <p className={`flex items-center gap-1 ${TITULO_GRUPO}`}>Lo que pides <AyudaCorta tema="condicionesEspeciales" /></p>
+        <p className={`flex items-center gap-1 ${TITULO_GRUPO}`}><span className="flex-1">Lo que pides</span><AyudaCorta tema="condicionesEspeciales" /></p>
         {/* En el teléfono, dos columnas —el nombre y el campo— y lo de hoy
             bajo el campo; desde 640px, lo de hoy en su propia columna. */}
         {/* En el computador, dos campos por fila (2026-11-23): con el show y el

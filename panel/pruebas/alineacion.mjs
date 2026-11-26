@@ -363,3 +363,57 @@ export async function revisarColumnas(page) {
     return malas;
   });
 }
+
+/**
+ * **Nada se sale de su marco** (2026-11-26, lo marcó el cliente con una foto de
+ * la Lista: *"ajustar tamaño de números, por cobrar sale de su marco, revisar
+ * en todo sitio"*). Para cada texto a la vista, busca el marco que lo encierra
+ * —el primer elemento con borde a los dos lados— y falla si el texto pasa más
+ * de 1,5px por fuera de su borde. Lo que va dentro de algo que se desplaza o
+ * se corta (`overflow`) no cuenta: ahí no se sale, se esconde.
+ *
+ * Con `peorCaso`, antes de medir pone en cada número grande (`data-numero`:
+ * `TarjetaNumero` y `Azulejo`) el más largo de su forma —*$888.888.888*,
+ * *100%*, *8.888*—: un número de hoy cabe, el del mes que viene puede que no.
+ * Cambia lo que se ve, así que va al final de cada pantalla.
+ */
+export async function revisarDesborde(page, { peorCaso = false } = {}) {
+  return page.evaluate((peorCaso) => {
+    const visible = (e) => {
+      const r = e.getBoundingClientRect(); const cs = getComputedStyle(e);
+      return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden';
+    };
+    const corta = (cs) => ['auto', 'scroll', 'hidden', 'clip'].includes(cs.overflowX);
+    if (peorCaso) {
+      for (const e of document.querySelectorAll('[data-numero]')) {
+        const t = e.textContent.trim();
+        if (t.includes('/') || !/\d/.test(t)) continue;
+        e.textContent = t.startsWith('$') ? '$888.888.888' : t.endsWith('%') ? '100%' : '8.888';
+        e.style.setProperty('--n', String(e.textContent.length));
+      }
+    }
+    const malos = new Set();
+    for (const e of document.querySelectorAll('main *, [role=dialog] *')) {
+      if (!visible(e)) continue;
+      if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+      if (corta(getComputedStyle(e))) continue;
+      let marco = e;
+      let escondido = false;
+      while (marco && marco !== document.body) {
+        const cs = getComputedStyle(marco);
+        if (marco !== e && corta(cs)) { escondido = true; break; }
+        if (parseFloat(cs.borderLeftWidth) >= 1 && parseFloat(cs.borderRightWidth) >= 1) break;
+        marco = marco.parentElement;
+      }
+      if (escondido || !marco || marco === document.body) continue;
+      const cs = getComputedStyle(marco);
+      const rango = document.createRange(); rango.selectNodeContents(e);
+      const t = rango.getBoundingClientRect();
+      const m = marco.getBoundingClientRect();
+      const fuera = Math.max(t.right - (m.right - parseFloat(cs.borderRightWidth)),
+        (m.left + parseFloat(cs.borderLeftWidth)) - t.left);
+      if (fuera > 1.5) malos.add(`«${e.textContent.trim().slice(0, 40)}» sale ${Math.round(fuera)}px de su marco`);
+    }
+    return [...malos];
+  }, peorCaso);
+}

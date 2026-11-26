@@ -199,10 +199,15 @@ export default function RecepcionVista() {
           // **Más bajos** (2026-11-13): el número y su palabra en la misma
           // línea. Antes cada uno ocupaba dos y la franja fija de arriba se
           // comía un cuarto de la pantalla del celular.
-          <div key={que} className="flex items-center justify-center gap-1.5 rounded-xl border border-hueso/15
-                                    bg-panel px-1.5 py-1.5 sm:gap-2 sm:py-2">
-            <p className={`text-[22px] font-extrabold leading-none tabular-nums sm:text-[26px] ${color}`}>{n}</p>
-            <p className="text-left text-[13px] leading-tight text-hueso/75 sm:text-[14px]">{que}</p>
+          // **En el celular, el número arriba y su palabra debajo**
+          // (2026-11-26, revisando el sitio entero porque *Por cobrar* se
+          // salía de su marco): a 393px *9/28 personas llegaron* no cabía
+          // lado a lado en un tercio de la pantalla y se salía 2px de su
+          // casilla (8px a 360). Desde 640px, como antes.
+          <div key={que} className="flex flex-col items-center justify-center gap-0.5 rounded-xl border border-hueso/15
+                                    bg-panel px-1.5 py-1.5 sm:flex-row sm:gap-2 sm:py-2">
+            <p className={`whitespace-nowrap text-[clamp(18px,5.6vw,22px)] font-extrabold leading-none tabular-nums sm:text-[26px] ${color}`}>{n}</p>
+            <p className="text-center text-[13px] leading-tight text-hueso/75 sm:text-left sm:text-[14px]">{que}</p>
           </div>
         ))}
       </div>

@@ -185,7 +185,7 @@ revisan antes de cada cambio en esta carpeta.
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, los calendarios de Reservas y de Cotizaciones: *Lo que viene · Semana · Mes*, con la cuenta de `lib/periodoCalendario.ts`) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
-  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo); en la Lista, en tres grupos con su marco (`GrupoTarjetas`) |
+  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo); en la Lista, en tres grupos con su marco (`GrupoTarjetas`). El número toma el tamaño que cabe (`numero-cabe`) y el `?` va en la esquina de arriba a la derecha |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
@@ -208,7 +208,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
   | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`), y la de sus cotizaciones (`data-columnas="historial"`) |
   | Filtrar por una persona —un vendedor, un socio— con su buscador | `FiltroConBuscador` (y `BotonPorVendedor`, que es ese con *👤 Por vendedor…*): el buscador flota bajo el botón, sin empujar la página. El calendario y la Lista de Cotizaciones, Clientes y *🤝 Por socio…* |
-  | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* | `BOTON_VISTA` (`filaCotizacion.ts`) |
+  | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* (Cotizaciones) y *← Volver*, *📅 Reservas · 👥 Equipo* (Estadísticas) | `BOTON_VISTA` (`filaCotizacion.ts`): el marco de la vista, 3px dorado y negrita |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -286,6 +286,63 @@ sección de la derecha?"*. Se le propuso y dijo *"dale con eso y mergea"*.
   conversado*, también de una prometida.
 - **Ninguna lectura, permiso ni columna.** **Ayuda**: `agenda` y el plazo
   prometido (`redactarAntes`).
+
+## Los números caben en su marco, el `?` va en la esquina y es más chico (2026-11-26)
+
+Lo pidió el cliente en cuatro mensajes seguidos, con una foto de la Lista:
+*"volver a calendario y lista necesitan marcos más marcados, tienen que ser los
+marcos de la vista"*, *"ajustar tamaño de números, por cobrar sale de su marco,
+revisar en todo sitio"*, *"ambos comandos tienen que tener más peso
+visualmente"*, *"haz los signos de interrogación (ayuda) 15% más chicos en todo
+el sitio, compu o cel"* y *"donde puedes, déjalos en el mismo borde derecho
+arriba dentro de la tarjeta, revisa todo"*.
+
+- ***← Volver al calendario*, *Sin fecha* y *📋 Lista*, con el marco de la
+  vista** (`BOTON_VISTA`): 3px en dorado entero, un tinte dorado apenas, la
+  sombra de los marcos de grupo y la letra en negrita de 16px; el de la vista
+  que se mira, con más tinte. Es la excepción a *botones con 2px o menos*: lo
+  pidió el cliente para estos tres, que cambian la pantalla entera. *+ Cotizar*
+  sigue siendo el único relleno. **También en Estadísticas** (*"sí claro, al
+  mismo"*): *← Volver al calendario* (o *al informe*) y *📅 Reservas · 👥
+  Equipo*.
+- **El número de una tarjeta toma el tamaño que cabe** (`numero-caja` y
+  `numero-cabe` en `globals.css`, en `TarjetaNumero`): 22px si cabe y, si no,
+  lo que deje el ancho para sus letras, nunca bajo 15px. **El renglón mide
+  siempre lo mismo**, así un número más chico no mueve la nota y las tarjetas
+  de una fila siguen parejas. *$12.395.200* en *Por cobrar* se salía de su
+  tarjeta en pantallas de 1.280 a 1.500px; también pasaba en Estadísticas.
+- **Las tarjetas de la Lista, en fila desde 1230px** (antes desde 1280) y con
+  columnas de 3,2 · 5 · 3,7: *Por hacer* tiene tres tarjetas y necesita más.
+  Medido de 1230 a 1920px: ningún título se dobla ni toca su `?`. Más angosto,
+  un grupo debajo del otro: a 1024px los títulos se doblaban y *Recontactar*
+  quedaba encima de su `?`.
+- **La Recepción, en el celular**: el número arriba y su palabra debajo, desde
+  640px como antes. A 393px *9/28 personas llegaron* no cabía lado a lado y se
+  salía de su casilla. La franja fija de arriba crece 24px (121 → 145px).
+- **El `?` de ayuda, un 15% más chico**, en el computador y el celular:
+  `AyudaCorta` pasa de 24 a 20px a la vista, y el de cada pantalla (`Ayuda`) de
+  36 a 30px. **Lo que se aprieta sigue en 36px**, con un área invisible
+  alrededor. El signo del chico sigue en 13px, el piso de la regla: lo que se
+  achica es el círculo. `revisarPlayStation()` los lista, porque mide lo que se
+  ve.
+- **El `?`, en la esquina de arriba a la derecha de su tarjeta**, donde la
+  tarjeta tiene un título con su ayuda: las tarjetas de números de la Lista,
+  Estadísticas y Vendedores, los gráficos de Estadísticas, las secciones de
+  cotizar, Configuración, *🆕 Nuevas del sitio*, *Anotar*, *Lo que pides*,
+  *Actividades del día*, *En una cotización* de Productos y el valor final de
+  la mesa. Si el título lleva algo a la derecha (una leyenda, una cuenta), el
+  `?` va después de eso. **Quedan donde están**: el `?` dentro de una frase o al
+  lado de un campo, que explica eso, y los títulos que tienen botones a la
+  derecha (*🧮 Cotizador* de una promoción) o que son una columna aparte (los
+  nombres sueltos de Equipo y Extras).
+- **Lo mide una prueba**: `revisarDesborde()` (`pruebas/alineacion.mjs`) busca
+  texto que pasa más de 1,5px por fuera del marco que lo encierra, con cada
+  número grande (`data-numero`: `TarjetaNumero` y `Azulejo`) en su peor caso
+  —*$888.888.888*, *100%*, *8.888*—. Corre en cada pantalla de `PANTALLAS` a
+  1280px y, en las que tienen números (Lista, Estadísticas, Recepción, el día,
+  Informe, Caja y Vendedores), a 1440, 1024, 393 y 360px.
+- **Ninguna lectura, permiso ni columna.** Ninguna ayuda describe dónde va el
+  `?` ni cuánto mide.
 
 ## Las tarjetas de la Lista en tres grupos, y el buscador que flota (2026-11-26)
 
