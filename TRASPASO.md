@@ -668,8 +668,10 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - ***Ver bebestibles* en las tarjetas de las experiencias** (26-11-2026, lo pidió
   el cliente): en Experiencias y en los tres landings; se apriete el botón o
   cualquier parte, la tarjeta gira y muestra los bebestibles. Cero JavaScript.
-  **En un PR, en preview hasta el *"mergea"*.** Ver `CLAUDE.md`, "*Ver
-  bebestibles* en las tarjetas de las experiencias".
+  **PR #372, mergeado el 26-11-2026** con el *"mergea"* del cliente;
+  `verificar.sh` dio 15 de 15 y `brasasdelopirque.cl/experiencias.html` ya trae
+  los botones. Ver `CLAUDE.md`, "*Ver bebestibles* en las tarjetas de las
+  experiencias".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
