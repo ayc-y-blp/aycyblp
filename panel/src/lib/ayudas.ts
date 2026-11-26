@@ -397,7 +397,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'los contestan, les ponen estado y prioridad, y con 📋 Pasar a tarea se lo encargan a alguien.'
     ],
     pasos: [
-      '📋 Nueva tarea: a quién —una persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
+      '📋 Nueva tarea: a quién —📌 A mí, como recordatorio; otra persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
       + 'para cuándo y con qué día tiene que ver.',
       'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo.',
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',

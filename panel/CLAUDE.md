@@ -282,6 +282,11 @@ panel y la pantalla de números de la gerencia vienen después.
   (son pocos y fijos)—, *Qué hacer*, *Para cuándo* (`ElegirFecha`, con *Sin
   plazo*) y *Con qué día* (opcional: la tarea lleva a la página de ese día).
   Mide 638px a 1280×650 (escena `v-nueva-tarea`).
+  **📌 A mí** (lo pidió el cliente el mismo día, al no poder elegirse como
+  administrador: *"sí, aplica a mí"*): al lado de *Otra persona…*, en *Nueva
+  tarea* y en *Pasar a tarea* de un comentario. Queda como recordatorio en el
+  propio panel. El servidor acepta siempre a quien la manda, **también la
+  cuenta de emergencia**, que no está en *Cuentas*.
 - **El ida y vuelta, corto** (`lib/tareas.ts`, puro y con pruebas): quien la
   recibe aprieta ***✓ Hecha*** (con una nota opcional) o ***❓ Preguntar***; la
   pregunta vuelve a quien la mandó, que ***↩ Contesta*** y la tarea sigue

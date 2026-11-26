@@ -342,6 +342,8 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
 
   const rol = rolDelDestino(para);
   const persona = d.personas.find((p) => p.usuario === para);
+  // 📌 A mí (2026-11-26): un recordatorio para uno mismo, también la cuenta de emergencia.
+  const aMi = !!para && para === d.yo.usuario;
   const aQuien = rol ? `todos los de ${d.roles.find((r) => r.rol === rol)?.nombre ?? rol}` : persona?.nombre ?? '';
   const BOTON_PARA = 'tecla flex min-h-[44px] items-center gap-2 rounded-xl border-2 px-3 text-left text-[15px]';
 
@@ -368,10 +370,14 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2">
           <span className={`${ROTULO} sm:pt-2.5`}>Para</span>
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="relative">
+            <div className="relative flex flex-wrap gap-2">
+              <button type="button" aria-pressed={aMi} onClick={() => setPara(aMi ? '' : d.yo.usuario)}
+                className={`${BOTON_PARA} ${aMi ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
+                📌 A mí
+              </button>
               <button type="button" onClick={() => setBuscando((b) => !b)}
-                className={`${BOTON_PARA} w-full sm:w-auto ${persona ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
-                👤 {persona ? persona.nombre : 'Una persona…'}
+                className={`${BOTON_PARA} flex-1 sm:flex-none ${persona && !aMi ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
+                👤 {persona && !aMi ? persona.nombre : 'Otra persona…'}
               </button>
               {buscando && (
                 <div className="absolute left-0 z-20 mt-1 w-full max-w-[22rem] rounded-xl border-2 border-oro/60 bg-panel p-2 shadow-lg">
@@ -426,7 +432,7 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
             {enviando ? 'Mandando…' : 'Mandar tarea'}
           </button>
           <span className="text-[14px] text-hueso/70">
-            {aQuien ? `Le llega a ${aQuien}, en su panel.` : 'Elige a quién se la mandas.'}
+            {aMi ? 'Te queda en tu panel, como recordatorio.' : aQuien ? `Le llega a ${aQuien}, en su panel.` : 'Elige a quién se la mandas.'}
           </span>
         </div>
         {error && <p className="text-[15px] text-rojo-texto">{error}</p>}

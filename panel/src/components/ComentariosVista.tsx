@@ -108,6 +108,7 @@ function TarjetaComentario({ c, d, onCambio }: { c: Comentario; d: Datos; onCamb
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const persona = d.personas.find((p) => p.usuario === para);
+  const aMi = !!para && para === d.yo;
 
   const mandar = async (cuerpo: Record<string, unknown>) => {
     setEnviando(true);
@@ -221,11 +222,16 @@ function TarjetaComentario({ c, d, onCambio }: { c: Comentario; d: Datos; onCamb
         <div className="space-y-2 rounded-xl border-2 border-hueso/25 p-2" data-ficha>
           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
             <span className="w-[7.5rem] shrink-0 text-[15px] font-semibold text-hueso/80">Para</span>
-            <div className="relative">
-              <button type="button" onClick={() => setBuscando((b) => !b)}
-                className={`tecla flex min-h-[44px] items-center gap-2 rounded-xl border-2 px-3 text-[15px] ${persona
+            <div className="relative flex flex-wrap gap-2">
+              <button type="button" aria-pressed={aMi} onClick={() => setPara(aMi ? '' : d.yo)}
+                className={`tecla flex min-h-[44px] items-center gap-2 rounded-xl border-2 px-3 text-[15px] ${aMi
                   ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
-                👤 {persona ? persona.nombre : 'Una persona…'}
+                📌 A mí
+              </button>
+              <button type="button" onClick={() => setBuscando((b) => !b)}
+                className={`tecla flex min-h-[44px] items-center gap-2 rounded-xl border-2 px-3 text-[15px] ${persona && !aMi
+                  ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
+                👤 {persona && !aMi ? persona.nombre : 'Otra persona…'}
               </button>
               {buscando && (
                 <div className="absolute left-0 z-20 mt-1 w-[22rem] max-w-[80vw] rounded-xl border-2 border-oro/60 bg-panel p-2 shadow-lg">

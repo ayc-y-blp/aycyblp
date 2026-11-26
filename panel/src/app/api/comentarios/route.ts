@@ -106,7 +106,8 @@ export const PATCH = conLecturas([HOJA_COMENTARIOS, HOJA_USUARIOS, HOJA_TAREAS],
         para: cuerpo.para, plazo: cuerpo.plazo,
         que: `${texto || actual.texto}${actual.para ? ` (para: ${actual.para})` : ''} · 💬 de ${actual.nombre}${actual.donde ? `, en ${actual.donde}` : ''}`
       }, {
-        cuentas: cuentas.map((c) => ({ usuario: c.nombre || c.usuario, activo: c.activo && ROLES_CON_TAREAS.includes(c.rol) })),
+        cuentas: [...cuentas.map((c) => ({ usuario: c.nombre || c.usuario, activo: c.activo && ROLES_CON_TAREAS.includes(c.rol) })),
+          { usuario: quien.usuario, activo: true }], // 📌 A mí, también la cuenta de emergencia
         hoy: hoy()
       });
       if ('error' in limpio) return NextResponse.json({ error: limpio.error }, { status: 400 });
