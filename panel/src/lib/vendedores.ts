@@ -572,20 +572,50 @@ export function ventasDe(usuario: string, presupuestos: Presupuesto[], lineas: L
  * Con `soloDe`, solo las de esa cuenta: es lo que ve un vendedor. Sin él, las
  * de todos los que venden (`cuentasQueVenden()`): lo que ve quien ve el
  * resumen de todos (`vendedores`, menos el vendedor).
+ *
+ * **Garantizada o posible** (2026-11-26, lo pidió el cliente: *"que muestre
+ * la posible ganancia por ganadas y aparte la comisión garantizada (por
+ * cotización pagada)"*): `pagada` si el cliente terminó de pagar y pagos lo
+ * revisó —la regla de siempre para ganarla—; `porRevisar` si pagó todo y
+ * falta la revisión.
  */
+export interface ComisionDeCotizacion { monto: number; pagada: boolean; porRevisar: boolean }
+
 export function comisionesPorCotizacion(presupuestos: Presupuesto[], lineas: LineaPresupuesto[],
   cobros: Cobro[], fichas: FichaVendedor[], menus: Pick<Menu, 'nombre' | 'bonoVendedor'>[],
   cuentas: { usuario: string; nombre: string; rol: string; activo: boolean }[],
-  soloDe?: { usuario: string; nombre: string }): Record<string, number> {
+  soloDe?: { usuario: string; nombre: string }): Record<string, ComisionDeCotizacion> {
   const quienes = soloDe ? [soloDe] : cuentasQueVenden(cuentas, fichas, presupuestos);
-  const salida: Record<string, number> = {};
+  const salida: Record<string, ComisionDeCotizacion> = {};
   for (const c of quienes) {
     const ficha = fichaDe(fichas, c.usuario, c.nombre);
     for (const v of ventasDe(c.usuario, presupuestos, lineas, cobros, ficha, menus, c.nombre)) {
-      if (!v.cancelada) salida[v.id] = v.comision;
+      if (!v.cancelada) salida[v.id] = { monto: v.comision, pagada: !!v.pagadaEl, porRevisar: !!v.porRevisar };
     }
   }
   return salida;
+}
+
+/**
+ * **💰 La comisión, posible y garantizada** (2026-11-26, lo pidió el cliente
+ * para la Lista, *Vendedores* y el link personal: *"la posible ganancia por
+ * ganadas y aparte la comisión garantizada (por cotización pagada)"*).
+ * `posible`: la de las ganadas que el cliente todavía no termina de pagar
+ * (`porRevisar`: pagadas que esperan la revisión de pagos); `garantizada`: la
+ * de las que pagó y pagos revisó. La misma forma para las tres pantallas
+ * (`GrupoComision`).
+ */
+export interface ResumenComision { posible: number; nPosible: number; porRevisar: number; garantizada: number; nGarantizada: number }
+
+/** Para *Vendedores* y el link: lo que viene (`porCobrar()`) y lo pagado en el periodo (`resumenDelPeriodo()`). */
+export function comisionPosibleYGarantizada(vienen: Pick<Venta, 'comision' | 'porRevisar' | 'cancelada'>[],
+  cuentan: Pick<Venta, 'comision'>[]): ResumenComision {
+  const posibles = vienen.filter((v) => !v.cancelada);
+  return {
+    posible: posibles.reduce((n, v) => n + v.comision, 0), nPosible: posibles.length,
+    porRevisar: posibles.filter((v) => v.porRevisar).length,
+    garantizada: cuentan.reduce((n, v) => n + v.comision, 0), nGarantizada: cuentan.length
+  };
 }
 
 /* ---------- el periodo ---------- */

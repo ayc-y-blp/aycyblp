@@ -5505,11 +5505,25 @@ console.log('\nLos socios comerciales (primera entrega)');
     { usuario: 'felipe', nombre: 'Felipe', rol: 'vendedor', activo: true }];
   const deTodos = comisionesPorCotizacion(pres, lineas, [], [vend], [], cuentas);
   const soloCarla = comisionesPorCotizacion(pres, lineas, [], [vend], [], cuentas, { usuario: 'carla', nombre: 'Carla' });
-  ok(deTodos.A === deCarla.find((v) => v.id === 'A')!.comision && deTodos.B === deCarla.find((v) => v.id === 'B')!.comision
-     && deTodos.C === 999,
+  ok(deTodos.A.monto === deCarla.find((v) => v.id === 'A')!.comision && deTodos.B.monto === deCarla.find((v) => v.id === 'B')!.comision
+     && deTodos.C.monto === 999 && !deTodos.A.pagada,
      'la comisión de cada ganada es la de Vendedores: la de su ficha, o la congelada si ya se pagó');
   ok(Object.keys(soloCarla).sort().join() === 'A,B',
      'el vendedor ve solo la comisión de las suyas');
+  // Garantizada: el cliente pagó todo y pagos lo revisó; por revisar: pagó y falta la revisión.
+  const totalB = deCarla.find((v) => v.id === 'B')!.total;
+  const cobrosG = [{ presupuesto: 'B', fecha: '2026-11-20', monto: totalB, cuando: '2026-11-20 10:00', revisadoPor: 'Pagos', revisado: '2026-11-21' },
+    { presupuesto: 'A', fecha: '2026-11-20', monto: deCarla.find((v) => v.id === 'A')!.total, cuando: '2026-11-20 10:00', revisadoPor: '', revisado: '' }] as never;
+  const conPagos = comisionesPorCotizacion(pres, lineas, cobrosG, [vend], [], cuentas, { usuario: 'carla', nombre: 'Carla' });
+  ok(conPagos.B.pagada && !conPagos.B.porRevisar && !conPagos.A.pagada && conPagos.A.porRevisar,
+     'la comisión es garantizada cuando el cliente pagó todo y pagos lo revisó; pagada sin revisar queda por revisar');
+  const { comisionPosibleYGarantizada } = await import('./vendedores.ts');
+  const pg = comisionPosibleYGarantizada(
+    [{ comision: 100, porRevisar: false, cancelada: false }, { comision: 50, porRevisar: true, cancelada: false },
+     { comision: 999, porRevisar: false, cancelada: true }],
+    [{ comision: 30 }, { comision: 20 }]);
+  ok(pg.posible === 150 && pg.nPosible === 2 && pg.porRevisar === 1 && pg.garantizada === 50 && pg.nGarantizada === 2,
+     'Vendedores y el link: posible es lo que viene (sin las canceladas) y garantizada lo pagado en el periodo');
 }
 
 console.log('\nLos socios comerciales (segunda entrega)');

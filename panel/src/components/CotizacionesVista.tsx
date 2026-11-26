@@ -88,7 +88,7 @@ type Datos = DatosCotizar & {
   /** El día en que se ganó cada cotización (2026-11-17, para la Lista). */
   ganadaEl?: Record<string, string>;
   /** La comisión de cada ganada que esta cuenta puede ver (2026-11-26): la línea 💰 de *Ganado*. */
-  comisiones?: Record<string, number>;
+  comisiones?: Record<string, { monto: number; pagada: boolean; porRevisar: boolean }>;
 };
 
 /** El color de cada estado: se distingue por la pastilla con borde. */

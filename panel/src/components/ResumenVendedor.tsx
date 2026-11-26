@@ -53,7 +53,8 @@ import { BASE_COMISION, CON_SOCIO_DEFECTO, type FichaVendedor, type Venta, type 
 import { sePuedeTransferir, faltaParaTransferir, bancoVacio, type Banco } from '@/lib/banco';
 import type { PagoEquipo } from '@/lib/remuneraciones';
 import { tasaEnTexto, type Desglose } from '@/lib/boletas';
-import { faltaParaFacturar } from '@/lib/vendedores';
+import { faltaParaFacturar, comisionPosibleYGarantizada } from '@/lib/vendedores';
+import { GrupoComision } from './GrupoTarjetas';
 
 type VentaConFolio = Venta & { folio: string };
 type EnCurso = { id: string; folio: string; cliente: string; fecha: string; estado: string; total: number; comision: number; detalle: string };
@@ -378,6 +379,15 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
             <Azulejo ayuda="vendFalta" que="Falta" monto={datos.falta}
               tono={datos.falta > 0 ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/15 bg-panel text-hueso/80'} />
           </div>
+
+          {/* **💰 La comisión, posible y garantizada** (2026-11-26, lo pidió el
+              cliente: *"esta estadística sirve también para pestaña vendedores y
+              mi resumen"*): la misma pieza de Cotizaciones → *Lista*. Posible:
+              lo que viene (las ganadas sin pagar, de cualquier mes); garantizada:
+              lo que se pagó y se revisó en el periodo. */}
+          <GrupoComision titulo={`💰 ${tu ? 'Tu comisión' : `Comisión de ${datos.nombre}`}`}
+            c={comisionPosibleYGarantizada(datos.porCobrar ?? [], r.cuentan)}
+            notaGarantizada={`${r.cuentan.length} ${r.cuentan.length === 1 ? 'pagada' : 'pagadas'} en el periodo`} />
 
           {/* 4. El hito: el único botón relleno de la vista. */}
           {datos.puedeEditar && !esVendedor && (datos.falta > 0 ? (
