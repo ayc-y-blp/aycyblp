@@ -4,6 +4,7 @@ import { HOJA_FECHAS, HOJA_RESERVAS } from '@/lib/columnas';
 import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS, folioDe } from '@/lib/presupuestos';
 import { avisosDelSitio } from '@/lib/promociones';
+import { avisosSinConfirmar } from '@/lib/envio';
 import { HOJA_CLIENTES } from '@/lib/clientes';
 import { HOJA_TRABAJADORES } from '@/lib/equipo';
 import { HOJA_COLABORADORES } from '@/lib/extras';
@@ -166,14 +167,19 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_PR
     // **Las cotizaciones del sitio que esta cuenta no ha visto** (2026-11-23):
     // la ventana que le avisa al entrar. `Presupuestos`, sus líneas y
     // `Clientes` ya venían en la tanda: ninguna lectura más.
-    const delSitio = puede(rol as Rol, 'presupuestos')
+    // **Y las listas que no ha confirmado como mandadas** (2026-11-25,
+    // `lib/envio.ts`): el segundo grupo de la misma ventana, de lo mismo.
+    const { delSitio, sinConfirmar } = puede(rol as Rol, 'presupuestos')
       ? await (async () => {
         const [pres, clientes, lineas] = await Promise.all([leerPresupuestos(), leerClientes(), leerLineasPresupuesto()]);
-        return avisosDelSitio(pres.map((p) => conCliente(p, clientes)), lineas,
-          { usuario, asigna: puede(rol as Rol, 'asignarVendedor') });
-      })().catch(() => [])
-      : [];
-    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos, caja, delSitio });
+        const conNombre = pres.map((p) => conCliente(p, clientes));
+        return {
+          delSitio: avisosDelSitio(conNombre, lineas, { usuario, asigna: puede(rol as Rol, 'asignarVendedor') }),
+          sinConfirmar: avisosSinConfirmar(conNombre, lineas, usuario, hoy())
+        };
+      })().catch(() => ({ delSitio: [], sinConfirmar: [] }))
+      : { delSitio: [], sinConfirmar: [] };
+    return NextResponse.json({ ocupacion, config: cfg, firma: firmaDe(reservas, fechas), exclusivos, cuentas, condiciones, acuerdos, caja, delSitio, sinConfirmar });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }

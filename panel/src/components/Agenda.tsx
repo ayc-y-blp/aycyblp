@@ -27,6 +27,7 @@ import { alternativasDe, enCarrera, grupoDe } from '@/lib/cotizar';
 import { enCorto, esFecha, type Fecha } from '@/lib/fechas';
 import type { Nota } from '@/lib/notas';
 import EmpresaCliente from './EmpresaCliente';
+import type { ReactNode } from 'react';
 
 const TONO = { rojo: 'font-semibold text-rojo-texto', ambar: 'font-semibold text-ambar-texto', neutro: 'text-hueso/75' } as const;
 
@@ -52,6 +53,12 @@ export interface PropsAgenda {
   soloHoy?: boolean;
   /** Las conversaciones que esta cuenta anotó hoy, para el avance. */
   anotadasHoy?: number;
+  /**
+   * **✉ ¿La mandaste?** (2026-11-25, `PastillaEnvio`): la marca de una lista
+   * sin confirmar, al principio de los botones de la fila. La arma la
+   * pantalla, que tiene las líneas para saber si está lista.
+   */
+  marcaEnvio?: (p: Presupuesto) => ReactNode;
 }
 
 export default function Agenda(props: PropsAgenda) {
@@ -128,7 +135,7 @@ export default function Agenda(props: PropsAgenda) {
 }
 
 /** Una fila de la agenda: quién, qué toca y los botones para hacerlo ahí mismo. */
-function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAnotar, onAbrir, onNotas, onCambio, onCayo, soloHoy }:
+function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAnotar, onAbrir, onNotas, onCambio, onCayo, soloHoy, marcaEnvio }:
   PropsAgenda & { x: ItemAgenda; onCayo: (p: Presupuesto) => void }) {
   const soloMira = usarSoloMira('presupuestos');
   const [enviando, setEnviando] = useState(false);
@@ -174,7 +181,8 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
       </button>
       {anota && ultima && <UltimaNota nota={ultima} compacta className="mt-1.5" />}
       {(toca || anota) && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {toca && x.tipo === 'redactar' && marcaEnvio?.(p)}
           {anota && (
             <button type="button" onClick={() => onNotas(p)}
               className={`${BOTON} !border-oro font-semibold`}>📝 Anotar</button>

@@ -50,7 +50,8 @@ import {
   condicionesDe, estadoCobros, montoCobro, CONCEPTO_COBRO, ganaSinRespaldo, type Cobro
 } from '@/lib/cobros';
 import { buscarClientes, porNombreCliente, faltaParaFactura, empresaAparte, type Cliente } from '@/lib/clientes';
-import { puedeTocarPresupuesto, puede, type Rol } from '@/lib/auth';
+import { puedeTocarPresupuesto, puede, esSuya, type Rol } from '@/lib/auth';
+import { porConfirmarDelGrupo } from '@/lib/envio';
 import { achicarFoto } from '@/lib/achicarFoto';
 import { faltaDelCliente, partirHorario, textoHorario, moverHora, PASO_HORARIO } from '@/lib/contrato';
 import CampoRut from './CampoRut';
@@ -392,7 +393,7 @@ export default function CotizacionDialogo({
   /** Por qué vía se acaba de mandar, mientras se pregunta "¿la mandaste?". */
   const [preguntaEnvio, setPreguntaEnvio] = useState<'' | 'cotizacion' | 'contrato'>('');
   /** Por dónde se intentó mandar: la pregunta ofrece abrirlo de nuevo si no se abrió. */
-  const [viaEnvio, setViaEnvio] = useState<'' | 'whatsapp' | 'correo' | 'link'>('');
+  const [viaEnvio, setViaEnvio] = useState<'' | 'whatsapp' | 'correo' | 'link' | 'ver'>('');
   /** La ventana *¿Marcarla ganada?*, abierta. */
   /** El id de la alternativa que se va a marcar ganada, o '' si no se pregunta. */
   const [confirmandoGanar, setConfirmandoGanar] = useState('');
@@ -527,6 +528,19 @@ export default function CotizacionDialogo({
     : undefined;
   const puedeEditar = !soloMira
     && (!p || puedeTocarPresupuesto(datos.rol as Rol, datos.usuario, p.creadoPor));
+  /**
+   * **Al abrirla lista y sin confirmar el envío, se pregunta** (2026-11-25, lo
+   * pidió el cliente con la foto de la N° 693616: *"hay que reforzar el
+   * proceso de que tiene que confirmar si envió la cotización, con popups y
+   * aviso dentro del sistema cuando uno pasa por esta cotización por
+   * vendedor"*). Solo a quien la creó, y con lo que tenía al abrirla
+   * (`porConfirmarDelGrupo()`): una que se está armando no pregunta a la
+   * mitad. Sale cada vez que la abre, hasta que diga que sí.
+   */
+  const [preguntaAlAbrir] = useState(() => !!presupuesto && puedeEditar
+    && esSuya(datos.usuario, presupuesto.creadoPor)
+    && !!porConfirmarDelGrupo(alternativas.length ? alternativas : [presupuesto], datos.lineas ?? [], datos.hoy));
+  useEffect(() => { if (preguntaAlAbrir) setPreguntaEnvio('cotizacion'); }, [preguntaAlAbrir]);
   /** Revisar cobros es de quien hace los pagos, no de quien los anota. */
   const puedePagar = puede(datos.rol as Rol, 'pagar');
   const cliente = clientes.find((c) => c.id === idCliente);
@@ -1291,51 +1305,52 @@ export default function CotizacionDialogo({
       : `${saludoAlCliente(cliente.nombre, datos.usuario, datos.empresa)}. Te mando la cotización: ${link}`;
   const whatsapp = textoWhatsapp ? enlaceWhatsApp(cliente!.telefono, textoWhatsapp) : '';
   /**
-   * **El correo** (2026-11-11): sin un servidor de correo, abre el programa
-   * de correo de quien cotiza con todo puesto. Solo si la ficha tiene correo.
+   * **El correo** (2026-11-11): sin un servidor de correo, abría el programa
+   * de correo de quien cotiza con todo puesto. **Desde el 2026-11-25 copia
+   * solo la dirección** (lo pidió el cliente: *"en paso 4 envío, el botón
+   * correo solo copie la dirección de correo"*): se escribe desde el correo de
+   * siempre, y el link se copia con *📋 Copiar link*. Solo si la ficha tiene
+   * correo.
    */
-  const correo = link && cliente?.correo
-    ? `mailto:${cliente.correo}?subject=${encodeURIComponent(
-        `Cotización N° ${folioDe({ id: grupoDe(p!) })}${enVariasAlt > 1 ? ` · ${enVariasAlt} alternativas`
-          : letraDe(p!, alternativas) ? ` · Alternativa ${letraDe(p!, alternativas)}` : ''}`
-        + (datos.empresa ? ` · ${datos.empresa}` : ''))}&body=${encodeURIComponent(
-        `Hola ${cliente.nombre.split(' ')[0]},\n\nTe mando la cotización:\n${link}\n\nQuedo atento.`)}`
-    : '';
-  const nombreCorto = cliente?.nombre.split(' ')[0] ?? '';
-  const folio = p ? `N° ${folioDe({ id: grupoDe(p) })}` : '';
+  const correo = link && cliente?.correo ? cliente.correo : '';
   /** **Mandar el contrato** (2026-11-11): los mismos tres caminos que la cotización. */
   const textoWhatsappContrato = linkContrato && cliente
     ? `${saludoAlCliente(cliente.nombre, datos.usuario, datos.empresa)}. Te mando el contrato para firmar: ${linkContrato}` : '';
   const whatsappContrato = textoWhatsappContrato
     ? enlaceWhatsApp(cliente!.telefono, textoWhatsappContrato) : '';
-  const correoContrato = linkContrato && cliente?.correo
-    ? `mailto:${cliente.correo}?subject=${encodeURIComponent(
-        `Contrato · Cotización ${folio}` + (datos.empresa ? ` · ${datos.empresa}` : ''))}&body=${encodeURIComponent(
-        `Hola ${nombreCorto},\n\nTe mando el contrato para firmar:\n${linkContrato}\n\nSe imprime y se firma en dos ejemplares.\n\nQuedo atento.`)}`
-    : '';
+  /** El correo del contrato: la misma dirección (2026-11-25). */
+  const correoContrato = linkContrato && cliente?.correo ? cliente.correo : '';
   const mandada = estaMandada(estado);
   /**
    * **Mandarla** (2026-11-11). Sin WhatsApp ni correo conectados al panel,
    * no hay cómo saber si de verdad se mandó: se pregunta. Copiar el link
    * también, porque casi siempre es para pegarlo en alguna parte.
    */
-  function mandar(via: 'whatsapp' | 'correo' | 'link', que: 'cotizacion' | 'contrato' = 'cotizacion') {
-    // WhatsApp y correo son enlaces de verdad (`BotonesMandar`): los abre el
-    // navegador. Abrirlos con `window.open` los bloqueaba en el teléfono como
-    // ventana emergente, y se perdía justo lo que el botón promete (2026-11-11).
+  function mandar(via: 'whatsapp' | 'correo' | 'link' | 'ver', que: 'cotizacion' | 'contrato' = 'cotizacion') {
+    // WhatsApp y el documento son enlaces de verdad (`BotonesMandar`): los
+    // abre el navegador. Abrirlos con `window.open` los bloqueaba en el
+    // teléfono como ventana emergente, y se perdía justo lo que el botón
+    // promete (2026-11-11).
     const elLink = que === 'contrato' ? linkContrato : link;
     setViaEnvio(via);
     if (via === 'link' && elLink) copiarConAviso(elLink, 'Link copiado', 'Copia este link:');
+    // **El correo copia la dirección** (2026-11-25, lo pidió el cliente: *"el
+    // botón correo solo copie la dirección de correo"*).
+    if (via === 'correo' && cliente?.correo) copiarConAviso(cliente.correo, 'Correo copiado: pégalo en tu correo', 'Copia este correo:');
     if (!p || !puedeEditar || cancelada) return;
     // Se pregunta solo la primera vez: mandarla de nuevo no cambia nada.
     if (que === 'cotizacion' && (ganada || mandada)) return;
     if (que === 'contrato' && (contratoEnviado || firmado)) return;
     // Copiar no saca de la pantalla: se pregunta enseguida.
     if (via === 'link') return setPreguntaEnvio(que);
-    // **WhatsApp y correo preguntan al volver** (lo pidió el cliente: *"cuando
-    // vuelvo a la pestaña o al panel, me tiene que preguntar"*). Se espera a
-    // que la página vuelva a estar a la vista o a tener el foco. Si nunca se
-    // fue —un correo sin programa de correo—, pregunta igual a los 3 s.
+    // **WhatsApp, el correo y *Ver el documento* preguntan al volver** (lo
+    // pidió el cliente: *"cuando vuelvo a la pestaña o al panel, me tiene que
+    // preguntar"*). Se espera a que la página vuelva a estar a la vista o a
+    // tener el foco. **El documento, desde el 2026-11-25** (lo pidió el
+    // cliente: una cotización mandada desde ahí —el PDF, la dirección— quedaba
+    // en borrador sin que nada lo preguntara). Si nunca se fue, WhatsApp
+    // pregunta igual a los 3 s (no se abrió); el correo y el documento esperan
+    // a que vuelva: copiar una dirección o mirar no es mandar.
     let salio = false;
     const listo = () => {
       document.removeEventListener('visibilitychange', alVolver);
@@ -1351,7 +1366,7 @@ export default function CotizacionDialogo({
     document.addEventListener('visibilitychange', alVolver);
     window.addEventListener('focus', alVolver);
     window.addEventListener('blur', alSalir);
-    const reloj = setTimeout(() => { if (!salio) listo(); }, 3000);
+    const reloj = via === 'whatsapp' ? setTimeout(() => { if (!salio) listo(); }, 3000) : undefined;
   }
   async function confirmarEnvio() {
     const que = preguntaEnvio;
@@ -3696,6 +3711,10 @@ export default function CotizacionDialogo({
             ¿Le mandaste {preguntaEnvio === 'contrato' ? 'el contrato' : 'la cotización'} a{' '}
             {cliente?.nombre ?? 'tu cliente'}?
           </p>
+          {/* Al abrirla, sin haber apretado nada (2026-11-25): se dice por qué. */}
+          {preguntaEnvio === 'cotizacion' && !viaEnvio && (
+            <p className="mt-1 text-[14px] text-hueso/75">Está lista y todavía no figura como mandada.</p>
+          )}
           <p className="mt-2 text-[14px] text-hueso/75">
             {preguntaEnvio === 'contrato'
               ? <>Queda anotado que se lo mandaste, y si no vuelve firmado te lo recuerdo arriba de Cotizaciones.</>
@@ -3706,29 +3725,47 @@ export default function CotizacionDialogo({
               cliente: apretó WhatsApp y solo apareció esta pregunta). Pasa
               cuando el navegador no deja abrir otra pestaña; el mensaje se
               puede copiar y pegar a mano. */}
-          {(viaEnvio === 'whatsapp' || viaEnvio === 'correo') && (() => {
+          {viaEnvio === 'whatsapp' && (() => {
             const contrato = preguntaEnvio === 'contrato';
-            const url = viaEnvio === 'whatsapp' ? (contrato ? whatsappContrato : whatsapp)
-              : (contrato ? correoContrato : correo);
-            const texto = viaEnvio === 'whatsapp' ? (contrato ? textoWhatsappContrato : textoWhatsapp)
-              : (contrato ? linkContrato : link);
+            const url = contrato ? whatsappContrato : whatsapp;
+            const texto = contrato ? textoWhatsappContrato : textoWhatsapp;
             return (
               <div className="mt-3 rounded-lg border border-hueso/20 bg-panel p-3">
-                <p className="text-[15px] font-semibold">
-                  ¿No se abrió {viaEnvio === 'whatsapp' ? 'WhatsApp' : 'el correo'}?
-                </p>
+                <p className="text-[15px] font-semibold">¿No se abrió WhatsApp?</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {url && (
-                    <a href={url} target={viaEnvio === 'whatsapp' ? '_blank' : undefined} rel="noreferrer"
-                      onClick={viaEnvio === 'whatsapp' ? (e) => { e.preventDefault(); abrirWhatsApp(url); } : undefined}
-                      className="tecla boton min-h-[44px]">
-                      {viaEnvio === 'whatsapp' ? '💬 Abrir WhatsApp de nuevo' : '✉️ Abrir el correo de nuevo'}
-                    </a>
+                    <a href={url} target="_blank" rel="noreferrer"
+                      onClick={(e) => { e.preventDefault(); abrirWhatsApp(url); }}
+                      className="tecla boton min-h-[44px]">💬 Abrir WhatsApp de nuevo</a>
                   )}
                   {texto && (
                     <button type="button" className="boton min-h-[44px]"
-                      onClick={() => copiarConAviso(texto, viaEnvio === 'whatsapp' ? 'Mensaje copiado: pégalo en WhatsApp' : 'Link copiado', 'Copia esto:')}>
-                      📋 Copiar {viaEnvio === 'whatsapp' ? 'el mensaje' : 'el link'}
+                      onClick={() => copiarConAviso(texto, 'Mensaje copiado: pégalo en WhatsApp', 'Copia esto:')}>
+                      📋 Copiar el mensaje
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          {/* **El correo copia la dirección** (2026-11-25): para escribirlo
+              hacen falta la dirección y el link, los dos a mano. */}
+          {viaEnvio === 'correo' && (() => {
+            const elLink = preguntaEnvio === 'contrato' ? linkContrato : link;
+            return (
+              <div className="mt-3 rounded-lg border border-hueso/20 bg-panel p-3">
+                <p className="text-[15px] font-semibold">¿Te falta algo para el correo?</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {cliente?.correo && (
+                    <button type="button" className="boton min-h-[44px]"
+                      onClick={() => copiarConAviso(cliente.correo, 'Correo copiado', 'Copia este correo:')}>
+                      ✉️ Copiar el correo
+                    </button>
+                  )}
+                  {elLink && (
+                    <button type="button" className="boton min-h-[44px]"
+                      onClick={() => copiarConAviso(elLink, 'Link copiado', 'Copia este link:')}>
+                      📋 Copiar el link
                     </button>
                   )}
                 </div>
@@ -4017,10 +4054,13 @@ function Camino({ pasos }: { pasos: { nombre: string; listo: boolean }[] }) {
 
 
 
-/** WhatsApp, correo y link: los tres preguntan "¿la mandaste?" (ver `mandar()`). */
+/**
+ * WhatsApp, correo, link y el documento: los cuatro preguntan "¿la mandaste?"
+ * (ver `mandar()`). `correo` es la dirección: el botón la copia (2026-11-25).
+ */
 function BotonesMandar({ link, whatsapp, correo, onMandar, grande = false, ver = 'Ver el documento' }: {
   link: string; whatsapp: string; correo: string;
-  onMandar: (via: 'whatsapp' | 'correo' | 'link') => void; grande?: boolean;
+  onMandar: (via: 'whatsapp' | 'correo' | 'link' | 'ver') => void; grande?: boolean;
   /** Qué dice el botón que abre el documento. */
   ver?: string;
 }) {
@@ -4032,13 +4072,13 @@ function BotonesMandar({ link, whatsapp, correo, onMandar, grande = false, ver =
           onClick={(e) => { e.preventDefault(); abrirWhatsApp(whatsapp); onMandar('whatsapp'); }}>💬 WhatsApp</a>
       ) : <button type="button" className={clase} disabled>Falta su teléfono</button>}
       {correo ? (
-        <a href={correo} className={`tecla ${clase}`} onClick={() => onMandar('correo')}>✉️ Correo</a>
+        <button type="button" className={clase} title={`Copia ${correo}`} onClick={() => onMandar('correo')}>✉️ Copiar correo</button>
       ) : <button type="button" className={clase} disabled>Falta su correo</button>}
       <button type="button" className={clase} disabled={!link} onClick={() => onMandar('link')}>
         📋 Copiar link
       </button>
       {link && (
-        <a href={link} target="_blank" rel="noreferrer" className={`tecla ${clase}`}>{ver}</a>
+        <a href={link} target="_blank" rel="noreferrer" className={`tecla ${clase}`} onClick={() => onMandar('ver')}>{ver}</a>
       )}
     </div>
   );

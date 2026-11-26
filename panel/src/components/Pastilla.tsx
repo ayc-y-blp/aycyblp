@@ -20,6 +20,7 @@
  */
 import type { ReactNode } from 'react';
 import { textoContacto } from '@/lib/agenda';
+import { haceCuanto } from '@/lib/envio';
 import { esFecha } from '@/lib/fechas';
 
 const BASE = 'inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[13px] font-semibold';
@@ -69,7 +70,14 @@ export const PASTILLA = {
    * `PastillaContacto`.
    */
   contactoToca: `${BASE} border-2 border-rojo-fuerte text-rojo-texto`,
-  contactoViene: `${BASE} border-2 border-ambar-fuerte text-ambar-texto`
+  contactoViene: `${BASE} border-2 border-ambar-fuerte text-ambar-texto`,
+  /**
+   * **🆕 Nueva del sitio** (2026-11-25, lo pidió el cliente: *"necesito que
+   * estos se destacan… NUEVOS para que al tiro pueden empezar el
+   * seguimiento"*): rosada como la ventana del sitio, con relleno y borde
+   * grueso, porque es lo primero que hay que hacer. Ver `PastillaNueva`.
+   */
+  nueva: `${BASE} border-2 border-rosa-fuerte bg-rosa/15 text-rosa-texto`
 } as const;
 
 export function Pastilla({ tipo, children, title, className = '' }: {
@@ -111,6 +119,23 @@ export function PastillaContacto({ fecha, hoy, className = '' }: { fecha: string
   return (
     <Pastilla tipo={tipo} className={className} title="El día que quedaste en volver a contactarlo: se cambia al anotar">
       <span aria-hidden>📞</span>{texto}
+    </Pastilla>
+  );
+}
+
+/**
+ * **🆕 Nueva · Gran Premio · hace 2 h** (2026-11-25): una cotización del sitio
+ * que nadie ha empezado a seguir (`esNuevaDelSitio()`). La misma en Clientes
+ * y en el bloque *🆕 Nuevas del sitio* de Cotizaciones.
+ */
+export function PastillaNueva({ promo, creado, ahora, className = '' }: {
+  promo: string; creado: string; ahora: string; className?: string;
+}) {
+  // *hace 4 h* no se parte en dos renglones: sus espacios no cortan.
+  const hace = (creado && ahora ? haceCuanto(creado, ahora) : '').replace(/ /g, '\u00a0');
+  return (
+    <Pastilla tipo="nueva" className={`max-w-full !whitespace-normal ${className}`} title="Llegó por el cotizador del sitio y todavía no tiene un contacto anotado">
+      <span aria-hidden>🆕</span>Nueva{promo ? ` · ${promo}` : ''}{hace ? ` · ${hace}` : ''}
     </Pastilla>
   );
 }

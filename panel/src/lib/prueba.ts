@@ -8101,5 +8101,55 @@ console.log('\nLas notas internas no salen en la cotización del cliente (2026-1
   ok(!/\bp\.notas\b/.test(hoja), 'la cotización que ve el cliente no imprime las Notas internas de la cotización');
 }
 
+console.log('\nConfirmar el envío y las nuevas del sitio (2026-11-25)');
+{
+  const E = await import('./envio.ts');
+  const HOY = '2026-11-25';
+  const cot = (x: Record<string, unknown>) => ({ id: 'P', grupo: '', estado: 'Borrador', fecha: '2026-12-15', periodo: '',
+    creado: '2026-11-25 09:40', creadoPor: 'Jorge', socio: '', idReserva: '', invitados: 44, validoHasta: '', enviada: '',
+    ultimoSeguimiento: '', descuento: 0, tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', cliente: 'Nathalie',
+    recontactar: '', redactarAntes: '', seguimientoDias: null, avisoEvento: null, notas: '', idCliente: 'C-1', origen: '',
+    ...x } as unknown as Presupuesto);
+  const linea = (id: string, precio: number) => ({ presupuesto: id, concepto: 'Menú', cantidad: 1, precio,
+    personas: 0, descuento: 0, ivaIncluido: true, sigue: false, precioUF: 0 } as unknown as LineaPresupuesto);
+
+  ok(E.faltaConfirmarEnvio(cot({}), 2618000, HOY), 'un borrador con cliente y total está listo sin confirmar');
+  ok(E.faltaConfirmarEnvio(cot({ estado: '' }), 100, HOY), 'el estado en blanco se lee como borrador');
+  ok(!E.faltaConfirmarEnvio(cot({ estado: 'Candidato' }), 100, HOY), 'un candidato no está listo');
+  ok(!E.faltaConfirmarEnvio(cot({}), 0, HOY), 'sin total no está lista');
+  ok(!E.faltaConfirmarEnvio(cot({ idCliente: '' }), 100, HOY), 'sin cliente no está lista');
+  ok(!E.faltaConfirmarEnvio(cot({ estado: 'Enviada' }), 100, HOY), 'una mandada ya está confirmada');
+  ok(!E.faltaConfirmarEnvio(cot({ fecha: '2026-11-20' }), 100, HOY), 'la de un evento que ya pasó no se pregunta');
+  ok(E.faltaConfirmarEnvio(cot({ fecha: '', periodo: 'marzo' }), 100, HOY), 'sin día exacto, sí');
+
+  const lineas = [linea('A', 1000), linea('B', 2000), linea('C', 500)];
+  const a = cot({ id: 'A', grupo: 'A' }), b = cot({ id: 'B', grupo: 'A' });
+  ok(E.porConfirmarDelGrupo([a, b], lineas, HOY)?.id === 'A', 'en un grupo, la primera lista');
+  ok(!E.porConfirmarDelGrupo([cot({ id: 'A', grupo: 'A', estado: 'Enviada' }), b], lineas, HOY),
+     'si una alternativa ya se mandó, el grupo está mandado');
+  const avisos = E.avisosSinConfirmar([a, b, cot({ id: 'C', fecha: '2026-12-01' }), cot({ id: 'D', creadoPor: 'Daniela' })],
+    [...lineas, linea('D', 9)], 'jorge', HOY);
+  ok(avisos.map((x) => x.id).join() === 'C,A' && avisos[1].total === 1000,
+     'las de esta cuenta, una por grupo y el evento más cercano primero, con su total');
+
+  const sitio = cot({ estado: 'Enviada', origen: 'Sitio · Gran Premio de Fin de Año', validoHasta: '2026-12-10', creadoPor: 'Daniela' });
+  ok(E.esNuevaDelSitio(sitio, 0, HOY), 'una del sitio sin notas es nueva');
+  ok(!E.esNuevaDelSitio(sitio, 1, HOY), 'con la primera nota deja de ser nueva');
+  ok(!E.esNuevaDelSitio(cot({ estado: 'Enviada' }), 0, HOY), 'una que no vino del sitio no es nueva');
+  ok(!E.esNuevaDelSitio({ ...sitio, idReserva: 'MANUAL-1' }, 0, HOY), 'una ganada no es nueva');
+  ok(!E.esNuevaDelSitio({ ...sitio, validoHasta: '2026-11-20' }, 0, HOY), 'una vencida no es nueva');
+  ok(E.esNuevaPara(sitio, 'daniela', false) && !E.esNuevaPara(sitio, 'jorge', true)
+     && E.esNuevaPara({ creadoPor: '' }, 'pagos', true) && !E.esNuevaPara({ creadoPor: '' }, 'jorge', false),
+     'es de su vendedor; sin vendedor, de quien asigna');
+  ok(E.promoDelOrigen('Sitio · Gran Premio de Fin de Año') === 'Gran Premio de Fin de Año', 'la promoción sale del origen');
+  ok(E.haceCuanto('2026-11-25 09:40', '2026-11-25 09:42') === 'recién'
+     && E.haceCuanto('2026-11-25 09:40', '2026-11-25 10:05') === 'hace 25 min'
+     && E.haceCuanto('2026-11-25 09:40', '2026-11-25 13:10') === 'hace 3 h'
+     && E.haceCuanto('2026-11-24 23:50', '2026-11-25 00:30') === 'hace 40 min'
+     && E.haceCuanto('2026-11-24 18:00', '2026-11-25 09:00') === 'ayer'
+     && E.haceCuanto('2026-11-21 18:00', '2026-11-25 09:00') === 'hace 4 días',
+     'cuánto hace que llegó: recién, minutos, horas, ayer, días');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);

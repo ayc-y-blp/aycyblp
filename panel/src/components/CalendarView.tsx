@@ -7,6 +7,7 @@
  */
 import AvisoCotizacionesSitio from './AvisoCotizacionesSitio';
 import type { AvisoSitio } from '@/lib/promociones';
+import type { AvisoSinConfirmar } from '@/lib/envio';
 import AyudaCorta from './AyudaCorta';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CRM_APAGADO } from '@/lib/crm';
@@ -211,6 +212,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [caja, setCaja] = useState<PendienteCaja[]>([]);
   /** Las cotizaciones del sitio que esta cuenta no ha visto (2026-11-23): la ventana que avisa al entrar. */
   const [delSitio, setDelSitio] = useState<AvisoSitio[]>([]);
+  /** Las listas que esta cuenta no ha confirmado como mandadas (2026-11-25): el segundo grupo de esa ventana. */
+  const [sinConfirmar, setSinConfirmar] = useState<AvisoSinConfirmar[]>([]);
   /** Las cuentas y tarifas que pagos tiene que confirmar: vienen solo para `pagar`. */
   const [cuentas, setCuentas] = useState<PendienteCuenta[]>([]);
   /** Qué reservas salieron de una cotización: su pago se revisa por sus cobros. */
@@ -259,6 +262,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         setAcuerdos(d.acuerdos ?? []);
         setCaja(d.caja ?? []);
         setDelSitio(d.delSitio ?? []);
+        setSinConfirmar(d.sinConfirmar ?? []);
         setCuentas(d.cuentas ?? []);
       })
       .catch((e) => { if (pedido === ultimoPedido.current) { setMoviendo(false); setError(String(e)); } });
@@ -448,7 +452,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   return (
     <>
       {/* Cambia la llave si llega otra: una que se cerró con *Después* no tapa a la nueva. */}
-      <AvisoCotizacionesSitio key={delSitio.map((a) => a.id).join()} avisos={delSitio} />
+      <AvisoCotizacionesSitio key={delSitio.map((a) => a.id).join()} avisos={delSitio}
+        sinConfirmar={sinConfirmar} onCambio={() => void cargar()} />
       {/* **La banda dorada de Reservas** (2026-11-13): el mismo formato que
           Cotizaciones (rosado) y Turnos (celeste), con su tono para saber
           dónde se está. Ver `BandaSeccion.tsx`. El `?` es el único que

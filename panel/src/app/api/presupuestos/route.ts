@@ -44,6 +44,7 @@ import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
 import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
+import { avisosSinConfirmar } from '@/lib/envio';
 import { avisosDelSitio, HOJA_PROMOCIONES, promocionDe, beneficioDePromocion, faltaAnticipacion, type Promocion } from '@/lib/promociones';
 import { hoy, esFecha, sumarDias } from '@/lib/fechas';
 import { ahoraEnChile } from '@/lib/bitacora';
@@ -90,6 +91,10 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // que avisa al entrar. De lo ya leído: ninguna lectura más.
       delSitio: avisosDelSitio(presupuestos.map((p) => conCliente(p, clientes)), lineas,
         { usuario: quien.usuario, asigna: puede(quien.rol as Rol, 'asignarVendedor') }),
+      // **Las listas que esta cuenta no ha confirmado como mandadas**
+      // (2026-11-25, `lib/envio.ts`): el segundo grupo de esa ventana. De lo
+      // ya leído: ninguna lectura más.
+      sinConfirmar: avisosSinConfirmar(presupuestos.map((p) => conCliente(p, clientes)), lineas, quien.usuario, hoy()),
       presupuestos: presupuestos.map((p) => recortarContactoDeCotizacion(conCliente(p, clientes), alcance, quien.usuario)),
       lineas, menus: puede(quien.rol as Rol, 'costos') ? menus : sinCostos(menus), clientes: clientesVisibles,
       // El simulador de evento (2026-11-23): quién ve los números y quién solo la señal.
