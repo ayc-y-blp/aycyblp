@@ -613,6 +613,16 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
     }
   }
 }
+// **Las cotizaciones de la ficha de un cliente, en columnas** (2026-11-26,
+// regla *el mismo dato va en la misma columna*): Gonzalo Contreras tiene dos.
+if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
+  await ir('/clientes');
+  await clic(p.locator('main button[aria-expanded="false"]').filter({ hasText: 'Gonzalo Contreras' }));
+  const c = await revisarColumnas(p);
+  const n = await p.locator('[data-columnas="historial"] [data-columna]').count();
+  console.log(`  ${c.length || !n ? 'FALLA ' : 'ok     '} columnas · ficha de un cliente${c.length ? '\n           · ' + c.join('\n           · ') : !n ? ': no encontró la lista' : ''}`);
+  if (c.length || !n) fallas.push('columnas · ficha de un cliente');
+}
 // **Los botones fijos de Cotizaciones no bajan** (2026-11-25): como Daniela,
 // que tiene dos pendientes —la fila más larga del ejemplo—, al ancho de la
 // prueba y a 1024, el computador más angosto.

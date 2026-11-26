@@ -684,8 +684,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   de dónde viene".
 - ***✕ Se cayó…* al final de la fila** (26-11-2026, lo pidió el cliente): en la
   fila de cada cotización y en la Agenda, después del N° y a la derecha; las
-  filas sin él dejan su lugar, así los montos quedan en columna. **En un PR, en
-  preview hasta el *"mergea"*.** Ver `panel/CLAUDE.md`.
+  filas sin él dejan su lugar, así los montos quedan en columna. Ver
+  `panel/CLAUDE.md`.
+- **PR #375, mergeado el 26-11-2026** con el *"luego mergea"* del cliente;
+  `verificar.sh` dio 15 de 15 después. Trajo *Se cayó* al final, cada dato
+  abre la cotización en su paso, *se cae sola* al día siguiente del evento,
+  las filas de Cotizaciones y Clientes en columnas y la regla nueva *el mismo
+  dato va en la misma columna* con `revisarColumnas()` (abajo).
 - **Cada dato abre la cotización en su paso** (26-11-2026, lo pidió el
   cliente: *"el botón sin confirmar el envío debería terminar en paso 4
   envío, no en productos… preguntarme al tiro"*): ✉ abre el Envío con la
@@ -704,6 +709,18 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Clientes** (✉ *sin confirmar el envío* en la columna central). En el mismo PR
   #375, con la regla nueva *el mismo dato va en la misma columna* y su prueba,
   `revisarColumnas()`. Ver `panel/CLAUDE.md`.
+- **Cotizaciones: la barra en orden y *👤 Por vendedor…* en el calendario**
+  (26-11-2026, lo pidió el cliente): *← Volver* a la izquierda, *+ Cotizar* a
+  su lado y *📋 Lista* a la derecha, con el mismo diseño; un solo filtro por
+  vendedor para el calendario, *Sin fecha* y la Lista; las cotizaciones de la
+  ficha de un cliente en columnas; y la regla de coherencia suma *la misma
+  estructura en las pantallas parecidas*. En el mismo PR #376 (el cliente dijo
+  *"mergea"* y *"dale con eso y mergea"*): **la Agenda con cada cotización en
+  una sola sección** —*📞 Contactar* o *✉ Por mandar*, que reemplaza a *✍ Por
+  redactar*—; **las tarjetas de la Lista en tres grupos** (*En curso*, *Por
+  hacer*, *Resultado*); y **el buscador de *👤 Por vendedor…* y *🤝 Por
+  socio…* flotando bajo el botón**, sin empujar la página, la misma pieza en
+  todas partes (`FiltroConBuscador`). Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

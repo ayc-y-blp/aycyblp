@@ -303,6 +303,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'ponle el día nuevo y vuelve sola.',
       'Con 👤 Mías, el calendario muestra solo los días con cotizaciones tuyas; '
       + 'con De todos, también los días abiertos, para cotizar en uno vacío. La '
+      + 'gerencia, pagos y el administrador eligen además un vendedor con 👤 Por '
+      + 'vendedor…, debajo, al lado del periodo: el calendario, Sin fecha y la Lista '
+      + 'quedan con lo suyo hasta soltarlo con el ✕. La '
       + 'gerencia, pagos y el administrador ven además ✉ N sin confirmar el envío: '
       + 'las listas de otros vendedores que todavía no confirman que las mandaron. En '
       + 'cada una, ✉ sin confirmar el envío la abre en Envío y pregunta si ya se mandó.',
@@ -310,16 +313,18 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'viene muestra desde esta semana, como siempre; Semana y Mes, con ◀ ▶, '
       + 'van también a las que pasaron, para revisar lo que se cotizó y se '
       + 'ganó. Un día que ya pasó se mira y no se cotiza.',
-      '📋 Lista muestra todas las cotizaciones con sus números: cuántas siguen '
-      + 'en carrera, cuánto hay cotizado, cuánto se ganó, la tasa de cierre, las '
-      + 'que esperan que alguien las siga, a quiénes quedaste en recontactar y lo '
-      + 'que falta cobrar. Parte en Lo que viene: los eventos de hoy en adelante, '
+      '📋 Lista muestra todas las cotizaciones con sus números, en tres grupos: '
+      + 'En curso (cuántas siguen en carrera y cuánto hay cotizado), Por hacer (tu '
+      + 'agenda, a quiénes quedaste en recontactar y lo que falta cobrar) y '
+      + 'Resultado (cuánto se ganó y la tasa de cierre). Parte en Lo que viene: los eventos de hoy en adelante, '
       + 'de cualquier mes, y los que todavía no tienen día. En el marco dorado '
       + 'eliges también Semana, Mes o Todo, te mueves con ◀ ▶ y eliges si cuenta '
       + 'la fecha del evento o la de cotización. 📞 Recontactar muestra todas las '
       + 'que tienen un día para volver a contactarlo, de cualquier fecha. Se filtra '
-      + 'además por estado y con el buscador; la gerencia, también por vendedor '
-      + 'o por socio. '
+      + 'además por estado y con el buscador; la gerencia, pagos y el administrador, '
+      + 'también por vendedor (👤 Por vendedor…, el mismo del calendario: elegido en '
+      + 'uno, sigue en el otro) o por socio: el buscador se abre bajo el botón, sin '
+      + 'mover la página, y se cierra al elegir, con Escape o tocando fuera. '
       + 'La lista va por fecha del evento, de la más próxima a la más lejana; '
       + 'las que no tienen día exacto, al final.'
     ],
@@ -1453,7 +1458,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Tu agenda',
     texto: [
       '📞 Contactar: los clientes a quienes quedaste en hablarles (el día que elegiste al anotar) y los recordatorios de siempre: mandadas sin respuesta hace días, el evento cerca sin ganar y el contrato que no vuelve firmado.',
-      '✍ Por redactar: los candidatos y borradores, por el día para el que prometiste la cotización. Se cumple al mandarla.',
+      '✉ Por mandar: arriba, las que prometiste mandar (por ese día) y las listas que no figuran como mandadas (✉ ¿La mandaste?). Abajo, plegadas en Sin plazo, las que no tienen ni promesa ni contacto. Se cumple al mandarla.',
+      'Cada cotización sale en una sola sección: si prometiste mandarla o está lista sin confirmar, en Por mandar; si no, y toca contactarlo, en Contactar.',
       'En cada fila: "📝 Anotar" dice qué conversaron y cuándo volver a contactarlo; también "Está negociando", "✕ Se cayó…" o "✍ Redactarla". Lo atrasado va en rojo, y el día que elegiste para contactarlo, en ámbar hasta ese día y en rojo desde ese día.'
     ]
   },
@@ -1471,7 +1477,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   redactarAntes: {
     titulo: 'Prometiste mandarla antes del',
     texto: [
-      'El día para el que le dijiste al cliente que le llegaba la cotización. Va a tu agenda, en ✍ Por redactar, y en rojo si se pasa.',
+      'El día para el que le dijiste al cliente que le llegaba la cotización. Va a tu agenda, en ✉ Por mandar, y en rojo si se pasa.',
       'Se cumple al mandarla. Sin plazo, queda al final de la lista.'
     ]
   },

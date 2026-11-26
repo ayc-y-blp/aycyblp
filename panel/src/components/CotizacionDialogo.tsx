@@ -317,7 +317,7 @@ export default function CotizacionDialogo({
   /**
    * **Para cuándo se le prometió la cotización** (2026-11-23, la agenda del
    * vendedor; lo decidió el cliente: *"que el vendedor elige nomás"*). Solo
-   * mientras no se mande: después está cumplido. Va a *✍ Por redactar*.
+   * mientras no se mande: después está cumplido. Va a *✉ Por mandar* (antes *✍ Por redactar*).
    */
   const [redactarAntes, setRedactarAntes] = useState(p?.redactarAntes ?? '');
   /** La ventanita de las notas y el próximo contacto (2026-11-23). */
@@ -2252,7 +2252,7 @@ export default function CotizacionDialogo({
             </div>
             {/* **¿Para cuándo le prometiste la cotización?** (2026-11-23, la
                 agenda): mientras no se mande. La elige el vendedor; en blanco,
-                *✍ Por redactar* la pone al final, sin plazo. */}
+                *✉ Por mandar* la pone al final, sin plazo. */}
             {(!p || (!p.idReserva && (estadoNormal(estado) === ESTADO_PRESUPUESTO.candidato
               || estadoNormal(estado) === ESTADO_PRESUPUESTO.borrador))) && (
               <div>

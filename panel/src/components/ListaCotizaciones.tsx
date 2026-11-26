@@ -19,12 +19,13 @@
  *
  * El vendedor ve sus números: sin *Por vendedor*, y las tarjetas de lo suyo.
  */
+import { gruposPorConfirmar } from '@/lib/envio';
 import { LISTA_FILAS } from './filaCotizacion';
 import { useMemo, useState, type ReactNode } from 'react';
 import ElegirPeriodo from './ElegirPeriodo';
 import AyudaCorta from './AyudaCorta';
 import Tarjeta from './TarjetaNumero';
-import BuscarEnLista from './BuscarEnLista';
+import BotonPorVendedor, { FiltroConBuscador } from './BotonPorVendedor';
 import { enPesos } from '@/lib/ocupacion';
 import { mesEnPalabras, rangoEnPalabras, semanaDe, sumarDias } from '@/lib/fechas';
 import type { Presupuesto } from '@/lib/presupuestos';
@@ -57,7 +58,7 @@ const DE_LAS_TARJETAS: Partial<Record<FiltroLista, string>> = {
   recontactar: 'las que tienen un día para recontactar, de todas las fechas'
 };
 
-export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda }: {
+export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, socios, fila, onDeTodos, verAgenda, vendedor, onVendedor }: {
   ctx: ContextoLista;
   rol: string;
   /** Las que deja ver *Mías / De todos*. */
@@ -73,6 +74,12 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   onDeTodos: () => void;
   /** La agenda de lo que se está mirando, con los botones de cada fila (`Agenda`). */
   verAgenda: (a: { contactar: ItemAgenda[]; redactar: ItemAgenda[] }) => ReactNode;
+  /**
+   * *👤 Por vendedor…*, el mismo del calendario (2026-11-26): lo guarda la
+   * pantalla, así sigue puesto al pasar de una vista a otra.
+   */
+  vendedor: string;
+  onVendedor: (v: string) => void;
 }) {
   const equipo = veElEquipo(rol);
   const [filtro, setFiltro] = useState<FiltroLista>('enCarrera');
@@ -87,9 +94,8 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   // la Agenda y no en la Lista. *Semana*, *Mes* y *Todo* quedan a un toque.
   const [periodo, setPeriodo] = useState<string>(LO_QUE_VIENE);
   const [porFecha, setPorFecha] = useState<PorFecha>('evento');
-  const [vendedor, setVendedor] = useState('');
+  const setVendedor = onVendedor;
   const [socio, setSocio] = useState('');
-  const [eligiendo, setEligiendo] = useState<'' | 'vendedor' | 'socio'>('');
 
   const viene = periodo === LO_QUE_VIENE;
   const rango = viene ? null : rangoDe(periodo);
@@ -112,7 +118,9 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
   const cuantas = useMemo(() => cuentasPorFiltro(base, ctx), [base, ctx]);
   // **La agenda no sigue al periodo** (2026-11-23): es de hoy y de los
   // próximos días, de lo que se mira en *De quién*.
-  const agenda = useMemo(() => agendaDe(deQuien, ctx.hoy, ctx.seguimiento), [deQuien, ctx]);
+  // **Cada cotización en una sola sección** (2026-11-26, `agendaDe(…, { unaVez })`).
+  const agenda = useMemo(() => agendaDe(deQuien, ctx.hoy, ctx.seguimiento,
+    { unaVez: true, listas: gruposPorConfirmar(ctx.todas, ctx.lineas, ctx.hoy) }), [deQuien, ctx]);
   const deHoy = cuentasDeHoy(agenda);
   const lista = useMemo(() => (filtro === 'recontactar'
     ? ordenarPorRecontacto(todasDeQuien.filter((p) => pasaFiltro(p, filtro, ctx) && calzaBusqueda(p, busqueda)), ctx.hoy)
@@ -133,20 +141,15 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
       <div className="flex flex-wrap items-center gap-2">
         {equipo && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="De quién">
-            {vendedor ? (
-              <button type="button" onClick={() => setVendedor('')}
-                className="boton min-h-[44px] border-oro bg-oro/15 !font-semibold text-oro">👤 {vendedor} ✕</button>
-            ) : (
-              <button type="button" onClick={() => setEligiendo(eligiendo === 'vendedor' ? '' : 'vendedor')}
-                aria-expanded={eligiendo === 'vendedor'} aria-haspopup="listbox" className="boton min-h-[44px]">👤 Por vendedor…</button>
-            )}
-            {socio ? (
-              <button type="button" onClick={() => setSocio('')}
-                className="boton min-h-[44px] border-cielo-fuerte bg-cielo/15 !font-semibold text-cielo-texto">🤝 {nombreSocio(socio)} ✕</button>
-            ) : (
-              <button type="button" onClick={() => setEligiendo(eligiendo === 'socio' ? '' : 'socio')}
-                aria-expanded={eligiendo === 'socio'} aria-haspopup="listbox" className="boton min-h-[44px]">🤝 Por socio…</button>
-            )}
+            <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')} opciones={vendedoresDe(ctx.todas)}
+              onElegir={(id) => { setVendedor(id); onDeTodos(); }} />
+            <FiltroConBuscador texto="🤝 Por socio…" icono="🤝" tono="cielo" elegido={socio} nombre={socio ? nombreSocio(socio) : ''}
+              etiqueta="Buscar socio comercial" vacia="No hay socios comerciales."
+              opciones={socios.map((s) => {
+                const n = unaPorGrupo(ctx.todas.filter((p) => p.socio === s.id), ctx).length;
+                return { id: s.id, nombre: s.nombre, detalle: `${n} ${n === 1 ? 'cotización' : 'cotizaciones'}${s.activo ? '' : ' · desactivado'}` };
+              })}
+              onElegir={(id) => { setSocio(id); onDeTodos(); }} onSoltar={() => setSocio('')} />
           </div>
         )}
         <span className="flex-1" />
@@ -171,62 +174,55 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
           fecha={porFecha} onFecha={(k) => setPorFecha(k as PorFecha)} />
       </div>
 
-      {eligiendo && (
-        <div className="mt-2 max-w-md">
-          <BuscarEnLista
-            etiqueta={eligiendo === 'vendedor' ? 'Buscar vendedor' : 'Buscar socio comercial'}
-            vacia={eligiendo === 'vendedor' ? 'Nadie ha cotizado todavía.' : 'No hay socios comerciales.'}
-            elegido={eligiendo === 'vendedor' ? vendedor : socio}
-            opciones={eligiendo === 'vendedor' ? vendedoresDe(ctx.todas)
-              : socios.map((s) => {
-                const n = unaPorGrupo(ctx.todas.filter((p) => p.socio === s.id), ctx).length;
-                return { id: s.id, nombre: s.nombre, detalle: `${n} ${n === 1 ? 'cotización' : 'cotizaciones'}${s.activo ? '' : ' · desactivado'}` };
-              })}
-            onElegir={(id) => {
-              if (eligiendo === 'vendedor') setVendedor(id); else setSocio(id);
-              setEligiendo(''); onDeTodos();
-            }}
-            onCerrar={() => setEligiendo('')} />
-        </div>
-      )}
-
-      {/* 2. Las tarjetas. */}
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
-        <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
-          nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}
-          tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'enCarrera'} onClick={() => setFiltro('enCarrera')} />
-        <Tarjeta que="Cotizado" ayuda="listaCotizado" valor={enPesos(r.cotizado.monto)}
-          nota={`${r.cotizado.n} ${r.cotizado.n === 1 ? 'mandada' : 'mandadas'}${r.cotizado.borradores
+      {/* 2. **Las tarjetas, en tres grupos** (2026-11-26, lo pidió el cliente:
+          *"el orden de las tarjetas es (en carrera, cotizado), (agenda,
+          recontactar, por cobrar), (ganados, tasa cierre), y márcalos
+          decentemente"*): lo que está en curso, lo que hay que hacer y el
+          resultado, cada grupo en su marco con su rótulo. En el computador
+          grande, los tres en una fila; más angosto, uno debajo del otro. El
+          ancho de cada grupo va por cuántas tarjetas lleva, con un poco más
+          para *Resultado*: así *Tasa de cierre* no se dobla. */}
+      <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,2.8fr)_minmax(0,2.2fr)]">
+        <GrupoTarjetas titulo="En curso" columnas="grid-cols-2">
+          <Tarjeta que="En carrera" ayuda="listaEnCarrera" valor={String(r.enCarrera.n)}
+            nota={`${r.enCarrera.gente} ${r.enCarrera.gente === 1 ? 'persona posible' : 'personas posibles'}`}
+            tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'enCarrera'} onClick={() => setFiltro('enCarrera')} />
+          <Tarjeta que="Cotizado" ayuda="listaCotizado" valor={enPesos(r.cotizado.monto)}
+            nota={`${r.cotizado.n} ${r.cotizado.n === 1 ? 'mandada' : 'mandadas'}${r.cotizado.borradores
             ? ` · ${r.cotizado.borradores} sin mandar${r.cotizado.montoBorradores ? ` (${enPesos(r.cotizado.montoBorradores)})` : ''}` : ''}`}
-          tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'mandadas'} onClick={() => alternar('mandadas')} />
-        <Tarjeta que="Ganado" ayuda="listaGanado" valor={enPesos(r.ganado.monto)}
-          nota={`${r.ganado.n} ${r.ganado.n === 1 ? 'evento' : 'eventos'}`}
-          tono="border-verde-fuerte/40 bg-verde/[0.06] text-verde-texto" activa={filtro === 'ganadas'} onClick={() => alternar('ganadas')} />
-        <Tarjeta que="Tasa de cierre" ayuda="listaTasa" valor={r.tasa.pct == null ? '—' : `${r.tasa.pct}%`}
-          nota={`${r.tasa.ganadas} ${r.tasa.ganadas === 1 ? 'ganada' : 'ganadas'} · ${r.tasa.perdidas} ${r.tasa.perdidas === 1 ? 'perdida' : 'perdidas'}`}
-          tono="border-hueso/20 bg-panel" />
-        {/* **🗓 Agenda** (2026-11-23, reemplaza a *Por seguir*): lo que toca
-            hoy —contactar o mandar una cotización prometida—. Se aprieta y se
-            ve la agenda entera. */}
-        <Tarjeta que="🗓 Agenda" ayuda="listaAgenda" valor={String(deHoy.hoy)}
-          nota={deHoy.hoy ? `para hoy${deHoy.atrasadas ? ` · ${deHoy.atrasadas} atrasadas` : ''}`
+            tono="border-rosa/50 bg-rosa/[0.05]" activa={filtro === 'mandadas'} onClick={() => alternar('mandadas')} />
+        </GrupoTarjetas>
+        <GrupoTarjetas titulo="Por hacer" columnas="grid-cols-2 sm:grid-cols-3">
+          {/* **🗓 Agenda** (2026-11-23, reemplaza a *Por seguir*): lo que toca
+              hoy —contactar o mandar una cotización prometida—. Se aprieta y se
+              ve la agenda entera. */}
+          <Tarjeta que="🗓 Agenda" ayuda="listaAgenda" valor={String(deHoy.hoy)}
+            nota={deHoy.hoy ? `para hoy${deHoy.atrasadas ? ` · ${deHoy.atrasadas} atrasadas` : ''}`
             : deHoy.semana ? `nada hoy · ${deHoy.semana} esta semana` : 'nada pendiente'}
-          tono={deHoy.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
+            tono={deHoy.atrasadas ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
             : deHoy.hoy ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
-          activa={filtro === 'agenda'} onClick={() => alternar('agenda')} />
-        {/* **📞 Recontactar** (2026-11-25): todas las que tienen un día para
-            volver a contactarlo, de todas las fechas. Se aprieta y la lista
-            las muestra por ese día, lo atrasado primero. */}
-        <Tarjeta que="Recontactar" ayuda="listaRecontactar" valor={String(recontacto.total)}
-          nota={recontacto.atrasadas ? `${recontacto.atrasadas} ${recontacto.atrasadas === 1 ? 'atrasada' : 'atrasadas'}${recontacto.hoy ? ` · ${recontacto.hoy} hoy` : ''}`
+            activa={filtro === 'agenda'} onClick={() => alternar('agenda')} />
+          {/* **📞 Recontactar** (2026-11-25): todas las que tienen un día para
+              volver a contactarlo, de todas las fechas. */}
+          <Tarjeta que="Recontactar" ayuda="listaRecontactar" valor={String(recontacto.total)}
+            nota={recontacto.atrasadas ? `${recontacto.atrasadas} ${recontacto.atrasadas === 1 ? 'atrasada' : 'atrasadas'}${recontacto.hoy ? ` · ${recontacto.hoy} hoy` : ''}`
             : recontacto.hoy ? `${recontacto.hoy} para hoy` : recontacto.total ? 'ninguna atrasada' : 'ninguna puesta'}
-          tono={recontacto.atrasadas || recontacto.hoy ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
+            tono={recontacto.atrasadas || recontacto.hoy ? 'border-rojo-fuerte/50 bg-rojo/[0.06] text-rojo-texto'
             : recontacto.total ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
-          activa={filtro === 'recontactar'} onClick={() => alternar('recontactar')} />
-        <Tarjeta que="Por cobrar" ayuda="listaPorCobrar" valor={enPesos(r.porCobrar.monto)}
-          nota={`${r.porCobrar.n} ${r.porCobrar.n === 1 ? 'ganada' : 'ganadas'} con saldo`}
-          tono={r.porCobrar.monto ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
-          activa={filtro === 'porCobrar'} onClick={() => alternar('porCobrar')} />
+            activa={filtro === 'recontactar'} onClick={() => alternar('recontactar')} />
+          <Tarjeta que="Por cobrar" ayuda="listaPorCobrar" valor={enPesos(r.porCobrar.monto)}
+            nota={`${r.porCobrar.n} ${r.porCobrar.n === 1 ? 'ganada' : 'ganadas'} con saldo`}
+            tono={r.porCobrar.monto ? 'border-ambar-fuerte/50 bg-ambar/[0.07] text-ambar-texto' : 'border-hueso/20 bg-panel'}
+            activa={filtro === 'porCobrar'} onClick={() => alternar('porCobrar')} />
+        </GrupoTarjetas>
+        <GrupoTarjetas titulo="Resultado" columnas="grid-cols-2">
+          <Tarjeta que="Ganado" ayuda="listaGanado" valor={enPesos(r.ganado.monto)}
+            nota={`${r.ganado.n} ${r.ganado.n === 1 ? 'evento' : 'eventos'}`}
+            tono="border-verde-fuerte/40 bg-verde/[0.06] text-verde-texto" activa={filtro === 'ganadas'} onClick={() => alternar('ganadas')} />
+          <Tarjeta que="Tasa de cierre" ayuda="listaTasa" valor={r.tasa.pct == null ? '—' : `${r.tasa.pct}%`}
+            nota={`${r.tasa.ganadas} ${r.tasa.ganadas === 1 ? 'ganada' : 'ganadas'} · ${r.tasa.perdidas} ${r.tasa.perdidas === 1 ? 'perdida' : 'perdidas'}`}
+            tono="border-hueso/20 bg-panel" />
+        </GrupoTarjetas>
       </div>
 
       {/* 3. **Ganado mes a mes** (2026-11-22, lo pidió el cliente: *"no se
@@ -299,5 +295,19 @@ export default function ListaCotizaciones({ ctx, rol, visibles, mias, soloMias, 
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * **Un grupo de tarjetas de la Lista** (2026-11-26): un marco más suave que el
+ * de una tarjeta abierta, con su rótulo chico arriba —*En curso*, *Por hacer*,
+ * *Resultado*—, y las tarjetas en su grilla.
+ */
+function GrupoTarjetas({ titulo, columnas, children }: { titulo: string; columnas: string; children: ReactNode }) {
+  return (
+    <section aria-label={titulo} className="rounded-xl border-2 border-hueso/25 bg-hueso/[0.03] p-1.5 pt-1">
+      <p className="mb-1 px-1 text-[13px] font-semibold uppercase tracking-wider text-hueso/60">{titulo}</p>
+      <div className={`grid gap-2 ${columnas}`}>{children}</div>
+    </section>
   );
 }
