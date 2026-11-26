@@ -362,6 +362,26 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
 - **El panel de ejemplo** trae tres comentarios: uno nuevo, uno en curso con
   prioridad alta y uno contestado sin ver.
 
+## Configuración: las secciones se pliegan (2026-11-26)
+
+Lo pidió el cliente: *"en configuración deben estar collapsable las distintas
+secciones"*.
+
+- **Cada sección abre cerrada**, con su `+` (`SignoAbrir`, el de las tarjetas
+  que se abren) y su `?` a la derecha, fuera del botón que la abre: apretar el
+  `?` no la pliega. Abierta, el marco pasa a dorado y el `+` a `−`. Se pueden
+  tener varias abiertas.
+- **El índice de arriba abre la sección elegida y baja a ella**; el botón de
+  una abierta va con tinte dorado. **Un link con `#seccion`**
+  (`/config#mantencion`) llega con esa abierta.
+- Cerrada, la sección no dibuja sus campos: lo escrito se guarda al salir del
+  campo, como siempre, así que plegar no pierde nada.
+- **Lecturas, permisos y columnas**: nada nuevo. **Ayuda**: el `?` de
+  Configuración y la misión *La configuración* (texto y foto, que ahora se
+  saca con *Reservas del sitio* abierta, `/config#sitio`). **Ventanas**: las
+  escenas de Mantención entran por `/config#mantencion`, y la prueba de
+  espacio mide además `configuracion-abierta` y `configuracion-mantencion`.
+
 ## Los calendarios: lo cotizado, siempre a la misma altura (2026-11-26)
 
 Lo pidió el cliente con una foto del calendario de Cotizaciones: *"deja la info
