@@ -52,6 +52,16 @@ export function porConfirmarDelGrupo(
   return alts.find((a) => faltaConfirmarEnvio(a, totalDe(lineasDe(lineas, a.id), a.descuento), hoy));
 }
 
+/**
+ * **Los grupos listos y sin confirmar** (2026-11-26): para la Agenda, que los
+ * pone en *✉ Por mandar* (`agendaDe(…, { listas })`).
+ */
+export function gruposPorConfirmar(presupuestos: Presupuesto[], lineas: LineaPresupuesto[], hoy: Fecha): Set<string> {
+  const grupos = new Map<string, Presupuesto[]>();
+  for (const p of presupuestos) grupos.set(grupoDe(p), [...(grupos.get(grupoDe(p)) ?? []), p]);
+  return new Set([...grupos].filter(([, alts]) => porConfirmarDelGrupo(alts, lineas, hoy)).map(([g]) => g));
+}
+
 export interface AvisoSinConfirmar {
   id: string;
   folio: string;

@@ -714,8 +714,13 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   su lado y *📋 Lista* a la derecha, con el mismo diseño; un solo filtro por
   vendedor para el calendario, *Sin fecha* y la Lista; las cotizaciones de la
   ficha de un cliente en columnas; y la regla de coherencia suma *la misma
-  estructura en las pantallas parecidas*. **En un PR, en preview hasta el
-  *"mergea"*.** Ver `panel/CLAUDE.md`.
+  estructura en las pantallas parecidas*. En el mismo PR #376 (el cliente dijo
+  *"mergea"* y *"dale con eso y mergea"*): **la Agenda con cada cotización en
+  una sola sección** —*📞 Contactar* o *✉ Por mandar*, que reemplaza a *✍ Por
+  redactar*—; **las tarjetas de la Lista en tres grupos** (*En curso*, *Por
+  hacer*, *Resultado*); y **el buscador de *👤 Por vendedor…* y *🤝 Por
+  socio…* flotando bajo el botón**, sin empujar la página, la misma pieza en
+  todas partes (`FiltroConBuscador`). Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

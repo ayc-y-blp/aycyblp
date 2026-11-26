@@ -23,8 +23,7 @@ import { PastillaEnvio } from './ConfirmarEnvio';
 import { pasoDelClic } from './pasoDelClic';
 import { LISTA_FILAS, BOTON_VISTA } from './filaCotizacion';
 import BotonPorVendedor from './BotonPorVendedor';
-import BuscarEnLista from './BuscarEnLista';
-import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen } from '@/lib/envio';
+import { porConfirmarDelGrupo, esNuevaDelSitio, esNuevaPara, promoDelOrigen, gruposPorConfirmar } from '@/lib/envio';
 import { ahoraEnChile } from '@/lib/bitacora';
 import type { AvisoSitio } from '@/lib/promociones';
 import type { AvisoSinConfirmar } from '@/lib/envio';
@@ -158,7 +157,6 @@ export default function CotizacionesVista() {
    * gerencia, pagos y el administrador). Vacío, todos.
    */
   const [vendedor, setVendedor] = useState('');
-  const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   const [semanas, setSemanas] = useState(10);
   /**
    * **El periodo del calendario** (2026-11-24, lo pidió el cliente:
@@ -320,7 +318,8 @@ export default function CotizacionesVista() {
   // respuesta*, que se fusionó acá. Lo de hoy de la cuenta va en *Tus
   // pendientes*; la agenda entera, en la Lista → *🗓 Agenda*.
   const cfgSeg = { seguimientoDias: datos.seguimiento?.dias ?? 5, avisoEvento: datos.seguimiento?.antesEvento ?? 14 };
-  const agendaMia = agendaDe(propias, hoy, cfgSeg);
+  // Cada cotización en una sola sección (2026-11-26, `agendaDe(…, { unaVez })`).
+  const agendaMia = agendaDe(propias, hoy, cfgSeg, { unaVez: true, listas: gruposPorConfirmar(datos.presupuestos, datos.lineas, hoy) });
   const deHoyMia = [...agendaMia.contactar, ...agendaMia.redactar].filter(paraHoy);
   // La marca de la tarjeta del día sigue a lo que se está mirando: a quién
   // hay que contactar hoy por una cotización de ese día.
@@ -882,8 +881,8 @@ export default function CotizacionesVista() {
       {vista !== 'lista' && veElEquipo(datos.rol) && (
         <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-3">
           <div role="group" aria-label="De quién" className="flex flex-wrap gap-2">
-            <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')}
-              abierto={eligiendoVendedor} onAbrir={() => setEligiendoVendedor(!eligiendoVendedor)} />
+            <BotonPorVendedor vendedor={vendedor} onSoltar={() => setVendedor('')} opciones={vendedoresDe(datos.presupuestos)}
+              onElegir={(id) => { setVendedor(id); elegirDe('todos'); }} />
           </div>
           {/* En *Sin fecha*, la frase que la explica va en esta fila: sola
               debajo, dejaba dos filas que cabían en una. */}
@@ -898,14 +897,6 @@ export default function CotizacionesVista() {
               <ElegirPeriodo modos={MODOS_CALENDARIO} modo={periodo.modo}
                 onModo={(clave) => setPeriodo(cambiarModo(periodo, clave, hoy))}
                 titulo={tituloDelPeriodo(periodo)} onMover={(n) => setPeriodo(moverPeriodo(periodo, n))} />
-            </div>
-          )}
-          {eligiendoVendedor && (
-            <div className="basis-full lg:max-w-md">
-              <BuscarEnLista etiqueta="Buscar vendedor" vacia="Nadie ha cotizado todavía." elegido={vendedor}
-                opciones={vendedoresDe(datos.presupuestos)}
-                onElegir={(id) => { setVendedor(id); setEligiendoVendedor(false); elegirDe('todos'); }}
-                onCerrar={() => setEligiendoVendedor(false)} />
             </div>
           )}
         </div>

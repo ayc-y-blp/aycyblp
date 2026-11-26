@@ -185,11 +185,11 @@ revisan antes de cada cambio en esta carpeta.
   | Cuál planilla se va a tocar, y si es producción o una versión de prueba | `CualBase` (*Dejar la base en cero*, *Importar del CRM* y *Traer los datos de producción*, que la pone dos veces: desde y a) |
   | Elegir el periodo —mes, semana, día, todo o dos fechas—, moverse con ◀ ▶ y por qué fecha se cuenta | `ElegirPeriodo`: un marco dorado con las tres cosas juntas (Cotizaciones → *Lista*, Estadísticas, Vendedores, Informe y, desde el 2026-11-24, los calendarios de Reservas y de Cotizaciones: *Lo que viene · Semana · Mes*, con la cuenta de `lib/periodoCalendario.ts`) |
 | Elegir mes o semana en un link personal (sin JavaScript) | `ElegirPeriodoLink` de `mi/[token]/Periodo.tsx`: el mismo marco dorado, hecho con enlaces (trabajador, colaborador, vendedor y socio) |
-  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo) |
+  | Un número grande con su nombre, su nota y su comparación (en carrera, cotizado, reservas, ocupación…) | `TarjetaNumero` (Cotizaciones → *Lista*, Estadísticas de reservas y del equipo); en la Lista, en tres grupos con su marco (`GrupoTarjetas`) |
   | El mínimo de una línea de la cotización —el show ecuestre, el arriendo— y por qué no baja | La caja bajo la línea, ámbar si se impone y gris para quien puede pasar por encima (`🐎` el show, `🏠` el arriendo), en el paso 3 de cotizar |
   | Las condiciones especiales: lo que quedó en su tope, cómo va lo pedido y el botón para pedir (también el show o el arriendo bajo su mínimo y la segunda renovación) | `lineaCondiciones` de la ventana de cotizar (en *El pago* y en *Cambios de fecha y cancelación*), `PedirCondiciones` y el aviso de la bandeja (`BandejaAprobaciones`) |
   | Dar por caída una cotización: el motivo y la confirmación | `SeCayo`, con `✕ Se cayó…` en la ventana de cotizar (en todos los pasos), al lado de cada fila de la lista y en *Esperando respuesta* |
-  | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*) |
+  | A quién contactar y qué cotización mandar: la agenda del vendedor (reemplaza a *Esperando respuesta*) | `Agenda` (Cotizaciones → *Tus pendientes* con `soloHoy`, y *📋 Lista → 🗓 Agenda*), con `agendaDe(…, { unaVez })`: cada cotización en una sola sección, *📞 Contactar* o *✉ Por mandar* |
   | Lo conversado con un cliente y el próximo contacto | `NotasCotizacion` (la ventanita *🗒 Notas*, también desde la ficha del cliente) y `HistorialNotas` (la misma lista en la ficha del cliente, filtrable por cotización) |
   | La última nota y el próximo contacto | `LoConversado` (paso 4 de cotizar) y `UltimaNota` (la ficha del cliente y la Agenda); dentro del botón *🗒 Notas* de la cotización, en un renglón |
   | La empresa del cliente al lado de su nombre, donde se muestra una cotización | `EmpresaCliente` (y `nombreConEmpresa()` en una línea de texto): la Lista, la Agenda, *Tus pendientes*, la página del día, la cabecera de la cotización, *🗒 Notas*, la bandeja, el aviso del sitio y las ventas de Vendedores |
@@ -207,7 +207,7 @@ revisan antes de cada cambio en esta carpeta.
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
   | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`), y la de sus cotizaciones (`data-columnas="historial"`) |
-  | Filtrar por vendedor (la gerencia, pagos y el administrador) | `BotonPorVendedor` + `BuscarEnLista` (el calendario y la Lista de Cotizaciones, y Clientes) |
+  | Filtrar por una persona —un vendedor, un socio— con su buscador | `FiltroConBuscador` (y `BotonPorVendedor`, que es ese con *👤 Por vendedor…*): el buscador flota bajo el botón, sin empujar la página. El calendario y la Lista de Cotizaciones, Clientes y *🤝 Por socio…* |
   | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* | `BOTON_VISTA` (`filaCotizacion.ts`) |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
@@ -257,6 +257,63 @@ revisan antes de cada cambio en esta carpeta.
   `panel/pruebas/playstation.mjs`, y **la pregunta de la regla de arriba:
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
+
+## La Agenda: cada cotización en una sola sección (2026-11-26)
+
+Lo preguntó el cliente con una foto de la Agenda, donde Angel F Mammana salía
+en *📞 Contactar* y en *✍ Por redactar*: *"¿por qué aparece en ambas secciones
+la misma cotización? ¿tiene sentido? ¿qué tendría más sentido mostrar en la
+sección de la derecha?"*. Se le propuso y dijo *"dale con eso y mergea"*.
+
+- **Por qué pasaba**: las dos listas se armaban por separado. *Contactar*
+  tenía toda cotización con un contacto que toca; *Por redactar*, toda la que
+  no se ha mandado. Un borrador con un contacto agendado cumplía las dos. Y
+  *Por redactar · 98* eran casi todas lo importado del CRM, sin plazo.
+- **Ahora cada cotización va en una sola sección** (`agendaDe(…, { unaVez,
+  listas })`, con pruebas), en este orden:
+  1. **Prometida** (*✍ antes del …*): en la derecha, con su plazo, aunque
+     también tenga un contacto. La promesa es lo urgente.
+  2. **Lista y sin confirmar** (`gruposPorConfirmar()` de `lib/envio.ts`): en
+     la derecha, para hoy, *Está lista y no figura como mandada*, con *✉ ¿La
+     mandaste?*. Su fila abre la cotización en el Envío.
+  3. **Con un contacto que toca**: solo en *📞 Contactar*.
+  4. **Lo demás sin mandar**: en la derecha, en *Sin plazo · N*, plegado.
+- **La sección de la derecha se llama *✉ Por mandar*** (era *✍ Por
+  redactar*).
+- **Dónde**: *📋 Lista → 🗓 Agenda* (y su tarjeta, que cuenta lo de hoy) y
+  *Tus pendientes → 🗓 para hoy en tu agenda*. **La ventana de cotizar sigue con
+  la agenda de antes** (sin `unaVez`): de ahí saca el próximo contacto para *Lo
+  conversado*, también de una prometida.
+- **Ninguna lectura, permiso ni columna.** **Ayuda**: `agenda` y el plazo
+  prometido (`redactarAntes`).
+
+## Las tarjetas de la Lista en tres grupos, y el buscador que flota (2026-11-26)
+
+Lo pidió el cliente en dos fotos del mismo día. De las tarjetas de *📋 Lista*:
+*"el orden de las tarjetas es (y márcalos decentemente por los paréntesis): (en
+carrera, cotizado), (agenda, recontactar, por cobrar), (ganados, tasa de
+cierre)"*. Y del calendario con *👤 Por vendedor…* abierto: *"reorganiza los
+espacios cuando filtro por vendedor… estandarizar el formato para todos los
+lugares donde se filtra por vendedores, tiene que ser un mini popup o
+ampliación pero sin desplazarse en el sitio ni abrir un espacio desmedido"*.
+
+- **Las siete tarjetas, en tres grupos con su marco** (`GrupoTarjetas` en
+  `ListaCotizaciones`): ***En curso*** (*En carrera* y *Cotizado*), ***Por
+  hacer*** (*🗓 Agenda*, *Recontactar* y *Por cobrar*) y ***Resultado***
+  (*Ganado* y *Tasa de cierre*). El marco del grupo es fino y claro, con su
+  rótulo en mayúscula: las tarjetas de adentro siguen con su color. En el
+  computador ancho, los tres grupos en una fila (columnas 2 · 2,8 · 2,2); más
+  angosto, uno debajo del otro. Medido a 1280px: los rótulos de las siete en
+  una línea, *Tasa de cierre* incluida.
+- **El buscador de *👤 Por vendedor…* flota bajo el botón**
+  (`FiltroConBuscador` en `BotonPorVendedor.tsx`): antes se abría en su propia
+  fila y empujaba el calendario hacia abajo. Ahora se abre encima, del ancho de
+  una tarjeta (20rem), y se cierra al elegir, con Escape o tocando fuera. **Es
+  la misma pieza en el calendario y la Lista de Cotizaciones, en Clientes y en
+  *🤝 Por socio…*** de la Lista: cada pantalla tenía su copia. Elegido, el botón
+  pasa a *👤 Nombre ✕* (el socio, en celeste) y lo suelta. Medido: abrirlo no
+  cambia el alto de la página.
+- **Ninguna lectura, permiso ni columna.** **Ayuda**: el `?` de Cotizaciones.
 
 ## La barra de Cotizaciones y *👤 Por vendedor…* en el calendario (2026-11-26)
 

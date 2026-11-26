@@ -125,6 +125,11 @@ export interface ItemAgenda {
   cuando: Cuando;
   motivo?: MotivoContacto;
   dias: number;
+  /**
+   * **Está lista y no figura como mandada** (2026-11-26): va en *✉ Por mandar*,
+   * para hoy, con *✉ ¿La mandaste?*. Solo con `unaVez`.
+   */
+  lista?: boolean;
 }
 
 /** Si el grupo todavía no se mandó: candidatos y borradores en carrera, ninguna mandada ni ganada. */
@@ -137,8 +142,23 @@ function porMandar(grupo: Presupuesto[], hoy: Fecha): Presupuesto[] {
  * **La agenda de una lista de cotizaciones**: una fila por grupo en cada
  * lista, lo atrasado primero. Contactar mira hasta `HORIZONTE` días; por
  * redactar trae todos los que esperan, los sin plazo al final.
+ *
+ * **`unaVez`: cada cotización en una sola sección** (2026-11-26, lo preguntó
+ * el cliente con una foto: la misma cotización salía en *Contactar* y en *Por
+ * redactar*, *"¿tiene sentido?"*; dijo *"dale con eso"* a la propuesta). Es la
+ * de la pantalla de la Agenda y de *Tus pendientes*:
+ * 1. **Prometida** (*✍ antes del …*): en *✉ Por mandar*, con su plazo, aunque
+ *    también tenga un contacto. La promesa es lo urgente.
+ * 2. **Lista y sin confirmar** (`listas`, los grupos de
+ *    `porConfirmarDelGrupo()`): en *✉ Por mandar*, para hoy.
+ * 3. **Con un contacto que toca**: solo en *📞 Contactar*.
+ * 4. **Lo demás sin mandar** (sin plazo, casi todo lo del CRM): en *✉ Por
+ *    mandar*, *Sin plazo*, plegado.
+ * Sin `unaVez`, como antes: la ventana de cotizar la usa para saber el próximo
+ * contacto, aunque la cotización esté prometida.
  */
-export function agendaDe(lista: Presupuesto[], hoy: Fecha, cfg: Cfg): { contactar: ItemAgenda[]; redactar: ItemAgenda[] } {
+export function agendaDe(lista: Presupuesto[], hoy: Fecha, cfg: Cfg,
+  opciones: { unaVez?: boolean; listas?: Set<string> } = {}): { contactar: ItemAgenda[]; redactar: ItemAgenda[] } {
   const grupos = new Map<string, Presupuesto[]>();
   for (const p of lista) {
     const g = grupoDe(p);
@@ -157,14 +177,20 @@ export function agendaDe(lista: Presupuesto[], hoy: Fecha, cfg: Cfg): { contacta
         mejor = { p, tipo: 'contactar', fecha: c.fecha, cuando: cuandoEs(c.fecha, hoy), motivo: c.motivo, dias: c.dias };
       }
     }
-    if (mejor) contactar.push(mejor);
     const abiertas = porMandar(grupo, hoy);
-    if (abiertas.length) {
-      const plazos = abiertas.map((x) => x.redactarAntes ?? '').filter(esFecha).sort();
-      const fecha = plazos[0] ?? '';
-      const p = abiertas.find((x) => (x.redactarAntes ?? '') === fecha) ?? abiertas[0];
-      redactar.push({ p, tipo: 'redactar', fecha, cuando: cuandoEs(fecha, hoy), dias: 0 });
+    const plazos = abiertas.map((x) => x.redactarAntes ?? '').filter(esFecha).sort();
+    const fecha = plazos[0] ?? '';
+    const p = abiertas.find((x) => (x.redactarAntes ?? '') === fecha) ?? abiertas[0];
+    if (!opciones.unaVez) {
+      if (mejor) contactar.push(mejor);
+      if (abiertas.length) redactar.push({ p, tipo: 'redactar', fecha, cuando: cuandoEs(fecha, hoy), dias: 0 });
+      continue;
     }
+    if (abiertas.length && fecha) redactar.push({ p, tipo: 'redactar', fecha, cuando: cuandoEs(fecha, hoy), dias: 0 });
+    else if (abiertas.length && opciones.listas?.has(grupoDe(p))) {
+      redactar.push({ p, tipo: 'redactar', fecha: hoy, cuando: 'hoy', dias: 0, lista: true });
+    } else if (mejor) contactar.push(mejor);
+    else if (abiertas.length) redactar.push({ p, tipo: 'redactar', fecha: '', cuando: 'sinPlazo', dias: 0 });
   }
   const urgencia = (m?: MotivoContacto) => (m === 'eventoCerca' ? 0 : m === 'contratoSinFirmar' ? 1 : 2);
   const porNombre = (a: ItemAgenda, b: ItemAgenda) =>
@@ -204,6 +230,7 @@ export function fraseDe(x: ItemAgenda, hoy: Fecha): { texto: string; tono: 'rojo
     ? (x.cuando === 'proximo' ? 'ambar' : 'rojo')
     : x.cuando === 'atrasado' ? 'rojo' : x.cuando === 'hoy' ? 'ambar' : 'neutro';
   if (x.tipo === 'redactar') {
+    if (x.lista) return { texto: 'Está lista y no figura como mandada', tono: 'ambar' };
     if (x.cuando === 'sinPlazo') return { texto: 'Sin plazo para mandarla', tono: 'neutro' };
     if (x.cuando === 'atrasado') {
       return { texto: `Prometiste mandarla el ${enCorto(x.fecha as Fecha)} (hace ${plural(-diasEntre(hoy, x.fecha as Fecha), 'día', 'días')})`, tono };

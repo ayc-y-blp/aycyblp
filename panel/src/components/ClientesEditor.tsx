@@ -37,7 +37,6 @@ import {
 import { PastillaEstado } from './CotizacionesVista';
 import { enPesos } from '@/lib/ocupacion';
 import FechaDia from './FechaDia';
-import BuscarEnLista from './BuscarEnLista';
 
 /** Una cotización en el historial de un cliente. */
 interface EnHistorial {
@@ -132,7 +131,6 @@ export default function ClientesEditor() {
    */
   const [porVendedor, setPorVendedor] = useState<Record<string, string[]> | null>(null);
   const [vendedor, setVendedor] = useState('');
-  const [eligiendoVendedor, setEligiendoVendedor] = useState(false);
   const [hoyDia, setHoyDia] = useState('');
   /** La hora de ahora en Chile (2026-11-25), para *llegó hace 2 h*. */
   const [ahora, setAhora] = useState('');
@@ -311,7 +309,13 @@ export default function ClientesEditor() {
         )}
         {hayFiltro && porVendedor && (
           <BotonPorVendedor vendedor={vendedor} nombre={nombreVendedor(vendedor)} cuantos={delVendedor.size}
-            abierto={eligiendoVendedor} onAbrir={() => setEligiendoVendedor(!eligiendoVendedor)} onSoltar={() => setVendedor('')} />
+            vacia="No hay vendedores." onSoltar={() => setVendedor('')}
+            // Solo los que tienen clientes: uno sin ninguno dejaría la lista vacía.
+            opciones={(vendedores ?? []).filter((v) => (porVendedor[v.usuario]?.length ?? 0) > 0).map((v) => {
+              const n = porVendedor[v.usuario].length;
+              return { id: v.usuario, nombre: v.nombre, detalle: `${n} ${n === 1 ? 'cliente' : 'clientes'}` };
+            })}
+            onElegir={(id) => { setVendedor(id); setAbierta(null); }} />
         )}
         {hayFiltro && (
           <button type="button" aria-pressed={porContactar} onClick={() => setPorContactar(!porContactar)}
@@ -328,20 +332,6 @@ export default function ClientesEditor() {
           </button>
         )}
       </div>
-
-      {eligiendoVendedor && porVendedor && vendedores && (
-        <div className="-mt-2 mb-4 max-w-md">
-          <BuscarEnLista etiqueta="Buscar vendedor" vacia="No hay vendedores."
-            elegido={vendedor}
-            // Solo los que tienen clientes: uno sin ninguno dejaría la lista vacía.
-            opciones={vendedores.filter((v) => (porVendedor[v.usuario]?.length ?? 0) > 0).map((v) => {
-              const n = porVendedor[v.usuario].length;
-              return { id: v.usuario, nombre: v.nombre, detalle: `${n} ${n === 1 ? 'cliente' : 'clientes'}` };
-            })}
-            onElegir={(id) => { setVendedor(id); setEligiendoVendedor(false); setAbierta(null); }}
-            onCerrar={() => setEligiendoVendedor(false)} />
-        </div>
-      )}
 
       {nuevo && (
         // `data-ficha`: así la encuentra `npm run ventanas`, que mide si cabe.

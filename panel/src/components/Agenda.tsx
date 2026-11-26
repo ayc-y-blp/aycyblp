@@ -9,7 +9,8 @@
  * conversó y cuándo volver a contactarlo.
  *
  * Dos grupos, cada uno en su marco: **📞 Contactar** (rosado, el color del
- * seguimiento) y **✍ Por redactar** (cielo, el color del candidato), con lo
+ * seguimiento) y **✉ Por mandar** (cielo, el color del candidato; hasta el
+ * 2026-11-26 *✍ Por redactar*), con lo
  * de hoy y lo atrasado arriba y lo de los próximos días debajo. `soloHoy`
  * la deja en lo de hoy, sin marcos, para la pastilla de *Tus pendientes*.
  */
@@ -113,8 +114,12 @@ export default function Agenda(props: PropsAgenda) {
           {contactarHoy.length > 0 && <>{sub('Hoy')}<ul className="space-y-2">{contactarHoy.map(fila)}</ul></>}
           {contactarDespues.length > 0 && <>{sub('Próximos días')}<ul className="space-y-2">{contactarDespues.map(fila)}</ul></>}
         </section>
-        <section className={`${marcoGrupo('cielo')} p-3`} aria-label="Por redactar">
-          <p className={`mb-2 ${TITULO_GRUPO}`}>✍ Por redactar · {agenda.redactar.length}</p>
+        {/* **✉ Por mandar** (2026-11-26, lo pidió el cliente: la misma
+            cotización salía en las dos secciones): lo prometido y lo listo sin
+            confirmar, arriba; lo que no tiene plazo, plegado. Cada cotización
+            va en una sola sección (`agendaDe(…, { unaVez })`). */}
+        <section className={`${marcoGrupo('cielo')} p-3`} aria-label="Por mandar">
+          <p className={`mb-2 ${TITULO_GRUPO}`}>✉ Por mandar · {agenda.redactar.length}</p>
           {agenda.redactar.length === 0 && <p className="text-[14px] text-hueso/60">Ninguna cotización por mandar.</p>}
           {redactarHoy.length > 0 && <>{sub('Hoy')}<ul className="space-y-2">{redactarHoy.map(fila)}</ul></>}
           {redactarDespues.length > 0 && <>{sub('Próximos días')}<ul className="space-y-2">{redactarDespues.map(fila)}</ul></>}
@@ -163,9 +168,9 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
   const BOTON = 'boton min-h-[44px] lg:min-h-[40px]';
   return (
     <li className={`rounded-lg border-2 bg-panel p-2.5 ${frase.tono === 'rojo' ? 'border-rojo-fuerte/50' : 'border-hueso/15'}`}>
-      <button type="button" onClick={() => onAbrir(p, x.tipo === 'redactar' ? 3 : undefined)} className="w-full text-left">
+      <button type="button" onClick={() => onAbrir(p, x.lista ? 4 : x.tipo === 'redactar' ? 3 : undefined)} className="w-full text-left">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          {soloHoy && <span aria-hidden>{x.tipo === 'redactar' ? '✍' : '📞'}</span>}
+          {soloHoy && <span aria-hidden>{x.tipo === 'redactar' ? (x.lista ? '✉' : '✍') : '📞'}</span>}
           <span className="text-[16px] font-semibold">{p.cliente || 'Sin cliente'}</span>
           <EmpresaCliente nombre={p.cliente} empresa={p.empresaCliente} />
           <span className="text-[13px] text-hueso/65">N° {folioDe(p)}</span>
@@ -187,7 +192,7 @@ function FilaAgenda({ x, hoy, notasPorGrupo, ultimaPorGrupo, puedeTocar, puedeAn
             <button type="button" onClick={() => onNotas(p)}
               className={`${BOTON} !border-oro font-semibold`}>📝 Anotar</button>
           )}
-          {toca && x.tipo === 'redactar' && (
+          {toca && x.tipo === 'redactar' && !x.lista && (
             <button type="button" onClick={() => onAbrir(p, 3)} className={BOTON}>✍ Redactarla</button>
           )}
           {toca && x.motivo === 'contratoSinFirmar' && (

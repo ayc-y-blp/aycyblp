@@ -8192,5 +8192,32 @@ console.log('\nSe cae sola al día siguiente del evento (2026-11-26)');
   ok(Pr.estadoVisible({ ...base, fecha: '2026-12-05' }, HOY) === 'Enviada', 'si se le cambia el día, vuelve sola');
 }
 
+console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
+{
+  const A = await import('./agenda.ts');
+  const HOY = '2026-11-26';
+  const cfg = { seguimientoDias: 5, avisoEvento: 14 };
+  const cot = (x: Record<string, unknown>) => ({ id: 'P', grupo: '', estado: 'Borrador', fecha: '2026-12-20', periodo: '',
+    creado: '', creadoPor: 'Carmen', socio: '', idReserva: '', invitados: 30, validoHasta: '', enviada: '',
+    ultimoSeguimiento: '', descuento: 0, tipoEvento: '', motivo: '', contratoEnviado: '', contrato: '', cliente: 'X',
+    recontactar: '', redactarAntes: '', seguimientoDias: null, avisoEvento: null, ...x } as unknown as Presupuesto);
+  const angel = cot({ id: 'A', recontactar: HOY, cliente: 'Angel' });            // borrador con contacto hoy, sin promesa
+  const prometida = cot({ id: 'B', recontactar: HOY, redactarAntes: '2026-11-28' }); // prometida y con contacto
+  const lista = cot({ id: 'C', recontactar: '2026-11-27' });                       // lista sin confirmar, con contacto
+  const sinNada = cot({ id: 'D' });                                                // sin plazo ni contacto
+  const todas = [angel, prometida, lista, sinNada];
+  const antes = A.agendaDe(todas, HOY, cfg);
+  ok(antes.contactar.some((x) => x.p.id === 'A') && antes.redactar.some((x) => x.p.id === 'A'),
+     'sin unaVez, como antes: el borrador con contacto sale en las dos');
+  const ag = A.agendaDe(todas, HOY, cfg, { unaVez: true, listas: new Set(['C']) });
+  const en = (id: string) => [ag.contactar.some((x) => x.p.id === id) ? 'contactar' : '', ag.redactar.some((x) => x.p.id === id) ? 'mandar' : '']
+    .filter(Boolean).join();
+  ok(en('A') === 'contactar', 'sin promesa y con contacto: solo en Contactar');
+  ok(en('B') === 'mandar' && ag.redactar.find((x) => x.p.id === 'B')!.cuando === 'proximo', 'prometida: en Por mandar con su plazo, aunque tenga contacto');
+  ok(en('C') === 'mandar' && !!ag.redactar.find((x) => x.p.id === 'C')!.lista && A.fraseDe(ag.redactar.find((x) => x.p.id === 'C')!, HOY).texto
+     === 'Está lista y no figura como mandada', 'lista sin confirmar: en Por mandar, para hoy');
+  ok(en('D') === 'mandar' && ag.redactar.find((x) => x.p.id === 'D')!.cuando === 'sinPlazo', 'sin nada: en Por mandar, sin plazo');
+}
+
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');
 process.exit(fallos ? 1 : 0);
