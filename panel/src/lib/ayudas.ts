@@ -555,8 +555,8 @@ export const AYUDAS: Record<string, Ayuda> = {
   configuracion: {
     titulo: 'La configuración',
     cuerpo: [
-      'Está ordenada por secciones, con un botón arriba para saltar a cada '
-      + 'una: las reservas del sitio, el calendario del panel, las '
+      'Está ordenada por secciones plegadas: cada una se abre con su +, o con su '
+      + 'botón del índice de arriba, que la abre y baja a ella. Son las reservas del sitio, el calendario del panel, las '
       + 'cotizaciones, las condiciones para el cliente, los extras y el arriendo, '
       + 'los datos de la empresa y la mantención. Las secciones largas van en '
       + 'grupos, cada uno con su subtítulo.',

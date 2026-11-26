@@ -17,6 +17,7 @@ import PasoAProduccion from './PasoAProduccion';
 import ImportarCRM from './ImportarCRM';
 import TraerProduccion from './TraerProduccion';
 import TraerComentarios from './TraerComentarios';
+import { SignoAbrir } from './TarjetaLista';
 import BuscarEnLista from './BuscarEnLista';
 import { NOMBRE_ROL } from '@/lib/roles';
 import { usarSoloMira } from './SesionCliente';
@@ -41,6 +42,25 @@ export default function ConfigEditor() {
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
   const [guardando, setGuardando] = useState('');
+  // **Las secciones, plegables** (2026-11-26, lo pidió el cliente: *"en
+  // configuración deben estar collapsable las distintas secciones"*). Abren
+  // cerradas; el índice de arriba abre la elegida y baja a ella, y un link con
+  // `#mantencion` (u otra) llega con esa abierta.
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) setAbiertas(new Set([id]));
+  }, []);
+  const alternar = (id: string) => setAbiertas((a) => {
+    const n = new Set(a);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const irA = (id: string) => {
+    setAbiertas((a) => new Set(a).add(id));
+    window.history.replaceState(null, '', `#${id}`);
+    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+  };
   const [revisando, setRevisando] = useState(false);
   const [resumen, setResumen] = useState('');
   /** Las cuentas que cotizan, para elegir a quién van las cotizaciones del sitio (2026-11-23). */
@@ -484,35 +504,47 @@ export default function ConfigEditor() {
         necesita un despliegue.
       </AvisoFijo>
 
-      {/* El índice: un botón por sección, para no recorrer la página entera. */}
+      {/* El índice: un botón por sección, que la abre y baja a ella. */}
       <nav aria-label="Secciones" className="mb-6 flex flex-wrap gap-2 lg:mb-4">
         {secciones.map((x) => (
-          <a key={x.id} href={`#${x.id}`} className="boton tecla min-h-[40px]">{x.titulo}</a>
+          <a key={x.id} href={`#${x.id}`} onClick={(e) => { e.preventDefault(); irA(x.id); }}
+            className={`boton tecla min-h-[40px] ${abiertas.has(x.id) ? 'border-oro bg-oro/15' : ''}`}>{x.titulo}</a>
         ))}
       </nav>
 
-      <div className="space-y-6 lg:space-y-4">
-        {secciones.map((x) => (
+      <div className="space-y-3 lg:space-y-2">
+        {secciones.map((x) => {
+          const abierta = abiertas.has(x.id);
+          return (
           <section key={x.id} id={x.id} aria-labelledby={`t-${x.id}`}
-            className="scroll-mt-4 rounded-lg border border-hueso/15 bg-panel px-4 pt-4 sm:px-5 lg:pt-3">
-            {/* Para qué sirve la sección, en su `?`. */}
-            {/* El `?` en la esquina de arriba a la derecha (2026-11-26). */}
-            <h2 id={`t-${x.id}`} className="flex items-center gap-2 text-base font-bold uppercase tracking-wide text-oro">
-              <span className="min-w-0 flex-1">{x.titulo}</span><AyudaCorta titulo={x.titulo}>{x.para}</AyudaCorta>
-            </h2>
+            className={`scroll-mt-4 rounded-lg border bg-panel px-4 sm:px-5 ${abierta
+              ? 'border-oro/60 pb-0 pt-3' : 'border-hueso/15 py-1'}`}>
+            {/* Para qué sirve la sección, en su `?`, fuera del botón que la
+                abre: apretar el `?` no la pliega. El `?` en la esquina de
+                arriba a la derecha (2026-11-26). */}
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => alternar(x.id)} aria-expanded={abierta}
+                aria-controls={`c-${x.id}`}
+                className="tecla flex min-h-[44px] min-w-0 flex-1 items-center gap-3 text-left">
+                <SignoAbrir abierta={abierta} />
+                <h2 id={`t-${x.id}`} className="text-base font-bold uppercase tracking-wide text-oro">{x.titulo}</h2>
+              </button>
+              <AyudaCorta titulo={x.titulo}>{x.para}</AyudaCorta>
+            </div>
             {/* Con vista gerencia, los campos se ven apagados: `fieldset
                 disabled` los apaga todos de una vez. */}
             {/* **En el computador, los campos van en dos columnas** (2026-11-21,
                 el computador más compacto): cada uno es un nombre y una caja
                 angosta, y a todo el ancho la página medía el doble. La segunda
                 columna parte sin línea arriba, como la primera. */}
-            <fieldset disabled={soloMira}
+            {abierta && <fieldset disabled={soloMira} id={`c-${x.id}`}
               className="m-0 mt-2 min-w-0 border-0 border-t border-hueso/15 p-0
                          lg:grid lg:grid-cols-2 lg:gap-x-10 lg:[&>*:nth-child(2):not([data-grupo])]:border-t-0">
               {x.cuerpo}
-            </fieldset>
+            </fieldset>}
           </section>
-        ))}
+          );
+        })}
       </div>
 
       <AvisoFijo clave="config-clave" className="mt-6 max-w-2xl">

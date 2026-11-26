@@ -144,7 +144,7 @@ export const PANTALLAS = [
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
-  ['dia', '/dia/2026-11-14'], ['dia-con-caidas', '/dia/2026-11-22'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
+  ['dia', '/dia/2026-11-14'], ['dia-con-caidas', '/dia/2026-11-22'], ['productos', '/menus'], ['configuracion', '/config'], ['configuracion-abierta', '/config#extras-arriendo'], ['configuracion-mantencion', '/config#mantencion'], ['cuentas', '/usuarios'],
   ['bitacora', '/bitacora'],
   // La caja chica (2026-11-23, `caja.ts`).
   ['caja', '/caja'],
@@ -479,17 +479,17 @@ export const ESCENAS = {
   'v-clave': async () => { await ir('/usuarios'); await clic(boton('Cambiar', true)); },
   'v-ver-como': async () => { await ir('/usuarios'); await clic(boton(/Ver como/)); },
   'v-base-en-cero': async () => {
-    await ir('/config'); await clic(boton(/Ver qué se borra/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué se borra/));
     // Cuenta las filas de la planilla antes de mostrar la lista: se espera a que llegue.
     await ventana().getByText('Se borra').waitFor({ timeout: 15000 });
   },
   // Traer los datos de producción a la prueba (2026-11-24): lee las dos planillas antes de mostrar la lista.
   'v-traer-produccion': async () => {
-    await ir('/config'); await clic(boton(/Ver qué se trae/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué se trae/));
     await ventana().getByText('Lo que se trae').waitFor({ timeout: 15000 });
   },
   'v-importar-crm': async () => {
-    await ir('/config'); await clic(boton(/Ver qué entra/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué entra/));
     // Lee las pestañas de la planilla antes de mostrar la vista previa: se espera a que llegue.
     await ventana().getByText('Días que toman cupo').waitFor({ timeout: 15000 });
   },

@@ -262,7 +262,7 @@ const ADMIN: Mision[] = [
     id: 'config', emoji: '⚙️', titulo: 'La configuración', escena: 'adm-config',
     intro: 'Precios, plazos, el contrato y lo que ve el público, ordenado por secciones.',
     puntos: [
-      'Salta directo a cada sección.',
+      'Cada sección se abre con su +, o desde el índice de arriba, que la abre y baja a ella.',
       'Reservas del sitio: esto cambia lo que ve el público.',
       'Mantención: revisar Shopify a mano, traer los datos de producción a una versión de prueba y, una sola vez, dejar la base en cero.'
     ],
