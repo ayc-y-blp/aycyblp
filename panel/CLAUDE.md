@@ -302,7 +302,9 @@ panel y la pantalla de números de la gerencia vienen después.
   que el equipo se pide entre sí, no datos de prueba (y en la columna de lo que
   se borra ya no cabía otra línea en 1280×650).
 - **Permiso nuevo, `tareas`**: todas las cuentas que entran al panel, también
-  el vendedor y la anfitriona. Quién ve todas no es un permiso: es
+  el vendedor, **menos la anfitriona** (lo decidió el cliente el mismo día,
+  después del merge: *"la anfitriona no"*): no ve *Tareas* ni se le puede
+  mandar una, ni a ella ni a su rol. Quién ve todas no es un permiso: es
   `VEN_TODAS` (gerencia y administrador), como las notas.
 - **Lecturas de Google**: `/api/tareas` una tanda (`Tareas` y `Usuarios`);
   cambiar una relee `Tareas`. La portada, ninguna más.

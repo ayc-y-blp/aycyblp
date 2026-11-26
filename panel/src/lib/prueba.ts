@@ -5198,8 +5198,8 @@ console.log('\nEl cupo al ganar una cotización');
 }
 
 console.log('\nEl rol de anfitrión');
-ok((Object.keys(PERMISOS) as Accion[]).filter((x) => puede(ROL.anfitrion, x)).join() === 'asistencia,tareas',
-   'la anfitriona tiene dos permisos: marcar la asistencia y las tareas (2026-11-26)');
+ok((Object.keys(PERMISOS) as Accion[]).filter((x) => puede(ROL.anfitrion, x)).join() === 'asistencia',
+   'la anfitriona tiene un solo permiso: marcar la asistencia (las tareas no, lo decidió el cliente el 2026-11-26)');
 ok(puede(ROL.vendedor, 'reservas') && !puede(ROL.vendedor, 'anotar') && puede(ROL.vendedor, 'presupuestos')
    && puede(ROL.encargado, 'anotar'),
    'el vendedor edita sus reservas pero no anota una directo: va por Cotizaciones (2026-11-12)');
@@ -5589,7 +5589,7 @@ console.log('\nLa ayuda de cada rol');
      }),
      'la ayuda de cada rol trae exactamente las pantallas que su menú abre, ni una más');
   const anf = pantallasDe(ROL.anfitrion).map((p) => p.href);
-  ok(anf.join() === '/tareas,/recepcion', 'la anfitriona ve la ayuda de Recepción y de Tareas, nada más');
+  ok(anf.length === 1 && anf[0] === '/recepcion', 'la anfitriona ve la ayuda de Recepción y nada más');
   const ven = pantallasDe(ROL.vendedor);
   ok(!ven.some((p) => p.href === '/turnos' || p.href === '/equipo')
      && ven.some((p) => p.texto === 'Mi resumen'),
@@ -8260,6 +8260,7 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   const r = T.limpiarTareaNueva({ para: 'rol:encargado', que: 'Parrillas', enlace: 'javascript:alert(1)' }, { cuentas, hoy: hoyT });
   ok(!('error' in r) && r.para === 'rol:encargado' && r.enlace === '', 'a un rol entero; un enlace raro se descarta');
   ok('error' in T.limpiarTareaNueva({ para: 'rol:trabajador', que: 'x' }, { cuentas, hoy: hoyT }), 'a un rol sin panel no');
+  ok('error' in T.limpiarTareaNueva({ para: 'rol:anfitrion', que: 'x' }, { cuentas, hoy: hoyT }), 'a la anfitriona no: no tiene tareas');
 
   const base: Omit<T.Tarea, 'fila'> = { id: 'T-1', creada: '2026-11-26 10:00', de: 'juanma', para: 'Isma', que: 'Llamar', plazo: '2026-11-25',
     enlace: '', estado: T.ESTADO_TAREA.pendiente, conversacion: [], cerradaPor: '', cerrada: '' };
