@@ -57,8 +57,6 @@ export const SE_VACIAN: PestanaProduccion[] = [
   { hoja: HOJA_CLIENTES, que: 'Clientes' },
   // Las notas del vendedor (2026-11-23): son de las cotizaciones y los clientes que se borran.
   { hoja: HOJA_NOTAS, que: 'Notas de los vendedores' },
-  // Las tareas internas (2026-11-26): las de prueba no sirven en la base real.
-  { hoja: HOJA_TAREAS, que: 'Tareas internas' },
   { hoja: HOJA_COBROS, que: 'Pagos de los clientes' },
   { hoja: HOJA_TURNOS, que: 'Turnos del equipo' },
   { hoja: HOJA_AJUSTES_SUELTOS, que: 'Ajustes fuera de turno' },
@@ -74,6 +72,9 @@ export const SE_VACIAN: PestanaProduccion[] = [
 
 /** Lo que se conserva. Los comentarios viven en otra planilla y no se tocan. */
 export const SE_CONSERVAN: PestanaProduccion[] = [
+  // Las tareas internas (2026-11-26): son lo que el equipo se pide entre sí, no
+  // datos de prueba; y la base en cero de producción ya se hizo (22-11-2026).
+  { hoja: HOJA_TAREAS, que: 'Tareas internas' },
   { hoja: HOJA_TRABAJADORES, que: 'Trabajadores' },
   { hoja: HOJA_PUESTOS, que: 'Puestos' },
   { hoja: HOJA_USUARIOS, que: 'Cuentas' },

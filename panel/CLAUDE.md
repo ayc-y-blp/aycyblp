@@ -298,7 +298,9 @@ panel y la pantalla de números de la gerencia vienen después.
   `Plazo`, `Enlace` (`dia:AAAA-MM-DD`; también acepta `cotizacion:` y
   `reserva:`), `Estado` (*Pendiente · Pregunta · Hecha · Anulada*),
   `Conversación` (un renglón por mensaje: `cuándo · quién · tipo · texto`),
-  `Cerrada por` y `Cerrada`. Se crea sola. *Dejar la base en cero* la vacía.
+  `Cerrada por` y `Cerrada`. Se crea sola. *Dejar la base en cero* la conserva: es lo
+  que el equipo se pide entre sí, no datos de prueba (y en la columna de lo que
+  se borra ya no cabía otra línea en 1280×650).
 - **Permiso nuevo, `tareas`**: todas las cuentas que entran al panel, también
   el vendedor y la anfitriona. Quién ve todas no es un permiso: es
   `VEN_TODAS` (gerencia y administrador), como las notas.

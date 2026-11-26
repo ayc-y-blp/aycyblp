@@ -87,6 +87,10 @@ export const ALINEACION_ACEPTADA = {
  * texto, un trozo del hallazgo.
  */
 export const ESPACIO_ACEPTADO = {
+  // Las tareas (2026-11-26): debajo de qué hay que hacer va su detalle —de quién
+  // para quién, cuándo, el plazo—, como el segundo renglón de una cotización.
+  // Es la misma tarjeta, no una fila suelta: al lado, el texto quedaría cortado.
+  'tareas': ['y debajo "De '],
   // *✕ Se cayó…* al final de la fila (2026-11-26, lo pidió el cliente): la fila
   // de una cotización lleva debajo, a propósito, el renglón del detalle (el
   // vendedor, la empresa, el tipo). Es el segundo renglón de la misma fila, no
