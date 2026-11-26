@@ -44,6 +44,12 @@ export interface ContextoLista {
   seguimiento: { seguimientoDias: number; avisoEvento: number };
   /** Todas las cotizaciones, para juntar las alternativas. */
   todas: Presupuesto[];
+  /**
+   * La comisión de cada ganada que esta cuenta puede ver (2026-11-26,
+   * `comisionesPorCotizacion()`). Sin el dato, la tarjeta *Ganado* no la
+   * muestra.
+   */
+  comisiones?: Record<string, number>;
 }
 
 /**
@@ -190,7 +196,8 @@ export function calzaBusqueda(p: Presupuesto, texto: string): boolean {
 export interface ResumenLista {
   enCarrera: { n: number; gente: number };
   cotizado: { monto: number; n: number; borradores: number; montoBorradores: number };
-  ganado: { monto: number; n: number };
+  /** `comision`: lo que dejan en comisión las ganadas que se ven; `null` si esta cuenta no la ve. */
+  ganado: { monto: number; n: number; comision: number | null };
   tasa: { ganadas: number; perdidas: number; pct: number | null };
   porCobrar: { monto: number; n: number };
 }
@@ -202,7 +209,7 @@ export interface ResumenLista {
 export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLista {
   const r: ResumenLista = {
     enCarrera: { n: 0, gente: 0 }, cotizado: { monto: 0, n: 0, borradores: 0, montoBorradores: 0 },
-    ganado: { monto: 0, n: 0 }, tasa: { ganadas: 0, perdidas: 0, pct: null },
+    ganado: { monto: 0, n: 0, comision: ctx.comisiones ? 0 : null }, tasa: { ganadas: 0, perdidas: 0, pct: null },
     porCobrar: { monto: 0, n: 0 }
   };
   for (const p of base) {
@@ -217,7 +224,10 @@ export function resumenLista(base: Presupuesto[], ctx: ContextoLista): ResumenLi
         r.cotizado.borradores++; r.cotizado.montoBorradores += total;
       }
     }
-    if (e === ESTADO_PRESUPUESTO.aceptado) { r.ganado.n++; r.ganado.monto += total; r.tasa.ganadas++; }
+    if (e === ESTADO_PRESUPUESTO.aceptado) {
+      r.ganado.n++; r.ganado.monto += total; r.tasa.ganadas++;
+      if (r.ganado.comision !== null) r.ganado.comision += ctx.comisiones?.[p.id] ?? 0;
+    }
     if (e === ESTADO_PRESUPUESTO.rechazado) r.tasa.perdidas++;
     const falta = faltaCobrarDe(p, ctx);
     if (falta > 0) { r.porCobrar.n++; r.porCobrar.monto += falta; }

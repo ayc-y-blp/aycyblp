@@ -10,7 +10,7 @@ import { diasConSobrecupo } from '@/lib/sobrecupo';
 import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_MENUS, sinCostos, textoLargo } from '@/lib/menus';
 import { HOJA_LINEAS, HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
-import { HOJA_VENDEDORES } from '@/lib/vendedores';
+import { HOJA_VENDEDORES, comisionesPorCotizacion } from '@/lib/vendedores';
 import { vendedoresParaAsignar } from '@/lib/asignar';
 import { horarioDe, faltaDeEmpresa, normalizarHorario } from '@/lib/contrato';
 import { UF_MINIMA, UF_MAXIMA } from '@/lib/uf';
@@ -42,7 +42,7 @@ import {
 } from '@/lib/cotizar';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { esExclusivo } from '@/lib/exclusivo';
-import { puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
+import { ROL, puede, puedeTocarPresupuesto, type Rol } from '@/lib/auth';
 import { nuevoToken } from '@/lib/equipo';
 import { avisosSinConfirmar } from '@/lib/envio';
 import { avisosDelSitio, HOJA_PROMOCIONES, promocionDe, beneficioDePromocion, faltaAnticipacion, type Promocion } from '@/lib/promociones';
@@ -170,6 +170,20 @@ export const GET = conLecturas([HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_MENUS, HOJA
       // **El día en que se ganó cada una** (2026-11-17, para la Lista): el día
       // en que nació su reserva, que ya viene en esta tanda.
       ganadaEl: ganadasEl(presupuestos, reservas),
+      // **La comisión de lo ganado** (2026-11-26, lo pidió el cliente: *"mostrar
+      // la ganancia (comisión) del vendedor también, para motivarlo a ganar
+      // más"*): la línea *💰* de la tarjeta *Ganado* de la Lista. La ve quien
+      // ya ve las comisiones (`vendedores`): el vendedor, solo las suyas; la
+      // gerencia, pagos y el administrador, las de todos. Sale de lo ya leído
+      // (`Vendedores`, `Cobros`, `Menús`, `Usuarios`): ninguna lectura más.
+      comisiones: !puede(quien.rol as Rol, 'vendedores') ? undefined
+        : quien.rol === ROL.vendedor
+          ? (() => {
+              const c = cuentaDeSesion(cuentas, quien.usuario);
+              return comisionesPorCotizacion(presupuestos, lineas, cobros, fichas, menus, cuentas,
+                { usuario: c?.usuario ?? quien.usuario, nombre: c?.nombre ?? quien.usuario });
+            })()
+          : comisionesPorCotizacion(presupuestos, lineas, cobros, fichas, menus, cuentas),
       // **Las notas del vendedor** (2026-11-23, `lib/notas.ts`): solo las que
       // esta cuenta puede leer —las de sus cotizaciones, o todas si es la
       // gerencia o el administrador—. `Notas` va en la misma tanda.

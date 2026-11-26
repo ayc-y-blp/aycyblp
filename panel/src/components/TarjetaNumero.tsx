@@ -11,13 +11,15 @@
  *   (no solo color). `bueno` dice si que suba es bueno: el no-show que sube
  *   es malo.
  */
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import AyudaCorta from './AyudaCorta';
 
 export type Cambio = { texto: string; sentido: 'sube' | 'baja' | 'igual' } | null;
 
-export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, onClick, cambio, bueno = 'sube', contra }: {
+export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, onClick, cambio, bueno = 'sube', contra, extra }: {
   que: string; valor: string; nota?: string; tono: string; ayuda: string;
+  /** Un segundo dato, bajo la nota: la comisión de lo ganado (2026-11-26). */
+  extra?: ReactNode;
   activa?: boolean; onClick?: () => void;
   cambio?: Cambio;
   /** Qué dirección es la buena: `sube`, `baja` o `ninguna`. */
@@ -37,6 +39,7 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
           style={{ '--n': valor.length } as CSSProperties}>{valor}</span>
       </span>
       {nota && <span className="mt-1 block text-[13px] leading-tight text-hueso/75">{nota}</span>}
+      {extra && <span className="mt-1.5 block">{extra}</span>}
       {cambio && (
         <span className={`mt-1 block text-[13px] font-semibold leading-snug ${colorCambio}`}>
           {cambio.texto}{contra && <span className="font-normal text-hueso/60"> vs. {contra}</span>}
