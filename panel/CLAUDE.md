@@ -208,7 +208,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
   | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`), y la de sus cotizaciones (`data-columnas="historial"`) |
   | Filtrar por una persona —un vendedor, un socio— con su buscador | `FiltroConBuscador` (y `BotonPorVendedor`, que es ese con *👤 Por vendedor…*): el buscador flota bajo el botón, sin empujar la página. El calendario y la Lista de Cotizaciones, Clientes y *🤝 Por socio…* |
-  | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* | `BOTON_VISTA` (`filaCotizacion.ts`): el marco de la vista, 3px dorado y negrita |
+  | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* (Cotizaciones) y *← Volver*, *📅 Reservas · 👥 Equipo* (Estadísticas) | `BOTON_VISTA` (`filaCotizacion.ts`): el marco de la vista, 3px dorado y negrita |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
   | Corregir un día cerrado: el aviso de arriba y el pie con la lista de cambios y la casilla | `AvisoCierre` y `PieCorreccion` de `Correccion`, con `lib/correccion.ts`. El pie se acomoda con `modo`: `fila` (la ventana del equipo), `dosFilas` (el formulario de una reserva) y `apilado` (borrar una reserva, y guardar una cotización ganada) |
@@ -302,7 +302,9 @@ arriba dentro de la tarjeta, revisa todo"*.
   sombra de los marcos de grupo y la letra en negrita de 16px; el de la vista
   que se mira, con más tinte. Es la excepción a *botones con 2px o menos*: lo
   pidió el cliente para estos tres, que cambian la pantalla entera. *+ Cotizar*
-  sigue siendo el único relleno.
+  sigue siendo el único relleno. **También en Estadísticas** (*"sí claro, al
+  mismo"*): *← Volver al calendario* (o *al informe*) y *📅 Reservas · 👥
+  Equipo*.
 - **El número de una tarjeta toma el tamaño que cabe** (`numero-caja` y
   `numero-cabe` en `globals.css`, en `TarjetaNumero`): 22px si cabe y, si no,
   lo que deje el ancho para sus letras, nunca bajo 15px. **El renglón mide

@@ -21,6 +21,7 @@ import BandaSeccion from './BandaSeccion';
 import Ayuda from './Ayuda';
 import AyudaCorta from './AyudaCorta';
 import TarjetaNumero from './TarjetaNumero';
+import { BOTON_VISTA } from './filaCotizacion';
 import ElegirPeriodo, { DesdeHasta } from './ElegirPeriodo';
 import EstadisticasEquipo from './EstadisticasEquipo';
 import type { DiaEstadistica } from '@/lib/estadisticasEquipo';
@@ -287,16 +288,19 @@ export default function Estadisticas() {
         Solo para mirar
       </BandaSeccion>
       <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-2">
+        {/* **Volver y las dos vistas, con el marco de la vista** (2026-11-26,
+            lo pidió el cliente al llevarlo de Cotizaciones: *"sí claro, al
+            mismo"*): `BOTON_VISTA`, la misma pieza de *← Volver al
+            calendario*, *Sin fecha* y *📋 Lista*. */}
         {vista === 'equipo' && datos?.equipo
-          ? <a href="/informe" className="boton inline-flex min-h-[40px] items-center">← Volver al informe</a>
-          : <a href="/" className="boton inline-flex min-h-[40px] items-center">← Volver al calendario</a>}
+          ? <a href="/informe" className={`${BOTON_VISTA} inline-flex items-center`}>← Volver al informe</a>
+          : <a href="/" className={`${BOTON_VISTA} inline-flex items-center`}>← Volver al calendario</a>}
         {/* Las dos vistas, dos botones grandes: solo para quien también ve el informe. */}
         {datos?.equipo && (
           <div role="group" aria-label="Qué estadísticas" className="flex gap-2">
             {([['reservas', '📅 Reservas'], ['equipo', '👥 Equipo']] as const).map(([v, t]) => (
               <button key={v} type="button" aria-pressed={vista === v} onClick={() => elegirVista(v)}
-                className={`tecla min-h-[44px] rounded-xl border-2 px-4 text-[15px] font-bold ${
-                  vista === v ? 'border-oro bg-oro/15 text-hueso' : 'border-hueso/25 text-hueso/75 hover:border-oro/60'}`}>
+                className={`${BOTON_VISTA} px-4 ${vista === v ? '!bg-oro/25' : ''}`}>
                 {t}
               </button>
             ))}

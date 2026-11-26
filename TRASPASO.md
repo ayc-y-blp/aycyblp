@@ -728,7 +728,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   tarjeta): el número de cada tarjeta toma el tamaño que cabe, la Recepción
   apila número y palabra en el celular, el `?` de ayuda es un 15% más chico y
   va arriba a la derecha de su tarjeta, y *Volver*, *Sin fecha* y *Lista* llevan
-  el marco de la vista. Prueba nueva, `revisarDesborde()`, con los números en su
+  el marco de la vista (también *Volver* y *Reservas · Equipo* de Estadísticas). Prueba nueva, `revisarDesborde()`, con los números en su
   peor caso. **En un PR, en preview hasta el *"mergea"*.** Ver
   `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
