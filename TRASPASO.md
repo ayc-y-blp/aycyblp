@@ -678,7 +678,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   15 de 15 y `brasasdelopirque.cl/promociones.html` ya lo trae.
 - **La línea de cada reserva dice de dónde viene** (26-11-2026, lo pidió el
   cliente con una foto de la página del día): *🛒 Shopify · N°*, *✍ A mano ·
-  MANUAL-…* o *🤝 Cotización N° … · empresa · vendió …*. **En un PR, en preview
+  MANUAL-…* o *🤝 Cotización N° … · empresa · vendió … · socio …*. **En un PR, en preview
   hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "La línea de cada reserva dice
   de dónde viene".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de

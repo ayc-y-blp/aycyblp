@@ -11,7 +11,8 @@ import { marcasDePago } from '@/lib/plata';
 import { ROL, esSuya, puede, type Rol } from '@/lib/auth';
 import { empujarDia } from '@/lib/crm-escribir';
 import { anotar } from '@/lib/datos';
-import { leerPresupuestos, leerLineasPresupuesto, leerClientes } from '@/lib/datos';
+import { leerPresupuestos, leerLineasPresupuesto, leerClientes, leerVendedores } from '@/lib/datos';
+import { HOJA_VENDEDORES } from '@/lib/vendedores';
 import { HOJA_CLIENTES } from '@/lib/clientes';
 import { leerReservas, crearReserva, leerMenus, abrirElDiaSiHaceFalta, reservasDeCotizaciones,
          leerFechas, leerConfig } from '@/lib/datos';
@@ -26,15 +27,16 @@ import { ahoraEnChile } from '@/lib/bitacora';
 
 export const dynamic = 'force-dynamic';   // nunca cachear: son datos vivos
 
-export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CLIENTES], async function GET(req: Request) {
+export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HOJA_LINEAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CLIENTES, HOJA_VENDEDORES], async function GET(req: Request) {
   const no = await exigirVer(req, 'ver');
   if (no) return no;
   try {
     // Los menus viajan junto a las reservas: las dos vistas que leen esto
     // los necesitan para agrupar, y asi no hay una peticion mas.
-    const [reservas, menus, deCot, presupuestos, lineasCot, clientes] = await Promise.all([
+    const [reservas, menus, deCot, presupuestos, lineasCot, clientes, fichas] = await Promise.all([
       leerReservas(), leerMenus(), reservasDeCotizaciones().catch(() => new Map<string, string>()),
-      leerPresupuestos().catch(() => []), leerLineasPresupuesto().catch(() => []), leerClientes().catch(() => [])
+      leerPresupuestos().catch(() => []), leerLineasPresupuesto().catch(() => []), leerClientes().catch(() => []),
+      leerVendedores().catch(() => [])
     ]);
     // **Lo acordado en la cotización ganada** (2026-11-20): va dentro de la
     // caja de Fudo, así que el recorte de `privacidad.ts` lo saca junto con
@@ -57,6 +59,14 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HO
     for (const p of presupuestos) {
       const e = p.idReserva && p.idCliente ? empresaDe.get(p.idCliente) : '';
       if (e) empresaDeReserva[p.idReserva!] = e;
+    }
+    // **Y el socio comercial, si vino por uno** (lo pidió el cliente el mismo
+    // día: *"y si hay socio comercial, también"*): su nombre, de su ficha.
+    // `Vendedores` va en la misma tanda.
+    const socioDeReserva: Record<string, string> = {};
+    for (const p of presupuestos) {
+      if (!p.idReserva || !p.socio) continue;
+      socioDeReserva[p.idReserva] = fichas.find((f) => f.usuario === p.socio)?.nombre || p.socio;
     }
     // **Cómo ingresarla en Fudo**, armado acá (2026-11-11): la misma
     // instrucción en la página del día, en /turnos y en la recepción.
@@ -106,7 +116,7 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_MENUS, HOJA_PRESUPUESTOS, HO
       // Qué reservas vienen de una cotización: esas no se sueltan acá, se
       // cancelan desde su cotización.
       deCotizacion: Object.fromEntries(deCot),
-      vendedorDe, folioDeReserva, empresaDeReserva, empresa
+      vendedorDe, folioDeReserva, empresaDeReserva, socioDeReserva, empresa
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

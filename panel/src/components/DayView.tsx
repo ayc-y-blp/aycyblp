@@ -256,8 +256,8 @@ export default function DayView(
     { apertura: '', abierto: false, descuentos: [5, 10, 15] });
   /** **Mías** (2026-11-12, lo pidió el cliente): solo las que anotó o vendió esta cuenta. */
   const [soloMias, setSoloMias] = useState(false);
-  const [origen, setOrigen] = useState<{ vendedor: Record<string, string>; folio: Record<string, string>; empresa: Record<string, string> }>(
-    { vendedor: {}, folio: {}, empresa: {} });
+  const [origen, setOrigen] = useState<{ vendedor: Record<string, string>; folio: Record<string, string>;
+    empresa: Record<string, string>; socio: Record<string, string> }>({ vendedor: {}, folio: {}, empresa: {}, socio: {} });
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState<Filtro>('todas');
   /**
@@ -342,7 +342,8 @@ export default function DayView(
         if (d.capacidadMaxima) setCapacidadMaxima(d.capacidadMaxima);
         setEmpresa(d.empresa ?? '');
         if (d.deCotizacion) setDeCotizacionIds(d.deCotizacion);
-        setOrigen({ vendedor: d.vendedorDe ?? {}, folio: d.folioDeReserva ?? {}, empresa: d.empresaDeReserva ?? {} });
+        setOrigen({ vendedor: d.vendedorDe ?? {}, folio: d.folioDeReserva ?? {}, empresa: d.empresaDeReserva ?? {},
+          socio: d.socioDeReserva ?? {} });
         setInfoDia({ apertura: d.apertura ?? '', abierto: !!d.abierto,
                      descuentos: Array.isArray(d.descuentos) && d.descuentos.length ? d.descuentos : [5, 10, 15] });
       })
@@ -755,7 +756,8 @@ export default function DayView(
                 palabra que llega de Shopify… o de cotización de tal persona,
                 tal empresa"*): la palabra del filtro de origen
                 (`QUE_RESERVAS`): *🛒 Shopify · 1908…*, *✍ A mano · MANUAL-…*, o
-                *🤝 Cotización N° … · la empresa del cliente · vendió …*. Se
+                *🤝 Cotización N° … · la empresa del cliente · vendió … · socio …*
+                (el socio, si vino por uno). Se
                 dobla en vez de cortarse (regla: un nombre no se corta). */}
             <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-[13px] text-hueso/65">
               {/* En trozos que bajan enteros: en el celular, *🛒 Shopify* y su
@@ -763,7 +765,8 @@ export default function DayView(
                   doblan si hace falta. */}
               {(idCotizacion
                 ? [[`${palabraDeOrigen('cotizacion')} N° ${folio}`, true], [origen.empresa[r.id] ?? '', false],
-                   [`vendió ${origen.vendedor[r.id] || deCotizacion?.creadoPor || 'sin vendedor'}`, false]] as [string, boolean][]
+                   [`vendió ${origen.vendedor[r.id] || deCotizacion?.creadoPor || 'sin vendedor'}`, false],
+                   [origen.socio[r.id] ? `socio ${origen.socio[r.id]}` : '', false]] as [string, boolean][]
                 : [[palabraDeOrigen(origenDeReserva(r, false)), true], [r.id, true]] as [string, boolean][])
                 .filter(([t]) => t)
                 .map(([t, entero], k) => (

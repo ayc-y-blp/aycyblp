@@ -244,14 +244,16 @@ vendedor"*.
 
 - **Bajo el nombre de cada reserva** (cerrada o abierta), la palabra del filtro
   de origen (`QUE_RESERVAS`): ***🛒 Shopify · 1908…***, ***✍ A mano ·
-  MANUAL-…*** o ***🤝 Cotización N° 693616 · Aguas Andinas · vendió Carmen***.
-  La persona es el nombre de la reserva (el de la cotización), así que no se
-  repite.
+  MANUAL-…*** o ***🤝 Cotización N° 693616 · Aguas Andinas · vendió Carmen ·
+  socio Turismo Valle del Maipo*** (el socio, si vino por uno: *"y si hay socio
+  comercial, también"*). La persona es el nombre de la reserva (el de la
+  cotización), así que no se repite.
 - **En trozos que bajan enteros** en el celular: *🛒 Shopify* y su número no se
   parten a la mitad; la empresa y el vendedor se doblan si hace falta.
-- **La empresa del cliente** viaja en `/api/reservas` como `empresaDeReserva`
-  (`Clientes` se sumó a la tanda: la ruta sigue en una lectura). No se recorta
-  por rol, igual que en las cotizaciones.
+- **La empresa del cliente y el socio** viajan en `/api/reservas` como
+  `empresaDeReserva` y `socioDeReserva` (el nombre de su ficha). `Clientes` y
+  `Vendedores` se sumaron a la tanda: la ruta sigue en una lectura. No se
+  recortan por rol, igual que en las cotizaciones.
 - **Ningún permiso ni columna nueva.** Ninguna ayuda describía esa línea.
 
 ## Confirmar el envío y las nuevas del sitio (2026-11-25)
