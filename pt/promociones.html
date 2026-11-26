@@ -793,6 +793,15 @@
     .tier-cap .name{ font-size:0.9rem; }
     .tier-cap .price{ font-size:1.2rem; }
   }
+  /* **Ver bebestibles** (2026-11-25, lo pidio el cliente): un span con forma de
+     boton dentro del <label>, asi que se apriete el o cualquier parte, la
+     tarjeta gira y el reverso dice los bebestibles. Igual que en site.css. */
+  .ver-bebestibles{
+    align-self:flex-start; display:inline-flex; align-items:center; min-height:40px; padding:8px 14px; margin-top:8px;
+    border:1px solid rgba(244,240,230,0.75); background: rgba(11,11,10,0.35); color:#F4F0E6; border-radius:2px;
+    font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+  }
+  .flip-card:hover .ver-bebestibles{ border-color:#F4F0E6; background: rgba(11,11,10,0.55); }
   .flip-hint{
     position:absolute; top:10px; right:10px; font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em;
     color: #F4F0E6; background: rgba(0,0,0,0.6); padding:6px 10px; border-radius:4px; z-index:2;
@@ -1397,7 +1406,7 @@
               <div class="flip-inner">
                 <div class="flip-front">
                   <img src="../assets/imgs/img-005.jpg" alt="Experiência Lo Pirque" width="1650" height="482" loading="lazy" decoding="async">
-                  <span class="tier-cap"><span class="name">Lo Pirque</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.lo_pirque">$50.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.lo_pirque:descuento">$44.500 CLP</span><span class="mas-iva">+ IVA</span></span></span>
+                  <span class="tier-cap"><span class="name">Lo Pirque</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.lo_pirque">$50.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.lo_pirque:descuento">$44.500 CLP</span><span class="mas-iva">+ IVA</span></span><span class="ver-bebestibles">Ver bebidas</span></span>
                   <span class="dcto" aria-hidden="true" data-lista="texto:promociones.descuento:porcentaje-negativo">−11%</span>
                   <span class="flip-hint">Ver detalhes</span>
                 </div>
@@ -1416,7 +1425,7 @@
               <div class="flip-inner">
                 <div class="flip-front">
                   <img src="../assets/imgs/img-006.jpg" alt="Experiência Brasas" width="1650" height="482" loading="lazy" decoding="async">
-                  <span class="tier-cap"><span class="name">Brasas</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.brasas">$70.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.brasas:descuento">$62.300 CLP</span><span class="mas-iva">+ IVA</span></span></span>
+                  <span class="tier-cap"><span class="name">Brasas</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.brasas">$70.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.brasas:descuento">$62.300 CLP</span><span class="mas-iva">+ IVA</span></span><span class="ver-bebestibles">Ver bebidas</span></span>
                   <span class="dcto" aria-hidden="true" data-lista="texto:promociones.descuento:porcentaje-negativo">−11%</span>
                   <span class="flip-hint">Ver detalhes</span>
                 </div>
@@ -1435,7 +1444,7 @@
               <div class="flip-inner">
                 <div class="flip-front">
                   <img src="../assets/imgs/img-007.jpg" alt="Experiência Sommelier" width="1650" height="482" loading="lazy" decoding="async">
-                  <span class="tier-cap"><span class="name">Sommelier</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.sommelier">$90.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.sommelier:descuento">$80.100 CLP</span><span class="mas-iva">+ IVA</span></span></span>
+                  <span class="tier-cap"><span class="name">Sommelier</span><span class="price"><s class="precio-antes" data-lista="texto:empresas.sommelier">$90.000 CLP</s><span class="precio-ahora" data-lista="texto:empresas.sommelier:descuento">$80.100 CLP</span><span class="mas-iva">+ IVA</span></span><span class="ver-bebestibles">Ver bebidas</span></span>
                   <span class="dcto" aria-hidden="true" data-lista="texto:promociones.descuento:porcentaje-negativo">−11%</span>
                   <span class="flip-hint">Ver detalhes</span>
                 </div>
