@@ -270,8 +270,10 @@ centralizada"*. Decidió *"cada uno las suyas"* (la gerencia y el
 administrador ven todas) y *"tareas primero"*; los comentarios de 💬 en el
 panel y la pantalla de números de la gerencia vienen después.
 
-- **Pantalla nueva, *Tareas*** (`/tareas`, `TareasVista`), en el menú de todas
-  las cuentas, segunda después del Calendario. Grupos con su marco: ***👉 Para
+- **Pantalla nueva, *Mi panel*** (`/tareas`, `TareasVista`), en el menú de todas
+  las cuentas, segunda después del Calendario. **Se llamó *Tareas* el primer
+  día**: el cliente pidió *"debería llamarse mi panel, no tareas"*; la banda
+  dice *Mi panel · Tareas y comentarios* y la dirección sigue siendo `/tareas`. Grupos con su marco: ***👉 Para
   ti*** (lo que te toca ahora), ***📤 Las que mandaste***, ***👥 Del equipo***
   (solo quien ve todas) y ***✓ Cerradas***, plegado. Las atrasadas van arriba,
   con la tarjeta en rojo.
@@ -280,6 +282,11 @@ panel y la pantalla de números de la gerencia vienen después.
   (son pocos y fijos)—, *Qué hacer*, *Para cuándo* (`ElegirFecha`, con *Sin
   plazo*) y *Con qué día* (opcional: la tarea lleva a la página de ese día).
   Mide 638px a 1280×650 (escena `v-nueva-tarea`).
+  **📌 A mí** (lo pidió el cliente el mismo día, al no poder elegirse como
+  administrador: *"sí, aplica a mí"*): al lado de *Otra persona…*, en *Nueva
+  tarea* y en *Pasar a tarea* de un comentario. Queda como recordatorio en el
+  propio panel. El servidor acepta siempre a quien la manda, **también la
+  cuenta de emergencia**, que no está en *Cuentas*.
 - **El ida y vuelta, corto** (`lib/tareas.ts`, puro y con pruebas): quien la
   recibe aprieta ***✓ Hecha*** (con una nota opcional) o ***❓ Preguntar***; la
   pregunta vuelve a quien la mandó, que ***↩ Contesta*** y la tarea sigue
@@ -331,7 +338,10 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
   de la pantalla; `?ver=comentarios`), con los botones que cambian de vista a la
   derecha y el marco de la vista (`BOTON_VISTA`). El número rojo cuenta lo
   pendiente.
-  - **La gerencia general y el administrador** (`LEEN_TODOS`) ven todos, en
+  - **El administrador** (`LEEN_TODOS`) ve todos —**la gerencia no**, lo
+    decidió el cliente el mismo día: *"la gerencia no tiene que ver los
+    coméntame, eso solo admin, gerencia ve lo que se envía por interno"*: ve
+    todas las tareas y, de los comentarios, solo los suyos—, en
     *🆕 Nuevos*, *⏳ En curso* y *✓ Cerrados* (plegado): ***↩ Contestar*** (y
     queda resuelto o sigue en curso), estado (*Nuevo · En curso · Resuelto · No
     se hará*), prioridad (*Alta · Media · Baja*) y ***📋 Pasar a tarea***, que
@@ -351,7 +361,7 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
   (producción). **Después de traerlos, la variable se puede borrar de Vercel**
   y el Apps Script de *Gran Testeo* deja de recibir los nuevos.
 - **Ningún permiso nuevo**: comentar sigue siendo de cualquier cuenta;
-  contestar, de `LEEN_TODOS`; marcar visto, de quien lo escribió. *Dejar la
+  contestar, del administrador (`LEEN_TODOS`); marcar visto, de quien lo escribió. *Dejar la
   base en cero* los conserva.
 - **Lecturas de Google**: `/api/comentarios` una tanda (`Comentarios`,
   `Usuarios`, `Tareas`); mandar uno lee el encabezado de la pestaña. La
@@ -359,6 +369,26 @@ lecturas lo comparten igual las dos planillas, porque las lee la misma cuenta).
   **Ventanas**: la pantalla `tareas-comentarios` en la prueba de espacio.
 - **El panel de ejemplo** trae tres comentarios: uno nuevo, uno en curso con
   prioridad alta y uno contestado sin ver.
+
+## Configuración: las secciones se pliegan (2026-11-26)
+
+Lo pidió el cliente: *"en configuración deben estar collapsable las distintas
+secciones"*.
+
+- **Cada sección abre cerrada**, con su `+` (`SignoAbrir`, el de las tarjetas
+  que se abren) y su `?` a la derecha, fuera del botón que la abre: apretar el
+  `?` no la pliega. Abierta, el marco pasa a dorado y el `+` a `−`. Se pueden
+  tener varias abiertas.
+- **El índice de arriba abre la sección elegida y baja a ella**; el botón de
+  una abierta va con tinte dorado. **Un link con `#seccion`**
+  (`/config#mantencion`) llega con esa abierta.
+- Cerrada, la sección no dibuja sus campos: lo escrito se guarda al salir del
+  campo, como siempre, así que plegar no pierde nada.
+- **Lecturas, permisos y columnas**: nada nuevo. **Ayuda**: el `?` de
+  Configuración y la misión *La configuración* (texto y foto, que ahora se
+  saca con *Reservas del sitio* abierta, `/config#sitio`). **Ventanas**: las
+  escenas de Mantención entran por `/config#mantencion`, y la prueba de
+  espacio mide además `configuracion-abierta` y `configuracion-mantencion`.
 
 ## Los calendarios: lo cotizado, siempre a la misma altura (2026-11-26)
 

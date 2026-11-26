@@ -150,7 +150,7 @@ const ESCENAS = {
 
   'adm-cuentas': { rol: 'admin', ruta: '/usuarios', alto: 900,
     puntos: [boton(/Ver como/), (p) => p.locator('select').first(), boton(/Vista gerencia/)] },
-  'adm-config': { rol: 'admin', ruta: '/config', alto: 1000, foco: toque(/^Mantención$/),
+  'adm-config': { rol: 'admin', ruta: '/config#sitio', alto: 1000, foco: toque(/^Mantención$/),
     puntos: [toque(/^Reservas del sitio$/), texto(/Días que se abre/), toque(/^Mantención$/)] },
   'adm-bitacora': { rol: 'admin', ruta: '/bitacora',
     puntos: [texto(/^Cuándo$/i), texto(/^Quién$/i), texto(/^Acción$/i)] },

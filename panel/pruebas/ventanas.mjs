@@ -144,7 +144,7 @@ export const PANTALLAS = [
   ['cotizaciones-sin-fecha', '/presupuestos', async (p) => { await p.locator('button:visible', { hasText: /^Sin fecha/ }).first().click(); }],
   ['clientes', '/clientes'], ['vendedores', '/vendedores'], ['equipo', '/equipo'], ['turnos', '/turnos'],
   ['extras', '/extras'], ['informe', '/informe'], ['estadisticas', '/estadisticas'], ['recepcion', '/recepcion'],
-  ['dia', '/dia/2026-11-14'], ['dia-con-caidas', '/dia/2026-11-22'], ['productos', '/menus'], ['configuracion', '/config'], ['cuentas', '/usuarios'],
+  ['dia', '/dia/2026-11-14'], ['dia-con-caidas', '/dia/2026-11-22'], ['productos', '/menus'], ['configuracion', '/config'], ['configuracion-abierta', '/config#extras-arriendo'], ['configuracion-mantencion', '/config#mantencion'], ['cuentas', '/usuarios'],
   ['bitacora', '/bitacora'],
   // La caja chica (2026-11-23, `caja.ts`).
   ['caja', '/caja'],
@@ -169,7 +169,10 @@ await ctx.clock.install({ time: new Date(process.env.AYUDA_RELOJ ?? '2026-11-13T
 const p = await ctx.newPage();
 p.setDefaultTimeout(8000);
 
-const ir = async (ruta) => { await p.goto(URL_PANEL + ruta, { waitUntil: 'networkidle', timeout: 120000 }); await p.waitForTimeout(1100); };
+// Con un `#` (`/config#mantencion`), ir a la misma dirección no recarga: solo
+// mueve el ancla y deja lo que quedó abierto de la escena anterior. Se pasa por
+// una página en blanco para que cada escena parta de cero.
+const ir = async (ruta) => { if (ruta.includes('#')) await p.goto('about:blank'); await p.goto(URL_PANEL + ruta, { waitUntil: 'networkidle', timeout: 120000 }); await p.waitForTimeout(1100); };
 const clic = async (loc, n = 0) => { await loc.nth(n).click(); await p.waitForTimeout(800); };
 const boton = (name, exact = false) => p.getByRole('button', { name, exact });
 const ventana = () => p.locator('[role=dialog]').last();
@@ -479,17 +482,17 @@ export const ESCENAS = {
   'v-clave': async () => { await ir('/usuarios'); await clic(boton('Cambiar', true)); },
   'v-ver-como': async () => { await ir('/usuarios'); await clic(boton(/Ver como/)); },
   'v-base-en-cero': async () => {
-    await ir('/config'); await clic(boton(/Ver qué se borra/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué se borra/));
     // Cuenta las filas de la planilla antes de mostrar la lista: se espera a que llegue.
     await ventana().getByText('Se borra').waitFor({ timeout: 15000 });
   },
   // Traer los datos de producción a la prueba (2026-11-24): lee las dos planillas antes de mostrar la lista.
   'v-traer-produccion': async () => {
-    await ir('/config'); await clic(boton(/Ver qué se trae/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué se trae/));
     await ventana().getByText('Lo que se trae').waitFor({ timeout: 15000 });
   },
   'v-importar-crm': async () => {
-    await ir('/config'); await clic(boton(/Ver qué entra/));
+    await ir('/config#mantencion'); await clic(boton(/Ver qué entra/));
     // Lee las pestañas de la planilla antes de mostrar la vista previa: se espera a que llegue.
     await ventana().getByText('Días que toman cupo').waitFor({ timeout: 15000 });
   },

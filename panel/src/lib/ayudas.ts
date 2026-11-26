@@ -384,7 +384,7 @@ export const AYUDAS: Record<string, Ayuda> = {
     ]
   },
   tareas: {
-    titulo: 'Las tareas',
+    titulo: 'Mi panel: tareas y comentarios',
     cuerpo: [
       'Lo que alguien te pide hacer, y lo que tú pides a otros. No es un chat: cada tarea es una cosa por hacer, '
       + 'con su plazo si lo tiene, y se cierra cuando está hecha.',
@@ -393,17 +393,17 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Una tarea a un rol entero (todos los encargados de turno, por ejemplo) la cierra el primero que la hace, y '
       + 'queda a su nombre.',
       '💬 Comentarios, al lado, son los que se mandan con Coméntame. Cada uno ve los suyos y la respuesta '
-      + '(✓ Entendido apaga el aviso de la portada). La gerencia general y el administrador ven todos: '
+      + '(✓ Entendido apaga el aviso de la portada). El administrador ve todos: '
       + 'los contestan, les ponen estado y prioridad, y con 📋 Pasar a tarea se lo encargan a alguien.'
     ],
     pasos: [
-      '📋 Nueva tarea: a quién —una persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
+      '📋 Nueva tarea: a quién —📌 A mí, como recordatorio; otra persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
       + 'para cuándo y con qué día tiene que ver.',
       'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo.',
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
       'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
     ],
-    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona, y todos los comentarios.'
+    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona. Los comentarios de todos los ve solo el administrador.'
   },
   informe: {
     titulo: 'El informe para pagar',
@@ -555,8 +555,8 @@ export const AYUDAS: Record<string, Ayuda> = {
   configuracion: {
     titulo: 'La configuración',
     cuerpo: [
-      'Está ordenada por secciones, con un botón arriba para saltar a cada '
-      + 'una: las reservas del sitio, el calendario del panel, las '
+      'Está ordenada por secciones plegadas: cada una se abre con su +, o con su '
+      + 'botón del índice de arriba, que la abre y baja a ella. Son las reservas del sitio, el calendario del panel, las '
       + 'cotizaciones, las condiciones para el cliente, los extras y el arriendo, '
       + 'los datos de la empresa y la mantención. Las secciones largas van en '
       + 'grupos, cada uno con su subtítulo.',

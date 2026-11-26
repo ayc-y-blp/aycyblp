@@ -8311,8 +8311,9 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   const vieja = CM.leerComentariosDe([[...CM.COLUMNAS_COMENTARIOS], ['2026-11-01 09:00', 'Vendedor', 'Jorge', '🐞 Algo falla', 'X', 'Se cae', '', '', '', '', '']])[0];
   ok(vieja.id === 'fila-2' && vieja.estado === 'Nuevo', 'una fila de antes, sin ID ni estado, se lee igual: Nuevo');
   const lista = [{ ...base, fila: 2 }, { ...base, id: 'C-2', nombre: 'Tomás', respuesta: 'Sí', fila: 3 }];
-  ok(CM.comentariosVisibles(lista, 'vendedor', 'jorge').length === 1 && CM.comentariosVisibles(lista, 'gerencia', 'x').length === 2,
-     'cada uno los suyos; la gerencia y el administrador, todos');
+  ok(CM.comentariosVisibles(lista, 'vendedor', 'jorge').length === 1 && CM.comentariosVisibles(lista, 'admin', 'x').length === 2
+     && CM.comentariosVisibles(lista, 'gerencia', 'x').length === 0,
+     'cada uno los suyos; solo el administrador, todos (la gerencia no, 2026-11-26)');
   ok(CM.avisosDeComentarios(lista, 'admin', 'Tomás').nuevos === 2 && CM.avisosDeComentarios(lista, 'vendedor', 'Tomás').respuestas === 1
      && CM.avisosDeComentarios(lista, 'vendedor', 'Tomás').nuevos === 0, 'los avisos: nuevos para quien los trabaja, respuestas sin ver para cada uno');
   ok(CM.comentariosPorTraer([vieja, { ...vieja, texto: 'Otro' }], [{ ...vieja, id: 'C-9' }]).length === 1,

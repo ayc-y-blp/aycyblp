@@ -79,7 +79,10 @@ export const POST = conLecturas([HOJA_TAREAS, HOJA_USUARIOS], async function POS
     const quien = await quienEs(req);
     const cuerpo = (await req.json().catch(() => ({}))) ?? {};
     const c = await cuentas();
-    const limpio = limpiarTareaNueva(cuerpo, { cuentas: c.cuentasPorNombre, hoy: hoy() });
+    const limpio = limpiarTareaNueva(cuerpo, {
+      // 📌 A mí: uno mismo siempre vale, también la cuenta de emergencia, que no está en Usuarios.
+      cuentas: [...c.cuentasPorNombre, { usuario: quien.usuario, activo: true }], hoy: hoy()
+    });
     if ('error' in limpio) return NextResponse.json({ error: limpio.error }, { status: 400 });
     const t = await agregarTarea({
       ...limpio, creada: ahoraEnChile(), de: quien.usuario, estado: ESTADO_TAREA.pendiente,
