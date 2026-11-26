@@ -259,7 +259,7 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
-## El calendario de Cotizaciones: lo cotizado, siempre a la misma altura (2026-11-26)
+## Los calendarios: lo cotizado, siempre a la misma altura (2026-11-26)
 
 Lo pidió el cliente con una foto del calendario de Cotizaciones: *"deja la info
 de cotización siempre en la misma altura pese a que falte aún el cupo y
@@ -279,8 +279,20 @@ posibles*) subían hasta la fecha, más arriba que en la tarjeta de al lado.
   `data-pareja` dentro de una `data-tarjeta`: en `npm run ventanas`, en
   Cotizaciones, con los días cotizados del ejemplo sin abrir. Probado al revés:
   sin el lugar vacío, falla con lo cotizado a 39 y 85px.
-- **El calendario de Reservas no cambió**: ahí un día sin cupo muestra sus
-  personas y *Sin cupo definido*, otra forma.
+- **Y en el calendario de Reservas** (lo pidió el cliente el mismo día: *"dale,
+  hazlo también, si no me gusta, lo devolvemos"*): ahí lo de arriba cambia más
+  de alto —el cupo o *Sin cupo definido*, los tramos del pago, el sobrecupo—,
+  así que no sirve reservar un lugar. **La pastilla de lo cotizado va al final
+  de la tarjeta, justo encima del pie** (*Reservas · Editar · Equipo*), en un
+  bloque pegado abajo con el pie (`TarjetaDia`, `PIE_ABAJO`); como las tarjetas
+  de una fila miden lo mismo, queda a la misma altura en todas, y el aire que
+  sobra va arriba de ella. Antes iba después del sobrecupo, y el aviso de un
+  día cerrado con gente y las notas del día iban debajo de ella; ahora van
+  arriba. En el celular el pie no se mueve. Lo mide `revisarTarjetasParejas()`
+  en el calendario, con lo cotizado en todos los días del ejemplo; probado al
+  revés, falla.
+- **Si al cliente no le gusta, se devuelve** (lo dijo él): es revertir este
+  cambio en `TarjetaDia` y su línea en `ventanas.mjs`.
 - **Ninguna lectura, permiso ni columna.** Ninguna ayuda dice dónde va.
 
 ## La Agenda: cada cotización en una sola sección (2026-11-26)
