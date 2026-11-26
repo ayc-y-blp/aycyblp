@@ -59,7 +59,8 @@ export default function Azulejo({ n, titulo, nota, color, borde, compacto = fals
   return (
     <div className={`rounded-xl border-2 ${borde ?? 'border-hueso/30'} bg-panel ${
       compacto ? 'px-3 py-2' : 'px-4 py-2.5 lg:px-2.5 lg:py-2'} ${explica ? 'lg:shrink-[8]' : ''} ${estira ? 'lg:grow' : ''}`}>
-      <div className={`text-3xl font-bold leading-none tabular-nums lg:text-[26px] ${color ?? 'text-oro'}`}>
+      {/* `data-numero`: `revisarDesborde()` lo prueba con el número más largo. */}
+      <div data-numero className={`text-3xl font-bold leading-none tabular-nums lg:text-[26px] ${color ?? 'text-oro'}`}>
         {n}
       </div>
       <div className="mt-1.5 text-sm font-medium leading-tight">{sinHuerfanas(titulo)}</div>

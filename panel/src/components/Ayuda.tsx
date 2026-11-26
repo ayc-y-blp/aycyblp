@@ -39,10 +39,15 @@ export default function Ayuda({ tema, onRecorrido }: {
            justamente el botón que aprieta quien no sabe usar la pantalla. */
         /* **36px y 16px desde el 2026-11-12**: 30 seguía bajo el piso de
            34px de `revisarPlayStation()`. */
-        className="ml-2 inline-flex h-9 w-9 shrink-0 items-center
+        /* **30px y 14px a la vista desde el 2026-11-26**, un 15% menos (lo
+           pidió el cliente para todos los `?`, en el computador y el
+           celular). Lo que se aprieta sigue en 36px: el `::before` lo
+           extiende 3px a cada lado. `revisarPlayStation()` lo lista, porque
+           mide lo que se ve. */
+        className="relative ml-2 inline-flex h-[30px] w-[30px] shrink-0 items-center
                    justify-center rounded-full border border-hueso/30 align-middle
-                   text-[16px] font-bold text-hueso/70 hover:border-oro
-                   hover:text-oro">
+                   text-[14px] font-bold text-hueso/70 hover:border-oro
+                   hover:text-oro before:absolute before:-inset-[3px] before:content-['']">
         ?
       </button>
 

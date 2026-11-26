@@ -84,10 +84,9 @@ function Columnas({ titulo, ayuda, bloques, porSemana, series, fondo = false, pu
   return (
     <div className={`rounded-xl border-2 p-3 ${NEUTRO}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
-          {titulo}<AyudaCorta tema={ayuda} />
-        </p>
-        <p className="text-[13px] text-hueso/60">en miles de pesos</p>
+        <p className="text-[13px] font-semibold uppercase tracking-wider text-hueso/70">{titulo}</p>
+        {/* El `?` en la esquina de arriba a la derecha (2026-11-26). */}
+        <p className="ml-auto flex items-center text-[13px] text-hueso/60">en miles de pesos<AyudaCorta tema={ayuda} /></p>
       </div>
       {leyenda && presentes.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-hueso/80" aria-label="Qué es cada color">

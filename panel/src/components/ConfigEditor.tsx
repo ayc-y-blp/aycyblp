@@ -494,8 +494,9 @@ export default function ConfigEditor() {
           <section key={x.id} id={x.id} aria-labelledby={`t-${x.id}`}
             className="scroll-mt-4 rounded-lg border border-hueso/15 bg-panel px-4 pt-4 sm:px-5 lg:pt-3">
             {/* Para qué sirve la sección, en su `?`. */}
+            {/* El `?` en la esquina de arriba a la derecha (2026-11-26). */}
             <h2 id={`t-${x.id}`} className="flex items-center gap-2 text-base font-bold uppercase tracking-wide text-oro">
-              {x.titulo} <AyudaCorta titulo={x.titulo}>{x.para}</AyudaCorta>
+              <span className="min-w-0 flex-1">{x.titulo}</span><AyudaCorta titulo={x.titulo}>{x.para}</AyudaCorta>
             </h2>
             {/* Con vista gerencia, los campos se ven apagados: `fieldset
                 disabled` los apaga todos de una vez. */}

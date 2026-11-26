@@ -11,6 +11,7 @@
  *   (no solo color). `bueno` dice si que suba es bueno: el no-show que sube
  *   es malo.
  */
+import type { CSSProperties } from 'react';
 import AyudaCorta from './AyudaCorta';
 
 export type Cambio = { texto: string; sentido: 'sube' | 'baja' | 'igual' } | null;
@@ -28,7 +29,13 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
     : cambio.sentido === bueno ? 'text-verde-texto' : 'text-rojo-texto';
   const cuerpo = (
     <>
-      <span className="block text-[22px] font-bold leading-none tabular-nums">{valor}</span>
+      {/* **Del tamaño que cabe** (2026-11-26): ver `numero-cabe` en
+          `globals.css`. `data-numero` lo usa `revisarDesborde()` para
+          probarlo con el número más largo. */}
+      <span className="numero-caja">
+        <span className="numero-cabe font-bold tabular-nums" data-numero
+          style={{ '--n': valor.length } as CSSProperties}>{valor}</span>
+      </span>
       {nota && <span className="mt-1 block text-[13px] leading-tight text-hueso/75">{nota}</span>}
       {cambio && (
         <span className={`mt-1 block text-[13px] font-semibold leading-snug ${colorCambio}`}>
@@ -44,8 +51,14 @@ export default function TarjetaNumero({ que, valor, nota, tono, ayuda, activa, o
     // de las otras—. El espaciado entre letras baja de *wider* a *wide* y el
     // margen, desde 1280px, de 12 a 10px. La letra no baja.
     <div className={`min-w-0 rounded-xl border-2 px-3 py-2 xl:px-2.5 ${tono} ${activa ? 'ring-2 ring-oro ring-offset-2 ring-offset-tinta' : ''}`}>
-      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-hueso/70">
-        {que}<AyudaCorta tema={ayuda} />
+      {/* **El `?` en la esquina de arriba a la derecha** (2026-11-26, lo
+          pidió el cliente: *"donde puedes, déjalos en el mismo borde derecho
+          arriba dentro de la tarjeta, revisa todo"*): en todas las tarjetas
+          en el mismo lugar, mida lo que mida el título. Y el título no se sale
+          en un celular de 360px (*Cancelaciones*, *Recontactar*): sin
+          espaciado entre letras bajo 640px. */}
+      <p className="flex items-start justify-between text-[13px] font-semibold uppercase tracking-normal text-hueso/70 sm:tracking-wide">
+        <span className="min-w-0">{que}</span><AyudaCorta tema={ayuda} />
       </p>
       {onClick ? (
         <button type="button" aria-pressed={!!activa} onClick={onClick}

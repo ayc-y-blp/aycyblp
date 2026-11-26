@@ -131,7 +131,7 @@ export default function NotasCotizacion({ p, grupo, notas, hoy, usuario, onCambi
       <div>
       <div className={`mt-2 ${marcoGrupo('rosa')} p-3`}>
         <p className={`mb-2 flex items-center gap-2 ${TITULO_GRUPO}`}>
-          <span aria-hidden>🗒</span>Anotar <AyudaCorta tema="notas" />
+          <span aria-hidden>🗒</span><span className="flex-1">Anotar</span><AyudaCorta tema="notas" />
         </p>
         {/* Los nombres arriba de su campo, todos en la misma vertical: en la
             columna de la ventana no hay ancho para tenerlos al lado. */}

@@ -187,9 +187,10 @@ export default function ExtrasDialogo({
           {/* Qué es, que sin confirmar no suma y dónde va una diferencia, en
               su `?` (2026-11-21, regla *lo que explica va en su ?*). */}
           <h3 className={`flex items-center gap-2 px-1 ${TITULO_GRUPO}`}>
-            Actividades del día <AyudaCorta tema="actividadesDia" />
+            Actividades del día
           </h3>
-          <span className="px-1 text-[13px] font-semibold tabular-nums text-hueso/60">{lista.length}</span>
+          {/* La cuenta y el `?`, en la esquina de arriba a la derecha (2026-11-26). */}
+          <span className="flex items-center px-1 text-[13px] font-semibold tabular-nums text-hueso/60">{lista.length}<AyudaCorta tema="actividadesDia" /></span>
         </div>
       {lista.length === 0 ? (
         <p className="mt-2 text-[13px] text-hueso/60">Nadie agendado.</p>

@@ -4024,8 +4024,10 @@ function Seccion({ tono, icono, titulo, ayuda, ayudaPc, children }: {
 }) {
   return (
     <section className={`space-y-4 ${marcoGrupo(tono)} p-4 lg:space-y-1.5 lg:p-3`}>
+      {/* El `?` en la esquina de arriba a la derecha (2026-11-26, lo pidió el
+          cliente para todas las tarjetas). */}
       <h3 className={`flex items-center ${TITULO_GRUPO} ${TEXTO_TONO[tono]}`}>
-        <span aria-hidden className="mr-2 text-[18px]">{icono}</span>{titulo}
+        <span aria-hidden className="mr-2 text-[18px]">{icono}</span><span className="min-w-0 flex-1">{titulo}</span>
         {ayuda && <AyudaCorta tema={ayuda} />}
         {ayudaPc && <span className="hidden lg:inline"><AyudaCorta tema={ayudaPc} /></span>}
       </h3>

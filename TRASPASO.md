@@ -723,6 +723,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   todas partes (`FiltroConBuscador`). **PR #376, mergeado el 26-11-2026** con
   el *"mergea"* del cliente; `verificar.sh` dio 15 de 15 después. Ver
   `panel/CLAUDE.md`.
+- **Los números caben en su marco, el `?` en la esquina y más chico**
+  (26-11-2026, lo pidió el cliente con una foto: *Por cobrar* se salía de su
+  tarjeta): el número de cada tarjeta toma el tamaño que cabe, la Recepción
+  apila número y palabra en el celular, el `?` de ayuda es un 15% más chico y
+  va arriba a la derecha de su tarjeta, y *Volver*, *Sin fecha* y *Lista* llevan
+  el marco de la vista. Prueba nueva, `revisarDesborde()`, con los números en su
+  peor caso. **En un PR, en preview hasta el *"mergea"*.** Ver
+  `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

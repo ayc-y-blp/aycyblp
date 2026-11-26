@@ -36,7 +36,7 @@
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
-import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija, revisarColumnas } from './alineacion.mjs';
+import { revisarAlineacion, revisarTarjetasParejas, revisarLineaDeLaFecha, revisarEspacio, revisarFilaFija, revisarColumnas, revisarDesborde } from './alineacion.mjs';
 import { revisarPlayStation } from './playstation.mjs';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -611,7 +611,34 @@ if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
       console.log(`  FALLA  columnas · ${nombre}\n           · ${c.join('\n           · ')}`);
       fallas.push(`columnas · ${nombre}`);
     }
+    // **Nada se sale de su marco** (2026-11-26, lo marcó el cliente: *Por
+    // cobrar* se salía de su tarjeta), con cada número en su peor caso. Va
+    // al final: cambia los números que se ven.
+    const d = await revisarDesborde(p, { peorCaso: true });
+    if (d.length) {
+      console.log(`  FALLA  marco · ${nombre}\n           · ${d.join('\n           · ')}`);
+      fallas.push(`marco · ${nombre}`);
+    }
   }
+}
+// **Y en otros anchos** (2026-11-26): el número de una tarjeta se salía a
+// 1440px —tres grupos de tarjetas en una fila— y las casillas de la Recepción
+// a 393. Las pantallas con números grandes, del computador grande al celular
+// más chico.
+if (!SOLO_MEDIR && !process.argv.slice(2).length && ANCHO >= 1024) {
+  const CON_NUMEROS = ['cotizaciones-lista', 'estadisticas', 'recepcion', 'dia', 'informe', 'caja', 'vendedores'];
+  for (const [ancho, alto] of [[1440, 800], [1024, 600], [393, 740], [360, 640]]) {
+    await p.setViewportSize({ width: ancho, height: alto });
+    const malas = [];
+    for (const [nombre, ruta, preparar] of PANTALLAS.filter(([n]) => CON_NUMEROS.includes(n))) {
+      await ir(ruta);
+      if (preparar) { await preparar(p); await p.waitForTimeout(700); }
+      for (const x of await revisarDesborde(p, { peorCaso: true })) malas.push(`${nombre}: ${x}`);
+    }
+    console.log(`  ${malas.length ? 'FALLA ' : 'ok     '} marco a ${ancho}px${malas.length ? '\n           · ' + malas.join('\n           · ') : ': nada se sale, con los números más largos'}`);
+    if (malas.length) fallas.push(`marco a ${ancho}px`);
+  }
+  await p.setViewportSize({ width: ANCHO, height: ALTO });
 }
 // **Las cotizaciones de la ficha de un cliente, en columnas** (2026-11-26,
 // regla *el mismo dato va en la misma columna*): Gonzalo Contreras tiene dos.

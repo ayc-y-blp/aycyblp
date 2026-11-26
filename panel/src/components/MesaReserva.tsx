@@ -362,7 +362,7 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
       {editable && modo === 'valor' && (
         <div className="mt-2 space-y-2 rounded-xl border-2 border-oro/60 bg-panel p-3">
           <p className="flex items-center gap-2 text-[16px] font-semibold">
-            <label htmlFor={`valor-${r.fila}`}>¿Cuánto fue la cuenta de la mesa?</label>
+            <label htmlFor={`valor-${r.fila}`} className="flex-1">¿Cuánto fue la cuenta de la mesa?</label>
             <AyudaCorta tema="valorFinal" />
           </p>
           <div className="flex items-center gap-2">

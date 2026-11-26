@@ -388,6 +388,28 @@ button:active:not(:disabled), .tecla:active:not(:disabled) {
  * `pruebas/alineacion.mjs`.
  */
 .caja-campos { container-type: inline-size; min-width: 0; }
+
+/**
+ * **El número grande de una tarjeta, del tamaño que cabe** (2026-11-26, lo
+ * marcó el cliente con una foto de la Lista: *"ajustar tamaño de números, por
+ * cobrar sale de su marco, revisar en todo sitio"*). *$12.395.200* no cabía en
+ * la tarjeta *Por cobrar* y se salía por la derecha.
+ *
+ * `numero-caja` es la caja (mira su propio ancho, *container query*) y
+ * `numero-cabe` el número: mide **22px** (`--numero-max`) si cabe, y si no, lo
+ * que deje el ancho para sus letras (`--n`, que pone `TarjetaNumero`), nunca
+ * bajo 15px. **El renglón mide siempre lo mismo** (`--numero-alto`): un número
+ * más chico no sube la nota de abajo, y las tarjetas de una fila siguen
+ * parejas. Cada letra se cuenta como 0,62 de su tamaño, que es lo que mide un
+ * dígito en negrita de Work Sans (los puntos miden menos: sobra un poco).
+ */
+.numero-caja { display: block; container-type: inline-size; min-width: 0; }
+.numero-cabe {
+  display: block;
+  white-space: nowrap;
+  font-size: min(var(--numero-max, 22px), max(15px, calc(100cqi / (max(var(--n, 4), 4) * 0.62))));
+  line-height: var(--numero-alto, 22px);
+}
 .rejilla-campos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

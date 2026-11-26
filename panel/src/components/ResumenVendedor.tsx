@@ -116,8 +116,9 @@ function Azulejo({ que, monto, nota, tono, grande = false, ayuda }: {
 }) {
   return (
     <div className={`min-w-0 rounded-xl border-2 p-3 ${tono} ${grande ? 'col-span-2 sm:col-span-1' : ''}`}>
-      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-widest text-hueso/70">
-        {que}{ayuda && <AyudaCorta tema={ayuda} />}
+      {/* El `?` en la esquina de arriba a la derecha (2026-11-26). */}
+      <p className="flex items-start justify-between gap-1.5 text-[13px] font-semibold uppercase tracking-widest text-hueso/70">
+        <span className="min-w-0">{que}</span>{ayuda && <AyudaCorta tema={ayuda} />}
       </p>
       <p className={`mt-1 font-bold leading-none tabular-nums ${grande ? 'text-[32px]' : 'text-[24px]'}`}>{enPesos(monto)}</p>
       {nota && <p className="mt-1 text-[13px] text-hueso/75">{nota}</p>}
@@ -464,8 +465,8 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
           {/* 6. Cómo se le paga: se lee en una frase; se cambia en su ventana. */}
           <section className="space-y-3 rounded-2xl border-2 border-hueso/15 bg-panel p-4 xl:min-w-0 xl:p-3">
             <div>
-              <h2 className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-widest text-hueso/65">
-                {tu ? 'Cómo se te paga' : 'Cómo se le paga'}<AyudaCorta tema="vendEtapas" />
+              <h2 className="flex items-start gap-1.5 text-[13px] font-semibold uppercase tracking-widest text-hueso/65">
+                <span className="min-w-0 flex-1">{tu ? 'Cómo se te paga' : 'Cómo se le paga'}</span><AyudaCorta tema="vendEtapas" />
                 {!esSocio && (ficha ?? datos.ficha).conSocio < 100 && <AyudaCorta tema="vendConSocio" />}
               </h2>
               <div className="mt-1 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">

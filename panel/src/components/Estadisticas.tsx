@@ -64,8 +64,9 @@ function ListaBarras({ titulo, ayuda, bajada, filas }: {
   const max = Math.max(1, ...filas.map((f) => f.valor));
   return (
     <div className={`rounded-xl border-2 p-3 ${NEUTRO}`}>
-      <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
-        {titulo}<AyudaCorta tema={ayuda} />
+      {/* El `?` en la esquina de arriba a la derecha (2026-11-26). */}
+      <p className="flex items-start justify-between gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
+        <span className="min-w-0">{titulo}</span><AyudaCorta tema={ayuda} />
       </p>
       {bajada && <p className="mt-0.5 text-[13px] text-hueso/65">{bajada}</p>}
       {filas.length === 0 ? (
@@ -111,15 +112,20 @@ function Columnas({ r, base }: { r: Resumen; base: Base }) {
   return (
     <div className={`rounded-xl border-2 p-3 ${NEUTRO}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
-          {r.serieSemanal ? 'Personas por semana' : 'Personas por día'}<AyudaCorta tema="estSerie" />
+        <p className="text-[13px] font-semibold uppercase tracking-wider text-hueso/70">
+          {r.serieSemanal ? 'Personas por semana' : 'Personas por día'}
         </p>
-        {conCupo && (
-          <p className="flex items-center gap-3 text-[13px] text-hueso/75">
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-oro" />Personas</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-oro/20" />Cupo</span>
-          </p>
-        )}
+        {/* La leyenda y, al final, el `?`: en la esquina de arriba a la
+            derecha, como en todas las tarjetas (2026-11-26). */}
+        <p className="ml-auto flex items-center gap-3 text-[13px] text-hueso/75">
+          {conCupo && (
+            <>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-oro" />Personas</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded-sm bg-oro/20" />Cupo</span>
+            </>
+          )}
+          <AyudaCorta tema="estSerie" />
+        </p>
       </div>
       {r.serie.length === 0 ? (
         <p className="mt-2 text-[14px] text-hueso/60">Nada en este periodo.</p>
