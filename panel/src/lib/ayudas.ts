@@ -383,6 +383,25 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Algo anotado por error se borra mientras pagos no lo haya revisado. Queda en la bitácora.'
     ]
   },
+  tareas: {
+    titulo: 'Las tareas',
+    cuerpo: [
+      'Lo que alguien te pide hacer, y lo que tú pides a otros. No es un chat: cada tarea es una cosa por hacer, '
+      + 'con su plazo si lo tiene, y se cierra cuando está hecha.',
+      'Arriba, Para ti: lo que te toca ahora. Abajo, Las que mandaste, con cómo va cada una. Las atrasadas van '
+      + 'primero, en rojo.',
+      'Una tarea a un rol entero (todos los encargados de turno, por ejemplo) la cierra el primero que la hace, y '
+      + 'queda a su nombre.'
+    ],
+    pasos: [
+      '📋 Nueva tarea: a quién —una persona con el buscador, o un rol entero—, qué hay que hacer y, si quieres, '
+      + 'para cuándo y con qué día tiene que ver.',
+      'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo.',
+      'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
+      'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
+    ],
+    ojo: 'La gerencia general y el administrador ven todas las tareas, con un filtro por persona.'
+  },
   informe: {
     titulo: 'El informe para pagar',
     cuerpo: [

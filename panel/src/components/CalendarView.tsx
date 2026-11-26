@@ -218,6 +218,8 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
   const [cuentas, setCuentas] = useState<PendienteCuenta[]>([]);
   /** Qué reservas salieron de una cotización: su pago se revisa por sus cobros. */
   const [deCotizacion, setDeCotizacion] = useState<Record<string, string>>({});
+  // Las tareas que te tocan (2026-11-26, `lib/tareas.ts`): vienen con las reservas.
+  const [tareasMias, setTareasMias] = useState({ total: 0, atrasadas: 0 });
   /**
    * **Los días que cambiaron de gente en la última actualización**, con
    * cuánto y desde qué hora (2026-11-12). Se marcan en dorado un minuto:
@@ -279,6 +281,7 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
         if (d.reservas) setReservas(d.reservas);
         if (d.menus) setMenus(d.menus);
         if (d.deCotizacion) setDeCotizacion(d.deCotizacion);
+        if (d.tareasMias) setTareasMias(d.tareasMias);
       })
       .catch(() => {});
     // **Las dos de abajo se piden solo si la cuenta puede leerlas.** No es
@@ -470,6 +473,17 @@ export default function CalendarView({ rol, usuario = '', gerencia = false }: {
           los demás roles, el aviso de siempre. */}
       {!conCupo && <AvisoSobrecupo dias={sobrecupo} />}
       <BandejaAprobaciones pendientes={pendientes} onCambio={() => void cargar()} />
+      {/* **Las tareas que te tocan** (2026-11-26): un aviso que se aprieta y
+          lleva a *Tareas*. Rojo si alguna está atrasada. */}
+      {tareasMias.total > 0 && (
+        <a href="/tareas" data-fila-propia
+           className={`tecla mb-3 flex min-h-[44px] items-center gap-2 rounded-2xl border-[3px] px-3 py-2 text-[15px] font-semibold ${tareasMias.atrasadas
+             ? 'border-rojo-fuerte/80 bg-rojo/[0.06] text-rojo-texto' : 'border-cielo-fuerte/80 bg-cielo/[0.06]'}`}>
+          📋 {tareasMias.total === 1 ? 'Tienes 1 tarea' : `Tienes ${tareasMias.total} tareas`}
+          {tareasMias.atrasadas > 0 && <span>· {tareasMias.atrasadas} atrasada{tareasMias.atrasadas === 1 ? '' : 's'}</span>}
+          <span className="ml-auto text-[14px] font-normal text-hueso/70">Ver →</span>
+        </a>
+      )}
       {conAvisos && <AvisosRecepcion reservas={reservas} />}
       {/* En el computador la frase no va: *toca un día* lo dice el `?`, y el
           rango con su enlace pasa a la fila de los botones. */}

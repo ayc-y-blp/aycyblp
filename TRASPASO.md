@@ -761,6 +761,14 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   Editar · Equipo*, a la misma altura en toda la fila. En un PR, en preview
   hasta el *"mergea"*. Si no le gusta, se revierte. Ver `panel/CLAUDE.md`,
   "Los calendarios: lo cotizado, siempre a la misma altura".
+- **Las tareas internas** (26-11-2026, lo pidió el cliente: primera parte de
+  un panel de gerencia): pantalla *Tareas* para todas las cuentas, *📋 Nueva
+  tarea* a una persona o a un rol entero, ✓ Hecha / ❓ Preguntar, y *📋 Tienes N
+  tareas* en la portada. Permiso nuevo `tareas` y pestaña nueva `Tareas`. En un
+  PR, en preview hasta el *"mergea"*. **Lo que sigue del mismo proyecto**: los
+  comentarios de 💬 dentro del panel (verlos, contestarlos, pasarlos a tarea) y
+  `/gerencia` con Ventas, Reservas y ocupación, Plata y Tareas y comentarios.
+  Ver `panel/CLAUDE.md`, "Las tareas internas".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

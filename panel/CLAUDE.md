@@ -259,6 +259,59 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## Las tareas internas (2026-11-26)
+
+Lo pidió el cliente, como primera parte de un panel de gerencia: *"que yo
+puedo enviarles también mensajes a su panel con tareas pendientes… tengo que
+poder fácil elegir a quién envío… y eso tiene que ser también posible entre
+ellos como usuarios… Simplemente no es para hablar como en WhatsApp, sino es
+como para realmente gestionar tareas pendientes de forma más eficiente y
+centralizada"*. Decidió *"cada uno las suyas"* (la gerencia y el
+administrador ven todas) y *"tareas primero"*; los comentarios de 💬 en el
+panel y la pantalla de números de la gerencia vienen después.
+
+- **Pantalla nueva, *Tareas*** (`/tareas`, `TareasVista`), en el menú de todas
+  las cuentas, segunda después del Calendario. Grupos con su marco: ***👉 Para
+  ti*** (lo que te toca ahora), ***📤 Las que mandaste***, ***👥 Del equipo***
+  (solo quien ve todas) y ***✓ Cerradas***, plegado. Las atrasadas van arriba,
+  con la tarjeta en rojo.
+- ***📋 Nueva tarea*** (`NuevaTarea`, el único botón relleno): *Para* —una
+  persona con el buscador (`BuscarEnLista`) o **un rol entero** con sus botones
+  (son pocos y fijos)—, *Qué hacer*, *Para cuándo* (`ElegirFecha`, con *Sin
+  plazo*) y *Con qué día* (opcional: la tarea lleva a la página de ese día).
+  Mide 638px a 1280×650 (escena `v-nueva-tarea`).
+- **El ida y vuelta, corto** (`lib/tareas.ts`, puro y con pruebas): quien la
+  recibe aprieta ***✓ Hecha*** (con una nota opcional) o ***❓ Preguntar***; la
+  pregunta vuelve a quien la mandó, que ***↩ Contesta*** y la tarea sigue
+  pendiente. Quien la mandó la puede ***✕ Anular*** abierta o ***↺ Reabrir***
+  cerrada. Lo decide `puedeHacer()`, con lo escrito en la planilla al momento
+  (`cambiarTarea()` relee la pestaña). **La gerencia ve todas pero no marca
+  hecha la de otro.**
+- **A un rol entero, la cierra el primero** y queda a su nombre.
+- **La identidad es el nombre de la cuenta**, como en la sesión y en las notas:
+  `De` y `Para` guardan el nombre (`rol:<rol>` para un rol).
+- **En la portada**, bajo la bandeja, ***📋 Tienes N tareas*** (rojo si alguna
+  está atrasada), que lleva a *Tareas*. Viene en `/api/reservas`
+  (`tareasMias`, `cuantasMeTocan()`): **la pestaña se sumó a la tanda que la
+  portada ya lee**, ninguna lectura más.
+- **Pestaña nueva `Tareas`**: `ID`, `Creada`, `De`, `Para`, `Qué hacer`,
+  `Plazo`, `Enlace` (`dia:AAAA-MM-DD`; también acepta `cotizacion:` y
+  `reserva:`), `Estado` (*Pendiente · Pregunta · Hecha · Anulada*),
+  `Conversación` (un renglón por mensaje: `cuándo · quién · tipo · texto`),
+  `Cerrada por` y `Cerrada`. Se crea sola. *Dejar la base en cero* la conserva: es lo
+  que el equipo se pide entre sí, no datos de prueba (y en la columna de lo que
+  se borra ya no cabía otra línea en 1280×650).
+- **Permiso nuevo, `tareas`**: todas las cuentas que entran al panel, también
+  el vendedor y la anfitriona. Quién ve todas no es un permiso: es
+  `VEN_TODAS` (gerencia y administrador), como las notas.
+- **Lecturas de Google**: `/api/tareas` una tanda (`Tareas` y `Usuarios`);
+  cambiar una relee `Tareas`. La portada, ninguna más.
+- **Ayuda**: el `?` de *Tareas* (`AYUDAS.tareas`) y lo que puede cada rol
+  (`poderes.ts`, `roles.ts`). **Ventanas**: `v-nueva-tarea` y la pantalla
+  `tareas` en la prueba de espacio.
+- **El panel de ejemplo** trae seis tareas, una de cada caso (atrasada, a un
+  rol, con pregunta, hecha…).
+
 ## Los calendarios: lo cotizado, siempre a la misma altura (2026-11-26)
 
 Lo pidió el cliente con una foto del calendario de Cotizaciones: *"deja la info

@@ -27,6 +27,8 @@ export const PAGINAS: {
   fueraDelMenu?: true;
 }[] = [
   { href: '/', texto: 'Calendario', accion: 'ver', tema: 'calendario' },
+  // Las tareas internas (2026-11-26, `lib/tareas.ts`): todas las cuentas.
+  { href: '/tareas', texto: 'Tareas', accion: 'tareas', tema: 'tareas' },
   // Las estadísticas de reservas (2026-11-19): por *📊 Estadísticas* del calendario.
   { href: '/estadisticas', texto: 'Estadísticas', accion: 'estadisticas', tema: 'estadisticas', fueraDelMenu: true },
   // La pantalla de la entrada, el día de apertura (2026-11-11).

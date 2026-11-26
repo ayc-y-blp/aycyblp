@@ -22,6 +22,7 @@ import { aReserva, estadoDe, telefonoDe, emailDe, nombreDe, personasDe, menuDe,
          camposDeShopify, camposQueCambian, marcaCambiado, camposCambiadosEn, puedeAnotarPedido,
          type PedidoShopify } from './shopify.ts';
 import * as Caida from './caida.ts';
+import * as T from './tareas.ts';
 import { ESTADO_PAGO, esPrivada } from './columnas.ts';
 import { leerConfigDe, aFilasConfig, aDiasSemana, deDiasSemana, aDescuentos, aFechas,
          POR_DEFECTO, CLAVES } from './config.ts';
@@ -2458,8 +2459,9 @@ ok(ROLES_DE_CUENTA.includes(ROL.vendedor), 'se le puede crear una cuenta');
 const deVendedor = todas.filter((a) => puede(ROL.vendedor, a)).sort();
 // **Agregar socios entró el 2026-11-20** (lo pidió el cliente): desde la
 // cotización, con el trato por confirmar hasta que lo confirma pagos.
-ok(deVendedor.join() === 'agregarSocios,clientes,presupuestos,reservas,vendedores,ver',
-   'seis permisos y ninguno más: el calendario, sus reservas, las fichas de clientes, cotizar, su resumen y agregar socios (2026-11-20)');
+// **Las tareas entraron el 2026-11-26** (lo pidió el cliente: entre todas las cuentas).
+ok(deVendedor.join() === 'agregarSocios,clientes,presupuestos,reservas,tareas,vendedores,ver',
+   'siete permisos y ninguno más: el calendario, sus reservas, las fichas de clientes, cotizar, su resumen, agregar socios (2026-11-20) y las tareas (2026-11-26)');
 ok(!puede(ROL.vendedor, 'dias'),
    'no abre ni cierra días: eso le cambiaría el cupo al sitio público');
 ok(!puede(ROL.vendedor, 'equipo') && !puede(ROL.vendedor, 'extras'),
@@ -5196,8 +5198,8 @@ console.log('\nEl cupo al ganar una cotización');
 }
 
 console.log('\nEl rol de anfitrión');
-ok((Object.keys(PERMISOS) as Accion[]).filter((x) => puede(ROL.anfitrion, x)).join() === 'asistencia',
-   'la anfitriona tiene un solo permiso: marcar la asistencia');
+ok((Object.keys(PERMISOS) as Accion[]).filter((x) => puede(ROL.anfitrion, x)).join() === 'asistencia,tareas',
+   'la anfitriona tiene dos permisos: marcar la asistencia y las tareas (2026-11-26)');
 ok(puede(ROL.vendedor, 'reservas') && !puede(ROL.vendedor, 'anotar') && puede(ROL.vendedor, 'presupuestos')
    && puede(ROL.encargado, 'anotar'),
    'el vendedor edita sus reservas pero no anota una directo: va por Cotizaciones (2026-11-12)');
@@ -5587,7 +5589,7 @@ console.log('\nLa ayuda de cada rol');
      }),
      'la ayuda de cada rol trae exactamente las pantallas que su menú abre, ni una más');
   const anf = pantallasDe(ROL.anfitrion).map((p) => p.href);
-  ok(anf.length === 1 && anf[0] === '/recepcion', 'la anfitriona ve la ayuda de Recepción y nada más');
+  ok(anf.join() === '/tareas,/recepcion', 'la anfitriona ve la ayuda de Recepción y de Tareas, nada más');
   const ven = pantallasDe(ROL.vendedor);
   ok(!ven.some((p) => p.href === '/turnos' || p.href === '/equipo')
      && ven.some((p) => p.texto === 'Mi resumen'),
@@ -8241,6 +8243,57 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   ok(en('C') === 'mandar' && !!ag.redactar.find((x) => x.p.id === 'C')!.lista && A.fraseDe(ag.redactar.find((x) => x.p.id === 'C')!, HOY).texto
      === 'Está lista y no figura como mandada', 'lista sin confirmar: en Por mandar, para hoy');
   ok(en('D') === 'mandar' && ag.redactar.find((x) => x.p.id === 'D')!.cuando === 'sinPlazo', 'sin nada: en Por mandar, sin plazo');
+}
+
+{
+  console.log('\nLas tareas internas (2026-11-26)');
+  const jm = { usuario: 'juanma', rol: 'gerencia' };
+  const isma = { usuario: 'isma', rol: 'gerente' };
+  const vale = { usuario: 'vale', rol: 'encargado' };
+  const hoyT = '2026-11-26';
+  const cuentas = [{ usuario: 'juanma', activo: true }, { usuario: 'Isma', activo: true }, { usuario: 'viejo', activo: false }];
+  const n = T.limpiarTareaNueva({ para: 'isma', que: '  Llamar a Maipo ', plazo: '2026-11-28', enlace: 'dia:2026-11-28' }, { cuentas, hoy: hoyT });
+  ok(!('error' in n) && n.para === 'Isma' && n.que === 'Llamar a Maipo' && n.enlace === 'dia:2026-11-28', 'nueva: a una cuenta activa, con el usuario como está escrito');
+  ok('error' in T.limpiarTareaNueva({ para: 'viejo', que: 'x' }, { cuentas, hoy: hoyT }), 'a una cuenta desactivada no');
+  ok('error' in T.limpiarTareaNueva({ para: 'isma', que: 'x', plazo: '2026-11-25' }, { cuentas, hoy: hoyT }), 'plazo en el pasado no');
+  ok('error' in T.limpiarTareaNueva({ para: 'isma', que: '   ' }, { cuentas, hoy: hoyT }), 'sin texto no');
+  const r = T.limpiarTareaNueva({ para: 'rol:encargado', que: 'Parrillas', enlace: 'javascript:alert(1)' }, { cuentas, hoy: hoyT });
+  ok(!('error' in r) && r.para === 'rol:encargado' && r.enlace === '', 'a un rol entero; un enlace raro se descarta');
+  ok('error' in T.limpiarTareaNueva({ para: 'rol:trabajador', que: 'x' }, { cuentas, hoy: hoyT }), 'a un rol sin panel no');
+
+  const base: Omit<T.Tarea, 'fila'> = { id: 'T-1', creada: '2026-11-26 10:00', de: 'juanma', para: 'Isma', que: 'Llamar', plazo: '2026-11-25',
+    enlace: '', estado: T.ESTADO_TAREA.pendiente, conversacion: [], cerradaPor: '', cerrada: '' };
+  ok(T.esParaMi(base, isma) && !T.esParaMi(base, vale), 'para quién, sin mayúsculas');
+  ok(T.leToca(base, isma) && !T.leToca(base, jm), 'pendiente: le toca a quien la recibe');
+  ok(T.estaAtrasada(base, hoyT) && !T.estaAtrasada({ ...base, plazo: hoyT }, hoyT), 'atrasada desde el día siguiente al plazo');
+  ok(T.tareasVisibles([base], vale).length === 0 && T.tareasVisibles([base], { usuario: 'otro', rol: 'admin' }).length === 1,
+     'cada uno las suyas; el administrador ve todas');
+  ok(!T.puedeHacer(base, jm, 'hecha'), 'la gerencia no la marca hecha por otro');
+  const preg = T.aplicarAccion(base, 'preguntar', '¿Qué número?', isma, '2026-11-26 11:00');
+  ok(!('error' in preg) && preg.estado === 'Pregunta' && T.leToca(preg, jm) && !T.leToca(preg, isma), 'una pregunta vuelve a quien la mandó');
+  ok('error' in T.aplicarAccion(base, 'preguntar', '  ', isma, 'x'), 'una pregunta sin texto no');
+  if (!('error' in preg)) {
+    const resp = T.aplicarAccion(preg, 'responder', 'El de la ficha', jm, '2026-11-26 11:05');
+    ok(!('error' in resp) && resp.estado === 'Pendiente' && resp.conversacion.length === 2, 'contestada, sigue pendiente');
+    if (!('error' in resp)) {
+      const hecha = T.aplicarAccion(resp, 'hecha', '', isma, '2026-11-26 12:00');
+      ok(!('error' in hecha) && hecha.estado === 'Hecha' && hecha.cerradaPor === 'isma', 'hecha, a su nombre');
+      if (!('error' in hecha)) {
+        const fila = T.filaTarea(T.ENCABEZADO_TAREAS, hecha);
+        const leida = T.leerTareasDe([T.ENCABEZADO_TAREAS, fila])[0];
+        ok(leida.conversacion.length === 3 && leida.conversacion[1].texto === 'El de la ficha' && leida.estado === 'Hecha',
+           'la conversación ida y vuelta por la planilla');
+      }
+    }
+  }
+  const alRol = { ...base, para: 'rol:encargado', plazo: '' as const };
+  const cerrada = T.aplicarAccion(alRol, 'hecha', 'listo', vale, 'x');
+  ok(!('error' in cerrada) && cerrada.cerradaPor === 'vale', 'a un rol: la cierra el primero');
+  ok(T.renglonDe({ cuando: 'a', quien: 'b', tipo: 'nota', texto: 'uno\ndos' }) === 'a · b · nota · uno dos', 'un mensaje con salto de línea queda en un renglón');
+  ok(T.cuantasMeTocan([base, preg as T.Tarea, alRol], isma, hoyT).total === 1, 'lo que te toca: solo lo tuyo ahora');
+  const orden = T.ordenarTareas([{ ...base, id: 'b', plazo: '' }, { ...base, id: 'a' }, { ...base, id: 'c', estado: 'Hecha' }], hoyT);
+  ok(orden.map((x) => x.id).join() === 'a,b,c', 'atrasadas primero, sin plazo después, cerradas al final');
+  ok(T.destinoDelEnlace('dia:2026-11-28')?.href === '/dia/2026-11-28', 'el enlace a un día');
 }
 
 console.log(fallos ? `\n${fallos} FALLAS` : '\nTodo bien: la lógica del panel pasa.');

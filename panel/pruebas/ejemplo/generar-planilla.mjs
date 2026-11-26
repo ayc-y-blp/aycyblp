@@ -28,6 +28,7 @@ const caj = await import(L + 'caja.ts');
 const prm = await import(L + 'promociones.ts');
 const pla = await import(L + 'plata.ts');
 const otr = await import(L + 'otrasEmpresas.ts');
+const tar = await import(L + 'tareas.ts');
 
 const SALIDA = process.argv[2];
 if (!SALIDA) throw new Error('Falta dónde escribir la planilla: generar-planilla.mjs <salida.json>');
@@ -572,9 +573,29 @@ H['Importar reservas'] = [
   ['LP9004', '2026-12-27', 'Nelson Araya', '+56 9 2222 0004', 'nelson.araya@ejemplo.cl', '9 × Tradiciones', '9', '396000', 'Por pagar', 'Pedido LP9004 del sitio viejo · paga en el local', '2026-11-18']
 ];
 
+// **Las tareas internas** (2026-11-26): una de cada caso, con el reloj del ejemplo (vie 13-11-2026).
+const tarea = (t) => tar.filaTarea(tar.ENCABEZADO_TAREAS, { enlace: '', conversacion: [], cerradaPor: '', cerrada: '',
+  estado: 'Pendiente', plazo: '', ...t });
+H['Tareas'] = [tar.ENCABEZADO_TAREAS,
+  tarea({ id: 'T-EJ1', creada: '2026-11-10 09:12', de: 'Rodrigo Vera', para: 'Marcela Díaz', plazo: '2026-11-12',
+    que: 'Revisar con el proveedor el carbón para el sábado 14: que llegue el viernes en la tarde.' }),
+  tarea({ id: 'T-EJ2', creada: '2026-11-12 18:40', de: 'Paula Fuentes', para: 'Jorge', plazo: '2026-11-16',
+    que: 'Llamar a Andrés Pino para confirmar cuántos niños van el 28.', enlace: 'dia:2026-11-28' }),
+  tarea({ id: 'T-EJ3', creada: '2026-11-13 10:05', de: 'Marcela Díaz', para: 'rol:encargado', plazo: '2026-11-14',
+    que: 'Limpiar y aceitar las parrillas antes de abrir el sábado.' }),
+  tarea({ id: 'T-EJ4', creada: '2026-11-11 16:20', de: 'Paula Fuentes', para: 'Verónica Lagos', estado: 'Pregunta',
+    que: 'Pagar la boleta del pintacaritas de octubre.',
+    conversacion: [{ cuando: '2026-11-12 09:30', quien: 'Verónica Lagos', tipo: 'pregunta', texto: '¿La de octubre entera o solo la del 25?' }] }),
+  tarea({ id: 'T-EJ5', creada: '2026-11-13 08:50', de: 'Jorge', para: 'Paula Fuentes', plazo: '2026-11-13',
+    que: 'Subir el precio del karting en Productos: la otra empresa lo cobra a $25.000 desde diciembre.' }),
+  tarea({ id: 'T-EJ6', creada: '2026-11-09 11:00', de: 'Paula Fuentes', para: 'Tomás Herrera', estado: 'Hecha',
+    que: 'Contar las sillas del galpón.', cerradaPor: 'Tomás Herrera', cerrada: '2026-11-10 13:15',
+    conversacion: [{ cuando: '2026-11-10 13:15', quien: 'Tomás Herrera', tipo: 'nota', texto: 'Son 140, y 6 para arreglar.' }] })
+];
+
 const orden = ['Reservas', 'Fechas Hábiles', 'Config', 'Menús', 'Presupuestos', 'Presupuesto Líneas', 'Clientes', 'Cobros',
   'Puestos', 'Trabajadores', 'Turnos', 'Cierres', 'Actividades', 'Colaboradores', 'Pagos', 'Boletas', 'Usuarios',
-  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones', 'Otras empresas'];
+  'Bitácora', 'Vendedores', 'Comentarios', 'Importar clientes', 'Importar cotizaciones', 'Importar reservas', 'Notas', 'Caja chica', 'Promociones', 'Otras empresas', 'Tareas'];
 const hojas = Object.fromEntries(orden.map((k) => [k, (H[k] ?? []).map((f) => f.map((c) => (c == null ? '' : String(c))))]));
 fs.writeFileSync(SALIDA, JSON.stringify({ orden, hojas }, null, 1));
 console.log('Planilla de ejemplo:', SALIDA, Object.entries(hojas).map(([k, v]) => `${k}:${v.length - 1}`).join(' '));

@@ -87,6 +87,10 @@ export const ALINEACION_ACEPTADA = {
  * texto, un trozo del hallazgo.
  */
 export const ESPACIO_ACEPTADO = {
+  // Las tareas (2026-11-26): debajo de qué hay que hacer va su detalle —de quién
+  // para quién, cuándo, el plazo—, como el segundo renglón de una cotización.
+  // Es la misma tarjeta, no una fila suelta: al lado, el texto quedaría cortado.
+  'tareas': ['y debajo "De '],
   // *✕ Se cayó…* al final de la fila (2026-11-26, lo pidió el cliente): la fila
   // de una cotización lleva debajo, a propósito, el renglón del detalle (el
   // vendedor, la empresa, el tipo). Es el segundo renglón de la misma fila, no
@@ -144,6 +148,8 @@ export const PANTALLAS = [
   ['bitacora', '/bitacora'],
   // La caja chica (2026-11-23, `caja.ts`).
   ['caja', '/caja'],
+  // Las tareas internas (2026-11-26, `tareas.ts`).
+  ['tareas', '/tareas'],
   // Las promociones del sitio (2026-11-23), en Productos.
   ['productos-promociones', '/menus?ver=promociones'],
   ['productos-empresas', '/menus?ver=empresas']
@@ -227,6 +233,8 @@ export const ESCENAS = {
     await clic(boton(/🤝 Karting Pirque/)); await clic(boton('+ Empresa nueva…'));
   },
   // Un producto nuevo (2026-11-24): un borrador con *Guardar producto* y *Cancelar*.
+  // Las tareas internas (2026-11-26): la ventana para mandar una.
+  'v-nueva-tarea': async () => { await ir('/tareas'); await clic(boton('📋 Nueva tarea')); },
   'ficha-producto-nuevo': async () => { await ir('/menus'); await clic(boton('+ Agregar producto')); },
   'ficha-vendedor': vendedor,
   'ficha-recepcion': async () => { await ir('/recepcion'); await clic(p.locator('li > button[aria-expanded]')); },
