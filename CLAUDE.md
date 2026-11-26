@@ -427,7 +427,11 @@ existe en la lista o una marca mal escrita.
   frente y `local` atrás; el landing y promociones muestran `local`. La
   lista solo dice cuánto vale cada uno.
 - **El texto de campaña de la cabecera de promociones (`¿11?`) no está
-  marcado**, a propósito: es copy, y cambia de campaña en campaña.
+  marcado**, a propósito: es copy, y cambia de campaña en campaña. **El rótulo
+  del bloque de la oferta de fin de año dice lo mismo** (2026-11-26, lo pidió el
+  cliente: *"en vez de bienestar blabla, pon 11? me chupo los dedos
+  entonces"*): *¿11? Me chupo los dedos entonces…*, en vez de *Bienestar y
+  eventos corporativos*, con las traducciones de la animación de arriba.
 - **El `$8.000 + IVA` del desayuno y la once va sin el IVA en la lista**,
   porque así se anuncia: el "+ IVA" es texto de la página.
 
