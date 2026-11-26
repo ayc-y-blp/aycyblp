@@ -169,7 +169,10 @@ await ctx.clock.install({ time: new Date(process.env.AYUDA_RELOJ ?? '2026-11-13T
 const p = await ctx.newPage();
 p.setDefaultTimeout(8000);
 
-const ir = async (ruta) => { await p.goto(URL_PANEL + ruta, { waitUntil: 'networkidle', timeout: 120000 }); await p.waitForTimeout(1100); };
+// Con un `#` (`/config#mantencion`), ir a la misma dirección no recarga: solo
+// mueve el ancla y deja lo que quedó abierto de la escena anterior. Se pasa por
+// una página en blanco para que cada escena parta de cero.
+const ir = async (ruta) => { if (ruta.includes('#')) await p.goto('about:blank'); await p.goto(URL_PANEL + ruta, { waitUntil: 'networkidle', timeout: 120000 }); await p.waitForTimeout(1100); };
 const clic = async (loc, n = 0) => { await loc.nth(n).click(); await p.waitForTimeout(800); };
 const boton = (name, exact = false) => p.getByRole('button', { name, exact });
 const ventana = () => p.locator('[role=dialog]').last();
