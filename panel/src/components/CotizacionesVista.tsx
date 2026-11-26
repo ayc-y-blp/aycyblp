@@ -425,6 +425,7 @@ export default function CotizacionesVista() {
   const fila = (p: Presupuesto, conFecha = true, detalle?: ReactNode) => {
     const caerse = puedeCaerse(p);
     const envio = marcaEnvio(p);
+    const alternativas = alternativasDe(p, datos.presupuestos).length;
     const botonCaer = (donde: string, columna = false) => (
       <button type="button" onClick={() => setCayendo(p)} aria-label={`Se cayó la cotización de ${p.cliente || 'sin cliente'}`}
         data-columna={columna ? 'se-cayo' : undefined}
@@ -490,12 +491,13 @@ export default function CotizacionesVista() {
           {gente(p) > 0 && <>{gente(p)} pers. · </>}
           <strong className="text-hueso">{enPesos(total(p))}</strong>
         </span>
-        {alternativasDe(p, datos.presupuestos).length > 1 ? (
-          <span data-paso={PASO.productos} className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80
-                                                      lg:justify-self-center lg:whitespace-nowrap">
-            {alternativasDe(p, datos.presupuestos).length} alternativas
+        {/* En el celular, las alternativas siguen en la primera línea: ahí la
+            segunda ya lleva *Se cayó* y el detalle quedaba muy apretado. */}
+        {alternativas > 1 && (
+          <span data-paso={PASO.productos} className="rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80 lg:hidden">
+            {alternativas} alternativas
           </span>
-        ) : <span aria-hidden className="hidden lg:block" />}
+        )}
         <span data-columna="numero" className="text-[13px] text-hueso/55 lg:whitespace-nowrap">N° {folioDe({ id: grupoDe(p) })}</span>
         {/* **Al final de la fila** (2026-11-26, lo pidió el cliente: *"deja el
             se cayó al lado derecho, al final de la fila… así queda más
@@ -509,9 +511,22 @@ export default function CotizacionesVista() {
           <span aria-hidden className="invisible hidden shrink-0 items-center rounded border-2 px-2.5 text-[14px]
                                        font-semibold lg:inline-flex lg:min-h-[40px]">✕ Se cayó…</span>
         )}
-        {(detalle || caerse) && (
-          <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70 lg:col-span-full">
-            <span className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5">{detalle}</span>
+        {(detalle || caerse || alternativas > 1) && (
+          // `basis-full`: en el celular es la segunda línea de la fila.
+          <span className="flex basis-full items-center gap-x-3 gap-y-0.5 text-[13px] text-hueso/70
+                           lg:col-span-full lg:grid lg:grid-cols-subgrid">
+            <span className={`flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-0.5 ${alternativas > 1 ? '' : 'lg:col-span-full'}`}>{detalle}</span>
+            {/* **Las alternativas, en la segunda línea** (2026-11-26, lo pidió
+                el cliente: *"2 alternativas abajo del botón sin confirmar
+                envío, así más espacio en primera fila"*): en el computador,
+                bajo la columna de los avisos y centradas como ellos. */}
+            {alternativas > 1 && (
+              <span data-paso={PASO.productos} data-columna="alternativas" data-eje="centro"
+                className="shrink-0 rounded-full border border-hueso/30 px-2 py-0.5 text-[13px] font-semibold text-hueso/80
+                           max-lg:hidden lg:justify-self-center lg:whitespace-nowrap">
+                {alternativas} alternativas
+              </span>
+            )}
             {caerse && botonCaer('lg:hidden')}
           </span>
         )}

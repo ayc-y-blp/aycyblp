@@ -196,7 +196,7 @@ revisan antes de cada cambio en esta carpeta.
   | Las cotizaciones del sitio que la cuenta no ha visto, y las listas que no ha confirmado como mandadas | `AvisoCotizacionesSitio` (la portada y Cotizaciones) |
   | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
-  | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro, los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
+  | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
   | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`) |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
   | Un nombre suelto —una persona, un puesto o un colaborador que está en lo guardado y no en la lista— y a quién pasarlo | `ReengancharSuelto` (*Es…* / *Pasar a…*, en Equipo y Extras) |
@@ -293,8 +293,14 @@ el largo del nombre: en cada fila quedaban en otro lugar.
   los valores, a la derecha · las alternativas · el N° · *✕ Se cayó…*. Medido
   en el ejemplo: el centro de las pastillas en el mismo pixel en las 8 filas,
   y el N° también.
-- **Una fila dibuja siempre sus seis celdas**, vacías si no tiene ese dato
-  (las alternativas, *Se cayó*): si falta una, las de la derecha se corren.
+- **Una fila dibuja siempre sus cinco celdas**, vacías si no tiene ese dato
+  (*Se cayó*): si falta una, las de la derecha se corren.
+- ***2 alternativas*, en la segunda línea** (lo pidió el cliente el mismo día:
+  *"2 alternativas abajo del botón sin confirmar envío, así más espacio en
+  primera fila"*): en el computador, bajo la columna de los avisos y centradas
+  como ellos (la segunda línea también usa las columnas). En el celular siguen
+  en la primera, al lado del total: abajo, junto a *Se cayó*, el detalle
+  quedaba muy apretado.
 - **En el celular no cambia**: las piezas de la primera columna van en un
   `display: contents` y la fila se dobla como antes.
 - Va en la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas del sitio*:
