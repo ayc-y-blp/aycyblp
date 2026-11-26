@@ -207,7 +207,7 @@ revisan antes de cada cambio en esta carpeta.
   | Una cotización lista que no figura como mandada: la marca y la pregunta | `PastillaEnvio` de `ConfirmarEnvio` (la Lista, el día del calendario, *Sin fecha*, la Agenda y Clientes), que abre la cotización en el Envío con la pregunta de la ventana de cotizar; en el calendario, la pastilla *✉ N sin confirmar el envío* |
   | En qué paso se abre una cotización desde un dato de afuera | `PASO`, `pasoDelEstado()` y `linkACotizacion()` de `lib/pasos.ts`; en una fila que es un solo botón, `data-paso` y `pasoDelClic()` |
   | Una fila de cotización en una lista: el mismo dato en la misma columna en todas las filas (las pastillas al centro y, debajo, las alternativas; los valores, el N° y *Se cayó* a la derecha) | `fila()` de `CotizacionesVista` dentro de un `<ul className={LISTA_FILAS}>` (`filaCotizacion.ts`): la Lista, el día del calendario, *Sin fecha* y *🆕 Nuevas* |
-  | Los avisos de una tarjeta cerrada de Clientes (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`), y la de sus cotizaciones (`data-columnas="historial"`) |
+  | Una tarjeta cerrada de Clientes: cuántas cotizaciones tiene, en su columna, y los avisos (✉, 📞, 🆕), en la columna del medio | La grilla `data-columnas="clientes"` de `ClientesEditor` (`subgrid`, con `PastillaCotizaciones`), y la de sus cotizaciones (`data-columnas="historial"`) |
   | Filtrar por una persona —un vendedor, un socio— con su buscador | `FiltroConBuscador` (y `BotonPorVendedor`, que es ese con *👤 Por vendedor…*): el buscador flota bajo el botón, sin empujar la página. El calendario y la Lista de Cotizaciones, Clientes y *🤝 Por socio…* |
   | Los botones que cambian de vista: *← Volver*, *Sin fecha*, *📋 Lista* (Cotizaciones) y *← Volver*, *📅 Reservas · 👥 Equipo* (Estadísticas) | `BOTON_VISTA` (`filaCotizacion.ts`): el marco de la vista, 3px dorado y negrita |
   | Una cotización del sitio que espera el primer contacto | `PastillaNueva` (*🆕 Nueva · promoción · hace 2 h*): el bloque *🆕 Nuevas del sitio* de Cotizaciones y *🆕 Nuevos* de Clientes |
@@ -523,6 +523,16 @@ el largo del nombre: en cada fila quedaban en otro lugar.
   salieron del botón que abre la ficha: apretarlos también la abre (la
   cabecera entera abre), salvo ✉, que lleva a la cotización. En el celular van
   debajo del nombre (antes ✉ iba a la derecha).
+- ***1 cotización*, también en su columna** (lo pidió el cliente el mismo día,
+  con una foto de Clientes: *"ordena el 1 cotización también en una
+  columna"*). La pastilla rosada iba al final del teléfono o del correo, y
+  cada fila la dejaba en otro lugar. **En el computador va en su propia
+  columna**, justo después del contacto más largo, con el borde izquierdo en
+  la misma vertical en todas las tarjetas y las tres secciones; una tarjeta
+  sin cotizaciones deja su lugar vacío. Es la segunda de cuatro: el nombre y
+  su contacto · *N cotizaciones* · los avisos, centrados · *Borrar*. Apretarla
+  abre la ficha, como el resto de la cabecera. **En el celular no cambia**: al
+  final del contacto. `revisarColumnas()` la mide (`data-columna="cotizaciones"`).
 - **Lo mide `revisarColumnas()`** (regla nueva del mismo día, *"anótalo
   así"*): cada lista lleva `data-columnas` y cada dato que se repite,
   `data-columna` —las pastillas (`avisos`, por su centro), los valores (por su

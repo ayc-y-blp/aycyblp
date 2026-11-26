@@ -394,11 +394,13 @@ export default function ClientesEditor() {
         // confirmar envío es importante, debe estar en una columna central, no
         // al borde derecha"*; regla *el mismo dato va en la misma columna*). En
         // el computador, todas las secciones son una sola grilla y cada
-        // cabecera usa sus columnas (`subgrid`): el nombre y su contacto · los
-        // avisos (✉, 📞, 🆕), centrados en la columna del medio · *Borrar*. Así
+        // cabecera usa sus columnas (`subgrid`): el nombre y su contacto ·
+        // cuántas cotizaciones tiene (2026-11-26, *"ordena el 1 cotización
+        // también en una columna"*) · los avisos (✉, 📞, 🆕), centrados en la
+        // columna del medio · *Borrar*. Así
         // quedan en la misma vertical en todas las tarjetas, también entre
         // secciones. En el celular, como antes.
-        <div data-columnas="clientes" className="lg:grid lg:grid-cols-[auto_minmax(min-content,1fr)_auto]">{secciones.map((sec, k) => (
+        <div data-columnas="clientes" className="lg:grid lg:grid-cols-[auto_auto_minmax(min-content,1fr)_auto]">{secciones.map((sec, k) => (
         <div key={sec.clave} className={`lg:contents ${k > 0 ? 'mt-5' : ''}`}>
         {/* El rótulo de los grupos de la Agenda (*Hoy · Próximos días*). */}
         {/* Un título de verdad (2026-11-25): abre su sección. */}
@@ -427,13 +429,15 @@ export default function ClientesEditor() {
                     <span className="text-[16px] font-semibold">{c.nombre}</span>
                     {c.empresa && <span className="text-[14px] text-hueso/70">{c.empresa}</span>}
                     <span className="text-[14px] text-hueso/70">{c.telefono || c.correo}</span>
-                    {n > 0 && (
-                      <span className="rounded-full border border-rosa/50 px-2 py-0.5
-                                       text-[13px] font-semibold text-rosa-texto">
-                        {n} cotizaci{n === 1 ? 'ón' : 'ones'}
-                      </span>
-                    )}
+                    {/* En el celular, al final del contacto, como siempre. */}
+                    {n > 0 && <span className="lg:hidden"><PastillaCotizaciones n={n} /></span>}
                   </button>
+                  {/* **Cuántas cotizaciones, en su columna** (2026-11-26): al
+                      lado del contacto más largo, en la misma vertical en todas
+                      las tarjetas. Una sin cotizaciones deja su lugar vacío. */}
+                  <span className="hidden cursor-pointer items-center lg:flex">
+                    {n > 0 && <span data-columna="cotizaciones" className="inline-flex"><PastillaCotizaciones n={n} /></span>}
+                  </span>
                   {/* **Los avisos, en la columna del medio** (2026-11-26): el
                       recontacto más cercano, la del sitio sin contacto (🆕) y
                       ✉ una lista sin confirmar, que abre la cotización en el
@@ -636,5 +640,15 @@ export default function ClientesEditor() {
           onCambio={() => void cargar()} onCerrar={() => setAnotando(null)} />
       )}
     </section>
+  );
+}
+
+/** Cuántas cotizaciones tiene un cliente: la pastilla rosada de su tarjeta. */
+function PastillaCotizaciones({ n }: { n: number }) {
+  return (
+    <span className="whitespace-nowrap rounded-full border border-rosa/50 px-2 py-0.5
+                     text-[13px] font-semibold text-rosa-texto">
+      {n} cotizaci{n === 1 ? 'ón' : 'ones'}
+    </span>
   );
 }
