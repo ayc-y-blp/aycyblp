@@ -672,6 +672,15 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   `verificar.sh` dio 15 de 15 y `brasasdelopirque.cl/experiencias.html` ya trae
   los botones. Ver `CLAUDE.md`, "*Ver bebestibles* en las tarjetas de las
   experiencias".
+- **Promociones: el rótulo de la oferta de fin de año dice *¿11? Me chupo los
+  dedos entonces…*** (26-11-2026, lo pidió el cliente), en vez de *Bienestar y
+  eventos corporativos*. **PR #373, mergeado el 26-11-2026**; `verificar.sh` dio
+  15 de 15 y `brasasdelopirque.cl/promociones.html` ya lo trae.
+- **La línea de cada reserva dice de dónde viene** (26-11-2026, lo pidió el
+  cliente con una foto de la página del día): *🛒 Shopify · N°*, *✍ A mano ·
+  MANUAL-…* o *🤝 Cotización N° … · empresa · vendió … · socio …*. **En un PR, en preview
+  hasta el *"mergea"*.** Ver `panel/CLAUDE.md`, "La línea de cada reserva dice
+  de dónde viene".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo
