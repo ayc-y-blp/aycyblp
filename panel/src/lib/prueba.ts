@@ -8276,6 +8276,18 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   if (!('error' in mezcla)) ok(T.esParaMi({ para: mezcla.para }, isma) && T.esParaMi({ para: mezcla.para }, { usuario: 'p', rol: 'pagos' })
     && !T.esParaMi({ para: mezcla.para }, vale), 'personas y roles: le llega a la persona y al rol, y a nadie más');
   ok('error' in T.limpiarTareaNueva({ para: 'isma|viejo', que: 'x' }, { cuentas, hoy: hoyT }), 'con una cuenta desactivada en la lista no');
+  // ✎ Editar (2026-11-27): quien la mandó, mientras esté abierta.
+  {
+    const abierta: Omit<T.Tarea, 'fila'> = { id: 'T-9', creada: '2026-11-26 10:00', de: 'juanma', para: 'Isma', que: 'Llamar',
+      plazo: '2026-11-28', enlace: '', estado: T.ESTADO_TAREA.pendiente, conversacion: [], cerradaPor: '', cerrada: '' };
+    ok(T.puedeEditar(abierta, jm) && !T.puedeEditar(abierta, isma), 'editar: solo quien la mandó');
+    ok(!T.puedeEditar({ ...abierta, estado: T.ESTADO_TAREA.hecha }, jm), 'editar: cerrada no');
+    const e = T.editarTarea(abierta, { para: 'Isma|rol:pagos', que: 'Llamar', plazo: '2026-11-30', enlace: '' }, jm, '2026-11-27 09:00');
+    ok(!('error' in e) && e.para === 'Isma|rol:pagos' && e.plazo === '2026-11-30' && e.conversacion.length === 1
+      && e.conversacion[0].tipo === 'cambio' && e.conversacion[0].texto.includes('para quién'), 'editar: cambia y deja la línea de lo que cambió');
+    ok(T.editarTarea(abierta, { para: 'Isma', que: 'Llamar', plazo: '2026-11-28', enlace: '' }, jm, 'x') === abierta, 'editar sin cambios: la misma');
+    ok('error' in T.editarTarea(abierta, { para: 'Isma', que: 'Otra', plazo: '', enlace: '' }, isma, 'x'), 'editar: quien la recibió no');
+  }
 
   const base: Omit<T.Tarea, 'fila'> = { id: 'T-1', creada: '2026-11-26 10:00', de: 'juanma', para: 'Isma', que: 'Llamar', plazo: '2026-11-25',
     enlace: '', estado: T.ESTADO_TAREA.pendiente, conversacion: [], cerradaPor: '', cerrada: '' };

@@ -304,6 +304,25 @@ panel y la pantalla de números de la gerencia vienen después.
   (cada una con su ✕, y *+ Otra persona…* para sumar) y los roles, todo en la
   misma tarea (`Carmen|rol:pagos`, `personasDelDestino()`); la cierra el
   primero de cualquiera.
+- **✎ Editar, las dos fechas y los links** (2026-11-27, lo pidió el cliente:
+  *"no puedo editar la tarea y explícame la lógica de fecha"*; dijo *"sí"* a
+  las cuatro propuestas):
+  - ***✎ Editar***, solo quien la mandó y mientras esté abierta
+    (`puedeEditar()`, `editarTarea()`, `accion: 'editar'` en `PATCH
+    /api/tareas`): la misma ventana, *✎ Editar la tarea*, con *Guardar
+    cambios*. La conversación suma *cambió la tarea: para quién, el plazo
+    (30-11)…*, así quien la recibió lo ve. Un plazo que ya pasó se puede
+    dejar como está; uno nuevo, de hoy en adelante.
+  - **Una sola fecha a la vista, el plazo** (*Para cuándo*: desde el día
+    siguiente, si sigue abierta, se pone roja). *Con qué día* no es un plazo:
+    une la tarea a la página de un día. Va escondido detrás de ***📅 Unir a un
+    día del calendario…***, bajo *Qué hacer*, con *✕ Sin día*.
+  - **Los links del texto se aprietan** (`ConLinks`): abren en otra pestaña.
+  - ***Para* más corto**: con varios destinos, los roles por su nombre
+    (*Gerencia general y Encargado de pagos*); con un solo rol, *todos:
+    Gerencia general*.
+  - `PATCH /api/tareas` suma `Usuarios` a su tanda (para revisar a quién se
+    manda al editar): ninguna lectura más por pantalla.
 - **La identidad es el nombre de la cuenta**, como en la sesión y en las notas:
   `De` y `Para` guardan el nombre (`rol:<rol>` para un rol).
 - **En la portada**, bajo la bandeja, ***📋 Tienes N tareas*** (rojo si alguna

@@ -331,3 +331,29 @@ export function aplicarAccion<T extends Omit<Tarea, 'fila'>>(
   const cierra = accion === 'hecha' || accion === 'anular';
   return { ...t, estado, conversacion, cerradaPor: cierra ? yo.usuario : '', cerrada: cierra ? cuando : '' };
 }
+
+/**
+ * **✎ Editar** (2026-11-27, lo pidió el cliente: *"no puedo editar la
+ * tarea"*): quien la mandó, mientras esté abierta. Quien la recibe ya tiene
+ * ❓ Preguntar.
+ */
+export const puedeEditar = (t: Pick<Tarea, 'estado' | 'de'>, yo: Cuenta) => laMande(t, yo) && estaAbierta(t);
+
+/**
+ * La tarea con lo nuevo (ya revisado con `limpiarTareaNueva()`), y en la
+ * conversación una línea *cambió la tarea* con qué cambió, para que quien la
+ * recibió lo vea. Si no cambió nada, la misma tarea.
+ */
+export function editarTarea<T extends Omit<Tarea, 'fila'>>(
+  t: T, nuevo: { para: string; que: string; plazo: Fecha | ''; enlace: string }, yo: Cuenta, cuando: string
+): T | { error: string } {
+  if (!puedeEditar(t, yo)) return { error: 'Esa tarea ya no se puede editar: recarga la página.' };
+  const cambios = [
+    nuevo.que !== t.que ? 'qué hacer' : '',
+    nuevo.para !== t.para ? 'para quién' : '',
+    nuevo.plazo !== t.plazo ? (nuevo.plazo ? `el plazo (${nuevo.plazo.slice(8, 10)}-${nuevo.plazo.slice(5, 7)})` : 'el plazo (sin plazo)') : '',
+    nuevo.enlace !== t.enlace ? 'el día' : ''
+  ].filter(Boolean);
+  if (!cambios.length) return t;
+  return { ...t, ...nuevo, conversacion: [...t.conversacion, { cuando, quien: yo.usuario, tipo: 'cambio', texto: cambios.join(', ') }] };
+}

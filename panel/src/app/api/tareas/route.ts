@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import {
-  HOJA_TAREAS, VEN_TODAS, ROLES_CON_TAREAS, tareasVisibles, ordenarTareas, limpiarTareaNueva, aplicarAccion,
+  HOJA_TAREAS, VEN_TODAS, ROLES_CON_TAREAS, tareasVisibles, ordenarTareas, limpiarTareaNueva, aplicarAccion, editarTarea, puedeEditar,
   rolesDelDestino, personasDelDestino, ESTADO_TAREA, type AccionTarea
 } from '@/lib/tareas';
 import { NOMBRE_ROL } from '@/lib/roles';
@@ -49,8 +49,10 @@ async function cuentas() {
 }
 
 const paraEnPalabras = (para: string, nombres: Record<string, string>) => {
-  return [...personasDelDestino(para).map((p) => nombres[p] ?? p),
-    ...rolesDelDestino(para).map((r) => `todos los de ${NOMBRE_ROL[r] ?? r}`)].join(' y ');
+  const roles = rolesDelDestino(para);
+  const partes = [...personasDelDestino(para).map((p) => nombres[p] ?? p),
+    ...roles.map((r) => (roles.length + personasDelDestino(para).length > 1 ? NOMBRE_ROL[r] ?? r : `todos los de ${NOMBRE_ROL[r] ?? r}`))];
+  return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : partes[0] ?? '';
 };
 
 export const GET = conLecturas([HOJA_TAREAS, HOJA_USUARIOS], async function GET(req: Request) {
@@ -103,12 +105,31 @@ const EN_LA_BITACORA: Record<AccionTarea, string> = {
   anular: 'Anuló una tarea', reabrir: 'Reabrió una tarea'
 };
 
-export const PATCH = conLecturas([HOJA_TAREAS], async function PATCH(req: Request) {
+export const PATCH = conLecturas([HOJA_TAREAS, HOJA_USUARIOS], async function PATCH(req: Request) {
   const no = await exigir(req, 'tareas');
   if (no) return no;
   try {
     const quien = await quienEs(req);
     const cuerpo = (await req.json().catch(() => ({}))) ?? {};
+    // ✎ Editar (2026-11-27): quien la mandó, mientras esté abierta.
+    if (cuerpo.accion === 'editar') {
+      const yo = { usuario: quien.usuario, rol: quien.rol };
+      const c = await cuentas();
+      const r = await cambiarTarea(String(cuerpo.id ?? '').trim(), (t) => {
+        if (!puedeEditar(t, yo)) return { error: 'Esa tarea ya no se puede editar: recarga la página.' };
+        const limpio = limpiarTareaNueva(cuerpo, {
+          cuentas: [...c.cuentasPorNombre, { usuario: quien.usuario, activo: true }],
+          // Un plazo que ya pasó se puede dejar como está; uno nuevo, de hoy en adelante.
+          hoy: t.plazo && t.plazo < hoy() && cuerpo.plazo === t.plazo ? t.plazo : hoy()
+        });
+        if ('error' in limpio) return limpio;
+        return editarTarea(t, limpio, yo, ahoraEnChile());
+      });
+      if (!r) return NextResponse.json({ error: 'Esa tarea ya no está.' }, { status: 404 });
+      if ('error' in r) return NextResponse.json({ error: r.error }, { status: 409 });
+      await anotar({ ...quien, accion: 'Editó una tarea', detalle: `${r.id} · para ${paraEnPalabras(r.para, c.nombres)}` });
+      return NextResponse.json({ ok: true, tarea: r });
+    }
     const accion = String(cuerpo.accion ?? '') as AccionTarea;
     if (!ACCIONES.includes(accion)) return NextResponse.json({ error: 'No sé qué hacer con esa tarea.' }, { status: 400 });
     const yo = { usuario: quien.usuario, rol: quien.rol };

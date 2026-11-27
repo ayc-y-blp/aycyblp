@@ -240,6 +240,11 @@ export const ESCENAS = {
   // Un producto nuevo (2026-11-24): un borrador con *Guardar producto* y *Cancelar*.
   // Las tareas internas (2026-11-26): la ventana para mandar una.
   'v-nueva-tarea': async () => { await ir('/tareas'); await clic(boton('📋 Nueva tarea')); },
+  // ✎ Editar (2026-11-27): la misma ventana, con lo que ya tiene y el día abierto.
+  'v-editar-tarea': async () => {
+    await ir('/tareas'); await clic(boton('✎ Editar'));
+    await clic(ventana().getByRole('button', { name: /Unir a un día/ }));
+  },
   // A varios a la vez (2026-11-27): el peor caso, A mí, dos personas y dos roles.
   'v-nueva-tarea-varios': async () => {
     await ir('/tareas'); await clic(boton('📋 Nueva tarea'));
