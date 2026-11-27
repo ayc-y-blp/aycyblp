@@ -169,15 +169,29 @@ export function nuevoIdTarea(): string {
 const llano = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const mismo = (a: string, b: string) => !!a && !!b && llano(a) === llano(b);
 
-/** `rol:gerente` → `gerente`; una cuenta → `''`. */
-export const rolDelDestino = (para: string) => (para.startsWith('rol:') ? para.slice(4) : '');
+/**
+ * **Una tarea puede ir a varios a la vez** (2026-11-27, lo pidió el cliente:
+ * *"debo poder elegir dos roles a la vez"*, eligió **una sola tarea**, y *"sí
+ * mezclar personas y rol"*). Los destinos van en la columna `Para` separados
+ * con `|`: un nombre de cuenta o `rol:<rol>` cada uno
+ * (`Carmen|rol:pagos`). Le llega a todos y **la cierra el primero**.
+ */
+export const destinosDe = (para: string): string[] =>
+  para.split('|').map((x) => x.trim()).filter(Boolean);
+/** Los roles de una tarea: `Carmen|rol:pagos` → `['pagos']`. */
+export const rolesDelDestino = (para: string): string[] =>
+  destinosDe(para).filter((x) => x.startsWith('rol:')).map((x) => x.slice(4));
+/** Las personas de una tarea: `Carmen|rol:pagos` → `['Carmen']`. */
+export const personasDelDestino = (para: string): string[] =>
+  destinosDe(para).filter((x) => !x.startsWith('rol:'));
+/** El primer rol, o `''` si no va a ningún rol. */
+export const rolDelDestino = (para: string) => rolesDelDestino(para)[0] ?? '';
 
 export interface Cuenta { usuario: string; rol: string }
 
-/** La recibió: es a su nombre, o a su rol. */
+/** La recibió: va a su nombre o a su rol. */
 export function esParaMi(t: Pick<Tarea, 'para'>, yo: Cuenta): boolean {
-  const rol = rolDelDestino(t.para);
-  return rol ? rol === yo.rol : mismo(t.para, yo.usuario);
+  return rolesDelDestino(t.para).includes(yo.rol) || personasDelDestino(t.para).some((p) => mismo(p, yo.usuario));
 }
 
 export const laMande = (t: Pick<Tarea, 'de'>, yo: Cuenta) => mismo(t.de, yo.usuario);
@@ -261,17 +275,18 @@ export function limpiarTareaNueva(
 ): { para: string; que: string; plazo: Fecha | ''; enlace: string } | { error: string } {
   const que = String(cuerpo.que ?? '').trim().slice(0, LARGO_TAREA);
   if (!que) return { error: 'Escribe qué hay que hacer.' };
-  const paraBruto = String(cuerpo.para ?? '').trim();
-  const rol = rolDelDestino(paraBruto);
-  let para = '';
-  if (rol) {
-    if (!ROLES_CON_TAREAS.includes(rol)) return { error: 'Ese rol no existe en el panel.' };
-    para = `rol:${rol}`;
-  } else {
-    const c = ctx.cuentas.find((x) => x.activo && mismo(x.usuario, paraBruto));
+  const brutos = Array.isArray(cuerpo.para) ? cuerpo.para.map(String) : destinosDe(String(cuerpo.para ?? ''));
+  const roles = [...new Set(brutos.filter((x) => x.startsWith('rol:')).map((x) => x.slice(4)))];
+  if (roles.some((r) => !ROLES_CON_TAREAS.includes(r))) return { error: 'Ese rol no existe en el panel.' };
+  const personas: string[] = [];
+  for (const b of brutos.filter((x) => !x.startsWith('rol:'))) {
+    const c = ctx.cuentas.find((x) => x.activo && mismo(x.usuario, b));
     if (!c) return { error: 'Elige a quién se la mandas.' };
-    para = c.usuario;
+    if (!personas.some((p) => mismo(p, c.usuario))) personas.push(c.usuario);
   }
+  if (!personas.length && !roles.length) return { error: 'Elige a quién se la mandas.' };
+  // Primero las personas, después los roles en el orden del panel: una sola tarea para todos.
+  const para = [...personas, ...ROLES_CON_TAREAS.filter((r) => roles.includes(r)).map((r) => `rol:${r}`)].join('|');
   const plazoBruto = String(cuerpo.plazo ?? '').trim();
   if (plazoBruto && !esFecha(plazoBruto)) return { error: 'El plazo no es una fecha.' };
   if (plazoBruto && plazoBruto < ctx.hoy) return { error: 'El plazo tiene que ser de hoy en adelante.' };

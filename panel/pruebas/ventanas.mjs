@@ -240,6 +240,18 @@ export const ESCENAS = {
   // Un producto nuevo (2026-11-24): un borrador con *Guardar producto* y *Cancelar*.
   // Las tareas internas (2026-11-26): la ventana para mandar una.
   'v-nueva-tarea': async () => { await ir('/tareas'); await clic(boton('📋 Nueva tarea')); },
+  // A varios a la vez (2026-11-27): el peor caso, A mí, dos personas y dos roles.
+  'v-nueva-tarea-varios': async () => {
+    await ir('/tareas'); await clic(boton('📋 Nueva tarea'));
+    await clic(ventana().getByRole('button', { name: '📌 A mí' }));
+    for (let n = 0; n < 2; n++) {
+      await clic(ventana().getByRole('button', { name: /Otra persona/ }));
+      await clic(ventana().locator('ul > li > button[aria-pressed]'));
+    }
+    await clic(ventana().getByRole('button', { name: /^Gerencia general/ }));
+    await clic(ventana().getByRole('button', { name: /^Encargado de pagos/ }));
+    await ventana().getByLabel('Qué hacer').fill('Revisar el cierre de caja del sábado');
+  },
   'ficha-producto-nuevo': async () => { await ir('/menus'); await clic(boton('+ Agregar producto')); },
   'ficha-vendedor': vendedor,
   'ficha-recepcion': async () => { await ir('/recepcion'); await clic(p.locator('li > button[aria-expanded]')); },
