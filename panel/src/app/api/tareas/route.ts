@@ -3,7 +3,7 @@ import { conLecturas } from '@/lib/sheets';
 import { HOJA_USUARIOS } from '@/lib/usuarios';
 import {
   HOJA_TAREAS, VEN_TODAS, ROLES_CON_TAREAS, tareasVisibles, ordenarTareas, limpiarTareaNueva, aplicarAccion,
-  rolDelDestino, ESTADO_TAREA, type AccionTarea
+  rolesDelDestino, personasDelDestino, ESTADO_TAREA, type AccionTarea
 } from '@/lib/tareas';
 import { NOMBRE_ROL } from '@/lib/roles';
 import { exigir, quienEs } from '@/lib/permisos';
@@ -49,8 +49,8 @@ async function cuentas() {
 }
 
 const paraEnPalabras = (para: string, nombres: Record<string, string>) => {
-  const rol = rolDelDestino(para);
-  return rol ? `todos: ${NOMBRE_ROL[rol] ?? rol}` : nombres[para] ?? para;
+  return [...personasDelDestino(para).map((p) => nombres[p] ?? p),
+    ...rolesDelDestino(para).map((r) => `todos los de ${NOMBRE_ROL[r] ?? r}`)].join(' y ');
 };
 
 export const GET = conLecturas([HOJA_TAREAS, HOJA_USUARIOS], async function GET(req: Request) {

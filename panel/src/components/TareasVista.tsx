@@ -28,7 +28,7 @@ import ComentariosVista from './ComentariosVista';
 import { BOTON_VISTA } from './filaCotizacion';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO, LISTA_TARJETAS } from './TarjetaLista';
 import {
-  ESTADO_TAREA, estaAbierta, estaAtrasada, leToca, laMande, esParaMi, rolDelDestino, puedeHacer, destinoDelEnlace,
+  ESTADO_TAREA, estaAbierta, estaAtrasada, leToca, laMande, esParaMi, rolesDelDestino, personasDelDestino, puedeHacer, destinoDelEnlace,
   tareasDePersona, LARGO_TAREA, type Tarea, type AccionTarea, type Cuenta
 } from '@/lib/tareas';
 import type { Fecha } from '@/lib/fechas';
@@ -96,8 +96,9 @@ export default function TareasVista() {
 
   const nombre = (u: string) => d.nombres[u] ?? u;
   const paraTexto = (para: string) => {
-    const rol = rolDelDestino(para);
-    return rol ? `todos: ${d.roles.find((r) => r.rol === rol)?.nombre ?? rol}` : nombre(para);
+    const partes = [...personasDelDestino(para).map(nombre),
+      ...rolesDelDestino(para).map((rol) => `todos: ${d.roles.find((r) => r.rol === rol)?.nombre ?? rol}`)];
+    return partes.join(' y ');
   };
 
   const elegida = d.personas.find((p) => p.usuario === persona);
@@ -332,7 +333,8 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
 }
 
 function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; onListo: () => void }) {
-  const [para, setPara] = useState('');
+  // **A varios a la vez** (2026-11-27): personas y roles juntos, una sola tarea.
+  const [para, setPara] = useState<string[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [que, setQue] = useState('');
   const [plazo, setPlazo] = useState('');
@@ -340,11 +342,18 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
 
-  const rol = rolDelDestino(para);
-  const persona = d.personas.find((p) => p.usuario === para);
+  const roles = para.filter((x) => x.startsWith('rol:')).map((x) => x.slice(4));
+  const personas = para.filter((x) => !x.startsWith('rol:'));
   // 📌 A mí (2026-11-26): un recordatorio para uno mismo, también la cuenta de emergencia.
-  const aMi = !!para && para === d.yo.usuario;
-  const aQuien = rol ? `todos los de ${d.roles.find((r) => r.rol === rol)?.nombre ?? rol}` : persona?.nombre ?? '';
+  const aMi = personas.includes(d.yo.usuario);
+  const otras = personas.filter((p) => p !== d.yo.usuario);
+  const nombrePersona = (u: string) => d.personas.find((p) => p.usuario === u)?.nombre ?? u;
+  const nombreRol = (rol: string) => d.roles.find((r) => r.rol === rol)?.nombre ?? rol;
+  const alternar = (x: string) => setPara((ya) => (ya.includes(x) ? ya.filter((y) => y !== x) : [...ya, x]));
+  // Con varios destinos, el rol va sin *todos los de*: la frase tiene que caber al lado del botón.
+  const varios = (aMi ? 1 : 0) + otras.length + roles.length > 1;
+  const partes = [...(aMi ? ['ti'] : []), ...otras.map(nombrePersona), ...roles.map((r) => (varios ? nombreRol(r) : `todos los de ${nombreRol(r)}`))];
+  const aQuien = partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : partes[0] ?? '';
   const BOTON_PARA = 'tecla flex min-h-[44px] items-center gap-2 rounded-xl border-2 px-3 text-left text-[15px]';
 
   const mandar = async () => {
@@ -353,7 +362,7 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
     try {
       const r = await fetch('/api/tareas', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ para, que, plazo, enlace: dia ? `dia:${dia}` : '' })
+        body: JSON.stringify({ para: para.join('|'), que, plazo, enlace: dia ? `dia:${dia}` : '' })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'No se pudo mandar.');
@@ -365,37 +374,43 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
   };
 
   return (
-    <Dialogo titulo="📋 Nueva tarea" onCerrar={onCerrar} ancho="max-w-2xl">
+    <Dialogo titulo="📋 Nueva tarea" onCerrar={onCerrar} ancho="max-w-3xl">
       <div className="space-y-3" data-ficha>
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2">
           <span className={`${ROTULO} sm:pt-2.5`}>Para</span>
           <div className="min-w-0 flex-1 space-y-2">
             <div className="relative flex flex-wrap gap-2">
-              <button type="button" aria-pressed={aMi} onClick={() => setPara(aMi ? '' : d.yo.usuario)}
+              <button type="button" aria-pressed={aMi} onClick={() => alternar(d.yo.usuario)}
                 className={`${BOTON_PARA} ${aMi ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
                 📌 A mí
               </button>
+              {otras.map((u) => (
+                <button key={u} type="button" aria-pressed onClick={() => alternar(u)} title="Sacarla de la tarea"
+                  className={`${BOTON_PARA} border-oro bg-oro/15 font-bold`}>
+                  👤 {nombrePersona(u)} <span aria-hidden className="text-hueso/65">✕</span>
+                </button>
+              ))}
               <button type="button" onClick={() => setBuscando((b) => !b)}
-                className={`${BOTON_PARA} flex-1 sm:flex-none ${persona && !aMi ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
-                👤 {persona && !aMi ? persona.nombre : 'Otra persona…'}
+                className={`${BOTON_PARA} border-hueso/25 bg-panel hover:border-oro/60`}>
+                👤 {otras.length ? '+ Otra persona…' : 'Otra persona…'}
               </button>
               {buscando && (
-                <div className="absolute left-0 z-20 mt-1 w-full max-w-[22rem] rounded-xl border-2 border-oro/60 bg-panel p-2 shadow-lg">
+                <div className="absolute left-0 top-full z-20 mt-1 w-full max-w-[22rem] rounded-xl border-2 border-oro/60 bg-panel p-2 shadow-lg">
                   <BuscarEnLista etiqueta="Buscar persona" vacia="No hay cuentas activas."
-                    opciones={d.personas.map((p) => ({ id: p.usuario, nombre: p.nombre,
+                    opciones={d.personas.filter((p) => !personas.includes(p.usuario)).map((p) => ({ id: p.usuario, nombre: p.nombre,
                       detalle: d.roles.find((r) => r.rol === p.rol)?.nombre }))}
-                    elegido={persona?.usuario} onElegir={(id) => { setPara(id); setBuscando(false); }}
+                    onElegir={(id) => { alternar(id); setBuscando(false); }}
                     onCerrar={() => setBuscando(false)} />
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="O a un rol entero">
-              <span className="text-[14px] text-hueso/70">o a todos los</span>
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Y a uno o varios roles enteros">
+              <span className="text-[14px] text-hueso/70">y a todos los</span>
               {d.roles.map((r) => {
-                const elegido = rol === r.rol;
+                const elegido = roles.includes(r.rol);
                 return (
-                  <button key={r.rol} type="button" role="radio" aria-checked={elegido}
-                    onClick={() => setPara(elegido ? '' : `rol:${r.rol}`)}
+                  <button key={r.rol} type="button" aria-pressed={elegido}
+                    onClick={() => alternar(`rol:${r.rol}`)}
                     className={`${BOTON_PARA} min-h-[40px] ${elegido ? 'border-oro bg-oro/15 font-bold' : 'border-hueso/25 bg-panel hover:border-oro/60'}`}>
                     {r.nombre} <span className="text-[13px] text-hueso/65">{r.cuantos}</span>
                   </button>
@@ -427,12 +442,12 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
         </label>
 
         <div className="flex flex-wrap items-center gap-2 border-t-2 border-hueso/15 pt-3 sm:pl-[8rem]">
-          <button type="button" onClick={() => void mandar()} disabled={enviando || !para || !que.trim()}
+          <button type="button" onClick={() => void mandar()} disabled={enviando || !para.length || !que.trim()}
             className="boton boton-relleno min-h-[44px] px-4">
             {enviando ? 'Mandando…' : 'Mandar tarea'}
           </button>
           <span className="text-[14px] text-hueso/70">
-            {aMi ? 'Te queda en tu panel, como recordatorio.' : aQuien ? `Le llega a ${aQuien}, en su panel.` : 'Elige a quién se la mandas.'}
+            {partes.length === 1 && aMi ? 'Te queda en tu panel, como recordatorio.' : aQuien ? `Le llega a ${aQuien}${partes.length > 1 ? ': la cierra el primero' : ', en su panel'}.` : 'Elige a quién se la mandas.'}
           </span>
         </div>
         {error && <p className="text-[15px] text-rojo-texto">{error}</p>}

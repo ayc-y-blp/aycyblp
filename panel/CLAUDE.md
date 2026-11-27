@@ -295,6 +295,15 @@ panel y la pantalla de números de la gerencia vienen después.
   (`cambiarTarea()` relee la pestaña). **La gerencia ve todas pero no marca
   hecha la de otro.**
 - **A un rol entero, la cierra el primero** y queda a su nombre.
+- **A varios roles a la vez** (2026-11-27, lo pidió el cliente: *"debo poder
+  elegir dos roles a la vez"*, y eligió **una sola tarea**): los botones de
+  rol se marcan y desmarcan de a varios; le llega a todos los de esos roles y
+  la cierra el primero de cualquiera. Se guarda en la misma columna `Para`,
+  con `|` (`rol:gerencia|rol:pagos`, `rolesDelDestino()`). **Y personas con
+  roles** (*"sí mezclar personas y rol"*): *📌 A mí*, una o varias personas
+  (cada una con su ✕, y *+ Otra persona…* para sumar) y los roles, todo en la
+  misma tarea (`Carmen|rol:pagos`, `personasDelDestino()`); la cierra el
+  primero de cualquiera.
 - **La identidad es el nombre de la cuenta**, como en la sesión y en las notas:
   `De` y `Para` guardan el nombre (`rol:<rol>` para un rol).
 - **En la portada**, bajo la bandeja, ***📋 Tienes N tareas*** (rojo si alguna

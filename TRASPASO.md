@@ -781,7 +781,7 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   *💬 Traer los comentarios de Gran Testeo*** en producción. Y **la pantalla se
   llama *Mi panel*** (el cliente: *"debería llamarse mi panel, no tareas"*), en
   un PR aparte (#386), junto con **Configuración en secciones plegables** y **los
-  comentarios de todos, solo para el administrador** (la gerencia ve las tareas), y **📌 A mí** para mandarse una tarea a uno mismo. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
+  comentarios de todos, solo para el administrador** (la gerencia ve las tareas), y **📌 A mí** para mandarse una tarea a uno mismo. **Una tarea a varios a la vez** (27-11-2026, lo pidió el cliente: *"debo poder elegir dos roles a la vez"*, eligió una sola tarea y *"sí mezclar personas y rol"*): personas y roles juntos, la cierra el primero; en un PR, en preview hasta el *"mergea"*. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
   panel". Lo que sigue: `/gerencia` con los números.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).

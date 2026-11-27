@@ -8262,6 +8262,20 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   ok(!('error' in r) && r.para === 'rol:encargado' && r.enlace === '', 'a un rol entero; un enlace raro se descarta');
   ok('error' in T.limpiarTareaNueva({ para: 'rol:trabajador', que: 'x' }, { cuentas, hoy: hoyT }), 'a un rol sin panel no');
   ok('error' in T.limpiarTareaNueva({ para: 'rol:anfitrion', que: 'x' }, { cuentas, hoy: hoyT }), 'a la anfitriona no: no tiene tareas');
+  // Varios roles a la vez (2026-11-27): una sola tarea, la cierra el primero de cualquiera.
+  const dos = T.limpiarTareaNueva({ para: 'rol:pagos|rol:gerencia|rol:pagos', que: 'Revisar' }, { cuentas, hoy: hoyT });
+  ok(!('error' in dos) && dos.para.split('|').length === 2 && dos.para.includes('rol:pagos') && dos.para.includes('rol:gerencia'), 'a dos roles: una tarea, sin repetir el rol');
+  ok('error' in T.limpiarTareaNueva({ para: 'rol:pagos|rol:anfitrion', que: 'x' }, { cuentas, hoy: hoyT }), 'a dos roles, si uno no tiene tareas no');
+  if (!('error' in dos)) {
+    ok(T.esParaMi({ para: dos.para }, jm) && T.esParaMi({ para: dos.para }, { usuario: 'p', rol: 'pagos' }) && !T.esParaMi({ para: dos.para }, vale),
+      'a dos roles: le llega a los dos y a nadie más');
+    ok(JSON.stringify(T.rolesDelDestino(dos.para).sort()) === JSON.stringify(['gerencia', 'pagos']), 'los roles de una tarea a dos roles');
+  }
+  const mezcla = T.limpiarTareaNueva({ para: 'rol:pagos|isma|Isma', que: 'Revisar' }, { cuentas, hoy: hoyT });
+  ok(!('error' in mezcla) && mezcla.para === 'Isma|rol:pagos', 'personas y roles juntos: las personas primero, sin repetir');
+  if (!('error' in mezcla)) ok(T.esParaMi({ para: mezcla.para }, isma) && T.esParaMi({ para: mezcla.para }, { usuario: 'p', rol: 'pagos' })
+    && !T.esParaMi({ para: mezcla.para }, vale), 'personas y roles: le llega a la persona y al rol, y a nadie más');
+  ok('error' in T.limpiarTareaNueva({ para: 'isma|viejo', que: 'x' }, { cuentas, hoy: hoyT }), 'con una cuenta desactivada en la lista no');
 
   const base: Omit<T.Tarea, 'fila'> = { id: 'T-1', creada: '2026-11-26 10:00', de: 'juanma', para: 'Isma', que: 'Llamar', plazo: '2026-11-25',
     enlace: '', estado: T.ESTADO_TAREA.pendiente, conversacion: [], cerradaPor: '', cerrada: '' };
