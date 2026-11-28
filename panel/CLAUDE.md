@@ -288,6 +288,15 @@ vende"*. El cliente aprobó la propuesta (*"hazlo así"*).
 - **Lecturas de Google, permisos y columnas**: nada nuevo. **Ayuda**: el `?`
   de Vendedores, el del Informe y el del sueldo fijo.
 
+## *Extra desayuno* entre los motivos de una suma (2026-11-28)
+
+Lo pidió el cliente con una foto del ajuste de una persona en el equipo del
+día: *"agrégame en este campo la opción extra desayuno"*. Es un botón más en
+*+ Sumar* (`MOTIVOS_AJUSTE.suma` de `lib/equipo.ts`), antes de *Otro*: llega a
+la línea del equipo, de los extras y al ajuste del Informe, que usan la misma
+lista. Se guarda como texto en el motivo, igual que los demás. Ninguna
+lectura, permiso ni columna; ninguna ayuda nombra los botones.
+
 ## Las tareas: quien la mandó la da por resuelta (2026-11-28)
 
 Lo pidió el cliente con una foto de una tarea que mandó, donde solo podía

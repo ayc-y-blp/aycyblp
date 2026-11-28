@@ -223,7 +223,7 @@ export type TipoAjuste = 'resta' | 'suma';
 /** Los motivos con botón, por tipo. Los dio el cliente; *Otro* va con nota. */
 export const MOTIVOS_AJUSTE: Record<TipoAjuste, string[]> = {
   resta: ['Adelanto', 'Llegó tarde', 'Rompió algo', 'Otro'],
-  suma: ['Hora extra', 'Mérito', 'Feriado', 'Otro']
+  suma: ['Hora extra', 'Mérito', 'Feriado', 'Extra desayuno', 'Otro']
 };
 
 /** Cómo se le pagó o se le descontó: en los dos tipos (lo pidió el cliente). */
