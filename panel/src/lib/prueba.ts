@@ -6530,6 +6530,12 @@ console.log('\nLa boleta: bruto, neto y lo que falta boletear');
     { documento: 'boleta', incluido: true });
   ok(vend.total === 300000 && vend.porBoletear.aTransferir === 300000 && B.netoAlMarcar(vend) === 300000,
      'la cuenta de un vendedor con boleta: al marcar se guarda el líquido que recibe');
+  const li = B.desgloseDocumento(300000, { documento: 'liquidacion', incluido: true }, 1525);
+  ok(li.documento === 'liquidacion' && li.enDocumento === 300000 && li.impuesto === 0 && li.aTransferir === 300000,
+     'con liquidación (2026-11-28): el monto es el imponible, sin retención; los descuentos legales no los calcula el panel');
+  const vendL = B.cuentaBoleta([{ fecha: '2026-11-15', monto: 300000 }], [], 'Cristobal', '2026-11-01', '2026-11-30', '2026-11-20',
+    { documento: 'liquidacion', incluido: true });
+  ok(vendL.falta === 0 && vendL.delPeriodo.enDocumento === 300000, 'con liquidación nunca falta un documento');
   const V = await import('./vendedores.ts');
   const encV = [...V.ENCABEZADO_VENDEDORES];
   const socioF = { ...V.fichaSocio('S-0009', 'Turismo Sur'), incluido: false,
@@ -6544,6 +6550,9 @@ console.log('\nLa boleta: bruto, neto y lo que falta boletear');
     V.filaVendedor({ ...V.fichaVacia('luis', 'Luis'), incluido: false }, encV)]);
   ok(sinRet[0].sinRetencion && !sinRet[1].sinRetencion,
      'la ficha guarda si la boleta va sin retención; una de antes que decía retención incluida o aparte se lee con retención');
+  const conLiq = V.leerVendedoresDe([encV, V.filaVendedor({ ...V.fichaVacia('cristobal', 'Cristóbal'), documento: 'liquidacion' }, encV)]);
+  ok(conLiq[0].documento === 'liquidacion' && V.faltaParaFacturar(conLiq[0]).length === 0,
+     'la ficha guarda Liquidación y no pide datos de factura');
   const deAntes = V.leerVendedoresDe([['Usuario', 'Nombre', 'Tipo'], ['S-0001', 'Agencia', 'Socio comercial'], ['ana', 'Ana', '']]);
   ok(deAntes[0].documento === 'factura' && deAntes[0].incluido && deAntes[1].documento === 'boleta' && deAntes[1].incluido,
      'una ficha de antes: el socio con factura y el vendedor con boleta, con el impuesto incluido');
@@ -8296,7 +8305,10 @@ console.log('\nLa agenda: cada cotización en una sola sección (2026-11-26)');
   ok(T.estaAtrasada(base, hoyT) && !T.estaAtrasada({ ...base, plazo: hoyT }, hoyT), 'atrasada desde el día siguiente al plazo');
   ok(T.tareasVisibles([base], vale).length === 0 && T.tareasVisibles([base], { usuario: 'otro', rol: 'admin' }).length === 1,
      'cada uno las suyas; el administrador ve todas');
-  ok(!T.puedeHacer(base, jm, 'hecha'), 'la gerencia no la marca hecha por otro');
+  ok(T.puedeHacer(base, jm, 'hecha'), 'quien la mandó la da por resuelta (2026-11-28)');
+  ok(!T.puedeHacer({ ...base, de: 'otro' }, jm, 'hecha'), 'la gerencia no la marca hecha por otro');
+  const resuelta = T.aplicarAccion(base, 'hecha', '', jm, '2026-11-28 10:00');
+  ok(!('error' in resuelta) && resuelta.estado === 'Hecha' && resuelta.cerradaPor === 'juanma', 'resuelta por quien la mandó, a su nombre');
   const preg = T.aplicarAccion(base, 'preguntar', '¿Qué número?', isma, '2026-11-26 11:00');
   ok(!('error' in preg) && preg.estado === 'Pregunta' && T.leToca(preg, jm) && !T.leToca(preg, isma), 'una pregunta vuelve a quien la mandó');
   ok('error' in T.aplicarAccion(base, 'preguntar', '  ', isma, 'x'), 'una pregunta sin texto no');

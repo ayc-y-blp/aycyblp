@@ -259,6 +259,56 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## La liquidación: quien vende con contrato (2026-11-28)
+
+Lo pidió Felipe, de pagos, en un comentario de 💬: *"en el cómo se paga las
+comisiones falta que sean imponibles dentro de su remuneración; hoy tenemos
+solo factura y boleta de honorarios"*, *"para Cristóbal, que tiene contrato y
+vende"*. El cliente aprobó la propuesta (*"hazlo así"*).
+
+- **Una tercera opción en *¿Con qué documento se le paga?***
+  (`CamposDocumento`): ***Liquidación (contratado)***. Se guarda en la misma
+  columna `Documento` de `Vendedores`, como *Liquidación* (`Impuesto` queda en
+  blanco). Ninguna columna nueva.
+- **Lo que gana como vendedor** —comisión, monto por evento y bono— **va
+  imponible en su liquidación de sueldo**: sin boleta, sin retención y sin
+  *falta la boleta* (`desgloseDocumento()` y `cuentaBoleta()` en
+  `lib/boletas.ts`: se le transfiere lo mismo y nunca *falta*).
+- **El panel no calcula AFP, salud ni impuesto**: dice cuánto suma, como
+  monto imponible; los descuentos legales se calculan en la liquidación.
+- **La caja de la boleta** (`CajaBoleta`) pasa a ***📄 Liquidación***:
+  *Comisión imponible · va en su liquidación de sueldo, sin boleta*, sin
+  botones que marcar. En el Informe, la tarjeta suma *Imponible · va en su
+  liquidación de sueldo*; en Vendedores, *📄 Liquidación de sueldo ·
+  imponible* y *Este periodo: $X imponible*; en el link personal, *Se paga con
+  tu liquidación de sueldo* y *Tu liquidación*.
+- **El sueldo fijo de la ficha se deja en 0**: el sueldo ya lo paga su
+  contrato. Si tiene uno escrito, Vendedores lo avisa en ámbar (no lo borra).
+- **Pagar** se registra como siempre.
+- **Lecturas de Google, permisos y columnas**: nada nuevo. **Ayuda**: el `?`
+  de Vendedores, el del Informe y el del sueldo fijo.
+
+## *Extra desayuno* entre los motivos de una suma (2026-11-28)
+
+Lo pidió el cliente con una foto del ajuste de una persona en el equipo del
+día: *"agrégame en este campo la opción extra desayuno"*. Es un botón más en
+*+ Sumar* (`MOTIVOS_AJUSTE.suma` de `lib/equipo.ts`), antes de *Otro*: llega a
+la línea del equipo, de los extras y al ajuste del Informe, que usan la misma
+lista. Se guarda como texto en el motivo, igual que los demás. Ninguna
+lectura, permiso ni columna; ninguna ayuda nombra los botones.
+
+## Las tareas: quien la mandó la da por resuelta (2026-11-28)
+
+Lo pidió el cliente con una foto de una tarea que mandó, donde solo podía
+*✕ Anular*: *"debo poder dejar resuelta la tarea que envié también, cuando el
+que tenía la tarea me entregó lo esperado"*.
+
+- **Quien la mandó tiene ***✓ Resuelta***** al lado de *✕ Anular*
+  (`puedeHacer()` en `lib/tareas.ts`): la deja **hecha**, a su nombre (*Hecha
+  por …*), con una nota opcional, y se va a *✓ Cerradas*. *Anular* queda para
+  lo que ya no hace falta.
+- Ningún permiso, columna ni lectura. **Ayuda**: el `?` de *Mi panel*.
+
 ## El calendario se llama *Reservas* en el menú (2026-11-28)
 
 Lo pidió el cliente: *"quiero que el botón calendario se llame reservas"*. La

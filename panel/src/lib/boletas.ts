@@ -96,7 +96,14 @@ export function brutoParaNeto(neto: number, centesimas: number): number {
  * boleta o con factura: lo dice su ficha (lo pidió el cliente el
  * 2026-11-20, *"en los dos, boleta o factura"*).
  */
-export type Documento = 'boleta' | 'factura';
+/**
+ * **`liquidacion`** (2026-11-28, lo pidió Felipe, de pagos, por Cristóbal: *"falta que sean
+ * imponibles dentro de su remuneración… hoy tenemos solo factura y boleta de honorarios"*): quien
+ * vende con contrato cobra lo suyo **por su liquidación de sueldo**, como remuneración
+ * imponible. Sin boleta ni retención: el panel dice cuánto suma; los descuentos legales (AFP,
+ * salud, impuesto) los calcula quien hace las remuneraciones, no el panel.
+ */
+export type Documento = 'boleta' | 'factura' | 'liquidacion';
 
 export interface ComoSeDocumenta {
   documento: Documento;
@@ -149,6 +156,10 @@ export interface Desglose {
 export function desgloseDocumento(monto: number, como: ComoSeDocumenta, retencion: number): Desglose {
   const m = Math.max(0, Math.round(monto));
   const base = { documento: como.documento, incluido: como.incluido, sinRetencion: false };
+  if (como.documento === 'liquidacion') {
+    // Va en la liquidación: el monto es el imponible y no hay documento que recibir.
+    return { ...base, incluido: false, enDocumento: m, impuesto: 0, neto: m, aTransferir: m, tasa: 0 };
+  }
   if (como.documento === 'factura') {
     if (como.incluido) {
       const neto = Math.round((m * 10000) / (10000 + IVA_CENTESIMAS));
@@ -305,7 +316,9 @@ export function cuentaBoleta(
       diferencias.push({ boleta: b, dice: b.neto, suma });
     }
   }
-  const falta = sinBoleta + diferencias.reduce((n, d) => n + d.suma - d.dice, 0);
+  // Con liquidación no hay documento que pedir: nunca *falta* (2026-11-28).
+  const falta = como.documento === 'liquidacion' ? 0
+    : sinBoleta + diferencias.reduce((n, d) => n + d.suma - d.dice, 0);
   const tasa = retencionDelAno(fechaDeEmision(hasta, hoy));
   const exacta = suyas.find((b) => b.desde === desde && b.hasta === hasta) ?? null;
   return {
