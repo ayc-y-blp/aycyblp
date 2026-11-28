@@ -306,7 +306,10 @@ export type AccionTarea = 'hecha' | 'preguntar' | 'responder' | 'anular' | 'reab
  */
 export function puedeHacer(t: Pick<Tarea, 'estado' | 'para' | 'de'>, yo: Cuenta, accion: AccionTarea): boolean {
   switch (accion) {
-    case 'hecha': return esParaMi(t, yo) && estaAbierta(t);
+    // **Quien la mandó también la da por resuelta** (2026-11-28, lo pidió el
+    // cliente: *"debo poder dejar resuelta la tarea que envié… cuando quien
+    // tenía la tarea me entregó lo esperado"*): queda hecha, a su nombre.
+    case 'hecha': return (esParaMi(t, yo) || laMande(t, yo)) && estaAbierta(t);
     case 'preguntar': return esParaMi(t, yo) && t.estado === ESTADO_TAREA.pendiente;
     case 'responder': return laMande(t, yo) && t.estado === ESTADO_TAREA.pregunta;
     case 'anular': return laMande(t, yo) && estaAbierta(t);

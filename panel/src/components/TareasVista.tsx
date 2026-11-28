@@ -215,7 +215,7 @@ const TEXTO_ACCION: Record<AccionTarea, { boton: string; confirmar: string; pide
 };
 
 const PALABRA_MENSAJE: Record<string, string> = {
-  nota: 'la marcó hecha', cambio: 'cambió la tarea', pregunta: 'preguntó', respuesta: 'contestó', anulada: 'la anuló', reabierta: 'la reabrió'
+  nota: 'la dio por hecha', cambio: 'cambió la tarea', pregunta: 'preguntó', respuesta: 'contestó', anulada: 'la anuló', reabierta: 'la reabrió'
 };
 
 /**
@@ -244,6 +244,8 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
   const acciones = (['hecha', 'preguntar', 'responder', 'anular', 'reabrir'] as AccionTarea[])
     .filter((a) => puedeHacer(t, d.yo, a));
   const enlace = destinoDelEnlace(t.enlace);
+  // Quien la mandó y no la tiene: la da por resuelta (2026-11-28).
+  const resuelvoYo = !esParaMi(t, d.yo);
 
   const mandar = async () => {
     if (!accion) return;
@@ -307,7 +309,7 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
             {acciones.map((a) => (
               <button key={a} type="button" onClick={() => { setAccion(a); setTexto(''); setError(''); }}
                 className={`boton min-h-[40px] px-3 ${a === 'hecha' || a === 'responder' ? 'border-verde-fuerte/80' : ''}`}>
-                {TEXTO_ACCION[a].boton}
+                {a === 'hecha' && resuelvoYo ? '✓ Resuelta' : TEXTO_ACCION[a].boton}
               </button>
             ))}
           </div>
@@ -336,13 +338,13 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
             <button type="button" onClick={() => void mandar()}
               disabled={enviando || (TEXTO_ACCION[accion].obligatorio && !texto.trim())}
               className="boton min-h-[44px] border-oro px-4 font-semibold">
-              {enviando ? 'Guardando…' : TEXTO_ACCION[accion].confirmar}
+              {enviando ? 'Guardando…' : accion === 'hecha' && resuelvoYo ? '✓ Dar por resuelta' : TEXTO_ACCION[accion].confirmar}
             </button>
             <button type="button" onClick={() => setAccion('')} className="boton min-h-[44px] px-3">Cancelar</button>
             <span className="text-[14px] text-hueso/70">
               {accion === 'preguntar' ? `Le llega a ${nombre(t.de)}.`
                 : accion === 'responder' || accion === 'reabrir' ? 'Vuelve a quedar pendiente.'
-                  : accion === 'hecha' ? `${nombre(t.de)} la ve hecha.` : 'Se cierra para todos.'}
+                  : accion === 'hecha' ? (resuelvoYo ? 'Se cierra como hecha, a tu nombre.' : `${nombre(t.de)} la ve hecha.`) : 'Se cierra para todos.'}
             </span>
           </div>
         </div>

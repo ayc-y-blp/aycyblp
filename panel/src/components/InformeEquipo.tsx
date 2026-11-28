@@ -673,6 +673,11 @@ function LineaPersona({
             // y desmarca la fila de este periodo exacto. Si los días ya los
             // cubre otra (la del mes, o las semanas), se ve en la caja y se
             // desmarca mirando ese periodo.
+            // Con liquidación (quien vende con contrato), solo cuánto suma:
+            // no hay documento que marcar (2026-11-28).
+            if (boleta.como.documento === 'liquidacion') {
+              return <CajaBoleta titulo={tituloBoleta} cuenta={boleta} estado={false} compacta />;
+            }
             const recibida = !!boleta.exacta;
             // Con factura, el mismo botón dice factura (2026-11-20).
             const doc = boleta.como.documento === 'factura' ? 'factura' : 'boleta';
@@ -2170,6 +2175,7 @@ export default function InformeEquipo() {
                         { que: 'Comisiones', valor: l.comisiones ? enPesos(l.comisiones) : '—' },
                         ...(l.socio ? [] : [{ que: 'Sueldo fijo', valor: l.sueldoFijo ? enPesos(l.sueldoFijo) : '—' }]),
                         { que: 'Le toca', valor: enPesos(l.total), tono: 'fuerte' },
+                        ...(l.doc.documento === 'liquidacion' ? [{ que: 'Imponible', valor: 'va en su liquidación de sueldo' }] : []),
                         // **Lo que se le transfiere sale de su documento** (2026-11-20).
                         ...(l.aTransferir !== l.total ? [{ que: l.doc.documento === 'factura' ? 'Más IVA: se le transfiere'
                           : 'Menos retención: se le transfiere', valor: enPesos(l.aTransferir) }] : [])

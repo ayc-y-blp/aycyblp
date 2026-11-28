@@ -77,7 +77,7 @@ interface Datos {
 interface Linea {
   usuario: string; nombre: string; tipo: 'vendedor' | 'socio'; activo: boolean;
   total: number; aTransferir: number; pagado: number; falta: number; ventas: number; fijo: number;
-  formaDePago: boolean; sinCuenta: boolean; documento: 'boleta' | 'factura'; faltaFactura: boolean; porConfirmar: boolean;
+  formaDePago: boolean; sinCuenta: boolean; documento: 'boleta' | 'factura' | 'liquidacion'; faltaFactura: boolean; porConfirmar: boolean;
 }
 
 /** Minúsculas y sin tildes, para buscar "jose" y encontrar a José. */
@@ -497,8 +497,9 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                   <div className="min-w-0 flex-1 text-[15px] leading-relaxed">
                     <span className="block text-[13px] font-semibold uppercase tracking-widest text-hueso/65 sm:inline-block sm:w-[7.5rem] sm:text-[15px] sm:font-normal sm:normal-case sm:tracking-normal sm:text-hueso/70">Documento: </span>
                     <span className="inline-flex items-center gap-1 rounded-full border-2 border-oro/50 px-2 text-[14px] font-bold">
-                      🧾 {f.documento === 'factura' ? 'Factura' : 'Boleta de honorarios'} · {f.documento === 'factura'
-                        ? (f.incluido ? 'IVA incluido' : 'más IVA') : (f.sinRetencion ? 'sin retención' : 'con retención')}
+                      {f.documento === 'liquidacion' ? '📄 Liquidación de sueldo · imponible'
+                        : <>🧾 {f.documento === 'factura' ? 'Factura' : 'Boleta de honorarios'} · {f.documento === 'factura'
+                        ? (f.incluido ? 'IVA incluido' : 'más IVA') : (f.sinRetencion ? 'sin retención' : 'con retención')}</>}
                     </span>
                     {f.documento === 'factura' && f.factura.razonSocial && <span className="text-hueso/75"> · {f.factura.razonSocial}</span>}
                     {faltaF.length > 0 && (
@@ -506,7 +507,19 @@ export default function ResumenVendedor({ esVendedor }: { esVendedor: boolean })
                         ⚠ falta {faltaF.join(', ')}
                       </span>
                     )}
-                    {doc && doc.enDocumento > 0 && (
+                    {/* Con liquidación, el sueldo fijo ya lo paga su contrato:
+                        si se escribe uno, se pagaría dos veces (2026-11-28). */}
+                    {f.documento === 'liquidacion' && f.tipo === 'vendedor' && f.sueldoFijo > 0 && (
+                      <p className="mt-1 text-[14px] font-semibold text-ambar-texto">
+                        ⚠ Tiene sueldo fijo de {enPesos(f.sueldoFijo)}: con contrato, el sueldo va en su liquidación; acá se deja en 0.
+                      </p>
+                    )}
+                    {doc && doc.enDocumento > 0 && f.documento === 'liquidacion' && (
+                      <p className="mt-1 text-[14px] text-hueso/80">
+                        Este periodo: <b>{enPesos(doc.enDocumento)}</b> imponible, en {tu ? 'tu' : 'su'} liquidación de sueldo
+                      </p>
+                    )}
+                    {doc && doc.enDocumento > 0 && f.documento !== 'liquidacion' && (
                       <p className="mt-1 text-[14px] text-hueso/80">
                         Este periodo: {f.documento === 'factura' ? 'factura' : 'boleta'} por <b>{enPesos(doc.enDocumento)}</b>
                         {' '}({f.documento === 'factura' ? `IVA ${tasaEnTexto(doc.tasa)}` : `retención ${tasaEnTexto(doc.tasa)}`} {enPesos(doc.impuesto)})

@@ -74,6 +74,8 @@ function tratoEnLineas(f: FichaVendedor): [string, string][] {
   if (lineas.length) {
     lineas.push(['Se paga con', f.documento === 'factura'
       ? (f.incluido ? 'factura: lo que ganas ya incluye el IVA' : 'factura, más IVA')
+      : f.documento === 'liquidacion'
+        ? 'tu liquidación de sueldo: lo que ganas como vendedor va como remuneración imponible'
       : f.documento === 'boleta'
         ? (f.sinRetencion ? 'boleta de honorarios sin retención: la boleta va por lo mismo que ganas' : 'boleta de honorarios: lo que ganas es líquido y la retención va encima, en la boleta')
         : 'sin documento']);
@@ -205,7 +207,7 @@ export default function VistaSocio({ socio, ventas, pagos, boletas, token, p, v 
           {documento.total > 0 && (
             <div className="mt-5">
               <CajaBoleta tu cuenta={documento}
-                titulo={`${socio.documento === 'factura' ? 'Tu factura' : 'Tu boleta'} ${esMes ? 'de' : 'del'} ${comoSeLlama}`} />
+                titulo={`${socio.documento === 'factura' ? 'Tu factura' : socio.documento === 'liquidacion' ? 'Tu liquidación' : 'Tu boleta'} ${esMes ? 'de' : 'del'} ${comoSeLlama}`} />
             </div>
           )}
 

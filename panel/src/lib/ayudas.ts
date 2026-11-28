@@ -401,7 +401,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'para cuándo: desde el día siguiente al plazo, si sigue abierta, se pone roja como atrasada. '
       + '📅 Unir a un día del calendario es aparte y opcional: la tarea trae un botón a la página de ese día.',
       'Mientras está abierta, quien la mandó la puede ✎ Editar: qué hacer, para quién y el plazo. Quien la recibió ve que cambió.',
-      'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo.',
+      'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo. '
+      + 'Si te entregaron lo que pediste, la cierras tú con ✓ Resuelta.',
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
       'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
     ],
@@ -450,7 +451,8 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Vendedores y socios se pagan según su documento: con boleta, lo que '
       + 'ganan es líquido, se les transfiere eso y la boleta va por más, con la '
       + 'retención (o por lo mismo, si la ficha dice sin retención); con '
-      + 'factura más IVA, el total con IVA. Su caja lo dice.',
+      + 'factura más IVA, el total con IVA; con liquidación (quien vende con contrato), '
+      + 'lo que gana es imponible y va en su liquidación de sueldo, sin boleta. Su caja lo dice.',
       'La lista va en orden: arriba quien tiene plata en el periodo, después '
       + 'a quien le falta marcar si vino y al final quien no tiene nada que '
       + 'pagar. Sin marcar deja solo a los que les falta marcar.',
@@ -716,8 +718,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'y si está pagado. Busca por nombre si son muchas.',
       'Ábrela con el +: los azulejos dicen cuánto toca, cuánto se pagó y '
       + 'cuánto falta, con Pagarle, el detalle de cada venta y su trato.',
-      'En Documento: boleta o factura, y si lo que gana trae la retención o el '
-      + 'IVA. Eso decide cuánto se le transfiere, aquí y en el informe.',
+      'En Documento: boleta, factura o liquidación (quien vende con contrato: va '
+      + 'imponible en su liquidación de sueldo, y el sueldo fijo de acá queda en 0). Con '
+      + 'boleta o factura, si trae la retención o el IVA. Eso decide cuánto se le transfiere.',
       '🔗 Copiar link (vendedores y socios) le copia su link personal: sin '
       + 'clave, ve su trato, lo que ganó en el mes (o en una semana), lo que viene, lo que se le '
       + 'pagó y cuánto poner en la boleta o la factura. Renovar crea uno nuevo; '
@@ -1463,7 +1466,7 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   },
   vendSueldoFijo: {
     titulo: 'Sueldo fijo',
-    texto: ['Se suma una vez por mes, el último día del mes: un periodo que incluye ese día lo cuenta. Una semana que no lo incluye no suma fijo.']
+    texto: ['Se suma una vez por mes, el último día del mes: un periodo que incluye ese día lo cuenta. Una semana que no lo incluye no suma fijo.', 'Con liquidación (quien vende con contrato), el sueldo va en su liquidación: aquí se deja en 0.']
   },
   vendBase: {
     titulo: 'Neto o total',

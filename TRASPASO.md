@@ -786,6 +786,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
 - **El botón *Calendario* del menú se llama *Reservas*** (28-11-2026, lo pidió
   el cliente); solo el botón del menú y la ayuda, los *← Volver al calendario*
   siguen igual. En un PR, en preview hasta el *"mergea"*.
+- **La liquidación y *✓ Resuelta*** (28-11-2026): un tercer documento para
+  quien vende con contrato (*📄 Liquidación*: lo que gana va imponible en su
+  liquidación de sueldo, sin boleta; el panel no calcula los descuentos
+  legales), pedido por Felipe para Cristóbal; y quien manda una tarea la puede
+  dar por resuelta. En un PR, en preview hasta el *"mergea"*. Ver
+  `panel/CLAUDE.md`, "La liquidación" y "Las tareas: quien la mandó…".
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

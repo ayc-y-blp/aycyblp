@@ -38,8 +38,8 @@ export default function CamposDocumento({ documento, incluido, sinRetencion = fa
     <div className="space-y-4">
       <div>
         <p className="text-[15px] font-bold">¿Con qué documento se le paga?</p>
-        <div className="mt-1.5 grid grid-cols-2 gap-2" role="group" aria-label="Documento">
-          {([['boleta', 'Boleta de honorarios'], ['factura', 'Factura']] as const).map(([k, rotulo]) => (
+        <div className="mt-1.5 grid grid-cols-3 gap-2" role="group" aria-label="Documento">
+          {([['boleta', 'Boleta de honorarios'], ['factura', 'Factura'], ['liquidacion', 'Liquidación (contratado)']] as const).map(([k, rotulo]) => (
             <button key={k} type="button" aria-pressed={documento === k} onClick={() => onCambio({ documento: k })}
               className={`boton !min-h-[52px] !whitespace-normal !px-2 text-center !text-[15px] leading-tight ${documento === k
                 ? '!border-oro bg-oro/15 font-bold !text-oro' : ''}`}>
@@ -49,6 +49,13 @@ export default function CamposDocumento({ documento, incluido, sinRetencion = fa
         </div>
       </div>
 
+      {documento === 'liquidacion' ? (
+        <p className="rounded-lg border-2 border-hueso/15 px-3 py-2 text-[14px] leading-relaxed">
+          Lo que gana como vendedor va en su <b>liquidación de sueldo</b>, como remuneración imponible: sin boleta
+          ni retención. El panel dice cuánto suma; los descuentos legales (AFP, salud, impuesto) se calculan en la
+          liquidación. Su sueldo fijo ya lo paga su contrato: en el trato, déjalo en 0.
+        </p>
+      ) : (
       <div>
         <p className="text-[15px] font-bold">{esFactura ? 'Lo que gana según su trato…' : 'Lo que gana es líquido: lo que recibe'}</p>
         <div className="mt-1.5 grid gap-2 sm:grid-cols-2" role="group" aria-label={esFactura ? 'IVA' : 'Retención'}>
@@ -75,6 +82,7 @@ export default function CamposDocumento({ documento, incluido, sinRetencion = fa
           </AyudaCorta>
         </p>
       </div>
+      )}
 
       {esFactura && (
         <div className="space-y-2">

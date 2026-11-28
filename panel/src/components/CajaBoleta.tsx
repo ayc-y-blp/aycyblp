@@ -46,6 +46,27 @@ export default function CajaBoleta({ titulo, cuenta, tu = false, estado = true, 
   /** Lo de cada pantalla: marcar el documento, ir al mes… */
   children?: ReactNode;
 }) {
+  // **Con liquidación** (2026-11-28, quien vende con contrato): no hay
+  // documento que recibir ni retención; la caja dice cuánto suma, imponible,
+  // y que va en su liquidación de sueldo. Los descuentos legales no los
+  // calcula el panel.
+  if (cuenta.delPeriodo.documento === 'liquidacion') {
+    return (
+      <section className="rounded-xl border-2 border-hueso/25 p-3" data-liquidacion>
+        <h3 className="text-[15px] font-bold first-letter:uppercase"><span aria-hidden>📄</span> {titulo.replace(/^(tu )?(boleta|factura)/i, (_m, t) => `${t ?? ''}liquidación`)}</h3>
+        <div className="mt-2 flex items-baseline justify-between gap-3">
+          <p className="min-w-0">
+            <span className="text-[15px] font-bold">Comisión imponible</span>
+            <span className="block text-[13px] text-hueso/70">va en {tu ? 'tu' : 'su'} liquidación de sueldo, sin boleta</span>
+          </p>
+          <span className={`shrink-0 text-[24px] font-bold tabular-nums text-oro ${compacta ? 'lg:text-[20px]' : ''}`}>{enPesos(cuenta.delPeriodo.enDocumento)}</span>
+        </div>
+        <p className={`mt-2 text-[13px] text-hueso/60 ${compacta ? 'hidden' : ''}`}>
+          Es el monto antes de los descuentos legales (AFP, salud e impuesto), que se calculan en la liquidación.
+        </p>
+      </section>
+    );
+  }
   const lista = cuenta.falta === 0;
   const d = lista ? cuenta.delPeriodo : cuenta.porBoletear;
   const factura = d.documento === 'factura';

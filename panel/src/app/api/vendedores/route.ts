@@ -36,7 +36,7 @@ const texto = (v: unknown, largo = 120) => String(v ?? '').trim().slice(0, largo
  */
 function pagoDelCuerpo(b: Record<string, unknown>, antes: FichaVendedor): Partial<FichaVendedor> {
   const x: Partial<FichaVendedor> = {};
-  if (b.documento === 'boleta' || b.documento === 'factura') x.documento = b.documento;
+  if (b.documento === 'boleta' || b.documento === 'factura' || b.documento === 'liquidacion') x.documento = b.documento;
   if (typeof b.incluido === 'boolean') x.incluido = b.incluido;
   if (typeof b.sinRetencion === 'boolean') x.sinRetencion = b.sinRetencion;
   const f = b.factura as Record<string, unknown> | undefined;
@@ -302,7 +302,7 @@ export const POST = conLecturas([HOJA_VENDEDORES, HOJA_USUARIOS], async function
       const ficha: FichaVendedor = { ...base, ...pagoDelCuerpo(b, base) };
       await guardarVendedor(ficha);
       await anotar({ ...quien, accion: 'Creó la cuenta de un vendedor',
-        detalle: `${nombre} · ${usuario} · ${ficha.documento === 'factura' ? 'factura' : 'boleta'}` });
+        detalle: `${nombre} · ${usuario} · ${ficha.documento === 'factura' ? 'factura' : ficha.documento === 'liquidacion' ? 'liquidación' : 'boleta'}` });
       return NextResponse.json({ ok: true, ficha });
     }
 

@@ -64,7 +64,8 @@ export const COL_VENDEDORES = {
   ...COL_BANCO,
   nota: 'Nota de pago',
   /**
-   * **Con qué documento se le paga** (2026-11-20): `Boleta` o `Factura`. En
+   * **Con qué documento se le paga** (2026-11-20): `Boleta`, `Factura` o, desde el 2026-11-28,
+   * `Liquidación` (quien vende con contrato: va en su liquidación de sueldo). En
    * blanco, boleta para un vendedor y factura para un socio comercial.
    */
   documento: 'Documento',
@@ -250,7 +251,8 @@ export function leerVendedoresDe(filas: string[][]): FichaVendedor[] {
       nota: en(f, i.nota).trim()
     },
     // En blanco: boleta el vendedor, factura el socio; y el impuesto incluido.
-    documento: /factura/i.test(en(f, i.documento)) ? 'factura' as const
+    documento: /liquidaci/i.test(en(f, i.documento)) ? 'liquidacion' as const
+      : /factura/i.test(en(f, i.documento)) ? 'factura' as const
       : /boleta/i.test(en(f, i.documento)) ? 'boleta' as const
       : tipoDe(en(f, i.tipoFicha)) === 'socio' ? 'factura' as const : 'boleta' as const,
     incluido: !/aparte/i.test(en(f, i.impuesto)),
@@ -283,10 +285,10 @@ export function filaVendedor(v: FichaVendedor, enc: string[]): string[] {
   poner(i.titular, v.banco.titular); poner(i.rut, v.banco.rut); poner(i.banco, v.banco.banco);
   poner(i.tipo, v.banco.tipo); poner(i.numero, v.banco.numero); poner(i.correo, v.banco.correo);
   poner(i.nota, v.banco.nota);
-  poner(i.documento, v.documento === 'factura' ? 'Factura' : 'Boleta');
+  poner(i.documento, v.documento === 'factura' ? 'Factura' : v.documento === 'liquidacion' ? 'Liquidación' : 'Boleta');
   // Con boleta, la columna dice si lleva retención (2026-11-25); con factura, si el IVA va incluido.
   poner(i.impuesto, v.documento === 'boleta' ? (v.sinRetencion ? 'Sin retención' : 'Con retención')
-    : (v.incluido ? 'Incluido' : 'Aparte'));
+    : v.documento === 'liquidacion' ? '' : (v.incluido ? 'Incluido' : 'Aparte'));
   poner(i.rotacion, v.rotacionSitio ? 'Sí' : '');
   poner(i.razonSocial, v.factura.razonSocial); poner(i.rutFactura, v.factura.rut);
   poner(i.giro, v.factura.giro); poner(i.direccion, v.factura.direccion);
