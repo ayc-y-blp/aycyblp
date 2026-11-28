@@ -286,8 +286,12 @@ hoy**, y *A la carta* **como los agregados**, no como un producto.
   Se escribe en el formulario y en *La mesa* de una reserva que llegó
   (`MesaReserva`, en la fila del valor final, se guarda sola al salir del
   campo; mientras se cobra se esconde, para que la ficha del cobro quepa:
-  637px). Sale como pastilla *Mesa Terraza 3* al lado del nombre, en la
-  Recepción y en la página del día. La anfitriona la cambia con `asistencia`
+  637px). Sale como pastilla *Mesa Terraza 3* (`PastillaMesa`), en la
+  Recepción y en la página del día. **En el computador va en su propia
+  columna, a la izquierda del ícono del pago**, y cada fila deja su lugar aunque
+  no tenga mesa (lo pidió el cliente: *"en reservas agregar asignado a mesa 11
+  si la anfitriona asignó una mesa"*; `data-columna="mesa"`). En el celular va
+  bajo el nombre y el menú: como columna, el menú se partía letra a letra. La anfitriona la cambia con `asistencia`
   (`DE_LA_ENTRADA`, que suma además el `id`).
 - **Lecturas de Google**: ninguna más. **Permisos**: ninguno nuevo; la
   anfitriona anota hoy por una regla del servidor. **Ayuda**: el `?` de la
@@ -5376,9 +5380,11 @@ ejemplo, con capturas de antes y después, y el cliente dijo que sí. Todo en
      sin marcar;
   3. **Sin nada que pagar en este periodo · N**: solo días que no vino.
 
-  Dentro de cada grupo, el orden de siempre (lo que más se paga primero),
-  **para que la lista no salte mientras se paga**. Antes iba solo por monto,
-  así que alguien con $16.500 por pagar quedaba debajo de dos en $0.
+  **Dentro de cada grupo, por nombre, de la A a la Z** (2026-11-28, lo pidió
+  el cliente: *"mejor que dentro de cada grupo sea alfabético nomás"*), en las
+  tres secciones; antes iba de lo que más se paga a lo que menos. Tampoco
+  salta mientras se paga. Antes del 2026-11-21 iba solo por monto, así que
+  alguien con $16.500 por pagar quedaba debajo de dos en $0.
 - **Filtro *Sin marcar (N)***, al lado de *Todos · Por pagar · Sin boleta*:
   quien tiene algún día sin marcar en el periodo (equipo y extras; los
   vendedores no tienen días). **Ya no hay aviso *Hay N turnos sin

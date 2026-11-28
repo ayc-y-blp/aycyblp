@@ -34,6 +34,7 @@
  * Se vuelve a pedir cada minuto, por si el jefe de turno resolvió un aviso o
  * alguien marcó desde otro lado.
  */
+import PastillaMesa from './PastillaMesa';
 import AvisoFijo from './AvisoFijo';
 import { CUERPO_ABIERTO, SignoAbrir, marcoTarjeta } from './TarjetaLista';
 import MesaReserva, { ElegirAgregados } from './MesaReserva';
@@ -282,7 +283,6 @@ export default function RecepcionVista() {
                 <span className="min-w-0 flex-1">
                   <span className={`block break-words text-[18px] font-bold leading-tight ${noVino ? 'line-through opacity-70' : ''}`}>
                     {r.nombre || 'Sin nombre'}
-                    {r.numeroMesa && <span className="ml-2 inline-block whitespace-nowrap rounded-full border-2 border-hueso/25 px-2 align-middle text-[13px] font-bold">Mesa {r.numeroMesa}</span>}
                   </span>
                   {(r.menu || r.ingreso?.acordado) && (
                     <span className="flex min-w-0 items-center gap-1.5 text-[14px] text-hueso/70">
@@ -292,7 +292,9 @@ export default function RecepcionVista() {
                       <MarcaAcordado ingreso={r.ingreso} />
                     </span>
                   )}
+                  <PastillaMesa mesa={r.numeroMesa} enLinea />
                 </span>
+                <PastillaMesa mesa={r.numeroMesa} />
                 {!noVino && <IconoFudo ingreso={r.ingreso} />}
                 {/* La gente de la mesa, con los que se sumaron: el mismo
                     número que la página del día (2026-11-17). */}
