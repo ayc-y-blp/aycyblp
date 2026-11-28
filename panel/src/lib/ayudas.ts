@@ -422,6 +422,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       'Abre en el mes en curso; para pagar la semana pasada, aprieta Semana y ◀. En el marco dorado de '
       + 'arriba eliges mes, semana, día o dos fechas (Personalizado), y te '
       + 'mueves con ◀ ▶.',
+      'Arriba va quien tiene plata en el periodo, después quien tiene días sin '
+      + 'marcar y al final quien no tiene nada que pagar; en cada grupo, por '
+      + 'nombre, de la A a la Z.',
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
       + 'solo a ellas: esos días no suman, así que mientras haya, los totales '
       + 'están incompletos.',

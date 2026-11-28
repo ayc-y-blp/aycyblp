@@ -5376,9 +5376,11 @@ ejemplo, con capturas de antes y después, y el cliente dijo que sí. Todo en
      sin marcar;
   3. **Sin nada que pagar en este periodo · N**: solo días que no vino.
 
-  Dentro de cada grupo, el orden de siempre (lo que más se paga primero),
-  **para que la lista no salte mientras se paga**. Antes iba solo por monto,
-  así que alguien con $16.500 por pagar quedaba debajo de dos en $0.
+  **Dentro de cada grupo, por nombre, de la A a la Z** (2026-11-28, lo pidió
+  el cliente: *"mejor que dentro de cada grupo sea alfabético nomás"*), en las
+  tres secciones; antes iba de lo que más se paga a lo que menos. Tampoco
+  salta mientras se paga. Antes del 2026-11-21 iba solo por monto, así que
+  alguien con $16.500 por pagar quedaba debajo de dos en $0.
 - **Filtro *Sin marcar (N)***, al lado de *Todos · Por pagar · Sin boleta*:
   quien tiene algún día sin marcar en el periodo (equipo y extras; los
   vendedores no tienen días). **Ya no hay aviso *Hay N turnos sin

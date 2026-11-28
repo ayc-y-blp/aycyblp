@@ -1234,20 +1234,21 @@ export default function InformeEquipo() {
    * **El orden de la lista** (2026-11-21, lo pidió el cliente): arriba quien
    * tiene plata en el periodo —algo que transferir o un pago ya anotado—,
    * después a quien le falta marcar si vino, y al final quien no tiene nada
-   * que pagar. Dentro de cada grupo, el orden de siempre (lo que más se paga
-   * primero), para que la lista no salte mientras se paga.
+   * que pagar. **Dentro de cada grupo, por nombre, de la A a la Z**
+   * (2026-11-28, lo pidió el cliente: *"mejor que dentro de cada grupo sea
+   * alfabético nomás"*; antes iba de lo que más se paga a lo que menos).
    */
-  const enGrupos = <T,>(lista: T[], grupo: (x: T) => number) => lista
-    .map((x, i) => ({ x, i, g: grupo(x) }))
-    .sort((a, b) => a.g - b.g || a.i - b.i)
+  const enGrupos = <T,>(lista: T[], grupo: (x: T) => number, nombre: (x: T) => string) => lista
+    .map((x) => ({ x, g: grupo(x), n: llano(nombre(x)) }))
+    .sort((a, b) => a.g - b.g || a.n.localeCompare(b.n, 'es'))
     .map((y, k, todos) => ({ ...y, primero: k === 0 || todos[k - 1].g !== y.g }));
   const grupoDe = (nombre: string, aTransferir: number, sinMarcar: number) =>
     aTransferir > 0 || pagosEnPeriodo(pagos, nombre, desde, hasta).length > 0 ? 0 : sinMarcar > 0 ? 1 : 2;
   const ordenEquipo = enGrupos(visiblesEquipo, (l) => grupoDe(l.trabajador,
-    pagoDeFila(l.trabajador, l.total, l.propina).aTransferir, sinMarcarDe(fueraEquipo, l.trabajador)));
+    pagoDeFila(l.trabajador, l.total, l.propina).aTransferir, sinMarcarDe(fueraEquipo, l.trabajador)), (l) => l.trabajador);
   const ordenExtras = enGrupos(visiblesExtras, (l) => grupoDe(l.colaborador,
-    pagoDeFila(l.colaborador, l.total, 0).aTransferir, sinMarcarDe(fueraExtras, l.colaborador)));
-  const ordenVendedores = enGrupos(visiblesVendedores, (l) => grupoDe(l.nombre, l.aTransferir, 0));
+    pagoDeFila(l.colaborador, l.total, 0).aTransferir, sinMarcarDe(fueraExtras, l.colaborador)), (l) => l.colaborador);
+  const ordenVendedores = enGrupos(visiblesVendedores, (l) => grupoDe(l.nombre, l.aTransferir, 0), (l) => l.nombre);
   const rotuloGrupo = (g: number, n: number) => g === 0 ? null : (
     <li className="list-none px-1 pb-0.5 pt-3 text-[13px] font-semibold text-hueso/65">
       {g === 1 ? `○ Falta marcar si vino · ${n} · todavía no suman` : `Sin nada que pagar en este periodo · ${n}`}
