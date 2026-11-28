@@ -5595,7 +5595,7 @@ console.log('\nLa ayuda de cada rol');
   ok(!ven.some((p) => p.href === '/turnos' || p.href === '/equipo')
      && ven.some((p) => p.texto === 'Mi resumen'),
      'el vendedor no recibe Turnos ni Equipo, y su pestaña de ventas se llama Mi resumen, como en su menú');
-  ok(pantallaDeRuta('/presupuestos') === 'Cotizaciones' && pantallaDeRuta('/') === 'Calendario'
+  ok(pantallaDeRuta('/presupuestos') === 'Cotizaciones' && pantallaDeRuta('/') === 'Reservas'
      && pantallaDeRuta('/dia/2026-11-14') === 'Día 2026-11-14' && pantallaDeRuta('/ayuda') === 'Ayuda',
      'el comentario sabe en qué pantalla se escribió');
 }

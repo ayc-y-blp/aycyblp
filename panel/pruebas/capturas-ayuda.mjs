@@ -63,7 +63,10 @@ const abrirEnvio = (nombre) => [
   // Cada dato de la fila abre en su paso (2026-11-26): se aprieta en la
   // esquina, donde va el nombre, que abre como siempre.
   async (p) => { await boton(`Abrir la cotización de ${nombre}`)(p).click({ position: { x: 6, y: 6 } }); await p.waitForTimeout(900); },
-  async (p) => { await p.waitForTimeout(1500); await boton(/Envío/)(p).click(); await p.waitForTimeout(900); }
+  // El paso, dentro de la ventana (2026-11-28): detrás, la Lista ya trae
+  // *✉ sin confirmar el envío* para pagos y la gerencia, y ese botón tapado
+  // era el primero que calzaba.
+  async (p) => { await p.waitForTimeout(1500); await p.locator('[role=dialog]').last().getByRole('button', { name: /Envío/ }).first().click(); await p.waitForTimeout(900); }
 ];
 
 /** Cada escena: con qué rol, dónde, qué clics, qué dejar a la vista y sus puntos. */
@@ -85,7 +88,9 @@ const ESCENAS = {
   'anf-aviso': { rol: 'anfitrion', ruta: '/recepcion', pasos: [clic(filaRecepcion(0)), clic(boton(/Avisar al jefe/))], foco: texto(/Qué le avisas/),
     puntos: [campo(/Quieren cambiar/), boton('Avisar', 0), boton('Volver', 0)] },
 
-  'ven-calendario': { rol: 'vendedor', ruta: '/', alto: 1000,
+  // Más alta desde el 2026-11-28: los avisos de *Mi panel* y el marco del
+  // periodo dejaban el botón *Reservas* de la tarjeta bajo el borde de 1000.
+  'ven-calendario': { rol: 'vendedor', ruta: '/', alto: 1300,
     puntos: [toque(/Cotizar una reserva/), texto('personas', 0), (p) => p.locator('main a, main button').filter({ hasText: /^\W*Reservas$/ }).first()] },
   // Más alto desde el 2026-11-22: la lista de clientes va en su marco de grupo,
   // con su título, y el botón *Ir al paso 2* quedaba fuera de la foto.

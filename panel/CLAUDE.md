@@ -259,6 +259,20 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El calendario se llama *Reservas* en el menú (2026-11-28)
+
+Lo pidió el cliente: *"quiero que el botón calendario se llame reservas"*. La
+banda de esa pantalla ya decía *Reservas · Fechas abiertas*.
+
+- **El botón del menú dice *Reservas*** (`paginas.ts`; la dirección sigue
+  siendo `/`). **Solo el botón del menú** (lo precisó el cliente: *"cuando uno
+  está en listas, está bien que dice volver al calendario. Está dentro de
+  reservas, está el calendario y la lista… solo cambies en ayuda y en el
+  botón"*): *← Calendario* de la página del día, *← Volver al calendario* de
+  Estadísticas y el de Cotizaciones siguen igual.
+- **Ayuda**: las fotos de la ayuda que muestran el menú. Ninguna lectura,
+  permiso ni columna.
+
 ## Las tareas internas (2026-11-26)
 
 Lo pidió el cliente, como primera parte de un panel de gerencia: *"que yo
