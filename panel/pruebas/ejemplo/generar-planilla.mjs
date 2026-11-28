@@ -335,7 +335,8 @@ reserva({ id: 'MANUAL-1760100000003', fecha: '2026-11-11', nombre: 'Gonzalo Cont
 
 // Jueves 12: la página del día (enc-dia / ope-dia).
 deShopify({ fecha: '2026-11-12', nombre: 'Familia Soto', email: 'familia.soto@ejemplo.cl', telefono: '+56 9 6123 4501', menu: '4 × Tradiciones + 2 × Niños',
-  personas: 6, monto: 214000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-08 21:10', asistencia: 'Sí', llegaron: 6 });
+  personas: 6, monto: 214000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-08 21:10', asistencia: 'Sí', llegaron: 6,
+  numeroMesa: 'Terraza 3' });
 deShopify({ fecha: '2026-11-12', nombre: 'Pedro Navarro', email: 'pnavarro@ejemplo.cl', telefono: '+56 9 6123 4502', menu: '2 × Tradiciones',
   personas: 2, monto: 88000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-09 10:33', asistencia: 'Sí', llegaron: 2 });
 aMano({ fecha: '2026-11-12', nombre: 'Laura Méndez', telefono: '+56 9 6123 4503', menu: '4 × Lo Pirque',
@@ -360,7 +361,7 @@ deShopify({ fecha: '2026-11-13', nombre: 'Valentina Castro', email: 'vcastro@eje
 // No es Valentina Castro: la foto de la misión de la anfitriona la muestra sin valor final.
 deShopify({ fecha: '2026-11-13', nombre: 'Martín Araya', email: 'maraya@ejemplo.cl', telefono: '+56 9 7345 1106', menu: '2 × Tradiciones + 1 × Pequeños',
   personas: 3, monto: 94000, tipoPago: 'Pago directo', estadoPago: 'paid', creada: '2026-11-10 09:58', asistencia: 'Sí', llegaron: 3,
-  valorFinal: 112000, mesaCerrada: '2026-11-13 14:15 · Tomás Herrera' });
+  valorFinal: 112000, mesaCerrada: '2026-11-13 14:15 · Tomás Herrera', numeroMesa: '11' });
 
 // Sábado 14 y domingo 15 (lo que viene).
 const futuro = [
