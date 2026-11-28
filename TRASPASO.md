@@ -784,8 +784,8 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   comentarios de todos, solo para el administrador** (la gerencia ve las tareas), y **📌 A mí** para mandarse una tarea a uno mismo. **Una tarea a varios a la vez** (27-11-2026, lo pidió el cliente: *"debo poder elegir dos roles a la vez"*, eligió una sola tarea y *"sí mezclar personas y rol"*): personas y roles juntos, la cierra el primero (PR #387, mergeado el 27-11-2026). Después, **✎ Editar** para quien la mandó, una sola fecha a la vista (*📅 Unir a un día…* escondido), los links que se aprietan y *Para* más corto; en un PR, en preview hasta el *"mergea"*. Ver `panel/CLAUDE.md`, "Los comentarios del equipo, dentro del
   panel". Lo que sigue: `/gerencia` con los números.
 - **El botón *Calendario* del menú se llama *Reservas*** (28-11-2026, lo pidió
-  el cliente), con *← Reservas* en la página del día y *← Volver a Reservas* en
-  Estadísticas. En un PR, en preview hasta el *"mergea"*.
+  el cliente); solo el botón del menú y la ayuda, los *← Volver al calendario*
+  siguen igual. En un PR, en preview hasta el *"mergea"*.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

@@ -294,7 +294,7 @@ export default function Estadisticas() {
             calendario*, *Sin fecha* y *📋 Lista*. */}
         {vista === 'equipo' && datos?.equipo
           ? <a href="/informe" className={`${BOTON_VISTA} inline-flex items-center`}>← Volver al informe</a>
-          : <a href="/" className={`${BOTON_VISTA} inline-flex items-center`}>← Volver a Reservas</a>}
+          : <a href="/" className={`${BOTON_VISTA} inline-flex items-center`}>← Volver al calendario</a>}
         {/* Las dos vistas, dos botones grandes: solo para quien también ve el informe. */}
         {datos?.equipo && (
           <div role="group" aria-label="Qué estadísticas" className="flex gap-2">
