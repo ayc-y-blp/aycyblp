@@ -28,7 +28,7 @@ import ComentariosVista from './ComentariosVista';
 import { BOTON_VISTA } from './filaCotizacion';
 import { marcoGrupo, marcoTarjeta, TITULO_GRUPO, LISTA_TARJETAS } from './TarjetaLista';
 import {
-  ESTADO_TAREA, estaAbierta, estaAtrasada, leToca, laMande, esParaMi, rolesDelDestino, personasDelDestino, puedeHacer, destinoDelEnlace,
+  ESTADO_TAREA, estaAbierta, estaAtrasada, leToca, laMande, esParaMi, rolesDelDestino, personasDelDestino, puedeHacer, puedeEditar, destinoDelEnlace,
   tareasDePersona, LARGO_TAREA, type Tarea, type AccionTarea, type Cuenta
 } from '@/lib/tareas';
 import type { Fecha } from '@/lib/fechas';
@@ -95,10 +95,14 @@ export default function TareasVista() {
   }
 
   const nombre = (u: string) => d.nombres[u] ?? u;
+  // *Para* corto (2026-11-27): con varios destinos, los roles van por su nombre, sin *todos:*.
   const paraTexto = (para: string) => {
-    const partes = [...personasDelDestino(para).map(nombre),
-      ...rolesDelDestino(para).map((rol) => `todos: ${d.roles.find((r) => r.rol === rol)?.nombre ?? rol}`)];
-    return partes.join(' y ');
+    const roles = rolesDelDestino(para);
+    const personas = personasDelDestino(para);
+    const nombreRol = (rol: string) => d.roles.find((r) => r.rol === rol)?.nombre ?? rol;
+    const partes = [...personas.map(nombre),
+      ...roles.map((rol) => (roles.length + personas.length > 1 ? nombreRol(rol) : `todos: ${nombreRol(rol)}`))];
+    return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : partes[0] ?? '';
   };
 
   const elegida = d.personas.find((p) => p.usuario === persona);
@@ -211,13 +215,26 @@ const TEXTO_ACCION: Record<AccionTarea, { boton: string; confirmar: string; pide
 };
 
 const PALABRA_MENSAJE: Record<string, string> = {
-  nota: 'la marcó hecha', pregunta: 'preguntó', respuesta: 'contestó', anulada: 'la anuló', reabierta: 'la reabrió'
+  nota: 'la marcó hecha', cambio: 'cambió la tarea', pregunta: 'preguntó', respuesta: 'contestó', anulada: 'la anuló', reabierta: 'la reabrió'
 };
+
+/**
+ * Los links del texto, que se puedan apretar (2026-11-27, lo pidió el
+ * cliente con una tarea llena de links a las promociones). Abren en otra
+ * pestaña; lo demás queda como texto.
+ */
+function ConLinks({ texto }: { texto: string }) {
+  const partes = texto.split(/(https?:\/\/[^\s]+)/g);
+  return <>{partes.map((x, i) => (i % 2
+    ? <a key={i} href={x} target="_blank" rel="noopener noreferrer" className="break-all text-cielo-texto underline underline-offset-2">{x}</a>
+    : <span key={i}>{x}</span>))}</>;
+}
 
 function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
   t: TareaVista; d: Datos; nombre: (u: string) => string; paraTexto: (p: string) => string; onCambio: () => Promise<void>;
 }) {
   const [accion, setAccion] = useState<AccionTarea | ''>('');
+  const [editando, setEditando] = useState(false);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -262,7 +279,7 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
         data-tarea={t.id}>
       <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="whitespace-pre-line text-[16px] font-semibold leading-snug">{t.que}</p>
+          <p className="whitespace-pre-line text-[16px] font-semibold leading-snug"><ConLinks texto={t.que} /></p>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-hueso/75">
             <span>De <b className="text-hueso">{nombre(t.de)}</b> para <b className="text-hueso">{paraTexto(t.para)}</b></span>
             <span className="text-hueso/65">{cuandoCorto(t.creada)}</span>
@@ -282,8 +299,11 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
             </p>
           )}
         </div>
-        {acciones.length > 0 && !accion && (
+        {(acciones.length > 0 || puedeEditar(t, d.yo)) && !accion && (
           <div className="flex flex-wrap gap-2 lg:justify-end">
+            {puedeEditar(t, d.yo) && (
+              <button type="button" onClick={() => setEditando(true)} className="boton min-h-[40px] px-3">✎ Editar</button>
+            )}
             {acciones.map((a) => (
               <button key={a} type="button" onClick={() => { setAccion(a); setTexto(''); setError(''); }}
                 className={`boton min-h-[40px] px-3 ${a === 'hecha' || a === 'responder' ? 'border-verde-fuerte/80' : ''}`}>
@@ -299,7 +319,7 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
           {t.conversacion.filter((m) => m.texto).map((m, i) => (
             <li key={i} className="text-[14px] leading-snug">
               <span className="text-hueso/65">{nombre(m.quien)} {PALABRA_MENSAJE[m.tipo] ?? ''} · {cuandoCorto(m.cuando)}: </span>
-              <span>{m.texto}</span>
+              <span><ConLinks texto={m.texto} /></span>
             </li>
           ))}
         </ul>
@@ -328,17 +348,27 @@ function TarjetaTarea({ t, d, nombre, paraTexto, onCambio }: {
         </div>
       )}
       {error && <p className="text-[14px] text-rojo-texto">{error}</p>}
+      {editando && (
+        <NuevaTarea d={d} tarea={t} onCerrar={() => setEditando(false)}
+          onListo={() => { setEditando(false); void onCambio(); }} />
+      )}
     </li>
   );
 }
 
-function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; onListo: () => void }) {
+function NuevaTarea({ d, tarea, onCerrar, onListo }: {
+  d: Datos; tarea?: TareaVista; onCerrar: () => void; onListo: () => void;
+}) {
   // **A varios a la vez** (2026-11-27): personas y roles juntos, una sola tarea.
-  const [para, setPara] = useState<string[]>([]);
+  // Con `tarea`, la misma ventana edita una que ya se mandó (✎ Editar).
+  const [para, setPara] = useState<string[]>(() => (tarea ? tarea.para.split('|').map((x) => x.trim()).filter(Boolean) : []));
   const [buscando, setBuscando] = useState(false);
-  const [que, setQue] = useState('');
-  const [plazo, setPlazo] = useState('');
-  const [dia, setDia] = useState('');
+  const [que, setQue] = useState(tarea?.que ?? '');
+  const [plazo, setPlazo] = useState<string>(tarea?.plazo ?? '');
+  const diaInicial = tarea?.enlace.startsWith('dia:') ? tarea.enlace.slice(4) : '';
+  const [dia, setDia] = useState(diaInicial);
+  // *Con qué día* va escondido detrás de su botón (2026-11-27): a la vista queda una sola fecha, el plazo.
+  const [conDia, setConDia] = useState(!!diaInicial);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
 
@@ -360,9 +390,11 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
     setEnviando(true);
     setError('');
     try {
+      // Un enlace que no es a un día (cotización, reserva) se queda como estaba al editar.
+      const enlace = dia ? `dia:${dia}` : tarea && !tarea.enlace.startsWith('dia:') ? tarea.enlace : '';
       const r = await fetch('/api/tareas', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ para: para.join('|'), que, plazo, enlace: dia ? `dia:${dia}` : '' })
+        method: tarea ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...(tarea ? { id: tarea.id, accion: 'editar' } : {}), para: para.join('|'), que, plazo, enlace })
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.error || 'No se pudo mandar.');
@@ -374,7 +406,7 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
   };
 
   return (
-    <Dialogo titulo="📋 Nueva tarea" onCerrar={onCerrar} ancho="max-w-3xl">
+    <Dialogo titulo={tarea ? '✎ Editar la tarea' : '📋 Nueva tarea'} onCerrar={onCerrar} ancho="max-w-3xl">
       <div className="space-y-3" data-ficha>
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-2">
           <span className={`${ROTULO} sm:pt-2.5`}>Para</span>
@@ -426,25 +458,30 @@ function NuevaTarea({ d, onCerrar, onListo }: { d: Datos; onCerrar: () => void; 
             placeholder="Por ejemplo: llamar a la Constructora Maipo para confirmar los invitados"
             className={CAMPO} />
         </label>
+        <div className="flex flex-wrap items-center gap-2 sm:pl-[8rem]">
+          {conDia ? (
+            <>
+              <input type="date" value={dia} onChange={(e) => setDia(e.target.value)}
+                className={CAMPO.replace('w-full', 'w-auto')} aria-label="Día del calendario al que lleva la tarea" />
+              <button type="button" onClick={() => { setConDia(false); setDia(''); }} className="boton min-h-[40px] px-3">✕ Sin día</button>
+              <span className="text-[14px] text-hueso/65">la tarea lleva a la página de ese día</span>
+            </>
+          ) : (
+            <button type="button" onClick={() => setConDia(true)} className="boton min-h-[40px] px-3 text-[14px]">
+              📅 Unir a un día del calendario…
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
           <span className={ROTULO}>Para cuándo</span>
           <ElegirFecha valor={plazo} onCambio={setPlazo} hoy={d.hoy} etiqueta="Para cuándo" sinFecha="Sin plazo" />
         </div>
 
-        <label className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
-          <span className={ROTULO}>Con qué día</span>
-          <span className="flex flex-wrap items-center gap-2">
-            <input type="date" value={dia} onChange={(e) => setDia(e.target.value)}
-              className={`${CAMPO} w-auto`} aria-label="Con qué día tiene que ver (opcional)" />
-            <span className="text-[14px] text-hueso/65">opcional: la tarea lleva al día</span>
-          </span>
-        </label>
-
         <div className="flex flex-wrap items-center gap-2 border-t-2 border-hueso/15 pt-3 sm:pl-[8rem]">
           <button type="button" onClick={() => void mandar()} disabled={enviando || !para.length || !que.trim()}
             className="boton boton-relleno min-h-[44px] px-4">
-            {enviando ? 'Mandando…' : 'Mandar tarea'}
+            {enviando ? (tarea ? 'Guardando…' : 'Mandando…') : tarea ? 'Guardar cambios' : 'Mandar tarea'}
           </button>
           <span className="text-[14px] text-hueso/70">
             {partes.length === 1 && aMi ? 'Te queda en tu panel, como recordatorio.' : aQuien ? `Le llega a ${aQuien}${partes.length > 1 ? ': la cierra el primero' : ', en su panel'}.` : 'Elige a quién se la mandas.'}

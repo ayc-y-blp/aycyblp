@@ -398,7 +398,9 @@ export const AYUDAS: Record<string, Ayuda> = {
     ],
     pasos: [
       '📋 Nueva tarea: a quién —📌 A mí, una o varias personas con el buscador y uno o varios roles enteros, todos juntos; la cierra el primero—, qué hay que hacer y, si quieres, '
-      + 'para cuándo y con qué día tiene que ver.',
+      + 'para cuándo: desde el día siguiente al plazo, si sigue abierta, se pone roja como atrasada. '
+      + '📅 Unir a un día del calendario es aparte y opcional: la tarea trae un botón a la página de ese día.',
+      'Mientras está abierta, quien la mandó la puede ✎ Editar: qué hacer, para quién y el plazo. Quien la recibió ve que cambió.',
       'Quien la recibe aprieta ✓ Hecha (con una nota, si quiere) o ❓ Preguntar, si le falta algo.',
       'Una pregunta te vuelve a ti: la contestas y la tarea sigue pendiente.',
       'Mientras está abierta, quien la mandó la puede ✕ Anular; hecha, ↺ Reabrir si quedó algo a medias.'
