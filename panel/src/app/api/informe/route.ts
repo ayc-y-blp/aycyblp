@@ -138,6 +138,10 @@ export const GET = conLecturas([HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_TRABAJADORES
     // verdad cierra la puerta es el `exigir('pagar')` del POST.
     return NextResponse.json({
       turnos, extras, cuentas, porConfirmar, pagos, boletas, puedePagar, vendedores,
+      // **El sueldo de los contratados** (2026-11-28): lo suma la pantalla con
+      // `sumarSueldosDeContrato()`, a fin de cada mes.
+      contratos: gente.filter((t) => (t.sueldoContrato ?? 0) > 0)
+        .map((t) => ({ nombre: t.nombre, modalidad: t.modalidad, sueldoContrato: t.sueldoContrato, activo: t.activo })),
       puedeBoleta: puede(rol, 'boleta')
     });
   } catch (e) {

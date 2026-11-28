@@ -240,7 +240,7 @@ export default function EstadisticasEquipo({ equipo, rango, anterior, contra }: 
       <Seccion titulo="Lo que costó el equipo">
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <TarjetaNumero que="Costo del equipo" ayuda="estEqCosto" tono={NEUTRO} bueno="ninguna"
-            valor={enPesos(r.costo)} nota="jornadas, horas extra, ajustes y extras"
+            valor={enPesos(r.costo)} nota="jornadas, horas extra, ajustes, extras y contratos"
             cambio={cambio(r.costo, a.costo)} contra={contra} />
           <TarjetaNumero que="Propinas" ayuda="estEqPropinas" tono={NEUTRO}
             valor={enPesos(r.propinas)} nota="aparte: no es costo del negocio"

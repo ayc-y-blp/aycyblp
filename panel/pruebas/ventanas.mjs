@@ -229,6 +229,18 @@ const vendedor = async () => { await ir('/vendedores'); await clic(boton(/^Danie
 export const ESCENAS = {
   // Fichas que se abren dentro de su lista.
   'ficha-trabajador': async () => { await ir('/equipo'); await abrirPrimera(); },
+  // **¿Desde cuándo?** (2026-11-28): Hernán Bravo, contratado, pasa a por
+  // turno; se mira desde el 1 de noviembre. El cambio de la ficha no se guarda
+  // (se intercepta), para no tocar el ejemplo de las escenas siguientes.
+  'v-desde-cuando': async () => {
+    await p.route('**/api/equipo/trabajador', (r) => r.request().method() === 'PATCH'
+      ? r.fulfill({ json: {} }) : r.continue());
+    await ir('/equipo'); await clic(boton(/Hernán Bravo/));
+    await p.locator('select[aria-label^="Cómo se le paga a Hernán"]:visible').selectOption({ label: 'Por turno' });
+    await p.waitForTimeout(600);
+    await clic(ventana().getByRole('button', { name: /Desde el 1 de/ }));
+    await p.waitForTimeout(1200);
+  },
   'ficha-colaborador': async () => { await ir('/extras'); await clic(boton(/Paz Ortiz/)); },
   'ficha-cliente': async () => { await ir('/clientes'); await abrirPrimera(); },
   'ficha-producto': async () => { await ir('/menus'); await abrirPrimera(); },
@@ -539,6 +551,8 @@ const fallas = [], bajaron = [], sinAbrir = [];
 const medidas = {};
 for (const [nombre, abrir] of Object.entries(ESCENAS)) {
   if (pedidas.length && !pedidas.some((x) => nombre.startsWith(x))) continue;
+  // Lo que una escena intercepta no sigue en la de después.
+  await p.unroute('**/api/equipo/trabajador').catch(() => {});
   try {
     await abrir();
   } catch (e) {

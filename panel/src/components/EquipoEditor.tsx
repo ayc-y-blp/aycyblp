@@ -38,6 +38,7 @@ import CampoTelefono from './CampoTelefono';
 import Campo from './Campo';
 import { copiarConAviso } from './AvisoFlotante';
 import ReengancharSuelto, { cuantos } from './ReengancharSuelto';
+import DesdeCuando from './DesdeCuando';
 import { TITULO_GRUPO, marcoGrupo } from './TarjetaLista';
 
 const ENTRADA =
@@ -53,6 +54,8 @@ export default function EquipoEditor() {
    */
   const [puestos, setPuestos] = useState<(Puesto & { antes?: string })[] | null>(null);
   const [gente, setGente] = useState<Trabajador[]>([]);
+  /** La ventana *¿Desde cuándo?* después de cambiar la modalidad (2026-11-28). */
+  const [desdeCuando, setDesdeCuando] = useState<{ nombre: string; modalidad: string } | null>(null);
   /**
    * **Lo suelto** (2026-11-24): personas y puestos que están en los turnos y
    * no en las listas, con cuántos turnos. Se reengancha con *Es…* / *Pasar a…*.
@@ -502,7 +505,7 @@ export default function EquipoEditor() {
     const copia = gente.map((t) => ({ ...t }));
     if (campo === 'activo') copia[i].activo = Boolean(valor);
     else if (campo === 'propina') copia[i].propina = Boolean(valor);
-    else if (campo === 'pagoJornada' || campo === 'valorHora' || campo === 'pagoPreparacion') {
+    else if (campo === 'pagoJornada' || campo === 'valorHora' || campo === 'pagoPreparacion' || campo === 'sueldoContrato') {
       copia[i][campo] = aEntero(valor);
     } else if (campo === 'modalidad') {
       copia[i].modalidad = esContratado(valor) ? MODALIDAD.contratado : MODALIDAD.porTurno;
@@ -518,6 +521,10 @@ export default function EquipoEditor() {
     const cambio: Partial<Trabajador> = { [campo]: copia[i][campo] };
     if (campo === 'modalidad') { cambio.pagoJornada = copia[i].pagoJornada; cambio.pagoPreparacion = copia[i].pagoPreparacion; }
     fichas.programar(gente[i].nombre, cambio);
+    // **¿Desde cuándo?** (2026-11-28): los turnos ya anotados no cambian solos.
+    if (campo === 'modalidad' && esContratado(valor) !== esContratado(gente[i].modalidad) && gente[i].nombre) {
+      setDesdeCuando({ nombre: gente[i].nombre, modalidad: copia[i].modalidad });
+    }
   };
 
   /** El buscador: nombre, puesto y teléfono, sin tildes ni mayúsculas. */
@@ -531,6 +538,10 @@ export default function EquipoEditor() {
 
   return (
     <section>
+      {desdeCuando && (
+        <DesdeCuando nombre={desdeCuando.nombre} modalidad={desdeCuando.modalidad}
+          onCerrar={(n) => { setDesdeCuando(null); if (n) avisar(`${n} ${n === 1 ? 'turno pasó' : 'turnos pasaron'} a la modalidad nueva.`); }} />
+      )}
       {/* En el computador, el título y *Ver el mes completo* en una línea; el
           aviso, debajo (2026-11-21, el computador más compacto). */}
       <div className="lg:flex lg:flex-wrap lg:items-center lg:gap-x-3">
@@ -929,17 +940,23 @@ export default function EquipoEditor() {
                           <option value={MODALIDAD.contratado}>Contratado</option>
                         </select>
                       </Campo>
+                      {/* **Un contratado: su sueldo mensual** (2026-11-28) en el
+                          lugar de la jornada, que no cobra. */}
+                      {esContratado(t.modalidad) ? (
+                      <Campo etiqueta="Sueldo mensual" ayuda="sueldoContrato">
+                        <input type="number" min={0} step={10000} className={ENTRADA}
+                          value={t.sueldoContrato || ''} placeholder="—"
+                          aria-label={`Sueldo mensual de ${t.nombre || 'esta persona'}`}
+                          onChange={(e) => cambiarPersona(i, 'sueldoContrato', e.target.value)} />
+                      </Campo>
+                      ) : (
                       <Campo etiqueta="Jornada">
-                        {/* A un contratado no se le paga por jornada, así que
-                            el campo no se deja escribir: un monto ahí no se
-                            usaría en ninguna cuenta y haría creer que sí. */}
                         <input type="number" min={0} step={1000} className={ENTRADA}
-                          value={esContratado(t.modalidad) ? '' : (t.pagoJornada || '')}
-                          placeholder={esContratado(t.modalidad) ? 'sin jornada' : '—'}
-                          disabled={esContratado(t.modalidad)}
+                          value={t.pagoJornada || ''} placeholder="—"
                           aria-label={`Jornada de ${t.nombre || 'esta persona'}`}
                           onChange={(e) => cambiarPersona(i, 'pagoJornada', e.target.value)} />
                       </Campo>
+                      )}
                       {/* **La jornada de un día de preparación** (2026-11-23): se
                           propone sola al sumarlo a un día sin público ni
                           reservas. En blanco, la de siempre. */}

@@ -82,6 +82,7 @@ export const POST = conLecturas([], async function POST(req: Request) {
       propina: b?.propina === undefined ? true : esSi(b.propina),
       valorHora: esAdmin ? aEntero(b?.valorHora) : 0,
       pagoPreparacion: esAdmin ? aEntero(b?.pagoPreparacion) : 0,
+      sueldoContrato: esAdmin ? aEntero(b?.sueldoContrato) : 0,
       porConfirmar: ''
     };
     // **La plata la confirma pagos** (2026-11-13): una ficha nueva con cuenta
@@ -178,6 +179,9 @@ export const PATCH = conLecturas([], async function PATCH(req: Request) {
         ? aEntero(b.valorHora) : antes.valorHora,
       pagoPreparacion: esAdmin && b?.pagoPreparacion !== undefined
         ? aEntero(b.pagoPreparacion) : (antes.pagoPreparacion ?? 0),
+      // El sueldo de contrato (2026-11-28), con la misma regla que la jornada.
+      sueldoContrato: esAdmin && b?.sueldoContrato !== undefined
+        ? aEntero(b.sueldoContrato) : (antes.sueldoContrato ?? 0),
       propina: esAdmin
         ? (b?.propina === undefined ? antes.propina : esSi(b.propina))
         : antes.propina,

@@ -1767,8 +1767,9 @@ ok(JSON.stringify(leerTrabajadoresDe(aFilasTrabajadores(gente))) === JSON.string
   const vuelta = leerTrabajadoresDe(aFilasTrabajadores(conPrep));
   ok(vuelta[0].pagoPreparacion === 25000 && vuelta[0].pagoJornada === 35000,
      'la jornada de preparación sobrevive la ida y vuelta, al final de la fila');
-  ok(aFilasTrabajadores(conPrep)[0].at(-1) === 'Pago jornada preparación',
-     'y su columna va al final: una planilla vieja se lee igual');
+  ok(aFilasTrabajadores(conPrep)[0].at(-2) === 'Pago jornada preparación'
+     && aFilasTrabajadores(conPrep)[0].at(-1) === 'Sueldo de contrato',
+     'y su columna va al final, con el sueldo de contrato detrás: una planilla vieja se lee igual');
   ok(leerTrabajadoresDe(aFilasTrabajadores(gente))[0].pagoPreparacion === 0,
      'sin ese monto se lee en cero, que es la jornada de siempre');
   ok(jornadaPropuesta({ pagoJornada: 35000, pagoPreparacion: 25000 }, true) === 25000,
@@ -1983,8 +1984,37 @@ ok(trabajadorPorToken(conAcceso, 'token-de-pedro') === undefined,
 ok(trabajadorPorToken(conAcceso, 'TOKEN-DE-ANA') === undefined,
    'el token distingue mayúsculas: es una credencial, no un nombre');
 
+// ===== El sueldo de contrato y ¿desde cuándo? (2026-11-28) =====
+{
+  const E = await import('./equipo.ts');
+  ok(E.finesDeMes('2026-11-01', '2026-11-30').join() === '2026-11-30' && E.finesDeMes('2026-11-09', '2026-11-15').length === 0
+     && E.finesDeMes('2026-11-15', '2027-01-31').join() === '2026-11-30,2026-12-31,2027-01-31', 'los fines de mes de un periodo');
+  const tur = (fecha: string, modalidad: string, extra = {}) => ({ fecha, trabajador: 'Felipe Lopez', puesto: 'Comandero', asistencia: 'Sí',
+    modalidad, propina: 0, pagoJornada: 40000, horasExtra: 0, valorHora: 0, ajustes: [], fila: 2, ...extra }) as unknown as import('./equipo.ts').Turno;
+  const ficha = { nombre: 'Felipe Lopez', modalidad: 'Contratado', activo: true, sueldoContrato: 600000 };
+  const base = E.informeDelPeriodo([tur('2026-11-16', 'Contratado')], '2026-11-01', '2026-11-30');
+  const conC = E.sumarSueldosDeContrato(base, [ficha], [tur('2026-11-16', 'Contratado')], '2026-11-01', '2026-11-30');
+  ok(conC[0].contrato === 600000 && conC[0].total === 600000, 'el mes de un contratado suma su sueldo de contrato, sin la jornada');
+  ok(!E.sumarSueldosDeContrato(base, [ficha], [], '2026-11-09', '2026-11-15')[0]?.contrato, 'una semana sin fin de mes no lo suma');
+  const sinTurnos = E.sumarSueldosDeContrato([], [ficha], [], '2026-11-01', '2026-11-30');
+  ok(sinTurnos.length === 1 && sinTurnos[0].total === 600000, 'sin turnos en el mes aparece igual, con su sueldo');
+  ok(!E.sumarSueldosDeContrato([], [ficha], [tur('2026-11-16', 'Por turno')], '2026-11-01', '2026-11-30').length,
+     'un mes cuyo último turno fue por turno no suma sueldo de contrato');
+  ok(!E.sumarSueldosDeContrato([], [{ ...ficha, activo: false }], [], '2026-11-01', '2026-11-30').length, 'desactivado, sin turnos, no suma');
+  const tabla = [[...Object.values(E.COL_TURNOS)],
+    ['2026-11-02', 'Felipe Lopez', 'Comandero', 'Sí', 'Por turno', '', '40000'],
+    ['2026-11-16', 'Felipe Lopez', 'Comandero', 'Sí', 'Por turno', '', '40000'],
+    ['2026-11-16', 'Otra', 'Garzón', 'Sí', 'Por turno', '', '35000']];
+  const pagos = [{ quien: 'Felipe Lopez', desde: '2026-11-02', hasta: '2026-11-08', concepto: 'Sueldo' }];
+  const c = E.cambioDeModalidad(tabla, 'Felipe Lopez', '2026-11-01', 'Contratado', 40000, pagos);
+  ok(c.dias.length === 2 && c.dias[0].pagado && !c.dias[1].pagado && c.dias[1].antes === 40000 && c.dias[1].despues === 0,
+     '¿desde cuándo?: los dos días, el pagado marcado y el otro baja la jornada');
+  ok(c.celdas.length === 1 && c.celdas[0].fila === 3 && c.celdas[0].valor === 'Contratado', 'solo se escribe el día que no se pagó');
+  ok(E.cambioDeModalidad(tabla, 'Felipe Lopez', '2026-11-10', 'Contratado', 40000, []).dias.length === 1, 'desde una fecha, solo desde ahí');
+}
+
 const conToken = leerTrabajadoresDe(aFilasTrabajadores(conAcceso));
-ok(JSON.stringify(conToken) === JSON.stringify(conAcceso),
+ok(JSON.stringify(conToken) === JSON.stringify(conAcceso.map((t) => ({ ...t, sueldoContrato: t.sueldoContrato ?? 0 }))),
    'el token sobrevive la ida y vuelta a filas');
 ok(leerTrabajadoresDe([['Nombre', 'Teléfono', 'Puesto habitual', 'Activo'],
                        ['Ana', '', 'Garzón', 'Sí']])[0].token === '',

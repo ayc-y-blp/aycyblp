@@ -259,6 +259,53 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## El sueldo de un contratado, y *¿Desde cuándo?* (2026-11-28)
+
+Lo pidió el cliente: Felipe López pasó a contratado *"ya todo el noviembre"* y
+en el Informe seguía con su turno por jornada ($40.000); y *"ármalo para que se
+pueda ingresar su sueldo de contrato y luego gestionar el pago también, y así
+también nos queda para el análisis el dato"*.
+
+**Por qué pasaba**: cada turno guarda la modalidad de ese día, a propósito (si
+no, cambiar la ficha reescribiría meses ya pagados). El turno del 16 se pasó
+por turno y quedó así.
+
+- ***Sueldo mensual*** en la ficha (Equipo y la ficha que se abre desde el
+  día), en el lugar de la *Jornada* cuando es contratado, con su `?`
+  (`sueldoContrato`). Columna nueva al final de `Trabajadores`: **`Sueldo de
+  contrato`**. Lo fija quien fija los sueldos (`sueldos`) y, como la jornada,
+  pasa por *Por confirmar* de pagos (`plata.ts`).
+- **En el Informe** (`sumarSueldosDeContrato()` y `mesesDeContrato()` en
+  `lib/equipo.ts`, con pruebas): entra **el último día de cada mes** en que la
+  persona está contratada —como el sueldo fijo de un vendedor: el mes se ve,
+  una semana suelta no lo suma—, más sus horas extra y ajustes. *Contratada ese
+  mes* es: su último turno del mes es de contratado; sin turnos ese mes, lo que
+  dice su ficha, si sigue activa. Aparece aunque no tenga turnos. La tarjeta
+  dice *Sueldo de contrato*; se paga como un sueldo (*Pagado completo* /
+  *Pago parcial*) y no pide boleta. `/api/informe` manda `contratos`.
+- **En el link personal**: el azulejo *Sueldo* con *contrato $X · va en tu
+  liquidación*.
+- **En Estadísticas del equipo**: una fila propia, ***Sueldos de contrato***
+  (`CONTRATOS`), el último día de cada mes hasta el mes en curso, sin contar
+  jornadas: el promedio por jornada de cada puesto sigue siendo el de los
+  turnos. Entra en *Costo del equipo*. `/api/estadisticas` suma
+  `Trabajadores` a su tanda.
+- ***¿Desde cuándo?*** (`DesdeCuando`, `cambioDeModalidad()`, `POST
+  /api/equipo/modalidad`): al cambiar la modalidad, la ventana pregunta *Desde
+  hoy*, *Desde el 1 de este mes* o *📅 Elegir día…*, muestra cada turno que
+  cambia y cuánto (*$35.000 → $0*), y **un día que ya tiene un pago de sueldo
+  no se toca**. Se confirma con *Cambiar N días*; *No, dejar los turnos como
+  están* no cambia nada. Queda en la bitácora con cada día, también los
+  cerrados. Pasando a *por turno*, un turno sin jornada toma la de la ficha.
+  Permiso `sueldos`. Mide 339px (escena `v-desde-cuando`, que intercepta el
+  guardado para no tocar el ejemplo).
+- **Lecturas de Google**: `/api/estadisticas` lee `Trabajadores` en su tanda;
+  `/api/equipo/modalidad`, una tanda (Turnos, Pagos, Trabajadores) y, al
+  confirmar, Turnos fresco y una escritura. **Ningún permiso nuevo.**
+- **Ayuda**: `modalidad`, `sueldoContrato`, `desdeCuando`, `estEqCosto` y el
+  `?` del Informe.
+- **El panel de ejemplo**: Hernán Bravo, contratado, con $650.000.
+
 ## La liquidación: quien vende con contrato (2026-11-28)
 
 Lo pidió Felipe, de pagos, en un comentario de 💬: *"en el cómo se paga las

@@ -24,6 +24,7 @@ import DatosBancarios from './DatosBancarios';
 import { usarSoloMira } from './SesionCliente';
 import { bancoVacio, type Banco } from '@/lib/banco';
 import { MODALIDAD, esContratado, type Trabajador } from '@/lib/equipo';
+import DesdeCuando from './DesdeCuando';
 
 const ENTRADA =
   'w-full rounded border border-hueso/20 bg-tinta px-2 py-1 text-sm ' +
@@ -54,6 +55,9 @@ export default function FichaTrabajador({
   const [pagoJornada, setPagoJornada] = useState(String(ficha?.pagoJornada || ''));
   const [valorHora, setValorHora] = useState(String(ficha?.valorHora || ''));
   const [pagoPreparacion, setPagoPreparacion] = useState(String(ficha?.pagoPreparacion || ''));
+  const [sueldoContrato, setSueldoContrato] = useState(String(ficha?.sueldoContrato || ''));
+  /** Después de guardar un cambio de modalidad, *¿Desde cuándo?* (2026-11-28). */
+  const [desdeCuando, setDesdeCuando] = useState<{ t: Trabajador; aviso?: string } | null>(null);
   const [propina, setPropina] = useState(ficha?.propina ?? true);
   const [banco, setBanco] = useState<Banco>(ficha?.banco ?? bancoVacio());
   // Con vista gerencia y el rol sin `sueldos`: se ven, no se cambian.
@@ -71,15 +75,26 @@ export default function FichaTrabajador({
         method: creando ? 'POST' : 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ nombre, telefono, puesto: habitual, modalidad,
-                               pagoJornada, valorHora, pagoPreparacion: contratado ? 0 : pagoPreparacion, propina, banco,
+                               pagoJornada: contratado ? 0 : pagoJornada, valorHora, pagoPreparacion: contratado ? 0 : pagoPreparacion,
+                               sueldoContrato: contratado ? sueldoContrato : 0, propina, banco,
                                ...(creando ? {} : { activo }) })
       });
       const d = await r.json();
       if (d.error) return setError(d.error);
+      if (!creando && verSueldos && esContratado(modalidad) !== esContratado(ficha!.modalidad)) {
+        return setDesdeCuando({ t: d.trabajador, aviso: d.aviso });
+      }
       onListo(d.trabajador, d.aviso);
     } catch (e) {
       setError(String(e));
     } finally { setGuardando(false); }
+  }
+
+  if (desdeCuando) {
+    return (
+      <DesdeCuando nombre={desdeCuando.t.nombre} modalidad={modalidad}
+        onCerrar={() => onListo(desdeCuando.t, desdeCuando.aviso)} />
+    );
   }
 
   return (
@@ -154,15 +169,23 @@ export default function FichaTrabajador({
                 <option value={MODALIDAD.contratado}>Contratado (tiene sueldo)</option>
               </select>
             </Campo>
-            <Campo etiqueta="Jornada">
-              {/* A un contratado no se le paga por jornada: un monto acá no
-                  lo usaría ninguna cuenta y haría creer que sí. */}
-              <input type="number" min={0} step={1000} className={ENTRADA}
-                value={contratado ? '' : pagoJornada} disabled={contratado}
-                placeholder={contratado ? 'sin jornada' : '—'}
-                aria-label={`Jornada de ${nombre || 'esta persona'}`}
-                onChange={(e) => setPagoJornada(e.target.value)} />
-            </Campo>
+            {/* **Un contratado: su sueldo mensual** (2026-11-28) en el lugar
+                de la jornada, que no cobra. */}
+            {contratado ? (
+              <Campo etiqueta="Sueldo mensual" ayuda="sueldoContrato">
+                <input type="number" min={0} step={10000} className={ENTRADA}
+                  value={sueldoContrato} placeholder="—"
+                  aria-label={`Sueldo mensual de ${nombre || 'esta persona'}`}
+                  onChange={(e) => setSueldoContrato(e.target.value)} />
+              </Campo>
+            ) : (
+              <Campo etiqueta="Jornada">
+                <input type="number" min={0} step={1000} className={ENTRADA}
+                  value={pagoJornada} placeholder="—"
+                  aria-label={`Jornada de ${nombre || 'esta persona'}`}
+                  onChange={(e) => setPagoJornada(e.target.value)} />
+              </Campo>
+            )}
             {/* La jornada de un día de preparación (2026-11-23): en blanco, la
                 de siempre. */}
             <Campo etiqueta="Preparación" ayuda="jornadaPreparacion">

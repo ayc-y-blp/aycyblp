@@ -85,7 +85,7 @@ import CajaBoleta from '@/components/CajaBoleta';
 import { HOJA_COLABORADORES, HOJA_ACTIVIDADES } from '@/lib/extras';
 import { menusDe } from '@/lib/shopify';
 import { trabajadorPorToken, turnosDe, pagoDe, esContratado, esPreparacion,
-         totalAjustes, informeDelPeriodo, rangoDelPeriodo, periodoDelLink, semanaParaElMes,
+         totalAjustes, informeDelPeriodo, sumarSueldosDeContrato, rangoDelPeriodo, periodoDelLink, semanaParaElMes,
          VINO, etiquetaSemana, escaleraDeSemanas,
          type Turno } from '@/lib/equipo';
 import ElegirPeriodoLink, { EtiquetaSemana } from './Periodo';
@@ -456,7 +456,8 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
    * misma**: si la persona y quien le paga vieran números calculados por
    * caminos distintos, el día que no coincidan nadie sabría cuál creer.
    */
-  const l = informeDelPeriodo(trabajados, desde, hasta)[0];
+  // Con el sueldo de contrato, si es contratado y lo tiene (2026-11-28).
+  const l = sumarSueldosDeContrato(informeDelPeriodo(trabajados, desde, hasta), [quien], trabajados, desde, hasta)[0];
   const cuenta = l ?? {
     dias: 0, noVino: 0, sinMarcar: 0, jornadas: 0, horasExtra: 0,
     montoHorasExtra: 0, ajustes: 0, propina: 0, total: 0
@@ -478,7 +479,8 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
    * persona sumara con la calculadora y le diera otra cosa — que es
    * exactamente lo que esta página viene a evitar.
    */
-  const cuadra = cuenta.jornadas + cuenta.montoHorasExtra + cuenta.ajustes === cuenta.total;
+  const contrato = (l?.contrato ?? 0);
+  const cuadra = cuenta.jornadas + cuenta.montoHorasExtra + cuenta.ajustes + contrato === cuenta.total;
 
   /**
    * **La boleta del periodo** (2026-11-20, `lib/boletas.ts`): cuánto
@@ -682,8 +684,10 @@ async function PaginaDeLaEmpresa({ params, searchParams }: {
           </div>
 
           <div className="mt-2 grid grid-cols-2 gap-2">
-            <Azulejo que="Turnos" monto={cuenta.total} color="hueso"
-              nota={`${cuenta.dias} ${cuenta.dias === 1 ? 'día trabajado' : 'días trabajados'}`} />
+            <Azulejo que={contrato ? 'Sueldo' : 'Turnos'} monto={cuenta.total} color="hueso"
+              nota={contrato
+                ? `contrato ${enPesos(contrato)}${cuenta.total > contrato ? ` + extras ${enPesos(cuenta.total - contrato)}` : ''} · va en tu liquidación`
+                : `${cuenta.dias} ${cuenta.dias === 1 ? 'día trabajado' : 'días trabajados'}`} />
             <Azulejo que="Propina" monto={cuenta.propina} color="hueso" />
           </div>
 

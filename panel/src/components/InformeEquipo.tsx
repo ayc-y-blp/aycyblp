@@ -36,7 +36,7 @@ const llano = (t: string) =>
 import Ayuda from './Ayuda';
 import { Aviso } from './CalendarView';
 import {
-  informeDelPeriodo, rangoDelPeriodo,
+  informeDelPeriodo, sumarSueldosDeContrato, rangoDelPeriodo,
   pagoDe, esContratado, type Turno
 } from '@/lib/equipo';
 import { informeDeExtras, costoDeExtra, type Extra } from '@/lib/extras';
@@ -985,6 +985,8 @@ function ConfirmarTodos({ cual, periodo, entran, fuera, total, onGuardar, onCanc
 
 export default function InformeEquipo() {
   const [turnos, setTurnos] = useState<Turno[] | null>(null);
+  /** Los contratados con sueldo en su ficha (2026-11-28). */
+  const [contratos, setContratos] = useState<{ nombre: string; modalidad: string; sueldoContrato: number; activo: boolean }[]>([]);
   // Las actividades extras van en su propia tabla y en el mismo CSV: quien
   // paga hace un solo pago a la semana, pero un jinete no cobra una jornada
   // ni recibe propina, así que sumarlos en una sola lista sería mentir.
@@ -1067,6 +1069,7 @@ export default function InformeEquipo() {
         setTurnos(d.turnos ?? []);
         setExtras(d.extras ?? []);
         setVendedores(d.vendedores ?? []);
+        setContratos(d.contratos ?? []);
         setCuentas(d.cuentas ?? {});
         setPorConfirmar(d.porConfirmar ?? {});
         setPagos(d.pagos ?? []);
@@ -1088,7 +1091,8 @@ export default function InformeEquipo() {
         : { desde: hastaLibre, hasta: desdeLibre })
     : rangoDelPeriodo(periodo);
   const lineas = useMemo(
-    () => informeDelPeriodo(turnos ?? [], desde, hasta), [turnos, desde, hasta]
+    () => sumarSueldosDeContrato(informeDelPeriodo(turnos ?? [], desde, hasta), contratos, turnos ?? [], desde, hasta),
+    [turnos, desde, hasta, contratos]
   );
   /** Los días que no suman, por persona: turnos y actividades extras. */
   const fueraEquipo = useMemo(() => diasQueNoSuman(turnos ?? [], desde, hasta,
@@ -2017,13 +2021,17 @@ export default function InformeEquipo() {
                       fuera={fueraEquipo.get(normalizar(l.trabajador)) ?? SIN_FUERA}
                       marcarEn="/turnos" palabraSinMarcar="sin marcar"
                       nota={esContratado(l.modalidad)
-                        ? 'Contratado: sus jornadas van en su sueldo; acá suman solo horas extra y ajustes.'
+                        ? (l.contrato ? 'Contratado: su sueldo de contrato entra a fin de mes, más sus horas extra y ajustes. Va en su liquidación.'
+                          : 'Contratado: sus jornadas van en su sueldo; acá suman solo horas extra y ajustes. Su sueldo de contrato se escribe en su ficha de Equipo.')
                         : 'La propina se paga aparte del sueldo: son dos transferencias.'}
                       aTransferir={pago.aTransferir} estado={pago.estado}
                       partes={partesDe(l.trabajador, l.total, l.propina, false)}
                       datos={[
+                        // **El sueldo de contrato** (2026-11-28): a fin de mes.
+                        ...(l.contrato ? [{ que: l.mesesContrato && l.mesesContrato > 1
+                            ? `Sueldo de contrato (${l.mesesContrato} meses)` : 'Sueldo de contrato', valor: enPesos(l.contrato) }] : []),
                         { que: 'Jornadas', valor: esContratado(l.modalidad)
-                            ? 'en su sueldo' : enPesos(l.jornadas) },
+                            ? (l.contrato ? '—' : 'en su sueldo') : enPesos(l.jornadas) },
                         { que: 'Horas extra', valor: l.horasExtra
                             ? `${enPesos(l.montoHorasExtra)} (${l.horasExtra} h)` : '—' },
                         { que: 'Ajustes',
