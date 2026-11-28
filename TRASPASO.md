@@ -799,6 +799,12 @@ conversación: hay que preguntarlo o mirarlo antes de darlo por hecho.
   turnos desde ese día (sin tocar los ya pagados). Columna nueva al final de
   `Trabajadores`: `Sueldo de contrato`. En un PR, en preview hasta el
   *"mergea"*. Ver `panel/CLAUDE.md`, "El sueldo de un contratado".
+- **La Recepción anota reservas de hoy, *A la carta* y la mesa; el Informe
+  abre en el mes; el ojo de la contraseña** (28-11-2026, lo pidió el cliente):
+  *+ Agregar reserva* en la Recepción (la anfitriona, solo hoy); *A la carta*
+  sin precio en el formulario, que suma gente y no va a la cocina; la *Mesa*
+  en el formulario y en la mesa de la reserva (columna nueva `Mesa` en
+  `Reservas`). En el mismo PR que el sueldo de contrato. Ver `panel/CLAUDE.md`.
 - **Lo que sigue**: lo de después del lanzamiento (pendientes 5, 7, 9 y 10 de
   la sección 7).
 - **El cliente mira el panel en su notebook y va mandando fotos** de lo

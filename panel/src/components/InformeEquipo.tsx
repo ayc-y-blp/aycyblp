@@ -1046,12 +1046,12 @@ export default function InformeEquipo() {
   const [ajustando, setAjustando] = useState<{ quien: string; tipo: TipoAjuste; dias: string[]; sueldo: number } | null>(null);
   const [error, setError] = useState('');
   const [sinPermiso, setSinPermiso] = useState(false);
-  // **Abre en la semana pasada** (2026-11-04): se paga el lunes la semana
-  // que terminó el domingo, y el cliente pidió los pagos "por ahora
-  // semanal". Es la misma semana con que abre el link personal de cada
-  // trabajador, así que los dos miran lo mismo.
-  const [tipo, setTipo] = useState<Tipo>('semana');
-  const [periodo, setPeriodo] = useState(sumarDias(semanaDe(hoy()), -7));
+  // **Abre en el mes en curso** (2026-11-28, lo eligió el cliente: abría en
+  // la semana pasada y Darinka y Francisca salían con *1 día que vino*,
+  // aunque habían trabajado más días esta semana). Es lo que ya hacen
+  // Vendedores y los links personales; para pagar la semana, *Semana*.
+  const [tipo, setTipo] = useState<Tipo>('mes');
+  const [periodo, setPeriodo] = useState(hoy().slice(0, 7));
   // El rango libre lleva sus propias fechas: no se puede derivar de un
   // periodo con nombre, que es justamente la gracia.
   const [desdeLibre, setDesdeLibre] = useState(hoy().slice(0, 7) + '-01');

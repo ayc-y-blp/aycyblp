@@ -206,7 +206,7 @@ const OPERACIONES: Mision[] = [
 const PAGOS: Mision[] = [
   {
     id: 'informe', emoji: '📊', titulo: 'El informe: qué se paga', escena: 'pag-informe',
-    intro: 'Parte en la semana pasada, que es la que se paga. Todo lo de pagar al equipo sale de aquí.',
+    intro: 'Parte en el mes en curso; la semana que se paga, con Semana y ◀. Todo lo de pagar al equipo sale de aquí.',
     puntos: [
       'El periodo, en el marco dorado: mes, semana, día o dos fechas, con ◀ ▶.',
       'La planilla para el banco: sueldos, propinas o completa.',

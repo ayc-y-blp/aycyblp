@@ -319,6 +319,8 @@ export const ESCENAS = {
   },
   // Reservas y días.
   'v-reserva-nueva': async () => { await ir('/'); await clic(boton('Agregar reserva')); },
+  // Desde la Recepción, para hoy (2026-11-28): el mismo formulario, con la fecha fija.
+  'v-reserva-recepcion': async () => { await ir('/recepcion'); await clic(boton('+ Agregar reserva')); },
   // *✎ Editar* es el de la reserva: con /^Editar/ la escena abría *Editar
   // actividades* —la ventana de los extras— y el formulario quedó sin medir.
   'v-reserva-editar': async () => { await ir('/dia/2026-11-14'); await abrirPrimera(); await clic(boton(/^✎ Editar$/)); },

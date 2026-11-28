@@ -85,7 +85,25 @@ export function personasEnLaMesa(r: ConMesa): number {
 
 /** Lo que se sirve en la mesa: el menú de la reserva más los menús agregados. */
 export function menuEnLaMesa(r: ConMesa): string {
-  return [menuEfectivo(r), menusAgregados(r.agregados)].filter((x) => String(x ?? '').trim()).join(' + ');
+  return [sinCarta(menuEfectivo(r)), menusAgregados(r.agregados)].filter((x) => String(x ?? '').trim()).join(' + ');
+}
+
+/**
+ * **El menú sin *a la carta*** (2026-11-28): una reserva anotada con gente a la
+ * carta (*"2 × Tradiciones + 3 × A la carta"*) cuenta esas personas, pero a la
+ * cocina le llegan solo los menús.
+ */
+export function sinCarta(menu: unknown): string {
+  return String(menu ?? '').split('+').map((p) => p.trim())
+    .filter((p) => p && !/^\d+\s*[×x]\s*a la carta$/i.test(p)).join(' + ');
+}
+
+/** Cuántos de la reserva misma comen a la carta. */
+export function cartaDeLaReserva(menu: unknown): number {
+  return String(menu ?? '').split('+').reduce((n, p) => {
+    const m = /^\s*(\d+)\s*[×x]\s*a la carta\s*$/i.exec(p);
+    return n + (m ? Number(m[1]) : 0);
+  }, 0);
 }
 
 /**

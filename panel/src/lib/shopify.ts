@@ -334,7 +334,7 @@ export function camposDeShopify(
   const { asistencia, creada, notaPago, eventoCRM, anotadaPor, llegaron, avisoRecepcion, abonado, liberada,
           personasReales, menuReal, descuento, rectificacion, aprobacion, liberacion,
           pagoAnotado, pagoRevisado, descuentoRevisado, agregados, valorFinal, mesaCerrada,
-          cobroLocal, comprobanteCobro, cobroCerrado, cayo, cambiadoEnPanel, ...resto } = r;
+          cobroLocal, comprobanteCobro, cobroCerrado, cayo, cambiadoEnPanel, numeroMesa, ...resto } = r;
   for (const k of delPanel) delete (resto as Record<string, unknown>)[k];
   return resto;
 }

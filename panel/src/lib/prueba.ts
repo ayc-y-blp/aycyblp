@@ -280,7 +280,7 @@ const bueno = ['ID Orden','Fecha Reserva','Nombre','Email','Teléfono','Menú',
                'Llegaron','Aviso recepción','Abonado','Se cayó por cupo',
                'Personas reales','Menú real','Descuento','Rectificación','Aprobación','Evento exclusivo',
                'Pago anotado','Pago revisado','Descuento revisado','Agregados','Valor final','Mesa cerrada',
-               'Cobrado en el local','Comprobante del cobro','Cobro cerrado','Se cayó','Cambiado en el panel'];
+               'Cobrado en el local','Comprobante del cobro','Cobro cerrado','Se cayó','Cambiado en el panel','Mesa'];
 ok(faltantes(bueno, COL_RESERVAS).length === 0, 'el encabezado del encargo calza entero');
 ok(indices(bueno, COL_RESERVAS).tipoPago === 8, 'y cada campo sabe su columna');
 
@@ -2011,6 +2011,15 @@ ok(trabajadorPorToken(conAcceso, 'TOKEN-DE-ANA') === undefined,
      '¿desde cuándo?: los dos días, el pagado marcado y el otro baja la jornada');
   ok(c.celdas.length === 1 && c.celdas[0].fila === 3 && c.celdas[0].valor === 'Contratado', 'solo se escribe el día que no se pagó');
   ok(E.cambioDeModalidad(tabla, 'Felipe Lopez', '2026-11-10', 'Contratado', 40000, []).dias.length === 1, 'desde una fecha, solo desde ahí');
+}
+
+// ===== A la carta en la reserva y la mesa (2026-11-28) =====
+{
+  const M = await import('./mesa.ts');
+  ok(M.sinCarta('2 × Tradiciones + 3 × A la carta') === '2 × Tradiciones' && M.cartaDeLaReserva('2 × Tradiciones + 3 × A la carta') === 3,
+     'a la carta de la reserva cuenta gente pero no va a la cocina');
+  ok(M.menuEnLaMesa({ personas: 5, menu: '2 × Tradiciones + 3 × A la carta', agregados: '1 × Niños + 2 × A la carta' }) === '2 × Tradiciones + 1 × Niños',
+     'lo que se sirve: los menús de la reserva y los agregados, sin a la carta');
 }
 
 const conToken = leerTrabajadoresDe(aFilasTrabajadores(conAcceso));

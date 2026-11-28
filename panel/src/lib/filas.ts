@@ -69,6 +69,7 @@ export function filaReserva(
   poner(i.cobroCerrado, r.cobroCerrado);
   poner(i.cayo, r.cayo);
   poner(i.cambiadoEnPanel, r.cambiadoEnPanel);
+  poner(i.numeroMesa, r.numeroMesa);
   return fila;
 }
 
@@ -230,6 +231,7 @@ export function leerReservasDe(filas: string[][]): Reserva[] {
       cobroCerrado: String(en(f, i.cobroCerrado)),
       cayo: String(en(f, i.cayo)),
       cambiadoEnPanel: String(en(f, i.cambiadoEnPanel)),
+      numeroMesa: String(en(f, i.numeroMesa)).trim(),
       fila: n + 1                            // 1-based, y la 1 es el encabezado
     };
     salida.push(reserva);

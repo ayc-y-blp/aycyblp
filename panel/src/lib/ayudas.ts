@@ -419,7 +419,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'mano.'
     ],
     pasos: [
-      'Abre en la semana pasada, que es la que se paga. En el marco dorado de '
+      'Abre en el mes en curso; para pagar la semana pasada, aprieta Semana y ◀. En el marco dorado de '
       + 'arriba eliges mes, semana, día o dos fechas (Personalizado), y te '
       + 'mueves con ◀ ▶.',
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
@@ -672,7 +672,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cuentas con − y +: eso no cambia la reserva, le avisa al jefe de turno. '
       + 'Si llegaron más, te pregunta qué come cada uno —un menú o a la carta— '
       + 'y se suman a la mesa.',
-      'Al abrir una reserva que llegó está su mesa: Agregar a la mesa, para '
+      '+ Agregar reserva anota a quien llega sin reserva, para hoy, con el '
+      + 'formulario de siempre: los menús o A la carta (sin precio), cómo viene el '
+      + 'pago y la Mesa en que se sentó.',
+      'Al abrir una reserva que llegó está su mesa: el N° de Mesa, Agregar a la mesa, para '
       + 'alguien que llegó después, y el valor final, que es el total de la '
       + 'cuenta en Fudo con lo ya pagado incluido. Las bebidas y lo de la carta '
       + 'no se anotan uno por uno: basta el total.',
@@ -1739,6 +1742,13 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
       'Contratado: no cobra jornada. Su sueldo mensual se escribe en Sueldo mensual y entra en el Informe a fin de mes, junto con sus horas extra y ajustes del día; se paga por su liquidación.',
       'Esto es lo que gana de costumbre. Lo de un día —cuántas horas extra hizo, un atraso, un adelanto, un feriado— se anota en ese día, con su motivo.',
       'Al cambiarla, el panel pregunta desde cuándo rige: sus turnos desde ese día pasan a la modalidad nueva.'
+    ]
+  },
+  numeroMesa: {
+    titulo: 'La mesa',
+    texto: [
+      'En qué mesa se sentó: un número o un nombre, como 12 o Terraza 3. Sale en la línea de la reserva, en la Recepción y en la página del día.',
+      'La anota quien recibe —la anfitriona o el encargado de turno— al anotar la reserva o después, en su mesa.'
     ]
   },
   sueldoContrato: {

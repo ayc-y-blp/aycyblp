@@ -140,10 +140,17 @@ export const POST = conLecturas([], async function POST(req: Request) {
       permiso: true
     }, { status: 403 });
   }
-  const no = await exigir(req, 'anotar');
+  // **La anfitriona anota solo las de hoy** (2026-11-28, lo decidió el
+  // cliente): quien llega sin reserva. Las de otro día, el encargado.
+  const yo = await quienEs(req);
+  const b = await req.json().catch(() => ({}));
+  const anfitrionaHoy = yo.rol === ROL.anfitrion && String(b?.fecha ?? '') === hoy();
+  if (yo.rol === ROL.anfitrion && !anfitrionaHoy) {
+    return NextResponse.json({ error: 'Tú anotas las reservas de hoy. Las de otro día, el encargado de turno.', permiso: true }, { status: 403 });
+  }
+  const no = anfitrionaHoy ? null : await exigir(req, 'anotar');
   if (no) return no;
   try {
-    const b = await req.json();
     if (!b.fecha || !b.nombre) {
       return NextResponse.json(
         { error: 'La fecha y el nombre son obligatorios.' }, { status: 400 });
@@ -177,6 +184,7 @@ export const POST = conLecturas([], async function POST(req: Request) {
       // nace sin ella, que es lo que de verdad pasó.
       tipoPago: '', estadoPago: b.estadoPago ?? '',
       notaPago: String(b.notaPago ?? '').trim(),
+      numeroMesa: String(b.numeroMesa ?? '').trim().slice(0, 30),
       // Cuánto abonó, solo si quedó *Abonada* (2026-11-11).
       abonado: b.estadoPago === ESTADO_PAGO.abonado && Number(b.abonado) > 0
         ? Math.round(Number(b.abonado)) : null,

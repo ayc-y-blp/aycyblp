@@ -43,12 +43,18 @@ import CampoTelefono from './CampoTelefono';
 import { correoNormal, avisoCorreo } from '@/lib/contacto';
 import { cambiosDeLaReserva, textoDeCambios } from '@/lib/correccion';
 import { PieCorreccion } from './Correccion';
+import { A_LA_CARTA } from '@/lib/mesa';
 
 export default function ReservaForm({
-  fecha, reserva, menusConocidos, catalogo, diaCerrado = false, desdeCRM,
+  fecha, reserva, menusConocidos, catalogo, diaCerrado = false, desdeCRM, soloHoy = false,
   onListo, onCancelar, onSeCayo
 }: {
   fecha: string;
+  /**
+   * **La anfitriona anota solo las de hoy** (2026-11-28, lo decidió el
+   * cliente): la fecha queda fija. El servidor lo comprueba igual.
+   */
+  soloHoy?: boolean;
   reserva: Reserva | null;
   /**
    * El ganado del socio que se está pasando al panel (2026-11-03).
@@ -91,7 +97,9 @@ export default function ReservaForm({
     tipoPago: reserva?.tipoPago ?? '',
     estadoPago: reserva?.estadoPago || ESTADO_PAGO.pendiente,
     notaPago: reserva?.notaPago ?? '',
-    abonado: reserva?.abonado != null ? String(reserva.abonado) : ''
+    abonado: reserva?.abonado != null ? String(reserva.abonado) : '',
+    // **En qué mesa se sentó** (2026-11-28): texto libre, *12* o *Terraza 3*.
+    numeroMesa: reserva?.numeroMesa ?? ''
   });
   // **De Shopify, el pago lo pone la tienda** (2026-11-11). A mano, se elige
   // con los tres botones. Que se cayó va aparte: *✕ Se cayó…*.
@@ -108,9 +116,13 @@ export default function ReservaForm({
 
   // Los que ya se vendieron, más los de esta reserva por si alguno dejó de
   // venderse y no aparecería en la lista.
+  // **A la carta, siempre al final** (2026-11-28, lo pidió el cliente): quien
+  // come de la carta, sin precio, con la misma palabra y la misma cuenta que
+  // los agregados de la mesa (`A_LA_CARTA`): suma personas y no va a la cocina.
   const menus = useMemo(
-    () => [...new Set([...menusConocidos, ...Object.keys(cuenta)])].sort(
-      (a, b) => a.localeCompare(b)),
+    () => [...[...new Set([...menusConocidos, ...Object.keys(cuenta)])]
+      .filter((m) => m.toLowerCase() !== A_LA_CARTA.toLowerCase())
+      .sort((a, b) => a.localeCompare(b)), A_LA_CARTA],
     [menusConocidos, cuenta]
   );
   const personas = personasDeCuenta(cuenta);
@@ -270,7 +282,7 @@ export default function ReservaForm({
           <section className={`${marcoGrupo()} p-3`}>
             <p className={TITULO_GRUPO}>Quién reserva</p>
             <div className="mt-2 space-y-2">
-              <FilaCampo rotulo="Fecha"><input type="date" {...campo('fecha')} className={ENTRADA} /></FilaCampo>
+              <FilaCampo rotulo="Fecha"><input type="date" {...campo('fecha')} className={ENTRADA} disabled={soloHoy} /></FilaCampo>
               <FilaCampo rotulo="Nombre">
                 <input type="text" {...campo('nombre')} className={ENTRADA} autoFocus />
               </FilaCampo>
@@ -301,6 +313,10 @@ export default function ReservaForm({
                   )}
                 </FilaCampo>
               </>)}
+              <FilaCampo rotulo={<>Mesa <AyudaCorta tema="numeroMesa" /></>}>
+                <input type="text" {...campo('numeroMesa')} className={ENTRADA} maxLength={30}
+                  placeholder="12 o Terraza 3" aria-label="En qué mesa se sentó" />
+              </FilaCampo>
             </div>
           </section>
 
@@ -324,7 +340,9 @@ export default function ReservaForm({
             <div className="mt-2 space-y-1.5">
               {menus.map((m) => (
                 <div key={m} className="flex items-center gap-1.5">
-                  <span className="min-w-0 flex-1 break-words text-[15px] leading-tight">{m}</span>
+                  <span className="min-w-0 flex-1 break-words text-[15px] leading-tight">
+                    {m}{m === A_LA_CARTA && <span className="block text-[13px] text-hueso/65">sin precio</span>}
+                  </span>
                   <button type="button" onClick={() => sumar(m, -1)}
                     aria-label={`Quitar uno de ${m}`}
                     className="h-9 w-9 shrink-0 rounded border-2 border-hueso/20 text-lg leading-none

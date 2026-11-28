@@ -64,7 +64,9 @@ async function duenaDeLaReserva(req: Request, antes: { anotadaPor: string } | un
  */
 // **La mesa** (2026-11-17, `mesa.ts`): la gente que se suma y el valor
 // final también los anota la anfitriona.
-const DE_LA_ENTRADA = new Set(['asistencia', 'llegaron', 'avisoRecepcion', 'agregados', 'valorFinal']);
+// **En qué mesa se sentó** (2026-11-28) también. Y el `id`, que solo dice
+// cuál reserva es (`reservaDeLaFila()`).
+const DE_LA_ENTRADA = new Set(['asistencia', 'llegaron', 'avisoRecepcion', 'agregados', 'valorFinal', 'numeroMesa', 'id']);
 
 export const PATCH = conLecturas([], async function PATCH(req: Request, { params }: { params: { fila: string } }) {
   const cuerpo = await req.json().catch(() => ({}));
@@ -105,6 +107,7 @@ export const PATCH = conLecturas([], async function PATCH(req: Request, { params
       cambios.llegaron = cambios.llegaron === null || cambios.llegaron === '' || !Number.isFinite(n)
         ? null : Math.max(0, Math.round(n));
     }
+    if (cambios.numeroMesa !== undefined) cambios.numeroMesa = String(cambios.numeroMesa ?? '').trim().slice(0, 30);
     if (cambios.avisoRecepcion !== undefined) {
       cambios.avisoRecepcion = String(cambios.avisoRecepcion ?? '').trim().slice(0, 300);
     }

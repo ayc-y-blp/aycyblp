@@ -259,6 +259,55 @@ revisan antes de cada cambio en esta carpeta.
   ¿cambió algo que una ayuda describe?** Y si se creó una ventana o una
   ficha, **¿está en `ESCENAS` de `pruebas/ventanas.mjs`?**
 
+## La Recepción anota reservas de hoy, *A la carta* y la mesa (2026-11-28)
+
+Lo pidió el cliente con una foto del formulario *Agregar reserva*: *"necesito
+que la anfitriona pueda agregar una reserva también con el mismo formulario,
+pero tiene que haber la opción de agregar a la carta… y la anfitriona debería
+poder escribir a cuál mesa se asignó la reserva"*, y *"encargado de turno
+también debería poder gestionar todo esto"*. Eligió: la anfitriona **solo
+hoy**, y *A la carta* **como los agregados**, no como un producto.
+
+- ***+ Agregar reserva* en la Recepción** (`RecepcionVista`): el formulario de
+  siempre (`ReservaForm`), con la fecha fija en hoy (`soloHoy`). Lo ven la
+  anfitriona y quien ya anota reservas (`anotar`: el encargado de turno,
+  operaciones, pagos, la gerencia y el administrador). **El servidor deja a la
+  anfitriona anotar solo para hoy** (`POST /api/reservas`, 403 con otro día);
+  sin el permiso `anotar` a la anfitriona, a propósito: así no se le abre nada
+  más. Si marca *Pagada* o *Abonada*, le llega a pagos como a todos.
+  `/api/recepcion` manda `anotar`, los menús del sitio y sus precios.
+- ***A la carta*, al final de los menús del formulario**, *sin precio*: la
+  misma palabra de los agregados de la mesa (`A_LA_CARTA`). Se guarda en el
+  menú de la reserva (*"2 × Tradiciones + 1 × A la carta"*), **suma personas y
+  no va a la cocina** (`menuEnLaMesa()` con `sinCarta()`, en `lib/mesa.ts`). El
+  monto no lo cuenta: se escribe a mano o queda en el valor final de la mesa.
+- ***Mesa***: en qué mesa se sentó, texto libre (*12*, *Terraza 3*). Columna
+  nueva al final de `Reservas`, **`Mesa`** (`numeroMesa`), que Shopify no toca.
+  Se escribe en el formulario y en *La mesa* de una reserva que llegó
+  (`MesaReserva`, en la fila del valor final, se guarda sola al salir del
+  campo; mientras se cobra se esconde, para que la ficha del cobro quepa:
+  637px). Sale como pastilla *Mesa Terraza 3* al lado del nombre, en la
+  Recepción y en la página del día. La anfitriona la cambia con `asistencia`
+  (`DE_LA_ENTRADA`, que suma además el `id`).
+- **Lecturas de Google**: ninguna más. **Permisos**: ninguno nuevo; la
+  anfitriona anota hoy por una regla del servidor. **Ayuda**: el `?` de la
+  Recepción, uno nuevo (`numeroMesa`) y lo que hace la anfitriona (`roles.ts`).
+  **Ventanas**: `v-reserva-recepcion` (435px).
+
+## El Informe abre en el mes (2026-11-28)
+
+Lo eligió el cliente (*"opción A"*) cuando Darinka y Francisca salían con *1
+día que vino*: el Informe abría en la semana pasada (16 al 22) y sus días de
+esta semana no entraban. Ahora abre en el **mes en curso**, como Vendedores y
+los links personales; para pagar la semana, *Semana* y ◀. **Ayuda**: el `?`
+del Informe y la misión *El informe*.
+
+## El ojo de la contraseña, en la entrada (2026-11-28)
+
+Lo pidió el cliente: *"agregar en el login el típico ojo para revisar la
+contraseña ingresada"*. Un botón 👁 / 🙈 dentro del campo (`Entrada.tsx`), que
+muestra u oculta lo escrito.
+
 ## El sueldo de un contratado, y *¿Desde cuándo?* (2026-11-28)
 
 Lo pidió el cliente: Felipe López pasó a contratado *"ya todo el noviembre"* y
