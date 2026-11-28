@@ -143,8 +143,10 @@ const ESCENAS = {
       // Más alto desde el 2026-11-20: entra la caja de la boleta.
       // *Sueldo $…* y no *Sueldo*: desde el 2026-11-21 la descarga del
       // celular se llama *Sueldos* y el foco se iba arriba.
-      [`${pre}-pagar`, { rol, ruta: '/informe', pasos: [clic(texto('sin pagar'))], foco: boton(/^Sueldo \$/), alto: 1500,
-        puntos: [boton(/^Sueldo \$/), boton(/^Propina \$/), boton(/Descontar/), texto(/Boleta del/)] }],
+      // Abre a Matías Pérez, por turno (2026-11-28): desde que el Informe abre
+      // en el mes, el primero sin pagar es un contratado, que no lleva boleta.
+      [`${pre}-pagar`, { rol, ruta: '/informe', pasos: [async (p) => { await p.getByPlaceholder(/Buscar por nombre/).fill('Matías Pérez'); await p.waitForTimeout(400); }, clic(texto('sin pagar'))], foco: boton(/^Sueldo \$/), alto: 1500,
+        puntos: [boton(/^Sueldo \$/), boton(/^Propina \$/), boton(/Descontar/), texto(/Boleta de/)] }],
       [`${pre}-cobros`, { rol, ruta: '/presupuestos', pasos: abrirEnvio('Andrés Pino'), alto: 900, foco: texto('Pagos del cliente'),
         puntos: [texto(/El pago/), boton(/Anticipo recibido/), texto(/Anticipo 30%/)] }],
       // Desde el 2026-11-20 es una lista de tarjetas: se abre la de Daniela.

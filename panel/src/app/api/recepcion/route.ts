@@ -20,7 +20,7 @@ import { HOJA_CONFIG } from '@/lib/config';
 import { HOJA_MENUS } from '@/lib/menus';
 import { HOJA_PRESUPUESTOS, HOJA_LINEAS } from '@/lib/presupuestos';
 import { exigir, exigirVer, quienEs } from '@/lib/permisos';
-import { puede } from '@/lib/auth';
+import { puede, ROL } from '@/lib/auth';
 import { leerReservas, leerFechas, leerConfig, leerCierres, leerMenus, reservasDeCotizaciones,
          leerPresupuestos, leerLineasPresupuesto } from '@/lib/datos';
 import { comoIngresar, acordadosPorReserva, type Acordado } from '@/lib/fudo';
@@ -69,6 +69,8 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CI
         // se puede sumar. El valor final lo anota ella misma: no es un dato
         // que se le esconda.
         agregados: r.agregados ?? '', valorFinal: r.valorFinal ?? null, mesaCerrada: r.mesaCerrada ?? '',
+        // En qué mesa se sentó (2026-11-28).
+        numeroMesa: r.numeroMesa ?? '',
         opciones: opcionesParaAgregar(r.menu, delSitio),
         // **El pago, para cobrar la mesa** (2026-11-23, `cobroLocal.ts`): solo
         // a quien cobra (`caja`). La anfitriona no lo recibe.
@@ -78,7 +80,13 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_CONFIG, HOJA_CI
           cobroRevisado: !!r.cobroLocal && partesMarca(r.pagoRevisado)?.firma === firmaPago(r)
         } : {})
       })),
-      cobrar
+      cobrar,
+      // **Anotar una reserva de hoy desde la Recepción** (2026-11-28, lo pidió
+      // el cliente): la anfitriona (solo hoy) y quien ya anota reservas. Con
+      // los menús del sitio y sus precios, que son públicos.
+      anotar: quien.rol === ROL.anfitrion || puede(quien.rol, 'anotar'),
+      menus: delSitio,
+      catalogo: paraReservar(menus)
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

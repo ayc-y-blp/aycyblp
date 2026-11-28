@@ -153,7 +153,14 @@ export const COL_RESERVAS = {
    * reescribe. Sin esto, cambiar la fecha o los menús de una reserva de
    * Shopify duraba hasta la próxima revisión de la mañana. Se agrega sola.
    */
-  cambiadoEnPanel: 'Cambiado en el panel'
+  cambiadoEnPanel: 'Cambiado en el panel',
+  /**
+   * **En qué mesa se sentó** (2026-11-28, lo pidió el cliente: *"la anfitriona
+   * debería poder escribir a cuál mesa se asignó la reserva"*). Texto libre
+   * —*12*, *Terraza 3*—. Shopify no la toca (`camposDeShopify()`). Se agrega
+   * sola.
+   */
+  numeroMesa: 'Mesa'
 } as const;
 
 export const COL_FECHAS = {

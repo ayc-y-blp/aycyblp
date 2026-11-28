@@ -50,7 +50,7 @@ const recortada = (gente: Trabajador[], verLinks: boolean, verSueldos: boolean) 
     // separados igual: uno es plata y el otro una credencial, así que el
     // día que un rol necesite ver lo uno y no lo otro, la costura está.
     // Un encargado sigue sin recibir ninguno de los dos.
-    ...(verSueldos ? {} : { banco: bancoVacio(), pagoJornada: 0, pagoPreparacion: 0, valorHora: 0 })
+    ...(verSueldos ? {} : { banco: bancoVacio(), pagoJornada: 0, pagoPreparacion: 0, valorHora: 0, sueldoContrato: 0 })
     // La modalidad y la participación en la propina SÍ bajan siempre: el
     // encargado las necesita al pasar lista —a quién no se le paga por
     // turno, entre quiénes se reparte— y ninguna dice cuánto gana nadie.
@@ -213,6 +213,9 @@ export const PUT = conLecturas([], async function PUT(req: Request) {
           pagoPreparacion: verSueldos
             ? aEntero(t?.pagoPreparacion)
             : (previos.get(normalizar(nombre))?.pagoPreparacion ?? 0),
+          sueldoContrato: verSueldos
+            ? aEntero(t?.sueldoContrato)
+            : (previos.get(normalizar(nombre))?.sueldoContrato ?? 0),
           // Quién entra en el reparto de la propina también lo fija el
           // administrador: decide a dónde va plata, aunque no sea del
           // negocio. En blanco es SÍ, que es la regla; no entrar es la

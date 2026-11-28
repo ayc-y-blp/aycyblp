@@ -419,7 +419,7 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'mano.'
     ],
     pasos: [
-      'Abre en la semana pasada, que es la que se paga. En el marco dorado de '
+      'Abre en el mes en curso; para pagar la semana pasada, aprieta Semana y ◀. En el marco dorado de '
       + 'arriba eliges mes, semana, día o dos fechas (Personalizado), y te '
       + 'mueves con ◀ ▶.',
       'El filtro Sin marcar dice cuántas personas tienen días sin cerrar y deja '
@@ -448,6 +448,9 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'recibe, y el botón para marcarla cuando llegue.',
       'Para exigir las boletas, aprieta 🧾 Sin boleta: quedan solo los que '
       + 'ganaron algo en el periodo y no la han mandado.',
+      'Un contratado suma su sueldo de contrato (el de su ficha en Equipo) el '
+      + 'último día de cada mes, más sus horas extra y ajustes: mirando el mes se '
+      + 've. Se paga igual que un sueldo y va en su liquidación, sin boleta.',
       'Vendedores y socios se pagan según su documento: con boleta, lo que '
       + 'ganan es líquido, se les transfiere eso y la boleta va por más, con la '
       + 'retención (o por lo mismo, si la ficha dice sin retención); con '
@@ -669,7 +672,10 @@ export const AYUDAS: Record<string, Ayuda> = {
       + 'cuentas con − y +: eso no cambia la reserva, le avisa al jefe de turno. '
       + 'Si llegaron más, te pregunta qué come cada uno —un menú o a la carta— '
       + 'y se suman a la mesa.',
-      'Al abrir una reserva que llegó está su mesa: Agregar a la mesa, para '
+      '+ Agregar reserva anota a quien llega sin reserva, para hoy, con el '
+      + 'formulario de siempre: los menús o A la carta (sin precio), cómo viene el '
+      + 'pago y la Mesa en que se sentó.',
+      'Al abrir una reserva que llegó está su mesa: el N° de Mesa, Agregar a la mesa, para '
       + 'alguien que llegó después, y el valor final, que es el total de la '
       + 'cuenta en Fudo con lo ya pagado incluido. Las bebidas y lo de la carta '
       + 'no se anotan uno por uno: basta el total.',
@@ -1282,8 +1288,8 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
   estEqCosto: {
     titulo: 'Costo del equipo',
     texto: [
-      'Lo que costaron los turnos que vinieron —jornadas, horas extra y ajustes— y las actividades extras confirmadas. Son los mismos montos del informe.',
-      'No incluye el sueldo de los contratados, las comisiones de los vendedores, la retención de las boletas ni los adelantos fuera de turno.'
+      'Lo que costaron los turnos que vinieron —jornadas, horas extra y ajustes—, las actividades extras confirmadas y el sueldo de los contratados (el último día de cada mes, en la fila Sueldos de contrato). Son los mismos montos del informe.',
+      'No incluye las comisiones de los vendedores, la retención de las boletas ni los adelantos fuera de turno.'
     ]
   },
   estEqPropinas: {
@@ -1733,8 +1739,33 @@ export const AYUDAS_CORTAS: Record<string, AyudaCorta> = {
     titulo: 'Por turno o contratado',
     texto: [
       'Por turno: se le paga la jornada de cada día que viene.',
-      'Contratado: su sueldo va por liquidación, fuera del panel. Acá solo se le suman horas extra y ajustes del día.',
-      'Esto es lo que gana de costumbre. Lo de un día —cuántas horas extra hizo, un atraso, un adelanto, un feriado— se anota en ese día, con su motivo.'
+      'Contratado: no cobra jornada. Su sueldo mensual se escribe en Sueldo mensual y entra en el Informe a fin de mes, junto con sus horas extra y ajustes del día; se paga por su liquidación.',
+      'Esto es lo que gana de costumbre. Lo de un día —cuántas horas extra hizo, un atraso, un adelanto, un feriado— se anota en ese día, con su motivo.',
+      'Al cambiarla, el panel pregunta desde cuándo rige: sus turnos desde ese día pasan a la modalidad nueva.'
+    ]
+  },
+  numeroMesa: {
+    titulo: 'La mesa',
+    texto: [
+      'En qué mesa se sentó: un número o un nombre, como 12 o Terraza 3. Sale en la línea de la reserva, en la Recepción y en la página del día.',
+      'La anota quien recibe —la anfitriona o el encargado de turno— al anotar la reserva o después, en su mesa.'
+    ]
+  },
+  sueldoContrato: {
+    titulo: 'El sueldo de un contratado',
+    texto: [
+      'Lo que gana al mes por contrato. Entra en el Informe el último día de cada mes en que está contratado: mirando el mes se ve; una semana suelta no lo suma.',
+      'Se paga desde el Informe, como un sueldo, y va en su liquidación: no lleva boleta. El panel no calcula AFP, salud ni impuesto.',
+      'También cuenta en Estadísticas, en su propia fila, Sueldos de contrato.'
+    ]
+  },
+  desdeCuando: {
+    titulo: '¿Desde cuándo?',
+    texto: [
+      'Cada turno guarda cómo se le pagaba ese día. Cambiar la ficha no cambia los turnos que ya están anotados.',
+      'Elige desde qué día rige la modalidad nueva: sus turnos desde ese día cambian. Antes de cambiar, se ve cada día y cuánto.',
+      'Un día que ya tiene un pago de sueldo no se toca: esa plata ya salió.',
+      'Queda en la bitácora, también si algún día estaba cerrado.'
     ]
   },
   jornadaPreparacion: {

@@ -40,6 +40,8 @@ export interface Reserva {
   cayo?: string;
   /** Lo cambiado en el panel de una de Shopify: ver `COL_RESERVAS.cambiadoEnPanel`. */
   cambiadoEnPanel?: string;
+  /** En qué mesa se sentó (2026-11-28): ver `COL_RESERVAS.numeroMesa`. */
+  numeroMesa?: string;
   /**
    * **Cómo se ingresa en Fudo** (`comoIngresar()`). No es una columna: lo
    * arma el servidor al responder, para que la pantalla no tenga que

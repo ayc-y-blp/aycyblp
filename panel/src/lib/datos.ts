@@ -122,6 +122,8 @@ export async function crearReserva(r: Omit<Reserva, 'id' | 'fila' | 'creada'>): 
   // La revisión de pagos (2026-11-13): solo si nace pagada o abonada.
   if (r.pagoAnotado) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS.pagoAnotado);
   if (r.pagoRevisado) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS.pagoRevisado);
+  // La mesa en que se sentó (2026-11-28): solo si viene.
+  if (r.numeroMesa) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS.numeroMesa);
   // MANUAL- para que no pueda chocar con un id de Shopify, que es numérico.
   const id = 'MANUAL-' + Date.now();
   await agregarFila(HOJA_RESERVAS, filaReserva(enc, {
@@ -160,7 +162,7 @@ export async function editarReserva(fila: number, cambios: Partial<Reserva>): Pr
   }
   // El cobro en el local (2026-11-23, `cobroLocal.ts`), y si se cayó o qué se
   // cambió en el panel de una de Shopify (2026-11-25, `caida.ts`).
-  for (const k of ['cobroLocal', 'comprobanteCobro', 'cobroCerrado', 'cayo', 'cambiadoEnPanel'] as const) {
+  for (const k of ['cobroLocal', 'comprobanteCobro', 'cobroCerrado', 'cayo', 'cambiadoEnPanel', 'numeroMesa'] as const) {
     if (cambios[k] !== undefined) enc = await asegurarColumna(HOJA_RESERVAS, enc, COL_RESERVAS[k]);
   }
   const previa = filas[fila - 1];

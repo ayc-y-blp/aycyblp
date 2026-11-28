@@ -55,7 +55,14 @@ export const COL_TRABAJADORES = {
    * estándar"*). En blanco, la jornada de siempre. Va al final: una planilla
    * vieja se lee igual.
    */
-  pagoPreparacion: 'Pago jornada preparación'
+  pagoPreparacion: 'Pago jornada preparación',
+  /**
+   * **El sueldo mensual de un contratado** (2026-11-28, lo pidió el cliente:
+   * *"que se pueda ingresar su sueldo de contrato y luego gestionar el pago
+   * también, y así nos queda para el análisis el dato"*). Entra en el informe
+   * a fin de mes, como el sueldo fijo de un vendedor. Va al final.
+   */
+  sueldoContrato: 'Sueldo de contrato'
 } as const;
 
 /**
@@ -145,6 +152,12 @@ export interface Trabajador {
    * jornada, es el valor de hoy: lo de un día queda en su turno.
    */
   pagoPreparacion?: number;
+  /**
+   * El sueldo de un contratado, al mes (2026-11-28). Cero es sin poner. Como
+   * la jornada, es el valor de hoy: entra a fin de cada mes en que la persona
+   * figura como contratada (`sumarSueldosDeContrato()`).
+   */
+  sueldoContrato?: number;
   /** `Por turno` o `Contratado`. Ver MODALIDAD. */
   modalidad: string;
   /**
@@ -766,7 +779,8 @@ export function leerTrabajadoresDe(filas: string[][]): Trabajador[] {
       // existiera. La nota es la 9, que era la cuenta en texto libre.
       banco: leerBanco(filas[i] ?? [], 10, 9),
       porConfirmar: String(filas[i]?.[16] ?? '').trim(),
-      pagoPreparacion: aEntero(filas[i]?.[17])
+      pagoPreparacion: aEntero(filas[i]?.[17]),
+      sueldoContrato: aEntero(filas[i]?.[18])
     });
   }
   return salida;
@@ -780,7 +794,7 @@ export function aFilasTrabajadores(gente: Trabajador[]): string[][] {
      COL_TRABAJADORES.pagoJornada, COL_TRABAJADORES.valorHora,
      COL_TRABAJADORES.propina, COL_TRABAJADORES.nota,
      ...Object.values(COL_BANCO), COL_TRABAJADORES.porConfirmar,
-     COL_TRABAJADORES.pagoPreparacion],
+     COL_TRABAJADORES.pagoPreparacion, COL_TRABAJADORES.sueldoContrato],
     // Un monto en cero se escribe en blanco: en la planilla un "0" se lee
     // como "gana cero" y lo que queremos decir es "sin poner".
     ...gente.map((t) => [t.nombre, t.telefono, t.puesto,
@@ -789,7 +803,8 @@ export function aFilasTrabajadores(gente: Trabajador[]): string[][] {
                          t.valorHora > 0 ? String(t.valorHora) : '',
                          t.propina ? 'Sí' : 'No', t.banco.nota,
                          ...filaBanco(t.banco), t.porConfirmar ?? '',
-                         (t.pagoPreparacion ?? 0) > 0 ? String(t.pagoPreparacion) : ''])
+                         (t.pagoPreparacion ?? 0) > 0 ? String(t.pagoPreparacion) : '',
+                         (t.sueldoContrato ?? 0) > 0 ? String(t.sueldoContrato) : ''])
   ];
 }
 
@@ -1168,6 +1183,14 @@ export interface LineaInforme {
    * Juntarlas haría imposible contestar "¿cuánto me costó el equipo?".
    */
   propina: number;
+  /**
+   * **El sueldo de contrato del periodo** (2026-11-28): el de la ficha por
+   * cada fin de mes que cae en el periodo, como el sueldo fijo de un vendedor.
+   * Entra en `total`. Lo suma `sumarSueldosDeContrato()`; sin eso, cero.
+   */
+  contrato?: number;
+  /** Cuántos fines de mes cuenta `contrato`. */
+  mesesContrato?: number;
   total: number;
 }
 
@@ -1447,3 +1470,133 @@ export function semanaParaElMes(mes: string, hoy: Fecha): Fecha {
 
 /** El mes de una semana, para volver de *Semana* a *Mes*: el de su lunes. */
 export const mesDeLaSemana = (lunes: Fecha): string => lunes.slice(0, 7);
+
+
+/* ---------- El sueldo de un contratado (2026-11-28) ---------- */
+
+/** Los últimos días de mes entre dos fechas, inclusive (`AAAA-MM-DD`). */
+export function finesDeMes(desde: Fecha, hasta: Fecha): Fecha[] {
+  const salida: Fecha[] = [];
+  if (!desde || !hasta || desde > hasta) return salida;
+  let [a, m] = desde.slice(0, 7).split('-').map(Number);
+  for (;;) {
+    const ultimo = new Date(Date.UTC(a, m, 0)).getUTCDate();
+    const fin = `${a}-${String(m).padStart(2, '0')}-${String(ultimo).padStart(2, '0')}`;
+    if (fin > hasta) break;
+    if (fin >= desde) salida.push(fin);
+    m++; if (m > 12) { m = 1; a++; }
+  }
+  return salida;
+}
+
+/**
+ * Los fines de mes, entre dos fechas, en que una persona cobra su sueldo de
+ * contrato: si tiene turnos ese mes, el último es de contratado; si no tiene,
+ * su ficha dice contratado y sigue activa.
+ */
+export function mesesDeContrato(
+  f: Pick<Trabajador, 'nombre' | 'modalidad' | 'activo'>,
+  turnos: Pick<Turno, 'fecha' | 'trabajador' | 'modalidad' | 'suelto'>[], desde: Fecha, hasta: Fecha
+): Fecha[] {
+  const clave = normalizar(f.nombre);
+  const suyos = turnos.filter((t) => !t.suelto && normalizar(t.trabajador) === clave)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+  return finesDeMes(desde, hasta).filter((fin) => {
+    const mes = fin.slice(0, 7);
+    const delMes = suyos.filter((t) => t.fecha.slice(0, 7) === mes);
+    if (delMes.length) return esContratado(delMes[delMes.length - 1].modalidad);
+    return esContratado(f.modalidad) && f.activo !== false;
+  });
+}
+
+/**
+ * **Suma el sueldo de contrato al informe** (2026-11-28, lo pidió el
+ * cliente). A cada contratado con sueldo en su ficha le entra ese sueldo
+ * **una vez por cada fin de mes que cae en el periodo**, igual que el sueldo
+ * fijo de un vendedor: el mes entero se ve, una semana suelta no lo suma.
+ * Quien no tiene turnos en el periodo aparece igual, con su sueldo.
+ *
+ * **Contratado ese mes** quiere decir: si tiene turnos ese mes, el último es
+ * de contratado; si no tiene, su ficha lo dice. Así quien pasó de por turno a
+ * contratado a mitad de mes y se corrigió con *¿Desde cuándo?* lo cobra, y
+ * quien dejó de serlo no lo arrastra a los meses de después.
+ */
+export function sumarSueldosDeContrato(
+  lineas: LineaInforme[], fichas: Pick<Trabajador, 'nombre' | 'modalidad' | 'sueldoContrato' | 'activo'>[],
+  turnos: Pick<Turno, 'fecha' | 'trabajador' | 'modalidad' | 'suelto'>[], desde: Fecha, hasta: Fecha
+): LineaInforme[] {
+  if (!finesDeMes(desde, hasta).length) return lineas;
+  const salida = lineas.map((l) => ({ ...l }));
+  for (const f of fichas) {
+    const sueldo = f.sueldoContrato ?? 0;
+    if (sueldo <= 0) continue;
+    const clave = normalizar(f.nombre);
+    const meses = mesesDeContrato(f, turnos, desde, hasta).length;
+    if (!meses) continue;
+    let l = salida.find((x) => normalizar(x.trabajador) === clave);
+    if (!l) {
+      l = { trabajador: f.nombre, modalidad: MODALIDAD.contratado, dias: 0, noVino: 0, sinMarcar: 0,
+        jornadas: 0, horasExtra: 0, montoHorasExtra: 0, ajustes: 0, propina: 0, total: 0 };
+      salida.push(l);
+    }
+    l.contrato = sueldo * meses;
+    l.mesesContrato = meses;
+    l.total += sueldo * meses;
+  }
+  return salida.sort((a, b) => b.total - a.total || a.trabajador.localeCompare(b.trabajador));
+}
+
+/* ---------- Cambiar la modalidad desde una fecha (2026-11-28) ---------- */
+
+export interface DiaQueCambia {
+  fecha: Fecha;
+  /** Lo que sumaba el turno y lo que va a sumar (sin propina). */
+  antes: number;
+  despues: number;
+  /** Ya hay un pago de sueldo que cubre ese día: no se cambia solo. */
+  pagado: boolean;
+  /** Si ya se marcó que vino: sin marcar o *no vino* no suma ni antes ni después. */
+  vino: boolean;
+}
+
+/**
+ * **¿Desde cuándo?** (2026-11-28, lo pidió el cliente: Felipe pasó a
+ * contratado *"ya todo el noviembre"*, y su turno del 16 seguía sumando la
+ * jornada). Cada turno guarda la modalidad de ese día, a propósito; esto
+ * dice qué turnos de una persona, **desde una fecha**, cambian a la modalidad
+ * nueva, y las celdas a escribir. A *por turno*, un turno sin jornada toma la
+ * de la ficha.
+ *
+ * **Un día que ya tiene un pago de sueldo que lo cubre no se cambia**: esa
+ * plata ya salió, y se decide a mano.
+ */
+export function cambioDeModalidad(
+  tabla: string[][], quien: string, desde: Fecha, modalidad: string, jornadaFicha: number,
+  pagos: { quien: string; desde: Fecha; hasta: Fecha; concepto: string }[]
+): { dias: DiaQueCambia[]; celdas: { hoja: string; fila: number; col: number; valor: string }[] } {
+  const turnos = leerTurnosDe(tabla);
+  const enc = (tabla[0] ?? []).map((c) => normalizar(String(c ?? '')));
+  const cMod = enc.indexOf(normalizar(COL_TURNOS.modalidad));
+  const cJor = enc.indexOf(normalizar(COL_TURNOS.pagoJornada));
+  const contratado = esContratado(modalidad);
+  const nueva = contratado ? MODALIDAD.contratado : MODALIDAD.porTurno;
+  const clave = normalizar(quien);
+  const dias: DiaQueCambia[] = [];
+  const celdas: { hoja: string; fila: number; col: number; valor: string }[] = [];
+  if (cMod < 0) return { dias, celdas };
+  for (const t of turnos) {
+    if (normalizar(t.trabajador) !== clave || t.fecha < desde) continue;
+    if (esContratado(t.modalidad) === contratado) continue;
+    const jornada = !contratado && !(t.pagoJornada > 0) ? jornadaFicha : t.pagoJornada;
+    const despuesTurno = { ...t, modalidad: nueva, pagoJornada: jornada };
+    const pagado = pagos.some((p) => normalizar(p.quien) === clave && p.desde <= t.fecha && t.fecha <= p.hasta
+      && (!p.concepto || normalizar(p.concepto) === 'sueldo'));
+    dias.push({ fecha: t.fecha, antes: pagoDe(t), despues: pagoDe(despuesTurno), pagado, vino: t.asistencia === VINO.si });
+    if (pagado) continue;
+    celdas.push({ hoja: HOJA_TURNOS, fila: t.fila, col: cMod, valor: nueva });
+    if (!contratado && jornada !== t.pagoJornada && cJor >= 0) {
+      celdas.push({ hoja: HOJA_TURNOS, fila: t.fila, col: cJor, valor: String(jornada) });
+    }
+  }
+  return { dias, celdas };
+}

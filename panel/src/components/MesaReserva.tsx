@@ -38,6 +38,8 @@ export interface DatosMesa {
   agregados?: string;
   valorFinal?: number | null;
   mesaCerrada?: string;
+  /** En qué mesa se sentó (2026-11-28). */
+  numeroMesa?: string;
   /** El pago, para cobrar la mesa (2026-11-23). Solo llega a quien tiene `caja`. */
   estadoPago?: string;
   monto?: number | null;
@@ -275,7 +277,7 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
   const lista = leerAgregados(r.agregados);
   const marca = partesMarcaMesa(r.mesaCerrada);
 
-  async function guardar(cambios: { agregados?: string; valorFinal?: number | null }, aviso: string) {
+  async function guardar(cambios: { agregados?: string; valorFinal?: number | null; numeroMesa?: string }, aviso: string) {
     setGuardando(true);
     try {
       const res = await fetch(`/api/reservas/${r.fila}`, {
@@ -311,12 +313,32 @@ export default function MesaReserva({ r, opciones, editable, onGuardado, compact
           </span>
         )) : <span className="text-[14px] text-hueso/65">Nadie agregado.</span>}
       </div>}
-      <p className={`mt-1.5 text-[15px] ${r.valorFinal != null ? 'font-bold' : 'text-hueso/65'}`}>
-        🧾 {r.valorFinal != null
-          ? <>Valor final {pesosCL(r.valorFinal)}{marca && <span className="font-normal text-hueso/65">
-              {' '}· lo anotó {marca.quien}{marca.cuando ? ` a las ${marca.cuando.slice(11) || marca.cuando}` : ''}</span>}</>
-          : 'Sin valor final todavía'}
-      </p>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <p className={`text-[15px] ${r.valorFinal != null ? 'font-bold' : 'text-hueso/65'}`}>
+          🧾 {r.valorFinal != null
+            ? <>Valor final {pesosCL(r.valorFinal)}{marca && <span className="font-normal text-hueso/65">
+                {' '}· lo anotó {marca.quien}{marca.cuando ? ` a las ${marca.cuando.slice(11) || marca.cuando}` : ''}</span>}</>
+            : 'Sin valor final todavía'}
+        </p>
+        {/* **En qué mesa se sentó** (2026-11-28, lo pidió el cliente: *"la
+            anfitriona debería poder escribir a cuál mesa se asignó la
+            reserva"*). Se guarda sola al salir del campo; va en la fila del
+            valor final para que la ficha siga cabiendo en una pantalla. */}
+        {/* Mientras se cobra se esconde: la mesa ya se anotó al llegar, y así
+            la ficha del cobro sigue cabiendo en una pantalla. */}
+        {cobrando ? null : editable ? (
+          <label className="ml-auto flex items-center gap-2 text-[14px] font-semibold">
+            Mesa
+            <input type="text" defaultValue={r.numeroMesa ?? ''} maxLength={30} placeholder="N°"
+              aria-label={`En qué mesa se sentó ${r.nombre}`}
+              className="h-9 w-24 rounded border-2 border-hueso/25 bg-tinta px-2 text-[15px] font-normal focus:border-oro focus:outline-none"
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v !== (r.numeroMesa ?? '')) void guardar({ numeroMesa: v }, v ? `${r.nombre}: mesa ${v}` : `${r.nombre}: sin mesa`);
+              }} />
+          </label>
+        ) : r.numeroMesa ? <span className="ml-auto text-[14px] font-bold">Mesa {r.numeroMesa}</span> : null}
+      </div>
       {acordado && r.valorFinal != null && r.valorFinal < acordado.total && (
         <p className="mt-1 text-[14px] font-semibold text-ambar-texto">
           ⚠ Bajo lo acordado en la cotización N° {acordado.folio} ({pesosCL(acordado.total)})

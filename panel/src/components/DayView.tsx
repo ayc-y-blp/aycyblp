@@ -749,6 +749,8 @@ export default function DayView(
           <span className="min-w-0 flex-1">
             <span className={`block break-words text-[16px] font-bold leading-tight ${libera ? 'line-through' : ''}`}>
               {r.nombre || <span className="text-hueso/50">sin nombre</span>}
+              {/* En qué mesa se sentó (2026-11-28), la misma pastilla de la Recepción. */}
+              {r.numeroMesa && <span className="ml-2 inline-block whitespace-nowrap rounded-full border-2 border-hueso/25 px-2 align-middle text-[13px] font-bold">Mesa {r.numeroMesa}</span>}
             </span>
             {/* **≠ Acordado** (2026-11-20): viene de una cotización con
                 precios negociados; se cierra con esos, no con la carta. */}

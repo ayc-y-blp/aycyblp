@@ -45,6 +45,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { avisar } from './AvisoFlotante';
 import { enPalabras } from '@/lib/fechas';
 import { ASISTENCIA } from '@/lib/columnas';
+import ReservaForm from './ReservaForm';
+import type { Menu } from '@/lib/menus';
 
 interface R {
   fila: number; id?: string; nombre: string; personas: number; menu: string;
@@ -64,11 +66,17 @@ interface R {
   comprobanteCobro?: string;
   cobroCerrado?: string;
   cobroRevisado?: boolean;
+  /** En qué mesa se sentó (2026-11-28). */
+  numeroMesa?: string;
 }
 interface Datos {
   fecha: string; apertura: string; abierta: boolean; cerrado: boolean; reservas: R[];
   /** Si esta cuenta cobra las mesas (`caja`). */
   cobrar?: boolean;
+  /** Si anota reservas de hoy desde acá (2026-11-28): la anfitriona y quien ya anota. */
+  anotar?: boolean;
+  menus?: string[];
+  catalogo?: Menu[];
 }
 
 const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -96,6 +104,8 @@ export default function RecepcionVista() {
   const [abierta, setAbierta] = useState(0);
   /** Las reservas abiertas con (+): cómo ingresarla en Fudo y Avisar. */
   const [expandidas, setExpandidas] = useState<Set<number>>(new Set());
+  /** El formulario de una reserva nueva de hoy (2026-11-28). */
+  const [anotando, setAnotando] = useState(false);
   const alternar = (fila: number) => setExpandidas((x) => {
     const y = new Set(x); if (y.has(fila)) y.delete(fila); else y.add(fila); return y;
   });
@@ -169,6 +179,7 @@ export default function RecepcionVista() {
       {/* En el computador, el título y el día en una línea, y los tres
           números con el buscador en otra (2026-11-21, el computador más
           compacto): eran cuatro filas. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <div className="lg:flex lg:items-baseline lg:gap-3">
       <h1 className="text-[20px] font-bold uppercase tracking-wide sm:text-[22px]">Recepción</h1>
       <p className="mt-0.5 text-[16px] text-hueso/80 sm:text-[18px] lg:mt-0">
@@ -176,6 +187,18 @@ export default function RecepcionVista() {
         {d.apertura && <> · abre a las {d.apertura}</>}
       </p>
       </div>
+      {/* **Quien llega sin reserva** (2026-11-28, lo pidió el cliente): se
+          anota acá mismo, para hoy, con el formulario de siempre. */}
+      {d.anotar && !d.cerrado && !soloMira && (
+        <button type="button" className="boton ml-auto min-h-[44px] !border-oro !text-[15px] font-semibold text-oro"
+          onClick={() => setAnotando(true)}>+ Agregar reserva</button>
+      )}
+      </div>
+      {anotando && (
+        <ReservaForm fecha={d.fecha} reserva={null} soloHoy menusConocidos={d.menus ?? []} catalogo={d.catalogo ?? []}
+          onCancelar={() => setAnotando(false)}
+          onListo={() => { setAnotando(false); avisar('Reserva anotada.'); void cargar(); }} />
+      )}
 
       {bloqueada && !soloMira && (
         <p className="mt-4 rounded-xl border-2 border-ambar/60 bg-ambar/10 p-4 text-[17px] font-semibold text-ambar-texto">
@@ -259,6 +282,7 @@ export default function RecepcionVista() {
                 <span className="min-w-0 flex-1">
                   <span className={`block break-words text-[18px] font-bold leading-tight ${noVino ? 'line-through opacity-70' : ''}`}>
                     {r.nombre || 'Sin nombre'}
+                    {r.numeroMesa && <span className="ml-2 inline-block whitespace-nowrap rounded-full border-2 border-hueso/25 px-2 align-middle text-[13px] font-bold">Mesa {r.numeroMesa}</span>}
                   </span>
                   {(r.menu || r.ingreso?.acordado) && (
                     <span className="flex min-w-0 items-center gap-1.5 text-[14px] text-hueso/70">

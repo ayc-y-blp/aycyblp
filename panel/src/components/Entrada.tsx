@@ -17,6 +17,8 @@ const ENTRADA =
 export default function Entrada({ empresa = 'Brasas de Lo Pirque' }: { empresa?: string }) {
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
+  /** **El ojo para ver la contraseña** (2026-11-28, lo pidió el cliente). */
+  const [verClave, setVerClave] = useState(false);
   const [error, setError] = useState('');
   const [entrando, setEntrando] = useState(false);
 
@@ -54,12 +56,19 @@ export default function Entrada({ empresa = 'Brasas de Lo Pirque' }: { empresa?:
             autoComplete="username" className={`${ENTRADA} mt-1`}
             onChange={(e) => setUsuario(e.target.value)} />
         </label>
-        <label className="block">
-          <span className="text-xs uppercase tracking-wide text-hueso/50">Contraseña</span>
-          <input type="password" value={clave} autoComplete="current-password"
-            className={`${ENTRADA} mt-1`}
-            onChange={(e) => setClave(e.target.value)} />
-        </label>
+        <div>
+          <label htmlFor="clave" className="text-xs uppercase tracking-wide text-hueso/50">Contraseña</label>
+          <div className="relative mt-1">
+            <input id="clave" type={verClave ? 'text' : 'password'} value={clave} autoComplete="current-password"
+              className={`${ENTRADA} pr-14`}
+              onChange={(e) => setClave(e.target.value)} />
+            <button type="button" onClick={() => setVerClave((v) => !v)} aria-pressed={verClave}
+              aria-label={verClave ? 'Ocultar la contraseña' : 'Ver la contraseña'} title={verClave ? 'Ocultar' : 'Ver'}
+              className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r text-[20px] text-hueso/70 hover:text-oro">
+              <span aria-hidden>{verClave ? '🙈' : '👁'}</span>
+            </button>
+          </div>
+        </div>
 
         {error && <p className="text-sm text-rojo-texto">{error}</p>}
 

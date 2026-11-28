@@ -427,7 +427,7 @@ const GENTE = [
 ];
 const TRAB = GENTE.map(([nombre, telefono, puesto, pagoJornada, valorHora, propina, b]) =>
   ({ nombre, telefono, puesto, activo: true, pagoJornada, valorHora, modalidad: 'Por turno', propina, banco: b, token: token() }));
-TRAB.push({ nombre: 'Hernán Bravo', telefono: '+56 9 4011 2209', puesto: 'Parrilla', activo: true, pagoJornada: 0, valorHora: 0,
+TRAB.push({ nombre: 'Hernán Bravo', telefono: '+56 9 4011 2209', puesto: 'Parrilla', activo: true, pagoJornada: 0, valorHora: 0, sueldoContrato: 650000,
   modalidad: 'Contratado', propina: true, banco: banco('Hernán Bravo', '12.345.678-5', 'Banco BCI', 'Cuenta corriente', '11223344'), token: token() });
 H['Trabajadores'] = eq.aFilasTrabajadores(TRAB);
 const t = (nombre) => TRAB.find((x) => x.nombre === nombre);

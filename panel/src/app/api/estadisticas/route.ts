@@ -20,13 +20,13 @@ import { NextResponse } from 'next/server';
 import { conLecturas } from '@/lib/sheets';
 import { exigirVer, quienEs } from '@/lib/permisos';
 import { puedeVer, type Rol } from '@/lib/auth';
-import { HOJA_TURNOS, HOJA_PUESTOS } from '@/lib/equipo';
+import { HOJA_TURNOS, HOJA_PUESTOS, HOJA_TRABAJADORES } from '@/lib/equipo';
 import { HOJA_ACTIVIDADES } from '@/lib/extras';
 import { estadisticasPorDia, ordenDePuestos } from '@/lib/estadisticasEquipo';
 import { HOJA_RESERVAS, HOJA_FECHAS, ASISTENCIA, ESTADO_PAGO, TIPO_PAGO, esManual, estaCerrado } from '@/lib/columnas';
 import { HOJA_MENUS } from '@/lib/menus';
 import { HOJA_PRESUPUESTOS } from '@/lib/presupuestos';
-import { leerReservas, leerFechas, leerMenus, reservasDeCotizaciones, leerTurnos, leerExtras, leerPuestos } from '@/lib/datos';
+import { leerReservas, leerFechas, leerMenus, reservasDeCotizaciones, leerTurnos, leerExtras, leerPuestos, leerTrabajadores } from '@/lib/datos';
 import { ocupaLugar } from '@/lib/ocupacion';
 import { personasEnLaMesa, cuantosAgregados } from '@/lib/mesa';
 import { menusDe } from '@/lib/shopify';
@@ -68,18 +68,19 @@ function filaDe(r: Reserva, menus: Awaited<ReturnType<typeof leerMenus>>, deCoti
 }
 
 export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_MENUS, HOJA_PRESUPUESTOS,
-  HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_PUESTOS], async function GET(req: Request) {
+  HOJA_TURNOS, HOJA_ACTIVIDADES, HOJA_PUESTOS, HOJA_TRABAJADORES], async function GET(req: Request) {
   const no = await exigirVer(req, 'estadisticas');
   if (no) return no;
   try {
     const { rol, gerencia } = await quienEs(req);
     const veEquipo = puedeVer(rol as Rol, 'informe', gerencia === true);
-    const [reservas, fechas, menus, deCot, turnos, extras, puestos] = await Promise.all([
+    const [reservas, fechas, menus, deCot, turnos, extras, puestos, gente] = await Promise.all([
       leerReservas(), leerFechas(), leerMenus(),
       reservasDeCotizaciones().catch(() => new Map<string, string>()),
       veEquipo ? leerTurnos() : Promise.resolve([]),
       veEquipo ? leerExtras().catch(() => []) : Promise.resolve([]),
-      veEquipo ? leerPuestos().catch(() => []) : Promise.resolve([])
+      veEquipo ? leerPuestos().catch(() => []) : Promise.resolve([]),
+      veEquipo ? leerTrabajadores().catch(() => []) : Promise.resolve([])
     ]);
     // **Anotada por error no es una cancelación** (2026-11-25, `lib/caida.ts`):
     // no entra en las estadísticas, ni como reserva ni como caída.
@@ -91,7 +92,8 @@ export const GET = conLecturas([HOJA_RESERVAS, HOJA_FECHAS, HOJA_MENUS, HOJA_PRE
     // Todos los días que haya: con la base partiendo en cero son pocos, y así
     // cambiar el periodo en la pantalla no vuelve a pedir nada.
     const equipo = veEquipo ? (() => {
-      const diasEquipo = estadisticasPorDia({ turnos, extras, reservas, desde: '2000-01-01', hasta: '2100-12-31', hoy: hoy() });
+      const diasEquipo = estadisticasPorDia({ turnos, extras, reservas, desde: '2000-01-01', hasta: '2100-12-31', hoy: hoy(),
+        contratos: gente.filter((t) => (t.sueldoContrato ?? 0) > 0) });
       const vistos = [...new Set(diasEquipo.flatMap((d) => Object.keys(d.porPuesto)))];
       return { dias: diasEquipo, puestos: ordenDePuestos(puestos.map((p) => p.nombre), vistos) };
     })() : null;

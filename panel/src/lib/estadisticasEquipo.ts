@@ -24,15 +24,18 @@
  *   de eso es valor final anotado también se cuenta, para decir qué tan
  *   cerca del dato de Fudo está el número.
  */
-import { pagoDe, VINO, type Turno } from './equipo.ts';
+import { pagoDe, VINO, mesesDeContrato, type Turno, type Trabajador } from './equipo.ts';
 import { costoDeExtra, type Extra } from './extras.ts';
 import { ocupaLugar } from './ocupacion.ts';
 import { personasEfectivas } from './rectificacion.ts';
 import { semanaDe, sumarDias, esFecha, type Fecha } from './fechas.ts';
 import type { Reserva } from './tipos.ts';
+import { normalizar } from './columnas.ts';
 
 /** El nombre del "puesto" de las actividades extras en las gráficas. */
 export const EXTRAS = 'Actividades extras';
+/** El sueldo de los contratados (2026-11-28): su propia fila, sin jornadas. */
+export const CONTRATOS = 'Sueldos de contrato';
 /** Un turno sin puesto escrito. */
 export const SIN_PUESTO = 'Sin puesto';
 
@@ -62,9 +65,11 @@ const vacio = (fecha: Fecha): DiaEstadistica => ({
  * Los días entre `desde` y `hasta` con algo que contar. Las reservas solo
  * cuentan **hasta `hoy`**: una de mañana todavía no vendió nada.
  */
-export function estadisticasPorDia({ turnos, extras, reservas, desde, hasta, hoy }: {
+export function estadisticasPorDia({ turnos, extras, reservas, desde, hasta, hoy, contratos = [] }: {
   turnos: Turno[]; extras: Extra[]; reservas: (Reserva & { valorFinal?: number | null })[];
   desde: Fecha; hasta: Fecha; hoy: Fecha;
+  /** Los contratados con sueldo en su ficha (2026-11-28). */
+  contratos?: Pick<Trabajador, 'nombre' | 'modalidad' | 'activo' | 'sueldoContrato'>[];
 }): DiaEstadistica[] {
   const dias = new Map<Fecha, DiaEstadistica>();
   const dia = (f: Fecha) => { let d = dias.get(f); if (!d) { d = vacio(f); dias.set(f, d); } return d; };
@@ -83,6 +88,28 @@ export function estadisticasPorDia({ turnos, extras, reservas, desde, hasta, hoy
     const d = dia(e.fecha);
     d.porPuesto[EXTRAS] = (d.porPuesto[EXTRAS] ?? 0) + costoDeExtra(e);
     d.jornadas[EXTRAS] = (d.jornadas[EXTRAS] ?? 0) + 1;
+  }
+  // **El sueldo de contrato** (2026-11-28, lo pidió el cliente: *"así también
+  // nos queda para el análisis el dato"*): el último día de cada mes en que la
+  // persona está contratada, hasta el mes en curso, en su propia fila
+  // (`CONTRATOS`) y sin contar jornadas: así el promedio por jornada de cada
+  // puesto sigue siendo el de los turnos.
+  const finDelMes = (f: Fecha) => {
+    const [a, m] = f.slice(0, 7).split('-').map(Number);
+    return `${f.slice(0, 7)}-${String(new Date(Date.UTC(a, m, 0)).getUTCDate()).padStart(2, '0')}`;
+  };
+  for (const c of contratos) {
+    const sueldo = c.sueldoContrato ?? 0;
+    if (sueldo <= 0) continue;
+    const suyos = turnos.filter((t) => normalizar(t.trabajador) === normalizar(c.nombre))
+      .map((t) => t.fecha).filter(esFecha).sort();
+    const primero = suyos[0] && suyos[0] < hoy ? suyos[0] : hoy;
+    const desdeC = primero > desde ? primero : desde;
+    const hastaC = finDelMes(hoy) < hasta ? finDelMes(hoy) : hasta;
+    for (const fin of mesesDeContrato(c, turnos, desdeC.slice(0, 7) + '-01', hastaC)) {
+      const d = dia(fin);
+      d.porPuesto[CONTRATOS] = (d.porPuesto[CONTRATOS] ?? 0) + sueldo;
+    }
   }
   for (const r of reservas) {
     if (!enRango(r.fecha) || r.fecha > hoy || !ocupaLugar(r)) continue;
@@ -196,7 +223,7 @@ export function porPuesto(bloques: Pick<DiaEstadistica, 'porPuesto' | 'jornadas'
  * color sigue al puesto, no a su lugar en el ranking.
  */
 export function ordenDePuestos(conocidos: string[], vistos: string[]): string[] {
-  const salida = [...conocidos.filter((p) => p && p !== EXTRAS)];
-  for (const p of vistos) if (p !== EXTRAS && !salida.includes(p)) salida.push(p);
-  return [...salida, EXTRAS];
+  const salida = [...conocidos.filter((p) => p && p !== EXTRAS && p !== CONTRATOS)];
+  for (const p of vistos) if (p !== EXTRAS && p !== CONTRATOS && !salida.includes(p)) salida.push(p);
+  return [...salida, ...(vistos.includes(CONTRATOS) ? [CONTRATOS] : []), EXTRAS];
 }

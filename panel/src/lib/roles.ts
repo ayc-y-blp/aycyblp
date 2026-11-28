@@ -78,7 +78,7 @@ export const RESUMEN_ROL: Record<string, string> = {
   [ROL.encargado]: 'El día a día: reservas, equipo y extras —con la ficha completa, sueldos, cuenta y su link personal—, cobrar las mesas con la caja chica, y cerrar y corregir el día. No agrega ni edita fechas. Sin cotizaciones, el informe, pagos ni configuración.',
   [ROL.pagos]: 'Lo del encargado de turno, más la plata y la configuración. No toca cuentas.',
   [ROL.vendedor]: 'Ve todo el calendario y cotiza; sus reservas nacen de una cotización ganada, y solo toca lo suyo.',
-  [ROL.anfitrion]: 'Recibe a los clientes: ve las reservas del día y marca si vinieron.'
+  [ROL.anfitrion]: 'Recibe a los clientes: ve las reservas del día, marca si vinieron, anota la mesa y a quien llega sin reserva.'
 };
 
 /**
