@@ -26,7 +26,8 @@ export const PAGINAS: {
    */
   fueraDelMenu?: true;
 }[] = [
-  { href: '/', texto: 'Calendario', accion: 'ver', tema: 'calendario' },
+  // *Reservas* (2026-11-28, lo pidió el cliente: *"quiero que el botón calendario se llame reservas"*); la banda ya decía *Reservas*.
+  { href: '/', texto: 'Reservas', accion: 'ver', tema: 'calendario' },
   // **Mi panel** (2026-11-26, `lib/tareas.ts`): las tareas y los comentarios
   // de cada cuenta. Se llamó *Tareas* hasta que el cliente pidió *"debería
   // llamarse mi panel, no tareas"*; la dirección sigue siendo /tareas.

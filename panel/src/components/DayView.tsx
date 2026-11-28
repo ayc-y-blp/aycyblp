@@ -1099,7 +1099,7 @@ export default function DayView(
                 y letra de 15px en negrita. Sigue sin relleno: el único dorado
                 de la pantalla es *Agregar reserva*. */}
             <a href={volverA} className="tecla boton !min-h-[44px] !border-2 !border-hueso/40 !px-4 !text-[15px] !font-semibold !text-hueso">
-              ← Calendario
+              ← Reservas
             </a>
             <h1 className="mt-3 text-xl font-bold uppercase tracking-wide lg:mt-0 lg:text-lg">
               {enPalabras(fecha)}<Ayuda tema="dia" />
